@@ -149,12 +149,17 @@ anyone who wants to reproduce them.
 
 Xpact-core requires EiffelStudio (developed against version 25.12) and
 has no external C library dependencies beyond the standard C library
-itself.
+itself. 
+
+The file `examples/project.py` is required only if you are using the Python script `launch_estudio` from Eiffel-Loop. It is entirely optional and just allows integration with the Eiffel-Loop extensions for the scons build system.
 
 ```sh
 git clone https://github.com/finnianr/Xpact-core.git
 cd Xpact-core
-# build instructions to be added
+# build instructions for xml_reader example program 
+XPACT_CORE=$PWD
+cd examples
+ec -project_path build/linux-x86-64 -config xml_reader.ecf' -finalize -c_compile
 ```
 
 ## Status
