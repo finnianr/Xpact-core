@@ -1,0 +1,7 @@
+.claude/
+.sconf_temp/
+__pycache__/
+build/
+spec/
+workarea/
+
