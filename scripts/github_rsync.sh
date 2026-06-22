@@ -4,10 +4,9 @@
 if [[ "$1" == "live" ]]; then
 	DRY_RUN=
 else
+	pushd .
 	DRY_RUN=--dry-run
 fi
-
-cd $HOME/github/Xpact-core
 
 XPACT_CORE=$EIFFEL/library/Xpact-core
 
@@ -16,15 +15,18 @@ rsync -av --itemize-changes $DRY_RUN --safe-links --delete --delete-excluded \
 	--exclude-from=$XPACT_CORE/rsync-excludes.txt \
 	$XPACT_CORE $HOME/github | sort | grep --invert-match -F ".d..t...... Eif"
 
-# Warn if any EIFGENs got copied
-line_count=$(find $HOME/github/Eiffel-Loop -type f -name "editors_1" | wc -l)
-if [ "$line_count" -gt 0 ]; then
-    echo "WARNING: $line_count 'EIFGENs/**/editors_1' file(s) found" >&2
-fi
+if [[ "$DRY_RUN" == "" ]]; then
+	cd $HOME/github/Xpact-core
 
-line_count=$(find $HOME/github/Eiffel-Loop -type d -name "__pycache__" | wc -l)
-if [ "$line_count" -gt 0 ]; then
-    echo "WARNING: $line_count '__pycache__' folder(s) found" >&2
-fi
-	
+	# Warn if any EIFGENs got copied
+	line_count=$(find $HOME/github/Eiffel-Loop -type f -name "editors_1" | wc -l)
+	if [ "$line_count" -gt 0 ]; then
+		 echo "WARNING: $line_count 'EIFGENs/**/editors_1' file(s) found" >&2
+	fi
+
+	line_count=$(find $HOME/github/Eiffel-Loop -type d -name "__pycache__" | wc -l)
+	if [ "$line_count" -gt 0 ]; then
+		 echo "WARNING: $line_count '__pycache__' folder(s) found" >&2
+	fi
+fi	
 
