@@ -90,14 +90,14 @@ feature {NONE} -- Implementation
 				IO.put_string ("Parsing: " + file_path)
 				IO.put_new_line
 				create time
-				millisecond_then := time.millisecond_now
+				millisecond_then := time.second_now * 1000 + time.millisecond_now
 				Memory.collection_off
 				file.parse
 				Memory.collection_on
 				Memory.full_collect
 
 				time.update
-				io.put_string ("Parsing time: "); io.put_integer (time.millisecond_now - millisecond_then)
+				io.put_string ("Parsing time: "); io.put_integer (time.second_now * 1000 + time.millisecond_now - millisecond_then)
 				io.put_string (" ms")
 				io.put_new_line
 				if file.status = Status_error then

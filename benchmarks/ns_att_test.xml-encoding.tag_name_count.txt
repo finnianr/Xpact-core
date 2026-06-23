@@ -1,0 +1,25 @@
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/ns_att_test.xml
+Parsing time: 161 ms
+
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/ns_att_test.xml
+Parsing time: 89 ms
+
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/recset.xml
+Parsing time: 140 ms
+
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/recset.xml
+Parsing time: 81 ms
+
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/wordnet_glossary-20010201.rdf
+Parsing time: 74 ms
+
+
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/wordnet_glossary-20010201.rdf
+Parsing time: 49 ms
+

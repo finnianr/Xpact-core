@@ -11,6 +11,7 @@ echo
 echo Benchmarking Eiffel Xpact and C eXpat
 echo
 
+
 for name in ns_att_test.xml recset.xml wordnet_glossary-20010201.rdf; do
 	echo USING\: eXpat XML parser \(pure C\)
 	xmlcount_byfreq libexpat/testdata/largefiles/$name

@@ -1,6 +1,7 @@
 note
 	description: "[
 		An immutable string that uses a C allocated character array instead of ${SPECIAL [CHARACTER_8]}
+		(BORROWED FROM Eiffel-Loop)
 	]"
 	notes: "[
 		WARNING: this is a fixed length string and not null terminated.

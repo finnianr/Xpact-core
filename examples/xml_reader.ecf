@@ -11,7 +11,7 @@
 			<concurrency support="none"/>
 			<void_safety support="none"/>
 		</capability>
-		<variable name="buffer_size" value="small"/>
+		<variable name="buffer_size" value="big"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf" readonly="false"/>
 		<library name="base_ext" location="$ISE_LIBRARY\library\base_extension\base_extension.ecf"/>
 		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf"/>

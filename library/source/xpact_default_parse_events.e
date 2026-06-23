@@ -32,7 +32,7 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_content_ (text_intervals: EL_ARRAYED_INTERVAL_LIST)
+	on_content_ (text_intervals: XPACT_STRING_INTERVALS)
 		do
 		end
 

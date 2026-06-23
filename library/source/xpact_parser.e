@@ -62,8 +62,7 @@ feature {NONE} -- Initialisation
 			-- Set up in State_initialized with an empty buffer.
 		do
 			make_default
-			create {XPACT_UTF8_ENCODING} encoding.make
-			encoding.set_attribute_indices (attribute_intervals_list)
+			set_encoding (create {XPACT_UTF8_ENCODING}.make)
 
 			parsing_state              := State_initialized
 			error_code                 := Error_none
@@ -114,6 +113,7 @@ feature -- Element change
 
 	set_encoding (a_encoding: XPACT_NORMAL_ENCODING)
 		do
+			a_encoding.set_attribute_indices (attribute_intervals)
 			encoding := a_encoding
 		end
 
@@ -392,7 +392,9 @@ feature {NONE} -- Processor dispatch
 				enough := True
 			end
 
-			if enough and then attached buffer as buf then
+			if enough and then attached buffer as buf
+				and then attached text_data_intervals.additions_buffer as text_data_lower_upper
+			then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				from done := False until done loop
@@ -467,6 +469,7 @@ feature {NONE} -- Processor dispatch
 						index := encoding.next_token_index
 					elseif tok = Tok_data_chars or tok = Tok_data_newline then
 						text_data_intervals.extend (index, encoding.next_token_index - 1)
+
 						index := encoding.next_token_index
 					elseif tok = Tok_invalid then
 						Result := Error_invalid_token; done := True
@@ -515,30 +518,24 @@ feature {NONE} -- Processor dispatch
 			end
 			inspect tok
 				when Tok_start_tag_no_atts, Tok_start_tag_with_atts then
-					if attached buffer_name (buf, tok_start, 1) as tag_name then
-						on_tag_start (tag_name, False)
-						inspect tok when Tok_start_tag_with_atts then
-							if attribute_intervals_list.count > 0 then
-								on_tag_attributes; attribute_intervals_list.wipe_out
-							end
-						else
-						end
+					on_tag_start (buffer_name (buf, tok_start + 1), False)
+					inspect tok when Tok_start_tag_with_atts then
+						process_attributes (attribute_intervals)
+					else
 					end
 
 				when Tok_empty_element_no_atts then
-					on_tag_start (buffer_name (buf, tok_start, 1), True)
+					on_tag_start (buffer_name (buf, tok_start + 1), True)
 
 				when Tok_empty_element_with_atts then
-					if attached buffer_name (buf, tok_start, 1) as tag_name then
+					if attached buffer_name (buf, tok_start +  1) as tag_name then
 						on_tag_start (tag_name, False)
-						if attribute_intervals_list.count > 0 then
-							on_tag_attributes; attribute_intervals_list.wipe_out
-						end
+						process_attributes (attribute_intervals)
 						on_tag_end (tag_name)
 					end
 
 				when Tok_end_tag then
-					on_tag_end (buffer_name (buf, tok_start, 2))  -- skip '</'
+					on_tag_end (buffer_name (buf, tok_start + 2))  -- skip '</'
 
 				when Tok_comment then
 					lower := tok_start + 4; upper := tok_end - 4
@@ -553,6 +550,13 @@ feature {NONE} -- Processor dispatch
 
 			else
 				-- PIs, BOM, xml declaration, CDATA open: skip
+			end
+		end
+
+	process_attributes (intervals_list: like attribute_intervals)
+		do
+			if intervals_list.count > 0 then
+				on_tag_attributes; intervals_list.wipe_out
 			end
 		end
 
@@ -649,13 +653,13 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_content (text_intervals: EL_ARRAYED_INTERVAL_LIST)
+	on_content (text_intervals: XPACT_STRING_INTERVALS)
 		deferred
 		end
 
 	on_tag_attributes
 		require
-			valid_attribute_indices_count: attribute_intervals_list.count \\ 4 = 0
+			valid_attribute_indices_count: attribute_intervals.count \\ 4 = 0
 		deferred
 		end
 

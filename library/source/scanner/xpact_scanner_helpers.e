@@ -133,28 +133,18 @@ feature {NONE} -- Implementation
 			Result := index + min_bytes_per_char
 		end
 
-	new_substring (buf: SPECIAL [CHARACTER]; attrib_indices: LIST [INTEGER]; index: INTEGER): STRING_8
+	new_substring (buf: SPECIAL [CHARACTER]; index: INTEGER): STRING_8
 		local
 			i, count, lower, upper: INTEGER
 		do
-			if attrib_indices.count \\ 2 = 0 then
-				i := (index - 1) * 2 + 1
-				if attrib_indices.valid_index (i) then
-					lower := attrib_indices [i]; upper := attrib_indices [i + 1]
-					count := upper - lower + 1
-					create Result.make_filled ('%U', count)
-					if attached Result.area as area then
-						from i := 0 until i = count loop
-							area [i] := buf [i + lower]
-							i := i + 1
-						end
-						Result.set_count (i)
-					end
-				else
-					create Result.make_empty
+			count := (buf.count - index).min (10)
+			create Result.make_filled ('%U', count)
+			if attached Result.area as area then
+				from i := 0 until i = count loop
+					area [i] := buf [i + index]
+					i := i + 1
 				end
-			else
-				Result := "(missing upper)"
+				Result.set_count (i)
 			end
 		end
 

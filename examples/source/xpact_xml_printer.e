@@ -57,7 +57,7 @@ feature {NONE} -- Event handlers
 			io.put_new_line
 		end
 
-	on_content (text_intervals: EL_ARRAYED_INTERVAL_LIST)
+	on_content (text_intervals: XPACT_STRING_INTERVALS)
 		local
 			is_double: BOOLEAN
 		do

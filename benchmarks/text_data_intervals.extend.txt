@@ -1,0 +1,66 @@
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/ns_att_test.xml
+Parsing time: 164 ms
+Tags sorted in order of occurrence count (Highest first)
+
+TAG: <z:row> occurrences 50000
+TAG: <rs:data> occurrences 1
+TAG: <xml> occurrences 1
+
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/ns_att_test.xml
+Parsing time: 88 ms
+Tags sorted in order of occurrence count (Highest first)
+
+TAG: <z:row> occurrences 50000
+TAG: <rs:data> occurrences 1
+TAG: <xml> occurrences 1
+
+
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/recset.xml
+Parsing time: 141 ms
+Tags sorted in order of occurrence count (Highest first)
+
+TAG: <z:row> occurrences 50000
+TAG: <s:AttributeType> occurrences 32
+TAG: <s:datatype> occurrences 32
+TAG: <rs:data> occurrences 1
+TAG: <s:ElementType> occurrences 1
+TAG: <s:Schema> occurrences 1
+TAG: <s:extends> occurrences 1
+TAG: <xml> occurrences 1
+
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/recset.xml
+Parsing time: 78 ms
+Tags sorted in order of occurrence count (Highest first)
+
+TAG: <z:row> occurrences 50000
+TAG: <s:AttributeType> occurrences 32
+TAG: <s:datatype> occurrences 32
+TAG: <xml> occurrences 1
+TAG: <s:Schema> occurrences 1
+TAG: <s:ElementType> occurrences 1
+TAG: <rs:data> occurrences 1
+TAG: <s:extends> occurrences 1
+
+
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/wordnet_glossary-20010201.rdf
+Parsing time: 73 ms
+Tags sorted in order of occurrence count (Highest first)
+
+TAG: <rdf:Description> occurrences 99642
+TAG: <b:glossaryEntry> occurrences 49964
+TAG: <rdf:RDF> occurrences 1
+
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/wordnet_glossary-20010201.rdf
+Parsing time: 50 ms
+Tags sorted in order of occurrence count (Highest first)
+
+TAG: <rdf:Description> occurrences 99642
+TAG: <b:glossaryEntry> occurrences 49964
+TAG: <rdf:RDF> occurrences 1
+

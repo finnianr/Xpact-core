@@ -65,7 +65,9 @@ feature -- Literal content tokenization
 								if index >= a_end then
 									Result := Tok_trailing_cr
 								else
-									if bt_table [buf [index].code].to_integer_32 = BT_LF then index := advance (index) end
+									inspect bt_table [buf [index].code].to_integer_32 when BT_LF then
+										index := advance (index)
+									end
 									next_token_index := index; Result := Tok_data_newline
 								end
 							else
@@ -139,7 +141,9 @@ feature -- Literal content tokenization
 								if index >= a_end then
 									Result := Tok_trailing_cr
 								else
-									if bt_table [buf [index].code].to_integer_32 = BT_LF then index := advance (index) end
+									inspect bt_table [buf [index].code].to_integer_32 when BT_LF then
+										index := advance (index)
+									end
 									next_token_index := index; Result := Tok_data_newline
 								end
 							else

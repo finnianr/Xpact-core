@@ -39,7 +39,7 @@ feature {NONE} -- Initialisation
 
 	make
 		do
-			create attribute_intervals_list.make (0)
+			create attribute_intervals_list.make (0, 0)
 		end
 
 feature -- Scanner dispatch (implements XPACT_ENCODING deferred features)
@@ -73,8 +73,8 @@ feature -- Name utilities (implements XPACT_ENCODING deferred features)
 		end
 
 	name_count (buf: SPECIAL [CHARACTER]; start_index: INTEGER): INTEGER
-			-- Byte count of the XML name starting at start_index.
-			-- Stops at first byte whose type is not a name-continuation type.
+		-- Byte count of the XML name starting at start_index.
+		-- Stops at first byte whose type is not a name-continuation type.
 		local
 			index: INTEGER; done: BOOLEAN
 		do

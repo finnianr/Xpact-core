@@ -25,10 +25,14 @@ inherit
 
 feature -- Element change
 
-	set_attribute_indices (a_attribute_indices: like attribute_intervals_list)
+	set_attribute_indices (a_attribute_indices: XPACT_STRING_INTERVALS)
 		do
 			attribute_intervals_list := a_attribute_indices
 		end
+
+feature -- Measurement
+
+	tag_name_count: INTEGER
 
 feature {NONE} -- Tag scanning
 
@@ -66,13 +70,13 @@ feature {NONE} -- Tag scanning
 						Result := scan_end_tag (buf, advance (index), a_end)
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
-						Result := scan_start_tag_name (byte_type_table, buf, index, a_end)
+						Result := scan_start_tag_name (buf, byte_type_table, index, a_end)
 					when BT_lead_2_byte then
 						if a_end - index >= 2 and then not is_invalid_char_2 (buf, index)
 							and then is_name_start_char_2 (buf, index)
 						then
 							index := index + 2
-							Result := scan_start_tag_name (byte_type_table, buf, index, a_end)
+							Result := scan_start_tag_name (buf, byte_type_table, index, a_end)
 						else
 							next_token_index := index
 							Result := Tok_invalid
@@ -82,7 +86,7 @@ feature {NONE} -- Tag scanning
 							and then is_name_start_char_3 (buf, index)
 						then
 							index := index + 3
-							Result := scan_start_tag_name (byte_type_table, buf, index, a_end)
+							Result := scan_start_tag_name (buf, byte_type_table, index, a_end)
 						else
 							next_token_index := index
 							Result := Tok_invalid
@@ -96,11 +100,12 @@ feature {NONE} -- Tag scanning
 
 	scan_end_tag (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
 			-- Scan end tag after '</'.  Returns Tok_end_tag or error.
-		require start_index <= a_end
+		require
+			valid_range: start_index <= a_end
 		local
-			index: INTEGER; done: BOOLEAN
+			index, name_count: INTEGER; done: BOOLEAN
 		do
-			index := start_index
+			index := start_index; name_count := 1
 			if index >= a_end then
 				Result := Tok_partial
 			else
@@ -130,7 +135,8 @@ feature {NONE} -- Tag scanning
 					from until index >= a_end or done loop
 						inspect bt_table [buf [index].code].to_integer_32
 							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only,
-							     BT_minus, BT_colon then
+								BT_minus, BT_colon then
+								name_count := name_count + 1
 								index := advance (index)
 							when BT_whitespace, BT_CR, BT_LF then
 								index := advance (index)
@@ -166,9 +172,10 @@ feature {NONE} -- Tag scanning
 					end
 				end
 			end
+			tag_name_count := name_count
 		end
 
-	scan_attributes (buf: SPECIAL [CHARACTER]; intervals_list: like attribute_intervals_list; start_index, a_end: INTEGER): INTEGER
+	scan_attributes (buf: SPECIAL [CHARACTER]; intervals_list: XPACT_STRING_INTERVALS; start_index, a_end: INTEGER): INTEGER
 		-- Scan attribute list starting at the first attribute name character.
 		-- Returns Tok_start_tag_with_atts, Tok_empty_element_with_atts, or error.
 		require
@@ -182,9 +189,8 @@ feature {NONE} -- Tag scanning
 				from until index >= a_end or done loop
 					byte := bt_table [buf [index].code].to_integer_32
 					inspect byte
-						when 	BT_name_start, BT_hex_digit, BT_digit, BT_name_only,
-								BT_minus, BT_colon, BT_lead_2_byte, BT_lead_3_byte,
-								BT_lead_4_byte then
+						when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon, BT_lead_2_byte, BT_lead_3_byte,
+							BT_lead_4_byte then
 							inspect index_buffer.count when 0 then
 								index_buffer.extend (index - 1) -- name lower
 							else
@@ -198,13 +204,17 @@ feature {NONE} -- Tag scanning
 							else end
 							index := advance (index)
 						when BT_equals then
-							inspect index_buffer.count
-								when 1 then -- needs closing index
-									index_buffer.extend (index - 1)
+							inspect index_buffer.count when 1 then -- needs closing index
+								index_buffer.extend (index - 1)
 							else end
 							index := advance (index)
 							Result := scan_attribute_value (bt_table, buf, index_buffer, index, a_end, open)
-							intervals_list.update
+							inspect Result
+								when Tok_partial, Tok_partial_char then
+									intervals_list.wipe_out
+							else
+								intervals_list.update
+							end
 							if Result /= 0 then
 								done := True
 							else
@@ -231,8 +241,8 @@ feature {NONE} -- Tag scanning
 				end
 			end
 			if not done then
-				intervals_list.wipe_out
 				Result := Tok_partial
+				intervals_list.wipe_out
 			end
 		ensure
 			attribute_indices_divisible_by_4: -- name and value have 2 indices each
@@ -241,16 +251,17 @@ feature {NONE} -- Tag scanning
 
 feature {NONE} -- Tag sub-helpers
 
-	scan_start_tag_name (bt_table: SPECIAL [NATURAL_8]; buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_start_tag_name (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [NATURAL_8]; start_index, a_end: INTEGER): INTEGER
 			-- After consuming name-start char(s); scan rest of start tag name.
 		local
-			index: INTEGER; done: BOOLEAN
+			index, name_count: INTEGER; done: BOOLEAN
 		do
-			index := start_index
+			index := start_index; name_count := 1
 			from until index >= a_end or done loop
 				inspect bt_table [buf [index].code].to_integer_32
-					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only,
-					     BT_minus, BT_colon, BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon, BT_lead_2_byte,
+						BT_lead_3_byte, BT_lead_4_byte then
+						name_count := name_count + 1
 						index := advance (index)
 					when BT_whitespace, BT_CR, BT_LF then
 						index := advance (index)
@@ -297,7 +308,9 @@ feature {NONE} -- Tag sub-helpers
 					next_token_index := index; Result := Tok_invalid; done := True
 				end
 			end
-			if not done then
+			if done then
+				tag_name_count := name_count
+			else
 				Result := Tok_partial
 			end
 		end
@@ -309,6 +322,8 @@ feature {NONE} -- Tag sub-helpers
 			-- Scan past whitespace to the opening quote, then the value up to matching
 			-- close quote.  Sets next_token_ptr past the closing quote.
 			-- Returns 0 (caller should continue) or a non-zero error/end token code.
+		require
+			index_buffer_has_name: index_buffer.count = 2
 		local
 			index, opening_quote: INTEGER; done, closed: BOOLEAN
 		do
@@ -368,7 +383,7 @@ feature {NONE} -- Tag sub-helpers
 				Result := Tok_partial
 			end
 		ensure
-			index_buffer_full: index_buffer.count = 4
+			index_buffer_full: Result /= Tok_partial implies index_buffer.count = 4
 		end
 
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
@@ -391,6 +406,6 @@ feature {NONE} -- Tag sub-helpers
 
 feature {NONE} -- Internal attributes
 
-	attribute_intervals_list: XPACT_ATTRIBUTE_INTERVALS_LIST
+	attribute_intervals_list: XPACT_STRING_INTERVALS
 
 end

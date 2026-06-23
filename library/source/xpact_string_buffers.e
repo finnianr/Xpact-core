@@ -25,16 +25,16 @@ feature {NONE} -- Initialisation
 			create attribute_table.make (11)
 			create name_cache.make
 			create comment_string.make_shared (default_pointer, 0)
-			create attribute_intervals_list.make (5)
+			create attribute_intervals.make (5, 4)
 			create output_buffer.make (10)
-			create text_data_intervals.make (5)
+			create text_data_intervals.make (5, 2)
 		ensure
 			empty_buffer: buffer_end = 0 and buffer_index = 0
 		end
 
 feature {NONE} -- Implementation
 
-	adjusted_concatenation (text_intervals: EL_ARRAYED_INTERVAL_LIST): STRING_8
+	adjusted_concatenation (text_intervals: XPACT_STRING_INTERVALS): STRING_8
 		-- concatenated `text_intervals' substrings found in `buffer'
 		-- Trims leading and trailing white space and first and last intervals
 		local
@@ -45,19 +45,25 @@ feature {NONE} -- Implementation
 			Result.grow (text_intervals.count_sum)
 			if attached buffer as buf and then attached Result.area as area_out then
 				j := 0
-				across text_intervals as interval loop
-					lower := interval.lower; upper := interval.upper
-					from i := lower until i > upper loop
-						c_i := buf [i]
-						if not first_copied then
-							first_copied := not c_i.is_space
-						end
-						if first_copied then
-							area_out [j] := c_i
-							j := j + 1
-						end
-						i := i + 1
-					end
+				from text_intervals.start until text_intervals.after loop
+					inspect (text_intervals.index - 1) \\ 2
+						when 0 then
+							lower := text_intervals.item
+						when 1 then
+							upper := text_intervals.item
+							from i := lower until i > upper loop
+								c_i := buf [i]
+								if not first_copied then
+									first_copied := not c_i.is_space
+								end
+								if first_copied then
+									area_out [j] := c_i
+									j := j + 1
+								end
+								i := i + 1
+							end
+					else end
+					text_intervals.forth
 				end
 				Result.set_count (j)
 				Result.right_adjust
@@ -66,13 +72,11 @@ feature {NONE} -- Implementation
 			is_text_buffer: Result = output_buffer
 		end
 
-	buffer_name (buf: like buffer; tok_start, offset: INTEGER): STRING_8
-		local
-			name_start, name_count: INTEGER
+	buffer_name (buf: like buffer; lower: INTEGER): STRING_8
 		do
-			name_start := tok_start + offset
-			name_count := encoding.name_count (buf, name_start)
-			Result := name_cache.item (buf, name_start, name_start + name_count - 1)
+			Result := name_cache.item (buf, lower, lower + encoding.tag_name_count - 1)
+		ensure
+			same_tag_length: Result.count = encoding.tag_name_count
 		end
 
 	buffer_substring (lower, upper: INTEGER): STRING_8
@@ -105,13 +109,13 @@ feature {NONE} -- Implementation
 
 	filled_attribute_table: like attribute_table
 		require
-			valid_attribute_indices_count: attribute_intervals_list.count \\ 4 = 0
+			valid_attribute_indices_count: attribute_intervals.count \\ 4 = 0
 		local
-			lower, upper, i: INTEGER; name, value: STRING
+			lower, upper: INTEGER; name, value: STRING
 		do
 			Result := attribute_table
 			Result.wipe_out
-			if attached attribute_intervals_list as list and then attached buffer as buf then
+			if attached attribute_intervals as list and then attached buffer as buf then
 				from list.start until list.after loop
 					inspect (list.index - 1) \\ 4
 						when 0 then
@@ -167,13 +171,13 @@ feature {NONE} -- Internal structures
 	attribute_table: HASH_TABLE [STRING, STRING]
 		-- reuseable table of name-value attribute pairs
 
-	attribute_intervals_list: XPACT_ATTRIBUTE_INTERVALS_LIST
+	attribute_intervals: XPACT_STRING_INTERVALS
 		-- collected attribute name-value pair indices into `buffer'
 
 	output_buffer: STRING_8
 		-- used to accumulate text for output
 
-	text_data_intervals: EL_ARRAYED_INTERVAL_LIST
+	text_data_intervals: XPACT_STRING_INTERVALS
 		-- list of substring intervals `lower .. upper' of `buffer' text
 
 	name_cache: XPACT_NAME_CACHE
