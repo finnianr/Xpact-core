@@ -13,7 +13,7 @@ class
 	XPACT_TAG_COUNTER
 
 inherit
-	XPACT_INCREMENTAL_PARSER
+	XPACT_PARSER
 		redefine
 			make_default
 		end

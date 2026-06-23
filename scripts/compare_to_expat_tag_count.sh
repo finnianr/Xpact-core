@@ -1,7 +1,7 @@
 
 clear
-echo Installing xpact_example
-cp -u build/linux-x86-64/EIFGENs/classic/F_code/xpact_example ~/.local/bin
+echo Installing xml_reader
+cp -u examples/build/linux-x86-64/EIFGENs/classic/F_code/xml_reader ~/.local/bin
 
 pushd .
 
@@ -17,7 +17,7 @@ for name in ns_att_test.xml recset.xml wordnet_glossary-20010201.rdf; do
 	echo
 
 	echo USING\: Xpact XML parser \(Eiffel\)
-	xpact_example count_tags libexpat/testdata/largefiles/$name
+	xml_reader count_tags libexpat/testdata/largefiles/$name
 done
 
 popd

@@ -36,7 +36,7 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_tag_attributes_
+	on_tag_attributes_ (list: XPACT_ATTRIBUTE_LIST)
 		do
 		end
 

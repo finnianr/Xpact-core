@@ -23,13 +23,6 @@ inherit
 	XPACT_SCANNER_HELPERS
 	XPACT_REF_SCANNER
 
-feature -- Element change
-
-	set_attribute_indices (a_attribute_indices: like attribute_intervals_list)
-		do
-			attribute_intervals_list := a_attribute_indices
-		end
-
 feature {NONE} -- Tag scanning
 
 	scan_lt (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
@@ -168,43 +161,30 @@ feature {NONE} -- Tag scanning
 			end
 		end
 
-	scan_attributes (buf: SPECIAL [CHARACTER]; intervals_list: like attribute_intervals_list; start_index, a_end: INTEGER): INTEGER
-		-- Scan attribute list starting at the first attribute name character.
-		-- Returns Tok_start_tag_with_atts, Tok_empty_element_with_atts, or error.
+	scan_atts (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+			-- Scan attribute list starting at the first attribute name character.
+			-- Returns Tok_start_tag_with_atts, Tok_empty_element_with_atts, or error.
 		require
 			valid_range: start_index <= a_end
 		local
-			index, open, byte: INTEGER; done: BOOLEAN
+			index, open: INTEGER; done: BOOLEAN
 		do
 			index := start_index
-			if attached byte_type_table as bt_table and then attached intervals_list.additions_buffer as index_buffer then
-				index_buffer.extend (index) -- name lower
+			if attached byte_type_table as bt_table then
 				from until index >= a_end or done loop
-					byte := bt_table [buf [index].code].to_integer_32
-					inspect byte
+					inspect bt_table [buf [index].code].to_integer_32
 						when 	BT_name_start, BT_hex_digit, BT_digit, BT_name_only,
 								BT_minus, BT_colon, BT_lead_2_byte, BT_lead_3_byte,
 								BT_lead_4_byte then
-							inspect index_buffer.count when 0 then
-								index_buffer.extend (index - 1) -- name lower
-							else
-							end
+
 							index := advance (index)
 						when BT_whitespace, BT_CR, BT_LF then
 							-- Skip one whitespace byte; outer loop handles subsequent chars naturally.
 							-- Whitespace may separate a name from '=' or one attribute from the next.
-							inspect index_buffer.count when 1 then
-								index_buffer.extend (index - 1) -- name upper
-							else end
 							index := advance (index)
 						when BT_equals then
-							inspect index_buffer.count
-								when 1 then -- needs closing index
-									index_buffer.extend (index - 1)
-							else end
 							index := advance (index)
-							Result := scan_attribute_value (bt_table, buf, index_buffer, index, a_end, open)
-							intervals_list.update
+							Result := scan_att_value (buf, index, a_end, open)
 							if Result /= 0 then
 								done := True
 							else
@@ -231,12 +211,8 @@ feature {NONE} -- Tag scanning
 				end
 			end
 			if not done then
-				intervals_list.wipe_out
 				Result := Tok_partial
 			end
-		ensure
-			attribute_indices_divisible_by_4: -- name and value have 2 indices each
-				Result /= Tok_partial implies attribute_intervals_list.count \\ 4 = 0
 		end
 
 feature {NONE} -- Tag sub-helpers
@@ -257,7 +233,7 @@ feature {NONE} -- Tag sub-helpers
 						from until index >= a_end or done loop
 							inspect bt_table [buf [index].code].to_integer_32
 								when BT_name_start, BT_hex_digit then
-									Result := scan_attributes (buf, attribute_intervals_list, index, a_end); done := True
+									Result := scan_atts (buf, index, a_end); done := True
 								when BT_gt then
 									next_token_index := advance (index)
 									Result := Tok_start_tag_no_atts; done := True
@@ -302,49 +278,45 @@ feature {NONE} -- Tag sub-helpers
 			end
 		end
 
-	scan_attribute_value (
-		bt_table: SPECIAL [NATURAL_8]; buf: SPECIAL [CHARACTER]; index_buffer: SPECIAL [INTEGER]
-		start_index, a_end, open: INTEGER
-	): INTEGER
+	scan_att_value (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER;
+	                open: INTEGER): INTEGER
 			-- Scan past whitespace to the opening quote, then the value up to matching
 			-- close quote.  Sets next_token_ptr past the closing quote.
 			-- Returns 0 (caller should continue) or a non-zero error/end token code.
 		local
-			index, opening_quote: INTEGER; done, closed: BOOLEAN
+			index, opening_quote: INTEGER
+			done, closed: BOOLEAN
 		do
 			index := start_index
 			-- skip to opening quote
-			from until index >= a_end or done loop
-				inspect bt_table [buf [index].code].to_integer_32
-					when BT_quote then
-						opening_quote := BT_quote; done := True
-					when BT_apostrophe then
-						opening_quote := BT_apostrophe; done := True
-					when BT_whitespace, BT_LF, BT_CR then
-						index := advance (index)
-				else
-					next_token_index := index; Result := Tok_invalid; done := True
+			if attached byte_type_table as bt_table  then
+				from until index >= a_end or done loop
+					inspect bt_table [buf [index].code].to_integer_32
+						when BT_quote then
+							opening_quote := BT_quote; done := True
+						when BT_apostrophe then
+							opening_quote := BT_apostrophe; done := True
+						when BT_whitespace, BT_LF, BT_CR then
+							index := advance (index)
+					else
+						next_token_index := index; Result := Tok_invalid; done := True
+					end
 				end
 			end
-			if done and Result = 0 then
-			-- scan value content up to matching closing quote
+			if done and Result = 0 and then attached byte_type_table as bt_table then
+				-- scan value content up to matching closing quote
 				index := advance (index)  -- skip opening quote
-				index_buffer.extend (index) -- value lower
 				from until index >= a_end or closed loop
 					inspect bt_table [buf [index].code].to_integer_32
 						when BT_quote then
-							inspect opening_quote
-								when BT_quote then
-									index_buffer.extend (index - 1) -- value upper
-									next_token_index := advance (index); closed := True
+							if opening_quote = BT_quote then
+								next_token_index := advance (index); closed := True
 							else
 								index := advance (index)
 							end
 						when BT_apostrophe then
-							inspect opening_quote
-								when BT_apostrophe then
-									index_buffer.extend (index - 1) -- value_upper
-									next_token_index := advance (index); closed := True
+							if opening_quote = BT_apostrophe then
+								next_token_index := advance (index); closed := True
 							else
 								index := advance (index)
 							end
@@ -367,8 +339,6 @@ feature {NONE} -- Tag sub-helpers
 			elseif not done then
 				Result := Tok_partial
 			end
-		ensure
-			index_buffer_full: index_buffer.count = 4
 		end
 
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
@@ -388,9 +358,5 @@ feature {NONE} -- Tag sub-helpers
 		require start_index <= a_end
 		deferred
 		end
-
-feature {NONE} -- Internal attributes
-
-	attribute_intervals_list: XPACT_ATTRIBUTE_INTERVALS_LIST
 
 end

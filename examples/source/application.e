@@ -75,7 +75,7 @@ feature {NONE} -- Implementation
 
 	do_task (task, file_path: STRING)
 		local
-			file: XPACT_XML_FILE; parser: XPACT_INCREMENTAL_PARSER
+			file: XPACT_XML_FILE; parser: XPACT_PARSER
 			time: C_DATE; millisecond_then: INTEGER
 		do
 			if task ~ Task_type [1] then

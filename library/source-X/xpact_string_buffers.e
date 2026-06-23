@@ -22,10 +22,9 @@ feature {NONE} -- Initialisation
 	make
 		do
 			buffer := new_buffer_area (Default_buffer_size)
-			create attribute_table.make (11)
 			create name_cache.make
 			create comment_string.make_shared (default_pointer, 0)
-			create attribute_intervals_list.make (5)
+			create attribute_list.make (5)
 			create output_buffer.make (10)
 			create text_data_intervals.make (5)
 		ensure
@@ -103,38 +102,6 @@ feature {NONE} -- Implementation
 			Result := c = '%U'
 		end
 
-	filled_attribute_table: like attribute_table
-		require
-			valid_attribute_indices_count: attribute_intervals_list.count \\ 4 = 0
-		local
-			lower, upper, i: INTEGER; name, value: STRING
-		do
-			Result := attribute_table
-			Result.wipe_out
-			if attached attribute_intervals_list as list and then attached buffer as buf then
-				from list.start until list.after loop
-					inspect (list.index - 1) \\ 4
-						when 0 then
-							lower := list.item
-						when 1 then
-							upper := list.item
-							name := name_cache.item (buf, lower, upper)
-						when 2 then
-							lower := list.item
-						when 3 then
-							upper := list.item
-							value := buffer_substring (lower, upper).twin
-							Result.put (value, name)
-							check
-								not_duplicate_name: Result.inserted
-							end
-					else
-					end
-					list.forth
-				end
-			end
-		end
-
 	new_buffer_area (n: INTEGER): like buffer
 		do
 			create Result.make_filled ('%U', n + 1)
@@ -164,11 +131,8 @@ feature {NONE} -- Internal structures
 	buffer: SPECIAL [CHARACTER_8]
 		-- Raw byte buffer; do not modify indices outside this class.
 
-	attribute_table: HASH_TABLE [STRING, STRING]
-		-- reuseable table of name-value attribute pairs
-
-	attribute_intervals_list: XPACT_ATTRIBUTE_INTERVALS_LIST
-		-- collected attribute name-value pair indices into `buffer'
+	attribute_list: XPACT_ATTRIBUTE_LIST
+		-- collected attribute buffer
 
 	output_buffer: STRING_8
 		-- used to accumulate text for output

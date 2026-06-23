@@ -39,7 +39,6 @@ feature {NONE} -- Initialisation
 
 	make
 		do
-			create attribute_intervals_list.make (0)
 		end
 
 feature -- Scanner dispatch (implements XPACT_ENCODING deferred features)

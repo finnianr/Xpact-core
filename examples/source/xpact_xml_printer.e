@@ -44,7 +44,7 @@ note
 class XPACT_XML_PRINTER
 
 inherit
-	XPACT_INCREMENTAL_PARSER
+	XPACT_PARSER
 
 create make
 
@@ -78,20 +78,19 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_tag_attributes (list: XPACT_ATTRIBUTE_LIST)
+	on_tag_attributes
 		do
-			from list.start until list.after loop
-				if list.is_first then
+			across filled_attribute_table as value loop
+				if @ value.is_first then
 					io.put_string (Tab_string)
 					io.put_string ("ATTRIBUTES: {")
 				else
 					io.put_string (", ")
 				end
-				io.put_string (list.name_item)
+				io.put_string (@ value.key)
 				io.put_string (" : %"")
-				io.put_string (buffer_substring (list.item_lower, list.item_upper))
+				io.put_string (value)
 				io.put_character ('"')
-				list.forth
 			end
 			io.put_character ('}')
 			io.put_new_line
