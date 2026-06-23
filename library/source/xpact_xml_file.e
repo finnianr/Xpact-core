@@ -82,5 +82,5 @@ feature {NONE} -- implementation
 
 feature {NONE} -- Internal attributes
 
-	parser: XPACT_PARSER
+	parser: XPACT_XML_PARSER
 end

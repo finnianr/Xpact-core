@@ -197,15 +197,15 @@ feature {NONE} -- Tag scanning
 							end
 							index := advance (index)
 						when BT_whitespace, BT_CR, BT_LF then
-							-- Skip one whitespace byte; outer loop handles subsequent chars naturally.
-							-- Whitespace may separate a name from '=' or one attribute from the next.
+						-- Skip one whitespace byte; outer loop handles subsequent chars naturally.
+						-- Whitespace may separate a name from '=' or one attribute from the next.
 							inspect index_buffer.count when 1 then
 								index_buffer.extend (index - 1) -- name upper
 							else end
 							index := advance (index)
 						when BT_equals then
-							inspect index_buffer.count when 1 then -- needs closing index
-								index_buffer.extend (index - 1)
+							inspect index_buffer.count when 1 then
+								index_buffer.extend (index - 1) -- name upper
 							else end
 							index := advance (index)
 							Result := scan_attribute_value (bt_table, buf, index_buffer, index, a_end, open)

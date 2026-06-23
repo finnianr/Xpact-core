@@ -44,7 +44,7 @@ note
 class XPACT_XML_PRINTER
 
 inherit
-	XPACT_PARSER
+	XPACT_XML_PARSER
 
 create make
 

@@ -1,6 +1,8 @@
+Benchmarking Eiffel Xpact and C eXpat
+
 USING: eXpat XML parser (pure C)
 Parsing: libexpat/testdata/largefiles/ns_att_test.xml
-Parsing time: 165 ms
+Parsing time: 163 ms
 Tags sorted in order of occurrence count (Highest first)
 
 TAG: <z:row> occurrences 50000
@@ -9,7 +11,7 @@ TAG: <xml> occurrences 1
 
 USING: Xpact XML parser (Eiffel)
 Parsing: libexpat/testdata/largefiles/ns_att_test.xml
-Parsing time: 88 ms
+Parsing time: 89 ms
 Tags sorted in order of occurrence count (Highest first)
 
 TAG: <z:row> occurrences 50000
@@ -19,7 +21,7 @@ TAG: <xml> occurrences 1
 
 USING: eXpat XML parser (pure C)
 Parsing: libexpat/testdata/largefiles/recset.xml
-Parsing time: 142 ms
+Parsing time: 141 ms
 Tags sorted in order of occurrence count (Highest first)
 
 TAG: <z:row> occurrences 50000
@@ -33,7 +35,7 @@ TAG: <xml> occurrences 1
 
 USING: Xpact XML parser (Eiffel)
 Parsing: libexpat/testdata/largefiles/recset.xml
-Parsing time: 81 ms
+Parsing time: 80 ms
 Tags sorted in order of occurrence count (Highest first)
 
 TAG: <z:row> occurrences 50000
@@ -48,7 +50,7 @@ TAG: <s:extends> occurrences 1
 
 USING: eXpat XML parser (pure C)
 Parsing: libexpat/testdata/largefiles/wordnet_glossary-20010201.rdf
-Parsing time: 74 ms
+Parsing time: 76 ms
 Tags sorted in order of occurrence count (Highest first)
 
 TAG: <rdf:Description> occurrences 99642
@@ -57,7 +59,7 @@ TAG: <rdf:RDF> occurrences 1
 
 USING: Xpact XML parser (Eiffel)
 Parsing: libexpat/testdata/largefiles/wordnet_glossary-20010201.rdf
-Parsing time: 48 ms
+Parsing time: 50 ms
 Tags sorted in order of occurrence count (Highest first)
 
 TAG: <rdf:Description> occurrences 99642

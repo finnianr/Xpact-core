@@ -154,7 +154,7 @@ feature {NONE} -- Implementation
 			Result := a_end - index >= count * min_bytes_per_char
 		end
 
-feature {XPACT_PARSER} -- Deferred
+feature {XPACT_XML_PARSER} -- Deferred
 
 	byte_type_table: SPECIAL [NATURAL_8]
 			-- 256-entry table mapping each byte value to its BT_* type.

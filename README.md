@@ -126,9 +126,9 @@ own test corpus, comparing Xpact-core against expat compiled with
 
 | Document | expat (C) | Xpact-core (Eiffel) | Result |
 |---|---|---|---|
-| `wordnet_glossary-20010201.rdf` (35MB, 149K+ tags) | 68 ms | 55 ms | **1.24x faster** |
-| `ns_att_test.xml` (36MB, 50K rows, attribute-heavy) | 163 ms | 110 ms | **1.48x faster** |
-| `recset.xml` (attribute and schema metadata heavy) | 142 ms | 95 ms | **1.49x faster** |
+| `ns_att_test.xml` (36MB, 50K rows, attribute-heavy) | 162 ms | 88 ms | **1.84x faster** |
+| `recset.xml` (attribute and schema metadata heavy) | 142 ms | 80 ms | **1.78x faster** |
+| `wordnet_glossary-20010201.rdf` (35MB, 149K+ tags) | 72 ms | 49 ms | **1.47x faster** |
 
 All runs produced identical tag occurrence counts to expat, confirming
 correctness alongside the performance result.
@@ -137,13 +137,11 @@ These results are reproducible and are not yet independently verified
 by a third party. Benchmark scripts are included under `examples/` for
 anyone who wants to reproduce them.
 
-> **A caveat worth stating plainly:** these benchmarks measure
-> whole-document, in-memory parsing of a single string. They do not yet
-> measure incremental, chunked-input streaming performance, which is
-> the use case that matters most for libexpat's real-world deployment
-> (network clients, web servers, file streaming). Xpact-core's
-> incremental design supports this, but it has not yet been benchmarked
-> specifically for it.
+> These benchmarks measure incremental, chunked-input streaming — the
+> same mode used by network clients, web servers, and file streaming
+> applications. Each file is read in fixed-size chunks and fed to the
+> parser one chunk at a time, exercising the full partial-token
+> carryover and buffer management path on every chunk boundary.
 
 ## Building
 

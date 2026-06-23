@@ -42,7 +42,7 @@ note
 	date: "2026-06-20 20:30:52 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XPACT_PARSER
+deferred class XPACT_XML_PARSER
 
 inherit
 	XPACT_BYTE_TYPE_CONSTANTS
