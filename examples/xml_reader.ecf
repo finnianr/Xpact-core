@@ -9,8 +9,9 @@
 		<setting name="dead_code_removal" value="all"/>
 		<capability>
 			<concurrency support="none"/>
-			<void_safety support="none"/>
+			<void_safety support="all" use="all"/>
 		</capability>
+		<precompile name="base_pre" location="$ISE_PRECOMP\base-safe.ecf"/>
 		<variable name="buffer_size" value="big"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf" readonly="false"/>
 		<library name="base_ext" location="$ISE_LIBRARY\library\base_extension\base_extension.ecf"/>

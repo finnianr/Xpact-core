@@ -13,12 +13,11 @@ echo
 
 
 for name in ns_att_test.xml recset.xml wordnet_glossary-20010201.rdf; do
-	echo USING\: eXpat XML parser \(pure C\)
-	xmlcount_byfreq libexpat/testdata/largefiles/$name
+	xml_tag_counter libexpat/testdata/largefiles/$name -duration 2000
 	echo
 
-	echo USING\: Xpact XML parser \(Eiffel\)
-	xml_reader count_tags libexpat/testdata/largefiles/$name
+	xml_reader count_tags libexpat/testdata/largefiles/$name -duration 2000
+	echo
 done
 
 popd

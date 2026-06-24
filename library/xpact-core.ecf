@@ -7,7 +7,7 @@
 		</option>
 		<capability>
 			<concurrency support="none"/>
-			<void_safety support="none"/>
+			<void_safety support="all" use="all"/>
 		</capability>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
 		<cluster name="xpact" location="source" recursive="true">

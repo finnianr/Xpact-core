@@ -65,7 +65,8 @@ feature -- Access
 
 	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING
 		local
-			i, bucket_count, count: INTEGER; bucket_list: like cache_item; found: BOOLEAN
+			i, bucket_count, count: INTEGER; bucket_list: like cache_item
+			found_name: detachable STRING
 		do
 			i := bucket_hash (buffer, start_index, end_index)
 			bucket_list := area [i]
@@ -79,18 +80,20 @@ feature -- Access
 			elseif attached bucket_list.area as l_area then
 			-- search for match
 				bucket_count := bucket_list.count
-				from i := 0 until i = bucket_count or found loop
+				from i := 0 until i = bucket_count or attached found_name loop
 					count := end_index - start_index + 1
 					if attached l_area [i] as name and then name.count = count
 						and then same_string (buffer, start_index, count, name)
 					then
-						Result := name; found := True
+						found_name := name
 					else
 						i := i + 1
 					end
 				end
 			-- Add to bucket if not found
-				if not found then
+				if attached found_name as l_name then
+					Result := l_name
+				else
 					Result := buffer_string_8 (buffer, start_index, end_index)
 					bucket_list.extend (Result)
 				end

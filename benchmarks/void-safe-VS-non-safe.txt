@@ -1,0 +1,42 @@
+NON-VOID-SAFE
+Benchmarking Eiffel Xpact and C eXpat
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/ns_att_test.xml
+Parsing time: 165 ms
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/ns_att_test.xml
+Parsing time: 91 ms
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/recset.xml
+Parsing time: 145 ms
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/recset.xml
+Parsing time: 81 ms
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/wordnet_glossary-20010201.rdf
+Parsing time: 73 ms
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/wordnet_glossary-20010201.rdf
+Parsing time: 49 ms
+
+VOID-SAFE
+Benchmarking Eiffel Xpact and C eXpat
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/ns_att_test.xml
+Parsing time: 164 ms
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/ns_att_test.xml
+Parsing time: 88 ms
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/recset.xml
+Parsing time: 141 ms
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/recset.xml
+Parsing time: 84 ms
+USING: eXpat XML parser (pure C)
+Parsing: libexpat/testdata/largefiles/wordnet_glossary-20010201.rdf
+Parsing time: 75 ms
+USING: Xpact XML parser (Eiffel)
+Parsing: libexpat/testdata/largefiles/wordnet_glossary-20010201.rdf
+Parsing time: 48 ms
+

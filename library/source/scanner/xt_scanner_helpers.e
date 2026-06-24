@@ -135,7 +135,7 @@ feature {NONE} -- Implementation
 
 	new_substring (buf: SPECIAL [CHARACTER]; index: INTEGER): STRING_8
 		local
-			i, count, lower, upper: INTEGER
+			i, count: INTEGER
 		do
 			count := (buf.count - index).min (10)
 			create Result.make_filled ('%U', count)

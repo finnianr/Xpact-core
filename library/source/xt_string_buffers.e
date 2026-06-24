@@ -81,6 +81,9 @@ feature {NONE} -- Implementation
 
 	buffer_substring (lower, upper: INTEGER): STRING_8
 		-- `lower .. upper' substring of `buffer' placed in `output_buffer'
+		require
+			valid_range: upper + 1 >= lower and then upper >= lower implies buffer.valid_index (lower) and buffer.valid_index (upper)
+
 		local
 			count, i: INTEGER
 		do

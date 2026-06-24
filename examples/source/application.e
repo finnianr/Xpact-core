@@ -36,16 +36,28 @@ feature {NONE} -- Initialisation
 
 	make
 		local
-			file: PLAIN_TEXT_FILE
+			file: PLAIN_TEXT_FILE; time_start: TIME; count, duration_milliseconds: INTEGER
 		do
 			if argument_count >= 2
-				and then attached argument (1).to_string_8 as task
-				and then attached argument (2).to_string_8 as file_path
-				and then Task_type.has (task)
+				and then attached new_argument_8 (1, Void) as task and then Task_type.has (task)
+				and then attached new_argument_8 (2, Void) as file_path
 			then
 				create file.make_with_name (file_path)
+				io.put_string ("Program: Xpact-core XML parser (Eiffel)")
+				io.put_new_line
 				if file.exists then
-					do_task (task, file_path)
+					duration_milliseconds := new_integer_argument ("duration", 500)
+					if duration = 0 then
+						do_task (task, file_path, count = 1)
+					else
+						from create time_start.make_now until elapsed_milliseconds (time_start) > duration_milliseconds loop
+							count := count + 1
+							do_task (task, file_path, count = 1)
+						end
+						io.put_string ("Total number of passes in ")
+						io.put_string (duration_milliseconds.out + " ms: " + count.out)
+						io.put_new_line
+					end
 				else
 					io.put_string ("File not found: " + file_path + "%N")
 				end
@@ -56,15 +68,39 @@ feature {NONE} -- Initialisation
 
 feature {NONE} -- Implementation
 
-	chunk_size: INTEGER
+	elapsed_milliseconds (time_start: TIME): INTEGER
+		local
+			time_now: TIME
+		do
+			create time_now.make_now
+			Result := (time_now.relative_duration (time_start).fine_seconds_count * 1000).rounded
+		end
+
+	new_argument_8 (index: INTEGER; a_option: detachable STRING): STRING
 		local
 			i: INTEGER
 		do
-			i := index_of_word_option ("chunk_size")
-			if i > 0 then
-				Result := argument (i + 1).to_integer_32
+			if attached a_option as option then
+				i := index_of_word_option (option)
+				if i > 0 then
+					i := i + 1
+				end
 			else
-				Result := Default_chunk_size
+				i := index
+			end
+			if 0 < i and i <= argument_count then
+				Result := argument (i).to_string_8
+			else
+				create Result.make_empty
+			end
+		end
+
+	new_integer_argument (a_option: STRING; default_value: INTEGER): INTEGER
+		do
+			if attached new_argument_8 (0, a_option) as str and then str.is_integer then
+				Result := str.to_integer_32
+			else
+				Result := default_value
 			end
 		end
 
@@ -73,10 +109,9 @@ feature {NONE} -- Implementation
 			create Result
 		end
 
-	do_task (task, file_path: STRING)
+	do_task (task, file_path: STRING; is_first: BOOLEAN)
 		local
 			file: XT_XML_FILE; parser: XT_XML_PARSER
-			time: C_DATE; millisecond_then: INTEGER
 		do
 			if task ~ Task_type [1] then
 				create {XT_TAG_COUNTER} parser.make
@@ -84,29 +119,27 @@ feature {NONE} -- Implementation
 				create {XT_XML_PRINTER} parser.make
 			end
 
-			create file.make (file_path, parser, chunk_size)
+			create file.make (file_path, parser, new_integer_argument ("chunk_size", Default_chunk_size))
 
 			if file.is_readable then
-				IO.put_string ("Parsing: " + file_path)
-				IO.put_new_line
-				create time
-				millisecond_then := time.second_now * 1000 + time.millisecond_now
+				if is_first then
+					IO.put_string ("Parsing: " + file_path)
+					IO.put_new_line
+				end
 				Memory.collection_off
 				file.parse
 				Memory.collection_on
 				Memory.full_collect
 
-				time.update
-				io.put_string ("Parsing time: "); io.put_integer (time.second_now * 1000 + time.millisecond_now - millisecond_then)
-				io.put_string (" ms")
-				io.put_new_line
 				if file.status = Status_error then
 					io.put_string ("Parse error code: " + parser.error_code.out)
 
-				elseif attached {XT_TAG_COUNTER} parser as counter then
+				elseif is_first and then attached {XT_TAG_COUNTER} parser as counter then
 					counter.print_stats
 				end
-				IO.put_new_line; IO.put_new_line
+				if is_first then
+					IO.put_new_line
+				end
 			else
 				io.put_string ("Cannot read: " + file_path)
 				io.put_new_line
@@ -115,9 +148,10 @@ feature {NONE} -- Implementation
 
 	put_usage
 		do
-			io.put_string ("Usage: xpact_example <operation> <xml-file> [-chunk_size <value>]")
+			io.put_string ("Usage: xpact_example <operation> <xml-file> [-chunk_size <value>] [-duration <millisecs>]")
 			io.put_string ("Valid operations: {count_tags, print}")
-			io.put_string ("OPTIONAL: -chunk_size. Defaults to: ")
+			io.put_string ("OPTIONAL: -chunk_size. Defaults to: " + Default_chunk_size.out)
+			io.put_string ("OPTIONAL: -duration. Defaults to: 500")
 			io.put_integer (Default_chunk_size)
 			io.put_new_line
 		end

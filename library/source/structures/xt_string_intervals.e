@@ -1,5 +1,5 @@
 note
-	description: "List of indices demarking name and attribute value string in {XPACT_INCREMENTAL_PARSER}.buffer"
+	description: "List of indices demarking name and attribute value string in ${XT_XML_PARSER}.buffer"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -19,11 +19,11 @@ inherit
 		export
 			{NONE} all
 		redefine
-			wipe_out
+			make_sized, wipe_out
 		end
 
 create
-	make
+	make, make_sized
 
 feature -- Initialization
 
@@ -31,6 +31,12 @@ feature -- Initialization
 		do
 			make_sized (n)
 			create additions_buffer.make_empty (buffer_size)
+		end
+
+	make_sized (n: INTEGER)
+		do
+			Precursor (n)
+			create additions_buffer.make_empty (0)
 		end
 
 feature -- Measurement
