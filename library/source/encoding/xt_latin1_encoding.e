@@ -15,10 +15,10 @@ note
 	date: "2026-06-18 19:02:11 GMT (Thursday 18th June 2026)"
 	revision: "1"
 
-class XPACT_LATIN1_ENCODING
+class XT_LATIN1_ENCODING
 
 inherit
-	XPACT_NORMAL_ENCODING
+	XT_NORMAL_ENCODING
 
 create make
 

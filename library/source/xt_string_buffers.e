@@ -10,10 +10,10 @@ note
 	revision: "1"
 
 deferred class
-	XPACT_STRING_BUFFERS
+	XT_STRING_BUFFERS
 
 inherit
-	XPACT_BUFFER_CONSTANTS
+	XT_BUFFER_CONSTANTS
 
 	STRING_HANDLER
 
@@ -34,7 +34,7 @@ feature {NONE} -- Initialisation
 
 feature {NONE} -- Implementation
 
-	adjusted_concatenation (text_intervals: XPACT_STRING_INTERVALS): STRING_8
+	adjusted_concatenation (text_intervals: XT_STRING_INTERVALS): STRING_8
 		-- concatenated `text_intervals' substrings found in `buffer'
 		-- Trims leading and trailing white space and first and last intervals
 		local
@@ -128,7 +128,9 @@ feature {NONE} -- Implementation
 						when 3 then
 							upper := list.item
 							value := buffer_substring (lower, upper).twin
-							Result.put (value, name)
+							if attached value as l_value and then attached name as l_name then
+								Result.put (value, l_name)
+							end
 							check
 								not_duplicate_name: Result.inserted
 							end
@@ -148,7 +150,7 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Deferred
 
-	encoding: XPACT_NORMAL_ENCODING
+	encoding: XT_NORMAL_ENCODING
 		deferred
 		end
 
@@ -171,16 +173,16 @@ feature {NONE} -- Internal structures
 	attribute_table: HASH_TABLE [STRING, STRING]
 		-- reuseable table of name-value attribute pairs
 
-	attribute_intervals: XPACT_STRING_INTERVALS
+	attribute_intervals: XT_STRING_INTERVALS
 		-- collected attribute name-value pair indices into `buffer'
 
 	output_buffer: STRING_8
 		-- used to accumulate text for output
 
-	text_data_intervals: XPACT_STRING_INTERVALS
+	text_data_intervals: XT_STRING_INTERVALS
 		-- list of substring intervals `lower .. upper' of `buffer' text
 
-	name_cache: XPACT_NAME_CACHE
+	name_cache: XT_NAME_CACHE
 		-- efficient lookup of attribute/
 
 	comment_string: C_STRING_8

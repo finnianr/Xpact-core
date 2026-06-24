@@ -14,7 +14,7 @@ note
 	date: "2026-06-17 6:29:23 GMT (Wednesday 17th June 2026)"
 	revision: "1"
 
-class XPACT_POSITION
+class XT_POSITION
 
 create make
 

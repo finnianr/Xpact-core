@@ -6,7 +6,7 @@ note
 			inherit
 				XPACT_INCREMENTAL_PARSER
 
-				XPACT_DEFAULT_PARSE_EVENTS
+				XT_DEFAULT_PARSE_EVENTS
 					rename
 						on_comment_ as on_comment,
 						on_content_ as on_content,
@@ -24,7 +24,7 @@ note
 	revision: "1"
 
 class
-	XPACT_DEFAULT_PARSE_EVENTS
+	XT_DEFAULT_PARSE_EVENTS
 
 feature {NONE} -- Event handlers
 
@@ -32,7 +32,7 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_content_ (text_intervals: XPACT_STRING_INTERVALS)
+	on_content_ (text_intervals: XT_STRING_INTERVALS)
 		do
 		end
 

@@ -10,7 +10,7 @@ note
 	revision: "1"
 
 class
-	XPACT_XML_FILE
+	XT_XML_FILE
 
 inherit
 	PLAIN_TEXT_FILE
@@ -21,7 +21,7 @@ inherit
 			{ANY} off, bytes_read
 		end
 
-	XPACT_PARSE_CONSTANTS
+	XT_PARSE_CONSTANTS
 		export
 			{NONE} all
 		end
@@ -39,7 +39,7 @@ feature -- Initialization
 			if exists then
 				open_read; read_line; close
 				if last_string.has_substring ("ISO-8859-1") then
-					parser.set_encoding (create {XPACT_LATIN1_ENCODING}.make)
+					parser.set_encoding (create {XT_LATIN1_ENCODING}.make)
 				end
 			end
 		end
@@ -50,7 +50,7 @@ feature -- Access
 		-- incremental chunk
 
 	status: INTEGER
-		-- one of `XPACT_PARSE_CONSTANTS' parse status constants
+		-- one of `XT_PARSE_CONSTANTS' parse status constants
 
 feature -- Basic operations
 
@@ -82,5 +82,5 @@ feature {NONE} -- implementation
 
 feature {NONE} -- Internal attributes
 
-	parser: XPACT_XML_PARSER
+	parser: XT_XML_PARSER
 end

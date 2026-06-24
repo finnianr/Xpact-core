@@ -22,12 +22,12 @@ note
 	date: "2026-06-18 19:39:38 GMT (Thursday 18th June 2026)"
 	revision: "1"
 
-deferred class XPACT_ENCODING
+deferred class XT_ENCODING
 
 inherit
-	XPACT_TOKEN_CONSTANTS   -- XML_TOK_* return values
-	XPACT_BYTE_TYPE_CONSTANTS
-	XPACT_CONVERT_RESULT_CONSTANTS
+	XT_TOKEN_CONSTANTS   -- XML_TOK_* return values
+	XT_BYTE_TYPE_CONSTANTS
+	XT_CONVERT_RESULT_CONSTANTS
 
 feature -- Token scanner dispatch (XML_Parsing state selects which scanner)
 
@@ -132,7 +132,7 @@ feature -- Attribute and reference utilities
 feature -- Position tracking
 
 	update_position (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER;
-	                 pos: XPACT_POSITION)
+	                 pos: XT_POSITION)
 			-- Advance `pos' (line/column) by scanning buf[start_index..a_end).
 		require
 			valid_range: start_index >= 0 and start_index <= a_end and a_end <= buf.count

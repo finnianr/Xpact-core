@@ -9,7 +9,7 @@ note
 	date: "2026-06-15 18:46:40 GMT (Monday 15th June 2026)"
 	revision: "1"
 
-class XPACT_CONVERT_RESULT_CONSTANTS
+class XT_CONVERT_RESULT_CONSTANTS
 
 feature -- Conversion results
 

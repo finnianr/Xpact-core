@@ -9,7 +9,7 @@ note
 	date: "2026-06-16 9:10:09 GMT (Tuesday 16th June 2026)"
 	revision: "1"
 
-class XPACT_BYTE_TYPE_CONSTANTS
+class XT_BYTE_TYPE_CONSTANTS
 
 feature -- Paired Byte types (ordinal matches C enum)
 

@@ -15,11 +15,11 @@ note
 	date: "2026-06-20 18:47:58 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XPACT_LITERAL_SCANNER
+deferred class XT_LITERAL_SCANNER
 
 inherit
-	XPACT_SCANNER_HELPERS
-	XPACT_REF_SCANNER
+	XT_SCANNER_HELPERS
+	XT_REF_SCANNER
 
 feature -- Literal content tokenization
 

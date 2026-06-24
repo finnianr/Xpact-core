@@ -9,7 +9,7 @@ note
 	date: "2026-06-22 18:20:41 GMT (Monday 22th June 2026)"
 	revision: "1"
 class
-	XPACT_STRING_INTERVALS
+	XT_STRING_INTERVALS
 
 inherit
 	ARRAYED_LIST [INTEGER]

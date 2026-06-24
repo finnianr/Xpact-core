@@ -3,7 +3,7 @@ note
 		Entry point for the xpact-incremental example.
 
 		Reads an XML file named on the command line and prints each XML
-		event to standard output via XPACT_XML_PRINTER.
+		event to standard output via XT_XML_PRINTER.
 
 		Usage:
 			xpact_example <operation> <xml-file> [-chunk_size <value>]")
@@ -23,7 +23,7 @@ note
 class APPLICATION
 
 inherit
-	XPACT_PARSE_CONSTANTS
+	XT_PARSE_CONSTANTS
 
 	ARGUMENTS_32
 		export
@@ -68,20 +68,20 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	compile: TUPLE [XPACT_ASCII_ENCODING, XPACT_LATIN1_ENCODING]
+	compile: TUPLE [XT_ASCII_ENCODING, XT_LATIN1_ENCODING]
 		do
 			create Result
 		end
 
 	do_task (task, file_path: STRING)
 		local
-			file: XPACT_XML_FILE; parser: XPACT_XML_PARSER
+			file: XT_XML_FILE; parser: XT_XML_PARSER
 			time: C_DATE; millisecond_then: INTEGER
 		do
 			if task ~ Task_type [1] then
-				create {XPACT_TAG_COUNTER} parser.make
+				create {XT_TAG_COUNTER} parser.make
 			else
-				create {XPACT_XML_PRINTER} parser.make
+				create {XT_XML_PRINTER} parser.make
 			end
 
 			create file.make (file_path, parser, chunk_size)
@@ -103,7 +103,7 @@ feature {NONE} -- Implementation
 				if file.status = Status_error then
 					io.put_string ("Parse error code: " + parser.error_code.out)
 
-				elseif attached {XPACT_TAG_COUNTER} parser as counter then
+				elseif attached {XT_TAG_COUNTER} parser as counter then
 					counter.print_stats
 				end
 				IO.put_new_line; IO.put_new_line

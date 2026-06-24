@@ -17,15 +17,15 @@ note
 	date: "2026-06-20 20:32:53 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XPACT_TAG_SCANNER
+deferred class XT_TAG_SCANNER
 
 inherit
-	XPACT_SCANNER_HELPERS
-	XPACT_REF_SCANNER
+	XT_SCANNER_HELPERS
+	XT_REF_SCANNER
 
 feature -- Element change
 
-	set_attribute_indices (a_attribute_indices: XPACT_STRING_INTERVALS)
+	set_attribute_indices (a_attribute_indices: XT_STRING_INTERVALS)
 		do
 			attribute_intervals_list := a_attribute_indices
 		end
@@ -175,7 +175,7 @@ feature {NONE} -- Tag scanning
 			tag_name_count := name_count
 		end
 
-	scan_attributes (buf: SPECIAL [CHARACTER]; intervals_list: XPACT_STRING_INTERVALS; start_index, a_end: INTEGER): INTEGER
+	scan_attributes (buf: SPECIAL [CHARACTER]; intervals_list: XT_STRING_INTERVALS; start_index, a_end: INTEGER): INTEGER
 		-- Scan attribute list starting at the first attribute name character.
 		-- Returns Tok_start_tag_with_atts, Tok_empty_element_with_atts, or error.
 		require
@@ -387,25 +387,25 @@ feature {NONE} -- Tag sub-helpers
 		end
 
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
-			-- Deferred: implemented in XPACT_PI_COMMENT_SCANNER.
+			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
 		require start_index <= a_end
 		deferred
 		end
 
 	scan_pi (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
-			-- Deferred: implemented in XPACT_PI_COMMENT_SCANNER.
+			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
 		require start_index <= a_end
 		deferred
 		end
 
 	scan_cdata_section_open (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
-			-- Deferred: implemented in XPACT_PI_COMMENT_SCANNER.
+			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
 		require start_index <= a_end
 		deferred
 		end
 
 feature {NONE} -- Internal attributes
 
-	attribute_intervals_list: XPACT_STRING_INTERVALS
+	attribute_intervals_list: XT_STRING_INTERVALS
 
 end

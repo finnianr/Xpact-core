@@ -1,38 +1,6 @@
 note
-	description: "[
-		Incremental XML parser: state machine and buffer manager.
-
-		Ports XML_Parse(), XML_ParseBuffer(), XML_GetBuffer(), and callProcessor()
-		from xmlparse.c (libexpat 2.x) to Eiffel with Design by Contract.
-
-		Pointer arithmetic from the C source is replaced by integer indices
-		into `buffer: SPECIAL [CHARACTER]'.  The correspondences are:
-
-		  C field              Eiffel attribute
-		  -----------------------------------------------------------------------
-		  m_buffer[0]          buffer [0]
-		  m_bufferPtr          buffer_ptr        (index)
-		  m_bufferEnd          buffer_end        (index)
-		  m_bufferLim          buffer_lim        (capacity)
-		  m_parseEndPtr        parse_end_ptr     (index, snapshot at parse entry)
-		  m_positionPtr        position_ptr      (index for line/col tracking)
-		  m_parseEndByteIndex  parse_end_byte_index
-		  m_handlerCallDepth   handler_call_depth
-		  m_partialTokenBytesBefore  partial_token_bytes_before
-		  m_lastBufferRequestSize    last_buffer_request_size
-		  m_reparseDeferralEnabled   reparse_deferral_enabled
-		  m_parsingStatus.parsing    parsing_state
-		  m_parsingStatus.finalBuffer  is_final_buffer
-		  m_errorCode          error_code
-
-		Deferred features that concrete subclasses must supply:
-		  on_start_parsing     -- initialise hash salt, namespace context (startParsing)
-		  do_process_bytes     -- one-shot processor call (m_processor)
-		  processor_wants_reenter  -- whether to loop again (m_reenter flag)
-		  on_clear_reenter     -- clear the reenter flag
-		  on_set_error_processor  -- switch to errorProcessor sink
-		  on_update_position   -- run XmlUpdatePosition over consumed bytes
-	]"
+	description: "Incremental XML parser based on eXpat port"
+	notes: "See end of class"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -42,16 +10,16 @@ note
 	date: "2026-06-20 20:30:52 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XPACT_XML_PARSER
+deferred class XT_XML_PARSER
 
 inherit
-	XPACT_BYTE_TYPE_CONSTANTS
+	XT_BYTE_TYPE_CONSTANTS
 
-	XPACT_TOKEN_CONSTANTS
+	XT_TOKEN_CONSTANTS
 
-	XPACT_PARSE_CONSTANTS
+	XT_PARSE_CONSTANTS
 
-	XPACT_STRING_BUFFERS
+	XT_STRING_BUFFERS
 		rename
 			make as make_default
 		end
@@ -62,7 +30,7 @@ feature {NONE} -- Initialisation
 			-- Set up in State_initialized with an empty buffer.
 		do
 			make_default
-			set_encoding (create {XPACT_UTF8_ENCODING}.make)
+			set_encoding (create {XT_UTF8_ENCODING}.make)
 
 			parsing_state              := State_initialized
 			error_code                 := Error_none
@@ -111,7 +79,7 @@ feature -- Status
 
 feature -- Element change
 
-	set_encoding (a_encoding: XPACT_NORMAL_ENCODING)
+	set_encoding (a_encoding: XT_NORMAL_ENCODING)
 		do
 			a_encoding.set_attribute_indices (attribute_intervals)
 			encoding := a_encoding
@@ -140,7 +108,7 @@ feature -- Basic operations
 			else
 				-- State_initialized or State_parsing
 				parsing_state := State_parsing
-				if not on_start_parsing_if_needed then
+				if not call_on_start_parsing then
 					Result := Status_error
 				elseif not prepare_buffer (a_count) then
 					Result := Status_error
@@ -209,7 +177,7 @@ feature {NONE} -- Buffer implementation
 					error_code := Error_finished
 					Result := Status_error
 			else
-				if not on_start_parsing_if_needed then
+				if not call_on_start_parsing then
 					Result := Status_error
 				else
 					parsing_state        := State_parsing
@@ -433,6 +401,24 @@ feature {NONE} -- Processor dispatch
 				implies error_code = old error_code
 		end
 
+	call_on_start_parsing: BOOLEAN
+			-- If currently in State_initialized, call `on_start_parsing' for a
+			-- root parser; always succeeds for child/entity parsers.
+			-- Returns False only when `on_start_parsing' fails.
+		do
+			if parsing_state = State_initialized then
+				if not on_start_parsing then
+					error_code := Error_no_memory
+				else
+					Result := True
+				end
+			else
+				Result := True
+			end
+		ensure
+			error_set_on_failure: not Result implies error_code /= Error_none
+		end
+
 	do_process_bytes (buf: like buffer; a_start, a_end_index: INTEGER): INTEGER
 		-- Scan tokens from `buf' `a_start .. a_end_index` and
 		-- triggers relevant XML events.  Advances `buffer_ptr'.
@@ -601,24 +587,6 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_start_parsing_if_needed: BOOLEAN
-			-- If currently in State_initialized, call `on_start_parsing' for a
-			-- root parser; always succeeds for child/entity parsers.
-			-- Returns False only when `on_start_parsing' fails.
-		do
-			if parsing_state = State_initialized then
-				if not on_start_parsing then
-					error_code := Error_no_memory
-				else
-					Result := True
-				end
-			else
-				Result := True
-			end
-		ensure
-			error_set_on_failure: not Result implies error_code /= Error_none
-		end
-
 	on_clear_reenter
 			-- Clear the reenter flag after each loop iteration.
 		do
@@ -653,7 +621,7 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_content (text_intervals: XPACT_STRING_INTERVALS)
+	on_content (text_intervals: XT_STRING_INTERVALS)
 		deferred
 		end
 
@@ -676,7 +644,7 @@ feature {NONE} -- Internal attributes
 	cdata_pending: BOOLEAN
 		-- `True' if accumulated text in `text_data_list' CDATA
 
-	encoding: XPACT_NORMAL_ENCODING
+	encoding: XT_NORMAL_ENCODING
 
 	position_index: INTEGER
 		-- Start index for the next line/column position update.
@@ -700,5 +668,45 @@ invariant
 	non_negative_handler_depth: handler_call_depth >= 0
 	non_negative_byte_index: parse_end_byte_index >= 0
 	partial_token_non_negative: partial_token_bytes_before >= 0
+
+note
+	notes: "[
+		Ports XML_Parse(), XML_ParseBuffer(), XML_GetBuffer(), and callProcessor()
+		from xmlparse.c (libexpat 2.x) to Eiffel with Design by Contract.
+
+		Pointer arithmetic from the C source is replaced by integer indices
+		into `buffer: SPECIAL [CHARACTER]'.  The correspondences are:
+
+		  C field              Eiffel attribute
+		  -----------------------------------------------------------------------
+		  m_buffer[0]          buffer [0]
+		  m_bufferPtr          buffer_ptr        (index)
+		  m_bufferEnd          buffer_end        (index)
+		  m_bufferLim          buffer_lim        (capacity)
+		  m_parseEndPtr        parse_end_ptr     (index, snapshot at parse entry)
+		  m_positionPtr        position_ptr      (index for line/col tracking)
+		  m_parseEndByteIndex  parse_end_byte_index
+		  m_handlerCallDepth   handler_call_depth
+		  m_partialTokenBytesBefore  partial_token_bytes_before
+		  m_lastBufferRequestSize    last_buffer_request_size
+		  m_reparseDeferralEnabled   reparse_deferral_enabled
+		  m_parsingStatus.parsing    parsing_state
+		  m_parsingStatus.finalBuffer  is_final_buffer
+		  m_errorCode          error_code
+
+		Deferred features that concrete subclasses must supply:
+			on_comment (text: C_STRING_8)
+			on_content (text_intervals: XT_STRING_INTERVALS)
+			on_tag_attributes
+			on_tag_end (name: STRING_8)
+			on_tag_start (name: STRING_8; is_empty: BOOLEAN)
+
+
+		Optional features that concrete subclasses can redefine:
+			on_start_parsing     	-- initialise hash salt, namespace context (startParsing)
+			on_clear_reenter     	-- clear the reenter flagon_finish (status: INTEGER)
+			on_set_error_processor  -- switch to errorProcessor sink
+			on_update_position   	-- run XmlUpdatePosition over consumed bytes
+	]"
 
 end

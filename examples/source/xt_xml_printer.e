@@ -1,6 +1,6 @@
 note
 	description: "[
-		Concrete incremental XML parser that prints element names, attribute
+		Concrete XML parser that prints element names, attribute
 		name/value pairs, and character data to standard output.
 	]"
 	notes: "[
@@ -41,10 +41,10 @@ note
 	date: "2026-06-20 18:21:11 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-class XPACT_XML_PRINTER
+class XT_XML_PRINTER
 
 inherit
-	XPACT_XML_PARSER
+	XT_XML_PARSER
 
 create make
 
@@ -57,7 +57,7 @@ feature {NONE} -- Event handlers
 			io.put_new_line
 		end
 
-	on_content (text_intervals: XPACT_STRING_INTERVALS)
+	on_content (text_intervals: XT_STRING_INTERVALS)
 		local
 			is_double: BOOLEAN
 		do

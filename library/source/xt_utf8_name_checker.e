@@ -1,7 +1,7 @@
 note
 	description: "[
 		Concrete implementations of the nine multi-byte name-checking predicates
-		for UTF-8, using the Unicode naming bitmaps from XPACT_NAME_BITMAP.
+		for UTF-8, using the Unicode naming bitmaps from XT_NAME_BITMAP.
 
 		Corresponds to the utf8_isName2/3, utf8_isNmstrt2/3, utf8_isInvalid2/3/4
 		function pointers and the UTF8_GET_NAMING2/3 macros in xmltok.c.
@@ -10,7 +10,7 @@ note
 		characters in XML 1.0; those predicates always return False.
 
 		Diamond join note: this class and the scanner mixins both inherit
-		XPACT_SCANNER_HELPERS.  Eiffel's join rule resolves the shared
+		XT_SCANNER_HELPERS.  Eiffel's join rule resolves the shared
 		deferred features automatically -- no rename or redefine needed here.
 	]"
 
@@ -22,10 +22,10 @@ note
 	date: "2026-06-18 19:48:47 GMT (Thursday 18th June 2026)"
 	revision: "1"
 
-class XPACT_UTF8_NAME_CHECKER
+class XT_UTF8_NAME_CHECKER
 
 inherit
-	XPACT_NAME_BITMAP
+	XT_NAME_BITMAP
 
 feature -- Name-character predicates (2-byte UTF-8, U+0080..U+07FF)
 

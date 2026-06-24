@@ -9,7 +9,7 @@ note
 	date: "2026-06-20 8:37:26 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-class XPACT_PARSE_CONSTANTS
+class XT_PARSE_CONSTANTS
 
 feature -- Parsing states (XML_Parsing enum)
 

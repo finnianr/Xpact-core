@@ -7,7 +7,7 @@ note
 		  nmstrt_pages    -- 256-entry page index for name-start chars (nmstrtPages[])
 		  name_pages      -- 256-entry page index for name chars (namePages[])
 
-		Usage (see XPACT_UTF8_NAME_CHECKER for the formulas):
+		Usage (see XT_UTF8_NAME_CHECKER for the formulas):
 		  UCS2_GET_NAMING (pages, hi, lo):
 		    naming_bitmap [(pages[hi] |<< 3) + (lo |>> 5)] & (1 |<< (lo & 0x1F))
 	]"
@@ -20,7 +20,7 @@ note
 	date: "2026-06-18 19:49:08 GMT (Thursday 18th June 2026)"
 	revision: "1"
 
-class XPACT_NAME_BITMAP
+class XT_NAME_BITMAP
 
 feature -- Naming tables (once, shared across all encodings)
 

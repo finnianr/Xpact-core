@@ -33,7 +33,7 @@ note
 	revision: "1"
 
 class
-	XPACT_NAME_CACHE
+	XT_NAME_CACHE
 
 inherit
 	ARRAY [ARRAYED_LIST [STRING]]
@@ -94,10 +94,12 @@ feature -- Access
 					Result := buffer_string_8 (buffer, start_index, end_index)
 					bucket_list.extend (Result)
 				end
+			else
+				Result := buffer_string_8 (buffer, start_index, end_index)
 			end
 		end
 
-feature {XPACT_STRING_BUFFERS} -- Implementation
+feature {XT_STRING_BUFFERS} -- Implementation
 
 	buffer_string_8 (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING_8
 			-- Buffer bytes [start_index .. end_index) as a STRING_8.

@@ -10,7 +10,7 @@
 			<void_safety support="none"/>
 		</capability>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
-		<cluster name="src" location="source" recursive="true">
+		<cluster name="xpact" location="source" recursive="true">
 			<file_rule>
 				<exclude>/small-size$</exclude>
 				<condition>

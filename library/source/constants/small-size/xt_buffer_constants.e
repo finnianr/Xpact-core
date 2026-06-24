@@ -9,7 +9,7 @@ note
 	date: "2026-06-20 8:30:39 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-class XPACT_BUFFER_CONSTANTS
+class XT_BUFFER_CONSTANTS
 
 feature -- Buffer parameters
 

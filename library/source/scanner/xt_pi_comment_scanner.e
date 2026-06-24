@@ -15,9 +15,9 @@ note
 	date: "2026-06-20 20:45:44 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XPACT_PI_COMMENT_SCANNER
+deferred class XT_PI_COMMENT_SCANNER
 
-inherit XPACT_SCANNER_HELPERS
+inherit XT_SCANNER_HELPERS
 
 feature {NONE} -- PI and comment scanning
 

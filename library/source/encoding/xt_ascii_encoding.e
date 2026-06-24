@@ -2,7 +2,7 @@ note
 	description: "[
 		Concrete ASCII encoding.
 
-		Identical to XPACT_LATIN1_ENCODING for the lower 128 bytes;
+		Identical to XT_LATIN1_ENCODING for the lower 128 bytes;
 		all upper bytes (0x80..0xFF) are BT_non_xml (not valid in ASCII XML).
 	]"
 
@@ -14,10 +14,10 @@ note
 	date: "2026-06-18 19:02:35 GMT (Thursday 18th June 2026)"
 	revision: "1"
 
-class XPACT_ASCII_ENCODING
+class XT_ASCII_ENCODING
 
 inherit
-	XPACT_NORMAL_ENCODING
+	XT_NORMAL_ENCODING
 
 create make
 

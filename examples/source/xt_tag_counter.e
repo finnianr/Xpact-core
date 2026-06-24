@@ -10,15 +10,15 @@ note
 	revision: "1"
 
 class
-	XPACT_TAG_COUNTER
+	XT_TAG_COUNTER
 
 inherit
-	XPACT_XML_PARSER
+	XT_XML_PARSER
 		redefine
 			make_default
 		end
 
-	XPACT_DEFAULT_PARSE_EVENTS
+	XT_DEFAULT_PARSE_EVENTS
 		rename
 			on_comment_ as on_comment,
 			on_content_ as on_content,
@@ -63,7 +63,9 @@ feature {NONE} -- Event handlers
 				if not table.has_key (name) then
 					table.put (create {TAG_OCCURRENCE_COUNT}.make (name), name)
 				end
-				table.found_item.increment
+				if attached table.found_item as count then
+					count.increment
+				end
 			end
 		end
 

@@ -6,14 +6,14 @@ note
 		in xmltok.c.
 
 		All scanner dispatch features delegate to the mixin scanner classes
-		(XPACT_CONTENT_SCANNER, XPACT_PROLOG_SCANNER, XPACT_LITERAL_SCANNER).
+		(XT_CONTENT_SCANNER, XT_PROLOG_SCANNER, XT_LITERAL_SCANNER).
 		The key bridge between the scanner mixins and this class is:
 		  byte_type (buf, index) -- reads from byte_type_table
 		  char_at   (buf, index) -- reads single byte
 
-		Diamond note: XPACT_SCANNER_HELPERS and XPACT_ENCODING both declare
+		Diamond note: XT_SCANNER_HELPERS and XT_ENCODING both declare
 		next_token_ptr as a stored attribute.  The scanner-mixin parents are
-		given `undefine next_token_ptr` so that XPACT_ENCODING's single copy
+		given `undefine next_token_ptr` so that XT_ENCODING's single copy
 		is used throughout.
 	]"
 
@@ -25,15 +25,15 @@ note
 	date: "2026-06-20 20:42:32 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XPACT_NORMAL_ENCODING
+deferred class XT_NORMAL_ENCODING
 
 inherit
-	XPACT_ENCODING
-	XPACT_CONTENT_SCANNER
+	XT_ENCODING
+	XT_CONTENT_SCANNER
 
-	XPACT_PROLOG_SCANNER
+	XT_PROLOG_SCANNER
 
-	XPACT_LITERAL_SCANNER
+	XT_LITERAL_SCANNER
 
 feature {NONE} -- Initialisation
 
@@ -42,7 +42,7 @@ feature {NONE} -- Initialisation
 			create attribute_intervals_list.make (0, 0)
 		end
 
-feature -- Scanner dispatch (implements XPACT_ENCODING deferred features)
+feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 
 	scan_content (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
 		do
@@ -64,7 +64,7 @@ feature -- Scanner dispatch (implements XPACT_ENCODING deferred features)
 			Result := entity_value_tok (buf, start_index, a_end)
 		end
 
-feature -- Name utilities (implements XPACT_ENCODING deferred features)
+feature -- Name utilities (implements XT_ENCODING deferred features)
 
 	byte_type (buf: SPECIAL [CHARACTER]; index: INTEGER): INTEGER
 			-- Byte-type category of the byte at buf[index].
@@ -236,7 +236,7 @@ feature -- Public ID validation
 
 feature -- Position tracking
 
-	update_position (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER; pos: XPACT_POSITION)
+	update_position (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER; pos: XT_POSITION)
 			-- Update line and column numbers by scanning buf[start_index..a_end-1].
 		local
 			index: INTEGER

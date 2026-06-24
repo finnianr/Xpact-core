@@ -4,9 +4,9 @@ note
 
 		The byte-type table is the union of asciitab.h (0x00..0x7F) and
 		utf8tab.h (0x80..0xFF), with numeric BT_* constants from
-		XPACT_BYTE_TYPE_CONSTANTS.
+		XT_BYTE_TYPE_CONSTANTS.
 
-		Multi-byte name/validity checks are provided by XPACT_UTF8_NAME_CHECKER.
+		Multi-byte name/validity checks are provided by XT_UTF8_NAME_CHECKER.
 	]"
 
 	author: "Finnian Reilly"
@@ -17,17 +17,17 @@ note
 	date: "2026-06-18 19:48:47 GMT (Thursday 18th June 2026)"
 	revision: "1"
 
-class XPACT_UTF8_ENCODING
+class XT_UTF8_ENCODING
 
 inherit
-	XPACT_NORMAL_ENCODING
+	XT_NORMAL_ENCODING
 		undefine
 			is_name_char_2, is_name_char_3, is_name_char_4,
 			is_name_start_char_2, is_name_start_char_3, is_name_start_char_4,
 			is_invalid_char_2, is_invalid_char_3, is_invalid_char_4
 		end
 
-	XPACT_UTF8_NAME_CHECKER
+	XT_UTF8_NAME_CHECKER
 
 create
 	make

@@ -14,11 +14,11 @@ note
 	date: "2026-06-20 20:34:05 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XPACT_CONTENT_SCANNER
+deferred class XT_CONTENT_SCANNER
 
 inherit
-	XPACT_TAG_SCANNER
-	XPACT_PI_COMMENT_SCANNER
+	XT_TAG_SCANNER
+	XT_PI_COMMENT_SCANNER
 
 feature -- Content tokenization
 

@@ -18,7 +18,7 @@ note
 	date: "2026-06-17 19:14:40 GMT (Wednesday 17th June 2026)"
 	revision: "1"
 
-class XPACT_TOKEN_CONSTANTS
+class XT_TOKEN_CONSTANTS
 
 feature -- Partial / error sentinels (negative or zero)
 

@@ -24,12 +24,12 @@ note
 	date: "2026-06-20 20:36:24 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XPACT_PROLOG_SCANNER
+deferred class XT_PROLOG_SCANNER
 
 inherit
-	XPACT_SCANNER_HELPERS
-	XPACT_REF_SCANNER
-	XPACT_PI_COMMENT_SCANNER
+	XT_SCANNER_HELPERS
+	XT_REF_SCANNER
+	XT_PI_COMMENT_SCANNER
 
 feature -- Prolog tokenization
 

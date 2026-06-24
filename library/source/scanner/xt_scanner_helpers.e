@@ -26,19 +26,19 @@ note
 	date: "2026-06-20 20:20:51 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XPACT_SCANNER_HELPERS
+deferred class XT_SCANNER_HELPERS
 
 inherit
-	XPACT_BYTE_TYPE_CONSTANTS
-	XPACT_TOKEN_CONSTANTS
+	XT_BYTE_TYPE_CONSTANTS
+	XT_TOKEN_CONSTANTS
 
 	STRING_HANDLER
 
-feature -- Output of the last scan (shared with XPACT_ENCODING via join)
+feature -- Output of the last scan (shared with XT_ENCODING via join)
 
 	next_token_index: INTEGER
 
-feature -- Primitive queries (deferred; provided by XPACT_NORMAL_ENCODING)
+feature -- Primitive queries (deferred; provided by XT_NORMAL_ENCODING)
 
 	min_bytes_per_char: INTEGER
 		deferred
@@ -154,7 +154,7 @@ feature {NONE} -- Implementation
 			Result := a_end - index >= count * min_bytes_per_char
 		end
 
-feature {XPACT_XML_PARSER} -- Deferred
+feature {XT_XML_PARSER} -- Deferred
 
 	byte_type_table: SPECIAL [NATURAL_8]
 			-- 256-entry table mapping each byte value to its BT_* type.

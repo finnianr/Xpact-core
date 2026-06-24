@@ -22,9 +22,9 @@ note
 	date: "2026-06-20 20:31:47 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XPACT_REF_SCANNER
+deferred class XT_REF_SCANNER
 
-inherit XPACT_SCANNER_HELPERS
+inherit XT_SCANNER_HELPERS
 
 feature {NONE} -- Reference scanning
 
