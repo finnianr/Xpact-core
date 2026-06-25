@@ -104,7 +104,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	compile: TUPLE [XT_ASCII_ENCODING, XT_LATIN1_ENCODING, XP_EXPAT_CALLBACK_HANDLER]
+	compile: TUPLE [XT_ASCII_ENCODING, XT_LATIN1_ENCODING]
 		do
 			create Result
 		end

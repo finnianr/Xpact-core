@@ -18,12 +18,14 @@ export:
 		<cluster name="xpact" location="source" recursive="true">
 			<file_rule>
 				<exclude>/small-size$</exclude>
+				<exclude>/expat$</exclude>
 				<condition>
 					<custom name="buffer_size" excluded_value="small"/>
 				</condition>
 			</file_rule>
 			<file_rule>
 				<exclude>/big-size$</exclude>
+				<exclude>/expat$</exclude>
 				<condition>
 					<custom name="buffer_size" excluded_value="big"/>
 				</condition>
