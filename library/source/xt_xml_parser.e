@@ -362,11 +362,12 @@ feature {NONE} -- Processor dispatch
 
 			if enough and then attached buffer as buf
 				and then attached text_data_intervals.additions_buffer as text_data_lower_upper
+				and then attached attribute_intervals as l_attribute_intervals
 			then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				from done := False until done loop
-					err := do_process_bytes (buf, buffer_index, a_end_index)
+					err := do_process_bytes (buf, l_attribute_intervals, buffer_index, a_end_index)
 
 					-- Suspended state overrides the reenter request.
 					if parsing_state /= State_parsing then
@@ -419,7 +420,7 @@ feature {NONE} -- Processor dispatch
 			error_set_on_failure: not Result implies error_code /= Error_none
 		end
 
-	do_process_bytes (buf: like buffer; a_start, a_end_index: INTEGER): INTEGER
+	do_process_bytes (buf: like buffer; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS; a_start, a_end_index: INTEGER): INTEGER
 		-- Scan tokens from `buf' `a_start .. a_end_index` and
 		-- triggers relevant XML events.  Advances `buffer_ptr'.
 		-- Execute one pass of the current processor over
@@ -438,42 +439,54 @@ feature {NONE} -- Processor dispatch
 			from until index >= a_end_index or done loop
 				if in_prolog then
 					tok := encoding.scan_prolog (buf, index, a_end_index)
-					if tok = Tok_instance_start then
-						in_prolog := False
-						index := encoding.next_token_index
-					elseif tok = Tok_invalid then
-						Result := Error_invalid_token; done := True
-					elseif tok <= 0 then
-						done := True  -- partial; wait for more data
+					inspect tok
+						when Tok_instance_start then
+							in_prolog := False
+							index := encoding.next_token_index
+
+						when Tok_invalid then
+							Result := Error_invalid_token; done := True
 					else
-						index := encoding.next_token_index  -- skip prolog token
+						if tok <= 0 then
+							done := True  -- partial; wait for more data
+						else
+							index := encoding.next_token_index  -- skip prolog token
+						end
 					end
 				elseif in_cdata_section then
 					tok := encoding.scan_cdata_section (buf, index, a_end_index)
-					if tok = Tok_cdata_sect_close then
-						in_cdata_section := False; cdata_pending := True
-						index := encoding.next_token_index
-					elseif tok = Tok_data_chars or tok = Tok_data_newline then
-						text_data_intervals.extend (index, encoding.next_token_index - 1)
+					inspect tok
+						when Tok_cdata_sect_close then
+							in_cdata_section := False; cdata_pending := True
+							index := encoding.next_token_index
 
-						index := encoding.next_token_index
-					elseif tok = Tok_invalid then
-						Result := Error_invalid_token; done := True
+						when Tok_data_chars, Tok_data_newline then
+							text_data_intervals.extend (index, encoding.next_token_index - 1)
+							index := encoding.next_token_index
+
 					else
-						done := True  -- partial; wait for more data
+						if tok = Tok_invalid then
+							Result := Error_invalid_token; done := True
+						else
+							done := True  -- partial; wait for more data
+						end
 					end
 				else
 					tok := encoding.scan_content (buf, index, a_end_index)
-					if tok = Tok_cdata_sect_open then
-						in_cdata_section := True
-						index := encoding.next_token_index
-					elseif tok > 0 then
-						process_token (buf, tok, index)
-						index := encoding.next_token_index
-					elseif tok = Tok_invalid then
-						Result := Error_invalid_token; done := True
+					inspect tok
+						when Tok_cdata_sect_open then
+							in_cdata_section := True
+							index := encoding.next_token_index
+
+						when Tok_invalid then
+							Result := Error_invalid_token; done := True
 					else
-						done := True  -- partial; wait for more data
+						if tok > 0 then
+							process_token (buf, a_attribute_intervals, tok, index)
+							index := encoding.next_token_index
+						else
+							done := True  -- partial; wait for more data
+						end
 					end
 				end
 			end
@@ -482,19 +495,18 @@ feature {NONE} -- Processor dispatch
 			buffer_ptr_advanced: buffer_index >= a_start and buffer_index <= a_end_index
 		end
 
-	process_token (buf: like buffer; tok, tok_start: INTEGER)
+	process_token (buf: like buffer; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS; tok, tok_start: INTEGER)
 			-- Print the XML event for a complete token at tok_start.
 			-- encoding.next_token_ptr is the first byte after the token.
 		local
-			tok_end, null_index, lower, upper: INTEGER
-			c, null: CHARACTER
+			tok_end, null_index, lower, upper: INTEGER; c, null: CHARACTER
 		do
 			tok_end := encoding.next_token_index
 			inspect tok
 				when Tok_data_chars then
 					do_nothing
 			else
-				if text_data_intervals.count > 0 then
+				if text_data_intervals.index_count > 0 then
 					on_content (text_data_intervals)
 					if cdata_pending then
 						cdata_pending := False
@@ -503,20 +515,20 @@ feature {NONE} -- Processor dispatch
 				end
 			end
 			inspect tok
-				when Tok_start_tag_no_atts, Tok_start_tag_with_atts then
-					on_tag_start (buffer_name (buf, tok_start + 1), False)
-					inspect tok when Tok_start_tag_with_atts then
-						process_attributes (attribute_intervals)
-					else
-					end
+				when Tok_start_tag_no_attributes then
+					on_tag_start (buffer_name (buf, tok_start +  1), a_attribute_intervals)
 
-				when Tok_empty_element_no_atts then
-					on_tag_start (buffer_name (buf, tok_start + 1), True)
+				when Tok_start_tag_with_attributes then
+					on_tag_start (buffer_name (buf, tok_start +  1), a_attribute_intervals)
+					a_attribute_intervals.wipe_out
 
-				when Tok_empty_element_with_atts then
+				when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
 					if attached buffer_name (buf, tok_start +  1) as tag_name then
-						on_tag_start (tag_name, False)
-						process_attributes (attribute_intervals)
+						on_tag_start (tag_name, a_attribute_intervals)
+						inspect tok when Tok_empty_element_with_attributes then
+							a_attribute_intervals.wipe_out
+						else
+						end
 						on_tag_end (tag_name)
 					end
 
@@ -536,13 +548,6 @@ feature {NONE} -- Processor dispatch
 
 			else
 				-- PIs, BOM, xml declaration, CDATA open: skip
-			end
-		end
-
-	process_attributes (intervals_list: like attribute_intervals)
-		do
-			if intervals_list.count > 0 then
-				on_tag_attributes; intervals_list.wipe_out
 			end
 		end
 
@@ -621,13 +626,7 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_content (text_intervals: XT_STRING_INTERVALS)
-		deferred
-		end
-
-	on_tag_attributes
-		require
-			valid_attribute_indices_count: attribute_intervals.count \\ 4 = 0
+	on_content (text_intervals: XT_CHARACTER_BUFFER_INTERVALS)
 		deferred
 		end
 
@@ -635,7 +634,9 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_tag_start (name: STRING_8; is_empty: BOOLEAN)
+	on_tag_start (name: STRING_8; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		require
+			valid_attribute_indices_count: a_attribute_intervals.is_valid_count
 		deferred
 		end
 

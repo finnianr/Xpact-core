@@ -32,11 +32,7 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_content_ (text_intervals: XT_STRING_INTERVALS)
-		do
-		end
-
-	on_tag_attributes_
+	on_content_ (text_intervals: XT_TEXT_DATA_BUFFER_INTERVALS)
 		do
 		end
 
@@ -44,7 +40,7 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_tag_start_ (name: STRING_8; is_empty: BOOLEAN)
+	on_tag_start_ (name: STRING_8; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 		end
 end

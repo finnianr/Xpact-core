@@ -1,5 +1,5 @@
 note
-	description: "List of indices demarking name and attribute value string in ${XT_XML_PARSER}.buffer"
+	description: "List of indices demarking substrings in ${XT_XML_PARSER}.buffer"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -8,40 +8,53 @@ note
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
 	date: "2026-06-22 18:20:41 GMT (Monday 22th June 2026)"
 	revision: "1"
-class
-	XT_STRING_INTERVALS
+
+deferred class
+	XT_CHARACTER_BUFFER_INTERVALS
 
 inherit
 	ARRAYED_LIST [INTEGER]
 		rename
-			make as make_sized,
-			extend as extend_index
+			forth as index_forth,
+			extend as extend_index,
+			count as index_count
 		export
 			{NONE} all
+		undefine
+			new_filled_list
 		redefine
-			make_sized, wipe_out
+			make, wipe_out, index_count
 		end
-
-create
-	make, make_sized
 
 feature -- Initialization
 
-	make (n, buffer_size: INTEGER)
+	make (n: INTEGER)
 		do
-			make_sized (n)
-			create additions_buffer.make_empty (buffer_size)
-		end
-
-	make_sized (n: INTEGER)
-		do
-			Precursor (n)
-			create additions_buffer.make_empty (0)
+			Precursor (Group_size * n)
+			create additions_buffer.make_empty (Group_size)
 		end
 
 feature -- Measurement
 
-	count_sum: INTEGER
+	count: INTEGER
+		-- count of interval groups
+		do
+			Result := index_count // Group_size
+		end
+
+	index_count: INTEGER
+		do
+			Result := Precursor
+		end
+
+	interval_item: SPECIAL [INTEGER]
+		do
+			Result := additions_buffer
+			Result.copy_data (area_v2, index - 1, 0, group_size)
+		end
+
+	character_count: INTEGER
+		-- sum of all substring interval counts
 		local
 			i: INTEGER
 		do
@@ -51,6 +64,22 @@ feature -- Measurement
 					i := i + 2
 				end
 			end
+		end
+
+feature -- Status query
+
+	is_valid_count: BOOLEAN
+		-- `index_count' is multiple of `group_size'
+		do
+			Result := index_count \\ group_size = 0
+		end
+
+feature -- Cursor movement
+
+	forth
+			-- Move cursor to first position if any.
+		do
+			index := index + group_size
 		end
 
 feature -- Access
@@ -64,11 +93,12 @@ feature -- Basic operations
 		local
 			i: INTEGER; l_area: like area_v2
 		do
-			i := count + 2
+			i := index_count + 2
 			l_area := area_v2
 			if i > l_area.capacity then
 				l_area := l_area.aliased_resized_area (i + additional_space)
 				area_v2 := l_area
+				on_resize
 			end
 			l_area.extend (lower_index); l_area.extend (upper_index)
 		end
@@ -81,13 +111,14 @@ feature -- Basic operations
 			i: INTEGER; l_area: like area_v2
 		do
 			if attached additions_buffer as additions then
-				i := count + additions.count
+				i := index_count + additions.count
 				l_area := area_v2
 				if i > l_area.capacity then
 					l_area := l_area.aliased_resized_area (i + additional_space)
 					area_v2 := l_area
+					on_resize
 				end
-				l_area.copy_data (additions, 0, count, additions.count)
+				l_area.copy_data (additions, 0, index_count, additions.count)
 				additions.wipe_out
 			end
 		ensure
@@ -100,6 +131,16 @@ feature -- Basic operations
 			area.wipe_out; additions_buffer.wipe_out
 		end
 
+feature {NONE} -- Implementation
+
+	group_size: INTEGER
+		deferred
+		end
+
+	on_resize
+		do
+		end
+
 invariant
-	lower_upper_pairs: count \\ 2 = 0
+	lower_upper_pairs: index_count \\ 2 = 0
 end

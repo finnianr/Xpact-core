@@ -39,7 +39,7 @@ feature {NONE} -- Initialisation
 
 	make
 		do
-			create attribute_intervals_list.make (0, 0)
+			create attribute_intervals_list.make (0)
 		end
 
 feature -- Scanner dispatch (implements XT_ENCODING deferred features)

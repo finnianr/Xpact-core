@@ -22,7 +22,6 @@ inherit
 		rename
 			on_comment_ as on_comment,
 			on_content_ as on_content,
-			on_tag_attributes_ as on_tag_attributes,
 			on_tag_end_ as on_tag_end
 		end
 
@@ -57,7 +56,7 @@ feature -- Basic operations
 
 feature {NONE} -- Event handlers
 
-	on_tag_start (name: STRING_8; is_empty: BOOLEAN)
+	on_tag_start (name: STRING_8; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			if attached tag_occurrence_table as table then
 				if not table.has_key (name) then

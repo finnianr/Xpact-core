@@ -1,0 +1,1596 @@
+note
+	description: "Eiffel event handler that adapts parser events to native Expat-style callback slots."
+
+class
+	XP_EXPAT_CALLBACK_HANDLER
+
+inherit
+	XT_XML_PARSER
+		redefine
+			make_default
+		end
+
+	XP_EVENT_HANDLER
+		rename
+			on_comment as on_comment_x
+		redefine
+			wants_start_element_events,
+			wants_end_element_events,
+			wants_character_data_events,
+			on_processing_instruction,
+			on_xml_declaration,
+			on_comment_x,
+			on_start_cdata_section,
+			on_end_cdata_section,
+			wants_automatic_character_data_default,
+			wants_default_events,
+			expands_internal_general_entity_references,
+			reports_skipped_internal_general_entities,
+			requires_eager_position_accounting,
+			stop_requested,
+			stop_is_resumable,
+			on_start_doctype_decl,
+			on_end_doctype_decl,
+			on_not_standalone,
+			on_element_decl,
+			on_notation_decl,
+			on_attlist_decl,
+			on_entity_decl,
+			on_unparsed_entity_decl,
+			on_skipped_entity,
+			on_start_namespace_decl,
+			on_end_namespace_decl,
+			on_default
+		end
+
+	XP_EXPAT_CALLBACK_C_API
+
+	PLATFORM
+		export
+			{NONE} all
+		end
+
+create
+	make
+
+feature {NONE} -- Initialization
+
+	make_default
+		do
+			Precursor
+			create events.make (16)
+			create attributes_c_array.make (21 * Pointer_bytes)
+			create delivered_character_data_lengths.make (16)
+			current_id_attribute_index := -1
+			diagnostic_events_enabled := True
+		ensure then
+			no_events: events.count = 0
+			no_delivered_text_lengths: delivered_character_data_lengths.count = 0
+			no_current_id_attribute: current_id_attribute_index = -1
+		end
+
+feature -- Access
+
+	user_data: POINTER
+			-- Opaque caller data passed back to native callbacks.
+
+	start_element_callback: POINTER
+			-- `XML_StartElementHandler' callback pointer.
+
+	end_element_callback: POINTER
+			-- `XML_EndElementHandler' callback pointer.
+
+	character_data_callback: POINTER
+			-- `XML_CharacterDataHandler' callback pointer.
+
+	processing_instruction_callback: POINTER
+			-- `XML_ProcessingInstructionHandler' callback pointer.
+
+	xml_decl_callback: POINTER
+			-- `XML_XmlDeclHandler' callback pointer.
+
+	comment_callback: POINTER
+			-- `XML_CommentHandler' callback pointer.
+
+	start_cdata_section_callback: POINTER
+			-- `XML_StartCdataSectionHandler' callback pointer.
+
+	end_cdata_section_callback: POINTER
+			-- `XML_EndCdataSectionHandler' callback pointer.
+
+	default_callback: POINTER
+			-- `XML_DefaultHandler' callback pointer.
+
+	default_expands_entities: BOOLEAN
+			-- Was the default handler registered through the expanding API?
+
+	current_default_text: detachable STRING_8
+			-- Current callback text replayable through `XML_DefaultCurrent'.
+
+	start_doctype_decl_callback: POINTER
+			-- `XML_StartDoctypeDeclHandler' callback pointer.
+
+	end_doctype_decl_callback: POINTER
+			-- `XML_EndDoctypeDeclHandler' callback pointer.
+
+	not_standalone_callback: POINTER
+			-- `XML_NotStandaloneHandler' callback pointer.
+
+	element_decl_callback: POINTER
+			-- `XML_ElementDeclHandler' callback pointer.
+
+	notation_decl_callback: POINTER
+			-- `XML_NotationDeclHandler' callback pointer.
+
+	attlist_decl_callback: POINTER
+			-- `XML_AttlistDeclHandler' callback pointer.
+
+	entity_decl_callback: POINTER
+			-- `XML_EntityDeclHandler' callback pointer.
+
+	unparsed_entity_decl_callback: POINTER
+			-- `XML_UnparsedEntityDeclHandler' callback pointer.
+
+	external_entity_ref_callback: POINTER
+			-- `XML_ExternalEntityRefHandler' callback pointer.
+
+	skipped_entity_callback: POINTER
+			-- `XML_SkippedEntityHandler' callback pointer.
+
+	start_namespace_decl_callback: POINTER
+			-- `XML_StartNamespaceDeclHandler' callback pointer.
+
+	end_namespace_decl_callback: POINTER
+			-- `XML_EndNamespaceDeclHandler' callback pointer.
+
+	external_entity_ref_arg: POINTER
+			-- Optional first argument for `XML_ExternalEntityRefHandler'.
+
+	has_external_entity_ref_arg: BOOLEAN
+			-- Was `external_entity_ref_arg' explicitly set?
+
+	native_parser_handle: POINTER
+			-- Native parser pointer passed to external entity callbacks by default.
+
+	events: ARRAYED_LIST [STRING_8]
+			-- Eiffel-visible event log used by tests and diagnostics.
+
+	diagnostic_events_enabled: BOOLEAN
+			-- Should internal diagnostic counters and event strings be recorded?
+
+	callback_sequence_count: INTEGER
+			-- Number of native callbacks encountered in the current parse replay.
+
+	callbacks_to_suppress: INTEGER
+			-- Number of previously delivered callbacks to suppress during resume replay.
+
+	last_suspending_callback_index: INTEGER
+			-- Callback sequence index that most recently requested resumable suspension.
+
+	delivered_character_data_lengths: HASH_TABLE [INTEGER, INTEGER]
+			-- Delivered character-data byte counts keyed by replay callback index.
+
+feature -- Metrics
+
+	start_element_count: INTEGER
+			-- Number of start events emitted.
+
+	end_element_count: INTEGER
+			-- Number of end events emitted.
+
+	character_data_count: INTEGER
+			-- Number of non-empty character-data events emitted.
+
+	processing_instruction_count: INTEGER
+			-- Number of processing-instruction events emitted.
+
+	xml_decl_count: INTEGER
+			-- Number of XML declaration events emitted.
+
+	comment_count: INTEGER
+			-- Number of comment events emitted.
+
+	start_cdata_section_count: INTEGER
+			-- Number of CDATA start events emitted.
+
+	end_cdata_section_count: INTEGER
+			-- Number of CDATA end events emitted.
+
+	default_count: INTEGER
+			-- Number of default-handler events emitted.
+
+	start_doctype_decl_count: INTEGER
+			-- Number of doctype start events emitted.
+
+	end_doctype_decl_count: INTEGER
+			-- Number of doctype end events emitted.
+
+	not_standalone_count: INTEGER
+			-- Number of not-standalone checks emitted.
+
+	element_decl_count: INTEGER
+			-- Number of element declaration events emitted.
+
+	notation_decl_count: INTEGER
+			-- Number of notation declaration events emitted.
+
+	attlist_decl_count: INTEGER
+			-- Number of attribute-list declaration events emitted.
+
+	entity_decl_count: INTEGER
+			-- Number of entity declaration events emitted.
+
+	unparsed_entity_decl_count: INTEGER
+			-- Number of unparsed entity declaration events emitted.
+
+	external_entity_ref_count: INTEGER
+			-- Number of external entity references delegated to native callbacks.
+
+	skipped_entity_count: INTEGER
+			-- Number of skipped entity references reported.
+
+	start_namespace_decl_count: INTEGER
+			-- Number of namespace declarations opened.
+
+	end_namespace_decl_count: INTEGER
+			-- Number of namespace declarations closed.
+
+	current_specified_attribute_count: INTEGER
+			-- Expat-style count of explicit attribute vector entries for current start event.
+
+	current_id_attribute_index: INTEGER
+			-- Expat-style ID attribute name index for current start event, or -1.
+
+feature -- Element change
+
+	set_user_data (a_user_data: POINTER)
+			-- Set native callback user data.
+		do
+			user_data := a_user_data
+		ensure
+			user_data_set: user_data = a_user_data
+		end
+
+	set_element_handlers (a_start, a_end: POINTER)
+			-- Set native element callbacks.
+		do
+			start_element_callback := a_start
+			end_element_callback := a_end
+		ensure
+			start_set: start_element_callback = a_start
+			end_set: end_element_callback = a_end
+		end
+
+	set_character_data_handler (a_handler: POINTER)
+			-- Set native character-data callback.
+		do
+			character_data_callback := a_handler
+		ensure
+			handler_set: character_data_callback = a_handler
+		end
+
+	set_processing_instruction_handler (a_handler: POINTER)
+			-- Set native processing-instruction callback.
+		do
+			processing_instruction_callback := a_handler
+		ensure
+			handler_set: processing_instruction_callback = a_handler
+		end
+
+	set_xml_decl_handler (a_handler: POINTER)
+			-- Set native XML declaration callback.
+		do
+			xml_decl_callback := a_handler
+		ensure
+			handler_set: xml_decl_callback = a_handler
+		end
+
+	set_comment_handler (a_handler: POINTER)
+			-- Set native comment callback.
+		do
+			comment_callback := a_handler
+		ensure
+			handler_set: comment_callback = a_handler
+		end
+
+	set_cdata_section_handlers (a_start, a_end: POINTER)
+			-- Set native CDATA section callbacks.
+		do
+			start_cdata_section_callback := a_start
+			end_cdata_section_callback := a_end
+		ensure
+			start_set: start_cdata_section_callback = a_start
+			end_set: end_cdata_section_callback = a_end
+		end
+
+	set_default_handler (a_handler: POINTER; a_expand: BOOLEAN)
+			-- Set native default callback.
+		do
+			default_callback := a_handler
+			default_expands_entities := a_expand
+		ensure
+			handler_set: default_callback = a_handler
+			expand_set: default_expands_entities = a_expand
+		end
+
+	set_doctype_decl_handlers (a_start, a_end: POINTER)
+			-- Set native doctype declaration callbacks.
+		do
+			start_doctype_decl_callback := a_start
+			end_doctype_decl_callback := a_end
+		ensure
+			start_set: start_doctype_decl_callback = a_start
+			end_set: end_doctype_decl_callback = a_end
+		end
+
+	set_not_standalone_handler (a_handler: POINTER)
+			-- Set native not-standalone callback.
+		do
+			not_standalone_callback := a_handler
+		ensure
+			handler_set: not_standalone_callback = a_handler
+		end
+
+	set_element_decl_handler (a_handler: POINTER)
+			-- Set native element declaration callback.
+		do
+			element_decl_callback := a_handler
+		ensure
+			handler_set: element_decl_callback = a_handler
+		end
+
+	set_notation_decl_handler (a_handler: POINTER)
+			-- Set native notation declaration callback.
+		do
+			notation_decl_callback := a_handler
+		ensure
+			handler_set: notation_decl_callback = a_handler
+		end
+
+	set_attlist_decl_handler (a_handler: POINTER)
+			-- Set native attribute-list declaration callback.
+		do
+			attlist_decl_callback := a_handler
+		ensure
+			handler_set: attlist_decl_callback = a_handler
+		end
+
+	set_entity_decl_handler (a_handler: POINTER)
+			-- Set native entity declaration callback.
+		do
+			entity_decl_callback := a_handler
+		ensure
+			handler_set: entity_decl_callback = a_handler
+		end
+
+	set_unparsed_entity_decl_handler (a_handler: POINTER)
+			-- Set native unparsed entity declaration callback.
+		do
+			unparsed_entity_decl_callback := a_handler
+		ensure
+			handler_set: unparsed_entity_decl_callback = a_handler
+		end
+
+	set_external_entity_ref_handler (a_handler: POINTER)
+			-- Set native external entity reference callback.
+		do
+			external_entity_ref_callback := a_handler
+		ensure
+			handler_set: external_entity_ref_callback = a_handler
+		end
+
+	set_external_entity_ref_handler_arg (a_arg: POINTER)
+			-- Set native external entity reference callback argument.
+		do
+			external_entity_ref_arg := a_arg
+			has_external_entity_ref_arg := a_arg /= default_pointer
+		ensure
+			arg_set: external_entity_ref_arg = a_arg
+			arg_marker_matches: has_external_entity_ref_arg = (a_arg /= default_pointer)
+		end
+
+	set_skipped_entity_handler (a_handler: POINTER)
+			-- Set native skipped entity callback.
+		do
+			skipped_entity_callback := a_handler
+		ensure
+			handler_set: skipped_entity_callback = a_handler
+		end
+
+	set_namespace_decl_handlers (a_start, a_end: POINTER)
+			-- Set native namespace declaration callback slots.
+		do
+			start_namespace_decl_callback := a_start
+			end_namespace_decl_callback := a_end
+		ensure
+			start_set: start_namespace_decl_callback = a_start
+			end_set: end_namespace_decl_callback = a_end
+		end
+
+	set_start_namespace_decl_handler (a_handler: POINTER)
+			-- Set native start namespace declaration callback slot.
+		do
+			start_namespace_decl_callback := a_handler
+		ensure
+			handler_set: start_namespace_decl_callback = a_handler
+		end
+
+	set_end_namespace_decl_handler (a_handler: POINTER)
+			-- Set native end namespace declaration callback slot.
+		do
+			end_namespace_decl_callback := a_handler
+		ensure
+			handler_set: end_namespace_decl_callback = a_handler
+		end
+
+	set_native_parser_handle (a_parser: POINTER)
+			-- Set native parser handle used for callback APIs that expect it.
+		do
+			native_parser_handle := a_parser
+		ensure
+			handle_set: native_parser_handle = a_parser
+		end
+
+	emit_xml_declaration (a_version, a_encoding: READABLE_STRING_8; a_standalone: INTEGER)
+			-- Emit native XML declaration callback, if configured.
+		require
+			version_attached: a_version /= Void
+			encoding_attached: a_encoding /= Void
+			valid_standalone: a_standalone = -1 or a_standalone = 0 or a_standalone = 1
+		local
+			l_event: STRING_8
+			l_version: detachable C_STRING
+			l_encoding: detachable C_STRING
+			l_version_pointer: POINTER
+			l_encoding_pointer: POINTER
+		do
+			xml_decl_count := xml_decl_count + 1
+			create l_event.make_from_string ("xml-decl")
+			events.extend (l_event)
+			if xml_decl_callback /= default_pointer then
+				if not suppress_next_callback then
+					if not a_version.is_empty then
+						create l_version.make (a_version)
+						l_version_pointer := l_version.item
+					end
+					if not a_encoding.is_empty then
+						create l_encoding.make (a_encoding)
+						l_encoding_pointer := l_encoding.item
+					end
+					call_xml_decl_callback (xml_decl_callback, user_data, l_version_pointer, l_encoding_pointer, a_standalone)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	reset_events
+			-- Clear observable event state.
+		do
+			events.wipe_out
+			start_element_count := 0
+			end_element_count := 0
+			character_data_count := 0
+			processing_instruction_count := 0
+			xml_decl_count := 0
+			comment_count := 0
+			start_cdata_section_count := 0
+			end_cdata_section_count := 0
+			default_count := 0
+			start_doctype_decl_count := 0
+			end_doctype_decl_count := 0
+			not_standalone_count := 0
+			element_decl_count := 0
+			notation_decl_count := 0
+			attlist_decl_count := 0
+			entity_decl_count := 0
+			unparsed_entity_decl_count := 0
+			external_entity_ref_count := 0
+			skipped_entity_count := 0
+			start_namespace_decl_count := 0
+			end_namespace_decl_count := 0
+			current_specified_attribute_count := 0
+			current_id_attribute_index := -1
+		ensure
+			no_events: events.count = 0
+			no_start_events: start_element_count = 0
+			no_end_events: end_element_count = 0
+			no_text_events: character_data_count = 0
+			no_pi_events: processing_instruction_count = 0
+			no_xml_decl_events: xml_decl_count = 0
+			no_comment_events: comment_count = 0
+			no_start_cdata_events: start_cdata_section_count = 0
+			no_end_cdata_events: end_cdata_section_count = 0
+			no_default_events: default_count = 0
+			no_start_doctype_events: start_doctype_decl_count = 0
+			no_end_doctype_events: end_doctype_decl_count = 0
+			no_not_standalone_events: not_standalone_count = 0
+			no_element_decl_events: element_decl_count = 0
+			no_notation_decl_events: notation_decl_count = 0
+			no_attlist_events: attlist_decl_count = 0
+			no_entity_decl_events: entity_decl_count = 0
+			no_unparsed_entity_decl_events: unparsed_entity_decl_count = 0
+			no_external_entity_refs: external_entity_ref_count = 0
+			no_skipped_entities: skipped_entity_count = 0
+			no_start_namespace_decl_events: start_namespace_decl_count = 0
+			no_end_namespace_decl_events: end_namespace_decl_count = 0
+			no_current_specified_attributes: current_specified_attribute_count = 0
+			no_current_id_attribute: current_id_attribute_index = -1
+		end
+
+	set_diagnostic_events_enabled (a_enabled: BOOLEAN)
+			-- Control internal diagnostic event recording.
+		do
+			diagnostic_events_enabled := a_enabled
+		ensure
+			value_set: diagnostic_events_enabled = a_enabled
+		end
+
+feature -- Events
+
+	wants_start_element_events: BOOLEAN
+			-- Should start-element event objects be materialized and emitted?
+		do
+			Result := diagnostic_events_enabled or else start_element_callback /= default_pointer
+		end
+
+	wants_end_element_events: BOOLEAN
+			-- Should end-element event objects be materialized and emitted?
+		do
+			Result := diagnostic_events_enabled or else end_element_callback /= default_pointer
+		end
+
+	wants_character_data_events: BOOLEAN
+			-- Should character-data event text be materialized and emitted?
+		do
+			Result := diagnostic_events_enabled or else character_data_callback /= default_pointer
+		end
+
+	wants_automatic_character_data_default: BOOLEAN
+			-- Should character data also be emitted through `on_default' automatically?
+		do
+			Result := default_callback /= default_pointer and then character_data_callback = default_pointer
+		end
+
+	wants_default_events: BOOLEAN
+			-- Should raw default-handler text be materialized and emitted?
+		do
+			Result := default_callback /= default_pointer
+		end
+
+	expands_internal_general_entity_references: BOOLEAN
+			-- Should internal general entity references be expanded in content?
+		do
+			Result := default_callback = default_pointer or else default_expands_entities
+		end
+
+	reports_skipped_internal_general_entities: BOOLEAN
+			-- Should skipped internal general entities be reported through `on_skipped_entity'?
+		do
+			Result := skipped_entity_callback /= default_pointer
+		end
+
+	requires_eager_position_accounting: BOOLEAN
+			-- Can native callback code observe parser positions during parsing?
+		do
+			Result := has_observable_native_callbacks
+		end
+
+	has_observable_native_callbacks: BOOLEAN
+			-- Is any native callback slot installed that can call parser query APIs?
+		do
+			Result :=
+				start_element_callback /= default_pointer
+				or else end_element_callback /= default_pointer
+				or else character_data_callback /= default_pointer
+				or else processing_instruction_callback /= default_pointer
+				or else xml_decl_callback /= default_pointer
+				or else comment_callback /= default_pointer
+				or else start_cdata_section_callback /= default_pointer
+				or else end_cdata_section_callback /= default_pointer
+				or else default_callback /= default_pointer
+				or else start_doctype_decl_callback /= default_pointer
+				or else end_doctype_decl_callback /= default_pointer
+				or else not_standalone_callback /= default_pointer
+				or else element_decl_callback /= default_pointer
+				or else notation_decl_callback /= default_pointer
+				or else attlist_decl_callback /= default_pointer
+				or else entity_decl_callback /= default_pointer
+				or else unparsed_entity_decl_callback /= default_pointer
+				or else external_entity_ref_callback /= default_pointer
+				or else skipped_entity_callback /= default_pointer
+				or else start_namespace_decl_callback /= default_pointer
+				or else end_namespace_decl_callback /= default_pointer
+				or else native_start_namespace_decl_callback (native_parser_handle) /= default_pointer
+				or else native_end_namespace_decl_callback (native_parser_handle) /= default_pointer
+		end
+
+	stop_requested: BOOLEAN
+			-- Did a native callback call `XML_StopParser' on the active parser?
+		do
+			Result := native_stop_requested (native_parser_handle)
+		end
+
+	stop_is_resumable: BOOLEAN
+			-- Is the native stop request resumable?
+		do
+			Result := native_stop_is_resumable (native_parser_handle)
+		end
+
+	prepare_fresh_parse_callbacks
+			-- Start a non-replay callback pass.
+		do
+			prepare_callback_replay (0)
+			last_suspending_callback_index := 0
+		ensure
+			no_callbacks_seen: callback_sequence_count = 0
+			no_suppression: callbacks_to_suppress = 0
+			no_suspend_point: last_suspending_callback_index = 0
+		end
+
+	prepare_resume_replay_callbacks
+			-- Start replaying the input up to the most recent suspend point.
+		do
+			prepare_callback_replay (last_suspending_callback_index)
+		ensure
+			no_callbacks_seen: callback_sequence_count = 0
+			suppression_set: callbacks_to_suppress = last_suspending_callback_index
+		end
+
+	prepare_callback_replay (a_suppressed_callbacks: INTEGER)
+			-- Start a replay pass suppressing callbacks already delivered to the native caller.
+		require
+			non_negative_suppression: a_suppressed_callbacks >= 0
+		do
+			callback_sequence_count := 0
+			callbacks_to_suppress := a_suppressed_callbacks
+		ensure
+			no_callbacks_seen: callback_sequence_count = 0
+			suppression_set: callbacks_to_suppress = a_suppressed_callbacks
+		end
+
+	finish_successful_parse_callbacks
+			-- Clear replay state after a parse reaches a terminal non-suspended state.
+		do
+			callbacks_to_suppress := 0
+			last_suspending_callback_index := 0
+			delivered_character_data_lengths.wipe_out
+		ensure
+			no_suppression: callbacks_to_suppress = 0
+			no_suspend_point: last_suspending_callback_index = 0
+			no_delivered_text_lengths: delivered_character_data_lengths.count = 0
+		end
+
+feature -- Event handling
+
+	on_start_element (a_name: READABLE_STRING_8; a_attributes: XP_ATTRIBUTES)
+		local
+			l_event: STRING_8
+			l_name: C_STRING
+			l_attribute_strings: ARRAYED_LIST [C_STRING]
+			l_attributes: MANAGED_POINTER
+			i, j: INTEGER
+			l_attribute_name: C_STRING
+			l_attribute_value: C_STRING
+		do
+			start_element_count := start_element_count + 1
+			current_specified_attribute_count := a_attributes.specified_attribute_count * 2
+			current_id_attribute_index := a_attributes.id_attribute_index
+			if diagnostic_events_enabled then
+				create l_event.make_from_string ("start:")
+				l_event.append (a_name)
+				l_event.append_character (':')
+				l_event.append_integer (a_attributes.count)
+				events.extend (l_event)
+			end
+			if start_element_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_name.make (a_name)
+					create l_attribute_strings.make (a_attributes.count * 2)
+					create l_attributes.make ((a_attributes.count * 2 + 1) * Pointer_bytes)
+					from
+						i := 1
+						j := 0
+					invariant
+						index_in_bounds: i >= 1 and i <= a_attributes.count + 1
+						pointer_index_valid: j = (i - 1) * 2
+					until
+						i > a_attributes.count
+					loop
+						create l_attribute_name.make (a_attributes.i_th_name (i))
+						create l_attribute_value.make (a_attributes.i_th_value (i))
+						l_attribute_strings.extend (l_attribute_name)
+						l_attribute_strings.extend (l_attribute_value)
+						l_attributes.put_pointer (l_attribute_name.item, j * Pointer_bytes)
+						l_attributes.put_pointer (l_attribute_value.item, (j + 1) * Pointer_bytes)
+						i := i + 1
+						j := j + 2
+					variant
+						a_attributes.count - i + 1
+					end
+					l_attributes.put_pointer (default_pointer, j * Pointer_bytes)
+					call_start_element_callback (start_element_callback, user_data, l_name.item, l_attributes.item)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_end_element (a_name: READABLE_STRING_8)
+		local
+			l_event: STRING_8
+			l_name: C_STRING
+		do
+			end_element_count := end_element_count + 1
+			if diagnostic_events_enabled then
+				create l_event.make_from_string ("end:")
+				l_event.append (a_name)
+				events.extend (l_event)
+			end
+			if end_element_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_name.make (a_name)
+					call_end_element_callback (end_element_callback, user_data, l_name.item)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_character_data (a_text: READABLE_STRING_8)
+		local
+			l_event: STRING_8
+			l_text: C_STRING
+			l_suppressed: BOOLEAN
+			l_already_delivered: INTEGER
+			l_suffix: STRING_8
+		do
+			if not a_text.is_empty then
+				character_data_count := character_data_count + 1
+				if diagnostic_events_enabled then
+					create l_event.make_from_string ("text:")
+					l_event.append (a_text)
+					events.extend (l_event)
+				end
+				if character_data_callback /= default_pointer then
+					l_suppressed := suppress_next_callback
+					if l_suppressed then
+						l_already_delivered := delivered_character_data_length (callback_sequence_count)
+						if a_text.count > l_already_delivered then
+							create l_suffix.make_from_string (a_text.substring (l_already_delivered + 1, a_text.count))
+							create l_text.make (l_suffix)
+							remember_default_text (l_suffix)
+							set_native_active_callback_kind (native_parser_handle, Native_callback_character_data)
+							call_character_data_callback (character_data_callback, user_data, l_text.item, l_suffix.count)
+							set_native_active_callback_kind (native_parser_handle, Native_callback_none)
+							record_delivered_character_data_length (callback_sequence_count, a_text.count)
+							record_callback_stop_if_requested
+							forget_default_text
+						end
+					else
+						create l_text.make (a_text)
+						remember_default_text (a_text)
+						set_native_active_callback_kind (native_parser_handle, Native_callback_character_data)
+						call_character_data_callback (character_data_callback, user_data, l_text.item, a_text.count)
+						set_native_active_callback_kind (native_parser_handle, Native_callback_none)
+						record_delivered_character_data_length (callback_sequence_count, a_text.count)
+						record_callback_stop_if_requested
+						forget_default_text
+					end
+				end
+			end
+		end
+
+	on_processing_instruction (a_target, a_data: READABLE_STRING_8)
+		local
+			l_event: STRING_8
+			l_target: C_STRING
+			l_data: C_STRING
+		do
+			processing_instruction_count := processing_instruction_count + 1
+			create l_event.make_from_string ("pi:")
+			l_event.append (a_target)
+			l_event.append_character (':')
+			l_event.append (a_data)
+			events.extend (l_event)
+			if processing_instruction_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_target.make (a_target)
+					create l_data.make (a_data)
+					call_processing_instruction_callback (processing_instruction_callback, user_data, l_target.item, l_data.item)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_xml_declaration (a_version, a_encoding: READABLE_STRING_8; a_standalone: INTEGER)
+		do
+			emit_xml_declaration (a_version, a_encoding, a_standalone)
+		end
+
+	on_comment_X (a_text: READABLE_STRING_8)
+		-- clashes with Xpact-core
+		local
+			l_event: STRING_8
+			l_text: C_STRING
+		do
+			comment_count := comment_count + 1
+			create l_event.make_from_string ("comment:")
+			l_event.append (a_text)
+			events.extend (l_event)
+			if comment_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_text.make (a_text)
+					call_comment_callback (comment_callback, user_data, l_text.item)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_start_cdata_section
+		do
+			start_cdata_section_count := start_cdata_section_count + 1
+			events.extend ("start-cdata")
+			if start_cdata_section_callback /= default_pointer then
+				if not suppress_next_callback then
+					call_cdata_section_callback (start_cdata_section_callback, user_data)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_end_cdata_section
+		do
+			end_cdata_section_count := end_cdata_section_count + 1
+			events.extend ("end-cdata")
+			if end_cdata_section_callback /= default_pointer then
+				if not suppress_next_callback then
+					call_cdata_section_callback (end_cdata_section_callback, user_data)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_start_doctype_decl (a_name: READABLE_STRING_8; a_system_id, a_public_id: detachable READABLE_STRING_8; a_has_internal_subset: BOOLEAN)
+		local
+			l_name: C_STRING
+			l_system_id: detachable C_STRING
+			l_public_id: detachable C_STRING
+			l_system_pointer: POINTER
+			l_public_pointer: POINTER
+		do
+			start_doctype_decl_count := start_doctype_decl_count + 1
+			if start_doctype_decl_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_name.make (a_name)
+					if attached a_system_id as l_attached_system_id then
+						create l_system_id.make (l_attached_system_id)
+						l_system_pointer := l_system_id.item
+					end
+					if attached a_public_id as l_attached_public_id then
+						create l_public_id.make (l_attached_public_id)
+						l_public_pointer := l_public_id.item
+					end
+					call_start_doctype_decl_callback (start_doctype_decl_callback, user_data, l_name.item, l_system_pointer, l_public_pointer, a_has_internal_subset)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_end_doctype_decl
+		do
+			end_doctype_decl_count := end_doctype_decl_count + 1
+			if end_doctype_decl_callback /= default_pointer then
+				if not suppress_next_callback then
+					call_end_doctype_decl_callback (end_doctype_decl_callback, user_data)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_not_standalone: BOOLEAN
+		local
+			l_status: INTEGER
+		do
+			not_standalone_count := not_standalone_count + 1
+			events.extend ("not-standalone")
+			if not_standalone_callback = default_pointer then
+				Result := True
+			else
+				if suppress_next_callback then
+					Result := True
+				else
+					l_status := call_not_standalone_callback (not_standalone_callback, user_data)
+					Result := l_status /= 0
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_element_decl (a_name: READABLE_STRING_8; a_model: XP_CONTENT_MODEL)
+		local
+			l_event: STRING_8
+			l_name: C_STRING
+			l_model_names: ARRAYED_LIST [C_STRING]
+			l_model: POINTER
+		do
+			element_decl_count := element_decl_count + 1
+			create l_event.make_from_string ("element-decl:")
+			l_event.append (a_name)
+			l_event.append_character (':')
+			l_event.append_integer (a_model.content_type)
+			l_event.append_character (':')
+			l_event.append_integer (a_model.quantifier)
+			l_event.append_character (':')
+			l_event.append_integer (a_model.children.count)
+			events.extend (l_event)
+			if element_decl_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_name.make (a_name)
+					create l_model_names.make (a_model.node_count)
+					l_model := content_model_array (a_model, l_model_names)
+					if l_model /= default_pointer then
+						call_element_decl_callback (element_decl_callback, user_data, l_name.item, l_model)
+						record_callback_stop_if_requested
+					end
+				end
+			end
+		end
+
+	on_notation_decl (a_name: READABLE_STRING_8; a_base, a_system_id, a_public_id: detachable READABLE_STRING_8)
+		local
+			l_event: STRING_8
+			l_name: C_STRING
+			l_base: detachable C_STRING
+			l_system_id: detachable C_STRING
+			l_public_id: detachable C_STRING
+			l_base_pointer: POINTER
+			l_system_pointer: POINTER
+			l_public_pointer: POINTER
+		do
+			notation_decl_count := notation_decl_count + 1
+			create l_event.make_from_string ("notation:")
+			l_event.append (a_name)
+			l_event.append_character (':')
+			if attached a_system_id as l_attached_system_id then
+				l_event.append (l_attached_system_id)
+			end
+			l_event.append_character (':')
+			if attached a_public_id as l_attached_public_id then
+				l_event.append (l_attached_public_id)
+			end
+			events.extend (l_event)
+			if notation_decl_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_name.make (a_name)
+					if attached a_base as l_attached_base then
+						create l_base.make (l_attached_base)
+						l_base_pointer := l_base.item
+					end
+					if attached a_system_id as l_attached_system_id then
+						create l_system_id.make (l_attached_system_id)
+						l_system_pointer := l_system_id.item
+					end
+					if attached a_public_id as l_attached_public_id then
+						create l_public_id.make (l_attached_public_id)
+						l_public_pointer := l_public_id.item
+					end
+					call_notation_decl_callback (notation_decl_callback, user_data, l_name.item, l_base_pointer, l_system_pointer, l_public_pointer)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_attlist_decl (a_element_name, a_attribute_name, a_attribute_type: READABLE_STRING_8; a_default_value: detachable READABLE_STRING_8; a_is_required: BOOLEAN)
+		local
+			l_event: STRING_8
+			l_element_name: C_STRING
+			l_attribute_name: C_STRING
+			l_attribute_type: C_STRING
+			l_default_value: detachable C_STRING
+			l_default_pointer: POINTER
+		do
+			attlist_decl_count := attlist_decl_count + 1
+			create l_event.make_from_string ("attlist:")
+			l_event.append (a_element_name)
+			l_event.append_character (':')
+			l_event.append (a_attribute_name)
+			l_event.append_character (':')
+			l_event.append (a_attribute_type)
+			l_event.append_character (':')
+			if attached a_default_value as l_attached_default_value then
+				l_event.append (l_attached_default_value)
+			end
+			l_event.append_character (':')
+			if a_is_required then
+				l_event.append ("1")
+			else
+				l_event.append ("0")
+			end
+			events.extend (l_event)
+			if attlist_decl_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_element_name.make (a_element_name)
+					create l_attribute_name.make (a_attribute_name)
+					create l_attribute_type.make (a_attribute_type)
+					if attached a_default_value as l_attached_default_value then
+						create l_default_value.make (l_attached_default_value)
+						l_default_pointer := l_default_value.item
+					end
+					call_attlist_decl_callback (attlist_decl_callback, user_data, l_element_name.item, l_attribute_name.item, l_attribute_type.item, l_default_pointer, a_is_required)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_entity_decl (a_name: READABLE_STRING_8; a_is_parameter: BOOLEAN; a_value: detachable READABLE_STRING_8; a_public_id, a_system_id, a_notation_name: detachable READABLE_STRING_8)
+		local
+			l_event: STRING_8
+			l_name: C_STRING
+			l_value: detachable C_STRING
+			l_public_id: detachable C_STRING
+			l_system_id: detachable C_STRING
+			l_notation_name: detachable C_STRING
+			l_value_pointer: POINTER
+			l_public_pointer: POINTER
+			l_system_pointer: POINTER
+			l_notation_pointer: POINTER
+			l_value_length: INTEGER
+		do
+			entity_decl_count := entity_decl_count + 1
+			create l_event.make_from_string ("entity-decl:")
+			l_event.append (a_name)
+			l_event.append_character (':')
+			if a_is_parameter then
+				l_event.append ("1")
+			else
+				l_event.append ("0")
+			end
+			l_event.append_character (':')
+			if attached a_value as l_attached_value then
+				l_event.append (l_attached_value)
+			else
+				l_event.append ("(null)")
+			end
+			events.extend (l_event)
+			if entity_decl_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_name.make (a_name)
+					if attached a_value as l_attached_value then
+						create l_value.make (l_attached_value)
+						l_value_pointer := l_value.item
+						l_value_length := l_attached_value.count
+					end
+					if attached a_public_id as l_attached_public_id then
+						create l_public_id.make (l_attached_public_id)
+						l_public_pointer := l_public_id.item
+					end
+					if attached a_system_id as l_attached_system_id then
+						create l_system_id.make (l_attached_system_id)
+						l_system_pointer := l_system_id.item
+					end
+					if attached a_notation_name as l_attached_notation_name then
+						create l_notation_name.make (l_attached_notation_name)
+						l_notation_pointer := l_notation_name.item
+					end
+					call_entity_decl_callback (entity_decl_callback, user_data, l_name.item, a_is_parameter, l_value_pointer, l_value_length, default_pointer, l_system_pointer, l_public_pointer, l_notation_pointer)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_unparsed_entity_decl (a_name, a_system_id: READABLE_STRING_8; a_public_id, a_notation_name: detachable READABLE_STRING_8)
+		local
+			l_event: STRING_8
+			l_name: C_STRING
+			l_system_id: C_STRING
+			l_public_id: detachable C_STRING
+			l_notation_name: detachable C_STRING
+			l_public_pointer: POINTER
+			l_notation_pointer: POINTER
+		do
+			unparsed_entity_decl_count := unparsed_entity_decl_count + 1
+			create l_event.make_from_string ("unparsed-entity:")
+			l_event.append (a_name)
+			l_event.append_character (':')
+			l_event.append (a_system_id)
+			events.extend (l_event)
+			if unparsed_entity_decl_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_name.make (a_name)
+					create l_system_id.make (a_system_id)
+					if attached a_public_id as l_attached_public_id then
+						create l_public_id.make (l_attached_public_id)
+						l_public_pointer := l_public_id.item
+					end
+					if attached a_notation_name as l_attached_notation_name then
+						create l_notation_name.make (l_attached_notation_name)
+						l_notation_pointer := l_notation_name.item
+					end
+					call_unparsed_entity_decl_callback (unparsed_entity_decl_callback, user_data, l_name.item, default_pointer, l_system_id.item, l_public_pointer, l_notation_pointer)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_skipped_entity (a_name: READABLE_STRING_8; a_is_parameter: BOOLEAN)
+		local
+			l_event: STRING_8
+			l_name: C_STRING
+		do
+			skipped_entity_count := skipped_entity_count + 1
+			create l_event.make_from_string ("skipped:")
+			l_event.append (a_name)
+			l_event.append_character (':')
+			if a_is_parameter then
+				l_event.append_character ('1')
+			else
+				l_event.append_character ('0')
+			end
+			events.extend (l_event)
+			if skipped_entity_callback /= default_pointer then
+				if not suppress_next_callback then
+					create l_name.make (a_name)
+					call_skipped_entity_callback (skipped_entity_callback, user_data, l_name.item, a_is_parameter)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_start_namespace_decl (a_prefix: detachable READABLE_STRING_8; a_uri: READABLE_STRING_8)
+		local
+			l_prefix: detachable C_STRING
+			l_uri: C_STRING
+			l_prefix_pointer: POINTER
+			l_callback: POINTER
+		do
+			start_namespace_decl_count := start_namespace_decl_count + 1
+			l_callback := start_namespace_decl_callback
+			if l_callback = default_pointer then
+				l_callback := native_start_namespace_decl_callback (native_parser_handle)
+			end
+			if l_callback /= default_pointer then
+				if not suppress_next_callback then
+					if attached a_prefix as l_attached_prefix then
+						create l_prefix.make (l_attached_prefix)
+						l_prefix_pointer := l_prefix.item
+					end
+					create l_uri.make (a_uri)
+					call_start_namespace_decl_callback (l_callback, user_data, l_prefix_pointer, l_uri.item)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_end_namespace_decl (a_prefix: detachable READABLE_STRING_8)
+		local
+			l_prefix: detachable C_STRING
+			l_prefix_pointer: POINTER
+			l_callback: POINTER
+		do
+			end_namespace_decl_count := end_namespace_decl_count + 1
+			l_callback := end_namespace_decl_callback
+			if l_callback = default_pointer then
+				l_callback := native_end_namespace_decl_callback (native_parser_handle)
+			end
+			if l_callback /= default_pointer then
+				if not suppress_next_callback then
+					if attached a_prefix as l_attached_prefix then
+						create l_prefix.make (l_attached_prefix)
+						l_prefix_pointer := l_prefix.item
+					end
+					call_end_namespace_decl_callback (l_callback, user_data, l_prefix_pointer)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	on_default (a_text: READABLE_STRING_8)
+		local
+			l_text: C_STRING
+		do
+			if default_callback /= default_pointer and then not a_text.is_empty then
+				default_count := default_count + 1
+				if not suppress_next_callback then
+					create l_text.make (a_text)
+					call_default_callback (default_callback, user_data, l_text.item, a_text.count)
+					record_callback_stop_if_requested
+				end
+			end
+		end
+
+	default_current
+			-- Replay the current callback text through the default handler.
+		do
+			if attached current_default_text as l_text then
+				on_default (l_text)
+			end
+		end
+
+feature -- External entity resolution
+
+	last_resolution_is_external_child_parse: BOOLEAN
+			-- Did the last resolution delegate to a native external child parser?
+
+	last_resolution_replacement_byte_count: INTEGER
+			-- Logical replacement byte count from the last resolution.
+
+	next_resolution_is_parameter_literal: BOOLEAN
+			-- Should the next parameter entity child parse as literal replacement text?
+
+	set_next_resolution_is_parameter_literal (a_enabled: BOOLEAN)
+			-- Mark whether the next parameter entity resolution is inside an entity literal.
+		do
+			next_resolution_is_parameter_literal := a_enabled
+		ensure then
+			value_set: next_resolution_is_parameter_literal = a_enabled
+		end
+
+	resolve_external_entity (a_name, a_public_id, a_system_id: READABLE_STRING_8; a_is_parameter: BOOLEAN): detachable STRING_8
+			-- Delegate external entity loading decision to the native callback slot.
+		local
+			l_context: C_STRING
+			l_system_id: C_STRING
+			l_public_id: detachable C_STRING
+			l_public_pointer: POINTER
+			l_before_external_count: INTEGER
+			l_after_external_count: INTEGER
+			l_status: INTEGER
+		do
+			last_resolution_is_external_child_parse := False
+			last_resolution_replacement_byte_count := 0
+			if external_entity_ref_callback /= default_pointer then
+				external_entity_ref_count := external_entity_ref_count + 1
+				if not suppress_next_callback then
+					l_before_external_count := external_entity_parse_count (native_parser_handle)
+					create l_context.make (a_name)
+					create l_system_id.make (a_system_id)
+					if not a_public_id.is_empty then
+						create l_public_id.make (a_public_id)
+						l_public_pointer := l_public_id.item
+					end
+					mark_next_external_entity_is_parameter (native_parser_handle, a_is_parameter)
+					mark_next_external_entity_is_parameter_literal (native_parser_handle, next_resolution_is_parameter_literal)
+					l_status := call_external_entity_ref_callback (external_entity_ref_callback, external_entity_callback_argument, l_context.item, default_pointer, l_system_id.item, l_public_pointer)
+					mark_next_external_entity_is_parameter (native_parser_handle, False)
+					mark_next_external_entity_is_parameter_literal (native_parser_handle, False)
+					next_resolution_is_parameter_literal := False
+					record_callback_stop_if_requested
+					if l_status /= 0 then
+						l_after_external_count := external_entity_parse_count (native_parser_handle)
+						if a_is_parameter and then l_after_external_count > l_before_external_count then
+							last_resolution_is_external_child_parse := True
+							last_resolution_replacement_byte_count := last_external_child_direct_count (native_parser_handle) + last_external_child_indirect_count (native_parser_handle)
+							create Result.make_from_string ("%N")
+						else
+							create Result.make_empty
+						end
+					end
+				else
+					create Result.make_empty
+				end
+			else
+				on_skipped_entity (a_name, a_is_parameter)
+				create Result.make_empty
+			end
+		end
+
+feature {NONE} -- Xpact core event handlers
+
+	on_comment (text: C_STRING_8)
+		local
+			call_back_ptr: POINTER
+		do
+			call_back_ptr := comment_callback
+			if is_attached (call_back_ptr) then
+				call_comment_callback (call_back_ptr, user_data, text.area)
+			end
+		end
+
+	on_content (text_intervals: XT_CHARACTER_BUFFER_INTERVALS)
+		local
+			lower, upper: INTEGER; call_back_ptr: POINTER
+		do
+			call_back_ptr := character_data_callback
+			if is_attached (call_back_ptr) then
+				if cdata_pending then
+					call_cdata_section_callback (start_cdata_section_callback, user_data)
+				end
+				set_native_active_callback_kind (native_parser_handle, Native_callback_character_data)
+				from text_intervals.start until text_intervals.after loop
+					if attached text_intervals.interval_item as array then
+						lower := array [0]; upper := array [1]
+						call_character_data_callback (call_back_ptr, user_data, buffer.item_address (lower), upper - lower + 1)
+					end
+					text_intervals.forth
+				end
+				set_native_active_callback_kind (native_parser_handle, Native_callback_none)
+				if cdata_pending then
+					call_cdata_section_callback (end_cdata_section_callback, user_data)
+				end
+			end
+		end
+
+	on_tag_end (name: STRING_8)
+		local
+			call_back_ptr: POINTER
+		do
+			call_back_ptr := end_element_callback
+			if is_attached (call_back_ptr) then
+				call_end_element_callback (call_back_ptr, user_data, name.area.base_address)
+			end
+		end
+
+	on_tag_start (name: STRING_8; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		local
+			allocation_size, j: INTEGER; c_name: ANY; call_back_ptr: POINTER
+		do
+			call_back_ptr := start_element_callback
+			if is_attached (call_back_ptr) and then attached attributes_c_array as c_array
+				and then attached buffer as buf and then attached name_cache as names
+			then
+				allocation_size := (a_attribute_intervals.count * 2 + 1) * Pointer_bytes
+				if allocation_size > c_array.count then
+					c_array.resize (allocation_size)
+				end
+				a_attribute_intervals.null_terminate_values (buf)
+
+				from a_attribute_intervals.start; j := 0 until a_attribute_intervals.after loop
+					if attached a_attribute_intervals.interval_item as array then
+						c_array.put_pointer (names.item (buf, array [0], array [1]).area.base_address, j)
+						j := j + Pointer_bytes
+						c_array.put_pointer (buf.item_address (array [2]), j)
+						j := j + Pointer_bytes
+					end
+					a_attribute_intervals.forth
+				end
+				c_array.put_pointer (default_pointer, j)
+				c_name := name.to_c
+				call_start_element_callback (call_back_ptr, user_data, $name, c_array.item)
+
+				a_attribute_intervals.undo_null_terminated_values (buf)
+			end
+		ensure then
+			buffer_unchanged:
+				a_attribute_intervals.upper_plus_1_characters (buffer).is_equal (
+					old a_attribute_intervals.upper_plus_1_characters (buffer)
+				)
+		end
+
+feature {NONE} -- Native callback calls
+
+	suppress_next_callback: BOOLEAN
+			-- Should the next native callback be skipped during resume replay?
+		do
+			callback_sequence_count := callback_sequence_count + 1
+			Result := callback_sequence_count <= callbacks_to_suppress
+		ensure
+			one_more_callback_seen: callback_sequence_count = old callback_sequence_count + 1
+		end
+
+	record_callback_stop_if_requested
+			-- Remember callback position if the application suspended parsing.
+		do
+			if stop_requested and then stop_is_resumable then
+				last_suspending_callback_index := callback_sequence_count
+			end
+		ensure
+			recorded_when_resumable_stop: (stop_requested and then stop_is_resumable) implies last_suspending_callback_index = callback_sequence_count
+		end
+
+	delivered_character_data_length (a_callback_index: INTEGER): INTEGER
+			-- Previously delivered character-data bytes for replay callback `a_callback_index'.
+		require
+			positive_index: a_callback_index > 0
+		do
+			if delivered_character_data_lengths.has (a_callback_index) then
+				Result := delivered_character_data_lengths.item (a_callback_index)
+			end
+		ensure
+			non_negative: Result >= 0
+		end
+
+	record_delivered_character_data_length (a_callback_index, a_count: INTEGER)
+			-- Remember delivered character-data byte count for replay callback `a_callback_index'.
+		require
+			positive_index: a_callback_index > 0
+			non_negative_count: a_count >= 0
+		do
+			delivered_character_data_lengths.force (a_count, a_callback_index)
+		ensure
+			recorded: delivered_character_data_length (a_callback_index) = a_count
+		end
+
+	remember_default_text (a_text: READABLE_STRING_8)
+			-- Store callback text for `XML_DefaultCurrent'.
+		require
+			text_attached: a_text /= Void
+		do
+			create current_default_text.make_from_string (a_text)
+		ensure
+			text_available: attached current_default_text as l_text and then l_text.same_string (a_text)
+		end
+
+	forget_default_text
+			-- Clear callback text after returning from the client callback.
+		do
+			current_default_text := Void
+		ensure
+			no_current_text: current_default_text = Void
+		end
+
+	external_entity_callback_argument: POINTER
+			-- First argument for `XML_ExternalEntityRefHandler'.
+		do
+			if has_external_entity_ref_arg then
+				Result := external_entity_ref_arg
+			else
+				Result := native_parser_handle
+			end
+		end
+
+	content_model_array (a_model: XP_CONTENT_MODEL; a_name_strings: ARRAYED_LIST [C_STRING]): POINTER
+			-- Newly allocated Expat-shaped content model array for `a_model'.
+		require
+			model_attached: a_model /= Void
+			name_strings_attached: a_name_strings /= Void
+		local
+			l_nodes: ARRAYED_LIST [XP_CONTENT_MODEL]
+			l_node: XP_CONTENT_MODEL
+			l_name: C_STRING
+			l_name_pointer: POINTER
+			i: INTEGER
+		do
+			create l_nodes.make (a_model.node_count)
+			append_content_model_nodes (l_nodes, a_model)
+			Result := c_malloc (l_nodes.count * content_struct_size)
+			if Result /= default_pointer then
+				from
+					i := 1
+				invariant
+					index_in_bounds: i >= 1 and i <= l_nodes.count + 1
+				until
+					i > l_nodes.count
+				loop
+					l_node := l_nodes.i_th (i)
+					l_name_pointer := default_pointer
+					if attached l_node.name as l_attached_name then
+						create l_name.make (l_attached_name)
+						a_name_strings.extend (l_name)
+						l_name_pointer := l_name.item
+					end
+					put_content_model_node (
+						Result,
+						i - 1,
+						l_node.content_type,
+						l_node.quantifier,
+						l_name_pointer,
+						l_node.children.count,
+						first_content_child_index (l_nodes, l_node)
+					)
+					i := i + 1
+				variant
+					l_nodes.count - i + 1
+				end
+			end
+		end
+
+	append_content_model_nodes (a_nodes: ARRAYED_LIST [XP_CONTENT_MODEL]; a_root: XP_CONTENT_MODEL)
+			-- Append `a_root' and descendants in Expat's breadth-first array order.
+		require
+			nodes_attached: a_nodes /= Void
+			nodes_empty: a_nodes.is_empty
+			root_attached: a_root /= Void
+		local
+			i, j, l_total: INTEGER
+			l_node: XP_CONTENT_MODEL
+		do
+			a_nodes.extend (a_root)
+			l_total := a_root.node_count
+			from
+				i := 1
+			invariant
+				index_in_bounds: i >= 1 and i <= l_total + 1
+				count_bounded: a_nodes.count <= l_total
+			until
+				i > l_total
+			loop
+				l_node := a_nodes.i_th (i)
+				from
+					j := 1
+				invariant
+					child_index_in_bounds: j >= 1 and j <= l_node.children.count + 1
+				until
+					j > l_node.children.count
+				loop
+					a_nodes.extend (l_node.children.i_th (j))
+					j := j + 1
+				variant
+					l_node.children.count - j + 1
+				end
+				i := i + 1
+			variant
+				l_total - i + 1
+			end
+		ensure
+			all_nodes_added: a_nodes.count = old a_nodes.count + a_root.node_count
+		end
+
+	first_content_child_index (a_nodes: ARRAYED_LIST [XP_CONTENT_MODEL]; a_node: XP_CONTENT_MODEL): INTEGER
+			-- Zero-based index of `a_node''s first child in `a_nodes', or -1.
+		require
+			nodes_attached: a_nodes /= Void
+			node_attached: a_node /= Void
+		local
+			i: INTEGER
+			l_found: BOOLEAN
+			l_first_child: XP_CONTENT_MODEL
+		do
+			Result := -1
+			if not a_node.children.is_empty then
+				l_first_child := a_node.children.i_th (1)
+				from
+					i := 1
+				invariant
+					index_in_bounds: i >= 1 and i <= a_nodes.count + 1
+				until
+					i > a_nodes.count or l_found
+				loop
+					if a_nodes.i_th (i) = l_first_child then
+						Result := i - 1
+						l_found := True
+					end
+					i := i + 1
+				variant
+					a_nodes.count - i + 1
+				end
+			end
+		ensure
+			valid_index: Result >= -1
+		end
+
+feature {NONE} -- Implementation
+
+	frozen is_attached (ptr: POINTER): BOOLEAN
+		local
+			null: POINTER
+		do
+			Result := ptr /= null
+		end
+
+feature {NONE} -- Internal attributes
+
+	attributes_c_array: MANAGED_POINTER
+
+feature {NONE} -- Constants
+
+	Native_callback_none: INTEGER = 0
+			-- No native callback is currently dispatching.
+
+	Native_callback_character_data: INTEGER = 1
+			-- Native character-data callback is currently dispatching.
+
+invariant
+	events_attached: events /= Void
+	non_negative_start_count: start_element_count >= 0
+	non_negative_end_count: end_element_count >= 0
+	non_negative_text_count: character_data_count >= 0
+	non_negative_pi_count: processing_instruction_count >= 0
+	non_negative_xml_decl_count: xml_decl_count >= 0
+	non_negative_comment_count: comment_count >= 0
+	non_negative_start_cdata_count: start_cdata_section_count >= 0
+	non_negative_end_cdata_count: end_cdata_section_count >= 0
+	non_negative_default_count: default_count >= 0
+	non_negative_start_doctype_count: start_doctype_decl_count >= 0
+	non_negative_end_doctype_count: end_doctype_decl_count >= 0
+	non_negative_not_standalone_count: not_standalone_count >= 0
+	non_negative_element_decl_count: element_decl_count >= 0
+	non_negative_notation_decl_count: notation_decl_count >= 0
+	non_negative_attlist_count: attlist_decl_count >= 0
+	non_negative_entity_decl_count: entity_decl_count >= 0
+	non_negative_unparsed_entity_decl_count: unparsed_entity_decl_count >= 0
+	non_negative_external_entity_ref_count: external_entity_ref_count >= 0
+	non_negative_skipped_entity_count: skipped_entity_count >= 0
+	non_negative_start_namespace_decl_count: start_namespace_decl_count >= 0
+	non_negative_end_namespace_decl_count: end_namespace_decl_count >= 0
+	non_negative_current_specified_attribute_count: current_specified_attribute_count >= 0
+	current_id_attribute_index_valid: current_id_attribute_index >= -1
+
+end

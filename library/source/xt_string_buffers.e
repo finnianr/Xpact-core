@@ -25,16 +25,16 @@ feature {NONE} -- Initialisation
 			create attribute_table.make (11)
 			create name_cache.make
 			create comment_string.make_shared (default_pointer, 0)
-			create attribute_intervals.make (5, 4)
+			create attribute_intervals.make (5)
 			create output_buffer.make (10)
-			create text_data_intervals.make (5, 2)
+			create text_data_intervals.make (5)
 		ensure
 			empty_buffer: buffer_end = 0 and buffer_index = 0
 		end
 
 feature {NONE} -- Implementation
 
-	adjusted_concatenation (text_intervals: XT_STRING_INTERVALS): STRING_8
+	adjusted_concatenation (text_intervals: XT_TEXT_DATA_BUFFER_INTERVALS): STRING_8
 		-- concatenated `text_intervals' substrings found in `buffer'
 		-- Trims leading and trailing white space and first and last intervals
 		local
@@ -42,27 +42,24 @@ feature {NONE} -- Implementation
 		do
 			Result := output_buffer
 			Result.wipe_out
-			Result.grow (text_intervals.count_sum)
+			Result.grow (text_intervals.character_count)
 			if attached buffer as buf and then attached Result.area as area_out then
 				j := 0
 				from text_intervals.start until text_intervals.after loop
-					inspect (text_intervals.index - 1) \\ 2
-						when 0 then
-							lower := text_intervals.item
-						when 1 then
-							upper := text_intervals.item
-							from i := lower until i > upper loop
-								c_i := buf [i]
-								if not first_copied then
-									first_copied := not c_i.is_space
-								end
-								if first_copied then
-									area_out [j] := c_i
-									j := j + 1
-								end
-								i := i + 1
+					if attached text_intervals.interval_item as array then
+						lower := array [0]; upper := array [1]
+						from i := lower until i > upper loop
+							c_i := buf [i]
+							if not first_copied then
+								first_copied := not c_i.is_space
 							end
-					else end
+							if first_copied then
+								area_out [j] := c_i
+								j := j + 1
+							end
+							i := i + 1
+						end
+					end
 					text_intervals.forth
 				end
 				Result.set_count (j)
@@ -110,34 +107,27 @@ feature {NONE} -- Implementation
 			Result := c = '%U'
 		end
 
-	filled_attribute_table: like attribute_table
+	filled_attribute_table (a_attribute_intervals: XT_CHARACTER_BUFFER_INTERVALS): like attribute_table
 		require
-			valid_attribute_indices_count: attribute_intervals.count \\ 4 = 0
+			valid_attribute_indices_count: attribute_intervals.index_count \\ 4 = 0
 		local
 			lower, upper: INTEGER; name, value: STRING
 		do
 			Result := attribute_table
 			Result.wipe_out
-			if attached attribute_intervals as list and then attached buffer as buf then
+			if attached a_attribute_intervals as list and then attached buffer as buf then
 				from list.start until list.after loop
-					inspect (list.index - 1) \\ 4
-						when 0 then
-							lower := list.item
-						when 1 then
-							upper := list.item
-							name := name_cache.item (buf, lower, upper)
-						when 2 then
-							lower := list.item
-						when 3 then
-							upper := list.item
-							value := buffer_substring (lower, upper).twin
-							if attached value as l_value and then attached name as l_name then
-								Result.put (value, l_name)
-							end
-							check
-								not_duplicate_name: Result.inserted
-							end
-					else
+					if attached list.interval_item as array then
+						lower := array [0]; upper := array [1]
+						name := name_cache.item (buf, lower, upper)
+						lower := array [2]; upper := array [3]
+						value := buffer_substring (lower, upper).twin
+						if attached value as l_value and then attached name as l_name then
+							Result.put (value, l_name)
+						end
+						check
+							not_duplicate_name: Result.inserted
+						end
 					end
 					list.forth
 				end
@@ -176,13 +166,13 @@ feature {NONE} -- Internal structures
 	attribute_table: HASH_TABLE [STRING, STRING]
 		-- reuseable table of name-value attribute pairs
 
-	attribute_intervals: XT_STRING_INTERVALS
+	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
 		-- collected attribute name-value pair indices into `buffer'
 
 	output_buffer: STRING_8
 		-- used to accumulate text for output
 
-	text_data_intervals: XT_STRING_INTERVALS
+	text_data_intervals: XT_TEXT_DATA_BUFFER_INTERVALS
 		-- list of substring intervals `lower .. upper' of `buffer' text
 
 	name_cache: XT_NAME_CACHE

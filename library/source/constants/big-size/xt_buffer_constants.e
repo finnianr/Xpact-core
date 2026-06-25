@@ -1,7 +1,7 @@
 note
 	description: "Constants ported from expat.h and xmlparse.c (libexpat 2.x)"
 	notes: "[
-		set ECF variable `buffer_size' to small to trigger 
+		set ECF variable `buffer_size' to small to trigger
 	]"
 
 	author: "Finnian Reilly"

@@ -36,7 +36,7 @@ feature {NONE} -- Initialisation
 
 	make
 		local
-			file: PLAIN_TEXT_FILE; time_start: TIME; count, duration_milliseconds: INTEGER
+			file: PLAIN_TEXT_FILE; time_start: TIME; count, duration_ms: INTEGER
 		do
 			if argument_count >= 2
 				and then attached new_argument_8 (1, Void) as task and then Task_type.has (task)
@@ -46,16 +46,16 @@ feature {NONE} -- Initialisation
 				io.put_string ("Program: Xpact-core XML parser (Eiffel)")
 				io.put_new_line
 				if file.exists then
-					duration_milliseconds := new_integer_argument ("duration", 500)
-					if duration = 0 then
-						do_task (task, file_path, count = 1)
+					duration_ms := new_integer_argument ("duration", 500)
+					if duration_ms = 0 then
+						do_task (task, file_path, True)
 					else
-						from create time_start.make_now until elapsed_milliseconds (time_start) > duration_milliseconds loop
+						from create time_start.make_now until elapsed_milliseconds (time_start) > duration_ms loop
 							count := count + 1
 							do_task (task, file_path, count = 1)
 						end
 						io.put_string ("Total number of passes in ")
-						io.put_string (duration_milliseconds.out + " ms: " + count.out)
+						io.put_string (duration_ms.out + " ms: " + count.out)
 						io.put_new_line
 					end
 				else
@@ -104,7 +104,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	compile: TUPLE [XT_ASCII_ENCODING, XT_LATIN1_ENCODING]
+	compile: TUPLE [XT_ASCII_ENCODING, XT_LATIN1_ENCODING, XP_EXPAT_CALLBACK_HANDLER]
 		do
 			create Result
 		end

@@ -100,6 +100,8 @@ feature -- Access
 			else
 				Result := buffer_string_8 (buffer, start_index, end_index)
 			end
+		ensure
+			null_terminated: Result.area [Result.count] = '%U'
 		end
 
 feature {XT_STRING_BUFFERS} -- Implementation
@@ -114,6 +116,7 @@ feature {XT_STRING_BUFFERS} -- Implementation
 			create Result.make (count)
 			Result.area.copy_data (buffer, start_index, 0, count)
 			Result.set_count (count)
+			Result.area [count] := '%U'
 		end
 
 feature {NONE} -- Implementation

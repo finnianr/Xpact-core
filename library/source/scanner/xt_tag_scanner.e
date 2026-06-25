@@ -25,7 +25,7 @@ inherit
 
 feature -- Element change
 
-	set_attribute_indices (a_attribute_indices: XT_STRING_INTERVALS)
+	set_attribute_indices (a_attribute_indices: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			attribute_intervals_list := a_attribute_indices
 		end
@@ -175,7 +175,7 @@ feature {NONE} -- Tag scanning
 			tag_name_count := name_count
 		end
 
-	scan_attributes (buf: SPECIAL [CHARACTER]; intervals_list: XT_STRING_INTERVALS; start_index, a_end: INTEGER): INTEGER
+	scan_attributes (buf: SPECIAL [CHARACTER]; intervals_list: XT_CHARACTER_BUFFER_INTERVALS; start_index, a_end: INTEGER): INTEGER
 		-- Scan attribute list starting at the first attribute name character.
 		-- Returns Tok_start_tag_with_atts, Tok_empty_element_with_atts, or error.
 		require
@@ -222,7 +222,7 @@ feature {NONE} -- Tag scanning
 							end
 						when BT_gt then
 							next_token_index := advance (index)
-							Result := Tok_start_tag_with_atts
+							Result := tok_start_tag_with_attributes
 							done := True
 						when BT_forward_slash then
 							index := advance (index)
@@ -230,7 +230,7 @@ feature {NONE} -- Tag scanning
 								Result := Tok_partial; done := True
 							elseif buf [index] = '>' then
 								next_token_index := advance (index)
-								Result := Tok_empty_element_with_atts
+								Result := tok_empty_element_with_attributes
 								done := True
 							else
 								next_token_index := index; Result := Tok_invalid; done := True
@@ -246,7 +246,7 @@ feature {NONE} -- Tag scanning
 			end
 		ensure
 			attribute_indices_divisible_by_4: -- name and value have 2 indices each
-				Result /= Tok_partial implies attribute_intervals_list.count \\ 4 = 0
+				Result /= Tok_partial implies attribute_intervals_list.is_valid_count
 		end
 
 feature {NONE} -- Tag sub-helpers
@@ -271,14 +271,14 @@ feature {NONE} -- Tag sub-helpers
 									Result := scan_attributes (buf, attribute_intervals_list, index, a_end); done := True
 								when BT_gt then
 									next_token_index := advance (index)
-									Result := Tok_start_tag_no_atts; done := True
+									Result := tok_start_tag_no_attributes; done := True
 								when BT_forward_slash then
 									index := advance (index)
 									if index >= a_end then
 										Result := Tok_partial; done := True
 									elseif buf [index] = '>' then
 										next_token_index := advance (index)
-										Result := Tok_empty_element_no_atts; done := True
+										Result := tok_empty_element_no_attributes; done := True
 									else
 										next_token_index := index; Result := Tok_invalid; done := True
 									end
@@ -293,14 +293,14 @@ feature {NONE} -- Tag sub-helpers
 						end
 					when BT_gt then
 						next_token_index := advance (index)
-						Result := Tok_start_tag_no_atts; done := True
+						Result := tok_start_tag_no_attributes; done := True
 					when BT_forward_slash then
 						index := advance (index)
 						if index >= a_end then
 							Result := Tok_partial; done := True
 						elseif buf [index] = '>' then
 							next_token_index := advance (index)
-							Result := Tok_empty_element_no_atts; done := True
+							Result := tok_empty_element_no_attributes; done := True
 						else
 							next_token_index := index; Result := Tok_invalid; done := True
 						end
@@ -406,6 +406,6 @@ feature {NONE} -- Tag sub-helpers
 
 feature {NONE} -- Internal attributes
 
-	attribute_intervals_list: XT_STRING_INTERVALS
+	attribute_intervals_list: XT_ATTRIBUTE_BUFFER_INTERVALS
 
 end

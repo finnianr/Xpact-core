@@ -57,7 +57,7 @@ feature {NONE} -- Event handlers
 			io.put_new_line
 		end
 
-	on_content (text_intervals: XT_STRING_INTERVALS)
+	on_content (text_intervals: XT_TEXT_DATA_BUFFER_INTERVALS)
 		local
 			is_double: BOOLEAN
 		do
@@ -78,33 +78,39 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_tag_attributes
-		do
-			across filled_attribute_table as value loop
-				if @ value.is_first then
-					io.put_string (Tab_string)
-					io.put_string ("ATTRIBUTES: {")
-				else
-					io.put_string (", ")
-				end
-				io.put_string (@ value.key)
-				io.put_string (" : %"")
-				io.put_string (value)
-				io.put_character ('"')
-			end
-			io.put_character ('}')
-			io.put_new_line
-		end
-
 	on_tag_end (name: STRING_8)
 		do
 		end
 
-	on_tag_start (name: STRING_8; is_empty: BOOLEAN)
+	on_tag_start (name: STRING_8; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			io.put_string (name)
 			io.put_character (':')
 			io.put_new_line
+			if a_attribute_intervals.index_count > 0 then
+				a_attribute_intervals.null_terminate_values (buffer) -- purely to test null termination
+
+				across filled_attribute_table (a_attribute_intervals) as value loop
+					if @ value.is_first then
+						io.put_string (Tab_string)
+						io.put_string ("ATTRIBUTES: {")
+					else
+						io.put_string (", ")
+					end
+					io.put_string (@ value.key)
+					io.put_string (" : %"")
+					io.put_string (value)
+					io.put_character ('"')
+				end
+				io.put_character ('}')
+				io.put_new_line
+				a_attribute_intervals.undo_null_terminated_values (buffer) -- purely to test restoring value
+			end
+		ensure then
+			buffer_unchanged:
+				a_attribute_intervals.upper_plus_1_characters (buffer).is_equal (
+					old a_attribute_intervals.upper_plus_1_characters (buffer) -- purely to test upper_plus_1_characters
+				)
 		end
 
 feature {NONE} -- Constants
