@@ -15,7 +15,7 @@ class
 inherit
 	XT_XML_PARSER
 		redefine
-			make_default
+			make
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
@@ -30,10 +30,10 @@ create
 
 feature {NONE} -- Initialisation
 
-	make_default
+	make
 		do
-			Precursor
 			create tag_occurrence_table.make (100)
+			Precursor
 		end
 
 feature -- Basic operations

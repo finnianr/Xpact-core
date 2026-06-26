@@ -39,7 +39,9 @@ feature {NONE} -- Initialisation
 
 	make
 		do
-			create attribute_intervals_list.make (0)
+			create attribute_intervals.make (5)
+			create name_cache.make
+			create index_x4_buffer.make_empty (4)
 		end
 
 feature -- Scanner dispatch (implements XT_ENCODING deferred features)
@@ -70,25 +72,6 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 			-- Byte-type category of the byte at buf[index].
 		do
 			Result := byte_type_table [buf [index].code].to_integer_32
-		end
-
-	name_count (buf: SPECIAL [CHARACTER]; start_index: INTEGER): INTEGER
-		-- Byte count of the XML name starting at start_index.
-		-- Stops at first byte whose type is not a name-continuation type.
-		local
-			index: INTEGER; done: BOOLEAN
-		do
-			if attached byte_type_table as bt_table then
-				from index := start_index until index >= buf.count or done loop
-					inspect bt_table [buf [index].code].to_integer_32
-						when BT_name_start, BT_name_only, BT_hex_digit, BT_digit, BT_minus, BT_colon then
-							index := index + min_bytes_per_char
-					else
-						done := True
-					end
-				end
-			end
-			Result := index - start_index
 		end
 
 	skip_s (buf: SPECIAL [CHARACTER]; start_index: INTEGER): INTEGER

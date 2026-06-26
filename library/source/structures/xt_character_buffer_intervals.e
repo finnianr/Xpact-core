@@ -26,12 +26,17 @@ inherit
 			make, wipe_out, index_count
 		end
 
+	STRING_HANDLER
+		undefine
+			copy, is_equal
+		end
+
 feature -- Initialization
 
 	make (n: INTEGER)
 		do
 			Precursor (Group_size * n)
-			create additions_buffer.make_empty (Group_size)
+			create interval_item_buffer.make_empty (Group_size)
 		end
 
 feature -- Measurement
@@ -42,14 +47,18 @@ feature -- Measurement
 			Result := index_count // Group_size
 		end
 
+	group_size: INTEGER
+		deferred
+		end
+
 	index_count: INTEGER
 		do
 			Result := Precursor
 		end
 
-	interval_item: SPECIAL [INTEGER]
+	item_interval: SPECIAL [INTEGER]
 		do
-			Result := additions_buffer
+			Result := interval_item_buffer
 			Result.copy_data (area_v2, index - 1, 0, group_size)
 		end
 
@@ -82,64 +91,71 @@ feature -- Cursor movement
 			index := index + group_size
 		end
 
-feature -- Access
-
-	additions_buffer: SPECIAL [INTEGER]
-		-- buffer for single name-value pair interval indices
-
 feature -- Basic operations
 
-	extend (lower_index, upper_index: INTEGER)
+	append_to (buffer: SPECIAL [CHARACTER_8]; str: STRING)
+		local
+			i, j, lower_index, upper_index: INTEGER; c_i: CHARACTER; first_copied: BOOLEAN
+		do
+			str.grow (character_count)
+			if attached str.area as area_out then
+				from j := 0 start until after loop
+					if attached item_interval as array then
+						upper_index := array [1]
+						from i := array [0] until i > upper_index loop
+							c_i := buffer [i]
+							if not first_copied then
+								first_copied := not c_i.is_space
+							end
+							if first_copied then
+								area_out [j] := c_i
+								j := j + 1
+							end
+							i := i + 1
+						end
+					end
+					forth
+				end
+				str.set_count (j)
+			end
+		end
+
+	transfer (additions: like interval_item_buffer)
+		-- move contents of `additions' into `area'
+		require
+			full_buffer: additions.count = group_size
 		local
 			i: INTEGER; l_area: like area_v2
 		do
-			i := index_count + 2
+			i := index_count + additions.count
 			l_area := area_v2
 			if i > l_area.capacity then
 				l_area := l_area.aliased_resized_area (i + additional_space)
 				area_v2 := l_area
 				on_resize
 			end
-			l_area.extend (lower_index); l_area.extend (upper_index)
-		end
-
-	update
-		-- update list with contents of `additions_buffer'
-		require
-			full_buffer: additions_buffer.count = additions_buffer.capacity
-		local
-			i: INTEGER; l_area: like area_v2
-		do
-			if attached additions_buffer as additions then
-				i := index_count + additions.count
-				l_area := area_v2
-				if i > l_area.capacity then
-					l_area := l_area.aliased_resized_area (i + additional_space)
-					area_v2 := l_area
-					on_resize
-				end
-				l_area.copy_data (additions, 0, index_count, additions.count)
-				additions.wipe_out
-			end
+			l_area.copy_data (additions, 0, index_count, additions.count)
+			additions.wipe_out
 		ensure
-			empty_additions_buffer: additions_buffer.count = 0
+			empty_additions_buffer: additions.count = 0
 		end
 
 	wipe_out
 		do
 			index := 0
-			area.wipe_out; additions_buffer.wipe_out
+			area.wipe_out; interval_item_buffer.wipe_out
 		end
 
 feature {NONE} -- Implementation
 
-	group_size: INTEGER
-		deferred
-		end
-
 	on_resize
 		do
 		end
+
+feature {NONE} -- Internal attributes
+
+	interval_item_buffer: SPECIAL [INTEGER]
+		-- buffer for single name-value pair interval indices
 
 invariant
 	lower_upper_pairs: index_count \\ 2 = 0

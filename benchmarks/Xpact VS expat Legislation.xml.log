@@ -1,0 +1,20 @@
+Log of benchmarks for parsing small file: Legislation.xml
+
+2026 26 JUN 14:05
+Legislation.xml: eXpat passes = 1280; Xpact-core passes = 1432 (x1.12 to eXpat)
+
+2026 26 JUN 14:18
+Legislation.xml: eXpat passes = 1275; Xpact-core passes = 1445 (x1.13 to eXpat)
+
+2026 26 JUN 15:59
+Using early tag_name lookup and argument pointers
+Legislation.xml: eXpat passes = 1257; Xpact-core passes = 1345 (x1.07 to eXpat)
+
+2026 26 JUN 16:53
+Legislation.xml: eXpat passes = 1272; Xpact-core passes = 1365 (x1.07 to eXpat)
+
+2026 26 JUN 19:03
+Legislation.xml: eXpat passes = 1281; Xpact-core passes = 1385 (x1.08 to eXpat)
+
+2026 26 JUN 19:46
+Legislation.xml: eXpat passes = 1272; Xpact-core passes = 1365 (x1.07 to eXpat)

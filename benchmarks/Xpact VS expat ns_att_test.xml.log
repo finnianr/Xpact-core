@@ -1,0 +1,26 @@
+Log of benchmarks for parsing file: ns_att_test.xml
+
+2024 26 JUN 14:50
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 30 (x2.14 to eXpat)
+
+2026 26 JUN 14:05
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 29 (x2.07 to eXpat)
+
+2026 26 JUN 14:18
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 29 (x2.07 to eXpat)
+
+2026 26 JUN 15:59
+Using early tag_name lookup and argument pointers
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 26 (x1.86 to eXpat)
+
+2026 26 JUN 16:53
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 30 (x2.14 to eXpat)
+
+2026 26 JUN 19:03
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 30 (x2.14 to eXpat)
+
+2026 26 JUN 19:40
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 29 (x2.07 to eXpat)
+
+2026 26 JUN 19:46
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 29 (x2.07 to eXpat)

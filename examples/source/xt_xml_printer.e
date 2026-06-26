@@ -64,7 +64,7 @@ feature {NONE} -- Event handlers
 			if attached adjusted_concatenation (text_intervals) as str and then str.count > 0 then
 				is_double := str.is_double
 				io.put_string (Tab_string)
-				if cdata_pending then
+				if text_intervals.is_cdata then
 					io.put_string ("CDATA: ")
 				end
 				if not is_double then

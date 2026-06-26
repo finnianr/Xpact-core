@@ -23,16 +23,16 @@ inherit
 	XT_SCANNER_HELPERS
 	XT_REF_SCANNER
 
-feature -- Element change
-
-	set_attribute_indices (a_attribute_indices: XT_ATTRIBUTE_BUFFER_INTERVALS)
-		do
-			attribute_intervals_list := a_attribute_indices
-		end
-
 feature -- Measurement
 
 	tag_name_count: INTEGER
+
+	tag_name (buffer: SPECIAL [CHARACTER_8]; lower: INTEGER): STRING_8
+		do
+			Result := name_cache.item (buffer, lower, lower + tag_name_count - 1)
+		ensure
+			same_tag_length: Result.count = name_count (buffer, lower)
+		end
 
 feature {NONE} -- Tag scanning
 
@@ -103,9 +103,9 @@ feature {NONE} -- Tag scanning
 		require
 			valid_range: start_index <= a_end
 		local
-			index, name_count: INTEGER; done: BOOLEAN
+			index, name_lower, name_upper: INTEGER; done: BOOLEAN
 		do
-			index := start_index; name_count := 1
+			index := start_index; name_lower := start_index; name_upper := Unset
 			if index >= a_end then
 				Result := Tok_partial
 			else
@@ -136,9 +136,11 @@ feature {NONE} -- Tag scanning
 						inspect bt_table [buf [index].code].to_integer_32
 							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only,
 								BT_minus, BT_colon then
-								name_count := name_count + 1
 								index := advance (index)
 							when BT_whitespace, BT_CR, BT_LF then
+								inspect name_upper when Unset then
+									name_upper := index - 1
+								else end
 								index := advance (index)
 								from until index >= a_end or done loop
 									inspect bt_table [buf [index].code].to_integer_32
@@ -158,6 +160,9 @@ feature {NONE} -- Tag scanning
 									Result := Tok_partial; done := True
 								end
 							when BT_gt then
+								inspect name_upper when Unset then
+									name_upper := index - 1
+								else end
 								next_token_index := advance (index)
 								Result := Tok_end_tag
 								done := True
@@ -167,15 +172,16 @@ feature {NONE} -- Tag scanning
 							done := True
 						end
 					end
-					if not done then
+					if done then
+						tag_name_count := name_upper - name_lower + 1
+					else
 						Result := Tok_partial
 					end
 				end
 			end
-			tag_name_count := name_count
 		end
 
-	scan_attributes (buf: SPECIAL [CHARACTER]; intervals_list: XT_CHARACTER_BUFFER_INTERVALS; start_index, a_end: INTEGER): INTEGER
+	scan_attributes (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; start_index, a_end: INTEGER): INTEGER
 		-- Scan attribute list starting at the first attribute name character.
 		-- Returns Tok_start_tag_with_atts, Tok_empty_element_with_atts, or error.
 		require
@@ -184,7 +190,7 @@ feature {NONE} -- Tag scanning
 			index, open, byte: INTEGER; done: BOOLEAN
 		do
 			index := start_index
-			if attached byte_type_table as bt_table and then attached intervals_list.additions_buffer as index_buffer then
+			if attached byte_type_table as bt_table and then attached index_x4_buffer as index_buffer then
 				index_buffer.extend (index) -- name lower
 				from until index >= a_end or done loop
 					byte := bt_table [buf [index].code].to_integer_32
@@ -211,9 +217,9 @@ feature {NONE} -- Tag scanning
 							Result := scan_attribute_value (bt_table, buf, index_buffer, index, a_end, open)
 							inspect Result
 								when Tok_partial, Tok_partial_char then
-									intervals_list.wipe_out
+									attributes.wipe_out; index_buffer.wipe_out
 							else
-								intervals_list.update
+								attributes.transfer (index_buffer)
 							end
 							if Result /= 0 then
 								done := True
@@ -242,11 +248,11 @@ feature {NONE} -- Tag scanning
 			end
 			if not done then
 				Result := Tok_partial
-				intervals_list.wipe_out
+				attributes.wipe_out
 			end
 		ensure
-			attribute_indices_divisible_by_4: -- name and value have 2 indices each
-				Result /= Tok_partial implies attribute_intervals_list.is_valid_count
+			attribute_intervals_valid_count:
+				Result /= Tok_partial implies attributes.is_valid_count
 		end
 
 feature {NONE} -- Tag sub-helpers
@@ -254,21 +260,23 @@ feature {NONE} -- Tag sub-helpers
 	scan_start_tag_name (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [NATURAL_8]; start_index, a_end: INTEGER): INTEGER
 			-- After consuming name-start char(s); scan rest of start tag name.
 		local
-			index, name_count: INTEGER; done: BOOLEAN
+			index, name_lower, name_upper: INTEGER; done: BOOLEAN
 		do
-			index := start_index; name_count := 1
+			index := start_index; name_lower := start_index - 1; name_upper := Unset
 			from until index >= a_end or done loop
 				inspect bt_table [buf [index].code].to_integer_32
 					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon, BT_lead_2_byte,
 						BT_lead_3_byte, BT_lead_4_byte then
-						name_count := name_count + 1
 						index := advance (index)
 					when BT_whitespace, BT_CR, BT_LF then
+						inspect name_upper when Unset then
+							name_upper := index - 1
+						else end
 						index := advance (index)
 						from until index >= a_end or done loop
 							inspect bt_table [buf [index].code].to_integer_32
 								when BT_name_start, BT_hex_digit then
-									Result := scan_attributes (buf, attribute_intervals_list, index, a_end); done := True
+									Result := scan_attributes (buf, attribute_intervals, index, a_end); done := True
 								when BT_gt then
 									next_token_index := advance (index)
 									Result := tok_start_tag_no_attributes; done := True
@@ -292,9 +300,15 @@ feature {NONE} -- Tag sub-helpers
 							Result := Tok_partial; done := True
 						end
 					when BT_gt then
+						inspect name_upper when Unset then
+							name_upper := index - 1
+						else end
 						next_token_index := advance (index)
 						Result := tok_start_tag_no_attributes; done := True
 					when BT_forward_slash then
+						inspect name_upper when Unset then
+							name_upper := index - 1
+						else end
 						index := advance (index)
 						if index >= a_end then
 							Result := Tok_partial; done := True
@@ -309,21 +323,19 @@ feature {NONE} -- Tag sub-helpers
 				end
 			end
 			if done then
-				tag_name_count := name_count
+				tag_name_count := name_upper - name_lower + 1
 			else
 				Result := Tok_partial
 			end
 		end
 
 	scan_attribute_value (
-		bt_table: SPECIAL [NATURAL_8]; buf: SPECIAL [CHARACTER]; index_buffer: SPECIAL [INTEGER]
+		bt_table: SPECIAL [NATURAL_8]; buf: SPECIAL [CHARACTER]; lower_upper: SPECIAL [INTEGER]
 		start_index, a_end, open: INTEGER
 	): INTEGER
 			-- Scan past whitespace to the opening quote, then the value up to matching
 			-- close quote.  Sets next_token_ptr past the closing quote.
 			-- Returns 0 (caller should continue) or a non-zero error/end token code.
-		require
-			index_buffer_has_name: index_buffer.count = 2
 		local
 			index, opening_quote: INTEGER; done, closed: BOOLEAN
 		do
@@ -344,13 +356,13 @@ feature {NONE} -- Tag sub-helpers
 			if done and Result = 0 then
 			-- scan value content up to matching closing quote
 				index := advance (index)  -- skip opening quote
-				index_buffer.extend (index) -- value lower
+				lower_upper.extend (index)
 				from until index >= a_end or closed loop
 					inspect bt_table [buf [index].code].to_integer_32
 						when BT_quote then
 							inspect opening_quote
 								when BT_quote then
-									index_buffer.extend (index - 1) -- value upper
+									lower_upper.extend (index - 1)
 									next_token_index := advance (index); closed := True
 							else
 								index := advance (index)
@@ -358,7 +370,7 @@ feature {NONE} -- Tag sub-helpers
 						when BT_apostrophe then
 							inspect opening_quote
 								when BT_apostrophe then
-									index_buffer.extend (index - 1) -- value_upper
+									lower_upper.extend (index - 1)
 									next_token_index := advance (index); closed := True
 							else
 								index := advance (index)
@@ -382,9 +394,9 @@ feature {NONE} -- Tag sub-helpers
 			elseif not done then
 				Result := Tok_partial
 			end
-		ensure
-			index_buffer_full: Result /= Tok_partial implies index_buffer.count = 4
 		end
+
+feature {NONE} -- Deferred
 
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
 			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
@@ -404,8 +416,37 @@ feature {NONE} -- Tag sub-helpers
 		deferred
 		end
 
-feature {NONE} -- Internal attributes
+feature {NONE} -- Contract support
 
-	attribute_intervals_list: XT_ATTRIBUTE_BUFFER_INTERVALS
+	name_count (buf: SPECIAL [CHARACTER]; start_index: INTEGER): INTEGER
+		-- Byte count of the XML name starting at start_index.
+		-- Stops at first byte whose type is not a name-continuation type.
+		local
+			index: INTEGER; done: BOOLEAN
+		do
+			if attached byte_type_table as bt_table then
+				from index := start_index until index >= buf.count or done loop
+					inspect bt_table [buf [index].code].to_integer_32
+						when BT_name_start, BT_name_only, BT_hex_digit, BT_digit, BT_minus, BT_colon then
+							index := index + min_bytes_per_char
+					else
+						done := True
+					end
+				end
+			end
+			Result := index - start_index
+		end
 
+feature {XT_STRING_BUFFERS} -- Internal attributes
+
+	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+
+	index_x4_buffer: SPECIAL [INTEGER]
+
+	name_cache: XT_NAME_CACHE
+		-- efficient lookup of attribute/
+
+feature {NONE} -- Constants
+
+	Unset: INTEGER = -1
 end

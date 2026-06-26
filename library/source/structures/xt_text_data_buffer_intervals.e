@@ -13,9 +13,28 @@ class
 
 inherit
 	XT_CHARACTER_BUFFER_INTERVALS
+		redefine
+			wipe_out
+		end
 
 create
 	make
+
+feature -- Status report
+
+	is_cdata: BOOLEAN
+
+feature -- Status report
+
+	set_is_c_data
+		do
+			is_cdata := True
+		end
+
+	wipe_out
+		do
+			Precursor; is_cdata := False
+		end
 
 feature {NONE} -- Implementation
 

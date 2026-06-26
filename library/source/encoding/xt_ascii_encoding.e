@@ -19,7 +19,8 @@ class XT_ASCII_ENCODING
 inherit
 	XT_NORMAL_ENCODING
 
-create make
+create
+	make
 
 feature -- Encoding identity
 

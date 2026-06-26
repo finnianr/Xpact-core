@@ -1,0 +1,26 @@
+Log of benchmarks for parsing file: wordnet_glossary-20010201.rdf
+
+2024 26 JUN 14:50
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 64 (x1.88 to eXpat)
+
+2026 26 JUN 14:05
+wordnet_glossary-20010201.rdf: eXpat passes = 33; Xpact-core passes = 63 (x1.91 to eXpat)
+
+2026 26 JUN 14:19
+wordnet_glossary-20010201.rdf: eXpat passes = 33; Xpact-core passes = 64 (x1.94 to eXpat)
+
+2026 26 JUN 15:59
+Using early tag_name lookup and argument pointers
+wordnet_glossary-20010201.rdf: eXpat passes = 33; Xpact-core passes = 62 (x1.88 to eXpat)
+
+2026 26 JUN 16:53
+wordnet_glossary-20010201.rdf: eXpat passes = 33; Xpact-core passes = 62 (x1.88 to eXpat)
+
+2026 26 JUN 19:03
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 63 (x1.85 to eXpat)
+
+2026 26 JUN 19:40
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 63 (x1.85 to eXpat)
+
+2026 26 JUN 19:46
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 63 (x1.85 to eXpat)

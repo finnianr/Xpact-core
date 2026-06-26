@@ -7,7 +7,7 @@ class
 inherit
 	XT_XML_PARSER
 		redefine
-			make_default
+			make
 		end
 
 	XP_EVENT_HANDLER
@@ -55,7 +55,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make_default
+	make
 		do
 			Precursor
 			create events.make (16)
@@ -1284,25 +1284,25 @@ feature {NONE} -- Xpact core event handlers
 			end
 		end
 
-	on_content (text_intervals: XT_CHARACTER_BUFFER_INTERVALS)
+	on_content (text_intervals: XT_TEXT_DATA_BUFFER_INTERVALS)
 		local
 			lower, upper: INTEGER; call_back_ptr: POINTER
 		do
 			call_back_ptr := character_data_callback
 			if is_attached (call_back_ptr) then
-				if cdata_pending then
+				if text_intervals.is_cdata then
 					call_cdata_section_callback (start_cdata_section_callback, user_data)
 				end
 				set_native_active_callback_kind (native_parser_handle, Native_callback_character_data)
 				from text_intervals.start until text_intervals.after loop
-					if attached text_intervals.interval_item as array then
+					if attached text_intervals.item_interval as array then
 						lower := array [0]; upper := array [1]
 						call_character_data_callback (call_back_ptr, user_data, buffer.item_address (lower), upper - lower + 1)
 					end
 					text_intervals.forth
 				end
 				set_native_active_callback_kind (native_parser_handle, Native_callback_none)
-				if cdata_pending then
+				if text_intervals.is_cdata then
 					call_cdata_section_callback (end_cdata_section_callback, user_data)
 				end
 			end
@@ -1318,7 +1318,7 @@ feature {NONE} -- Xpact core event handlers
 			end
 		end
 
-	on_tag_start (name: STRING_8; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (name: STRING_8; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		local
 			allocation_size, j: INTEGER; c_name: ANY; call_back_ptr: POINTER
 		do
@@ -1326,31 +1326,31 @@ feature {NONE} -- Xpact core event handlers
 			if is_attached (call_back_ptr) and then attached attributes_c_array as c_array
 				and then attached buffer as buf and then attached name_cache as names
 			then
-				allocation_size := (a_attribute_intervals.count * 2 + 1) * Pointer_bytes
+				allocation_size := (attributes.count * 2 + 1) * Pointer_bytes
 				if allocation_size > c_array.count then
 					c_array.resize (allocation_size)
 				end
-				a_attribute_intervals.null_terminate_values (buf)
+				attributes.null_terminate_values (buf)
 
-				from a_attribute_intervals.start; j := 0 until a_attribute_intervals.after loop
-					if attached a_attribute_intervals.interval_item as array then
+				from attributes.start; j := 0 until attributes.after loop
+					if attached attributes.item_interval as array then
 						c_array.put_pointer (names.item (buf, array [0], array [1]).area.base_address, j)
 						j := j + Pointer_bytes
 						c_array.put_pointer (buf.item_address (array [2]), j)
 						j := j + Pointer_bytes
 					end
-					a_attribute_intervals.forth
+					attributes.forth
 				end
 				c_array.put_pointer (default_pointer, j)
 				c_name := name.to_c
 				call_start_element_callback (call_back_ptr, user_data, $name, c_array.item)
 
-				a_attribute_intervals.undo_null_terminated_values (buf)
+				attributes.undo_null_terminated_values (buf)
 			end
 		ensure then
 			buffer_unchanged:
-				a_attribute_intervals.upper_plus_1_characters (buffer).is_equal (
-					old a_attribute_intervals.upper_plus_1_characters (buffer)
+				attributes.upper_plus_1_characters (buffer).is_equal (
+					old attributes.upper_plus_1_characters (buffer)
 				)
 		end
 

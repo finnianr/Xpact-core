@@ -13,39 +13,33 @@ note
 deferred class XT_XML_PARSER
 
 inherit
+	XT_STRING_BUFFERS
+		redefine
+			make
+		end
+
 	XT_BYTE_TYPE_CONSTANTS
 
 	XT_TOKEN_CONSTANTS
-
-	XT_PARSE_CONSTANTS
-
-	XT_STRING_BUFFERS
-		rename
-			make as make_default
-		end
 
 feature {NONE} -- Initialisation
 
 	make
 			-- Set up in State_initialized with an empty buffer.
 		do
-			make_default
-			set_encoding (create {XT_UTF8_ENCODING}.make)
-
 			parsing_state              := State_initialized
-			error_code                 := Error_none
+
 			is_final_buffer            := False
 			in_prolog						:= True
 			in_cdata_section           := False
-			handler_call_depth         := 0
 			reparse_deferral_enabled   := True
+
+			handler_call_depth         := 0
 			last_buffer_request_size   := 0
 			partial_token_bytes_before := 0
 			parse_end_byte_index       := 0
-			parse_end_index            := 0
 
-			buffer_end := 0
-			buffer_lim := Default_buffer_size
+			Precursor
 		ensure then
 			initialized:    parsing_state = State_initialized
 			no_error:       error_code = Error_none
@@ -56,16 +50,15 @@ feature -- Access
 
 	handler_call_depth: INTEGER
 
-	buffer_lim: INTEGER
-			-- Total usable capacity of `buffer'.
-
-feature -- Status
+feature -- Access
 
 	parsing_state: INTEGER
 			-- Current state: one of the State_* constants.
 
-	error_code: INTEGER
-			-- Most recent error (Error_none if none).
+	parse_end_byte_index: INTEGER_64
+			-- Cumulative count of bytes committed to the parser.
+
+feature -- Status query
 
 	is_final_buffer: BOOLEAN
 			-- Was the current parse call marked as the last chunk?
@@ -74,16 +67,6 @@ feature -- Status
 
 	in_cdata_section: BOOLEAN
 
-	parse_end_byte_index: INTEGER_64
-			-- Cumulative count of bytes committed to the parser.
-
-feature -- Element change
-
-	set_encoding (a_encoding: XT_NORMAL_ENCODING)
-		do
-			a_encoding.set_attribute_indices (attribute_intervals)
-			encoding := a_encoding
-		end
 
 feature -- Basic operations
 
@@ -129,6 +112,11 @@ feature -- Basic operations
 				(Result = Status_ok and a_is_final) implies parsing_state = State_finished
 			error_code_set_on_error:
 				Result = Status_error implies error_code /= Error_none
+		end
+
+	reset
+		do
+			make
 		end
 
 feature -- Handler depth tracking
@@ -242,88 +230,6 @@ feature {NONE} -- Buffer implementation
 			request_size_saved:   last_buffer_request_size = a_count
 		end
 
-	prepare_buffer (a_count: INTEGER): BOOLEAN
-			-- Ensure `buffer' has room for `a_count' more bytes
-			-- after `buffer_end'.  Compacts or reallocates as needed,
-			-- preserving up to `Context_bytes' before `buffer_index' for
-			-- error reporting.  Returns False and sets `error_code' on
-			-- failure; buffer indices are adjusted consistently on success.
-			--
-			-- Corresponds to the resize/compact logic in XML_GetBuffer().
-		local
-			needed, parsed, keep, offset, new_size: INTEGER
-		do
-			if a_count <= buffer_lim - buffer_end then
-				-- Enough free space after buffer_end already.
-				Result := True
-			else
-				parsed := buffer_index                 -- bytes before buffer_ptr
-				keep   := parsed.min (Context_bytes)   -- context bytes to retain
-				needed := keep + a_count + (buffer_end - buffer_index)
-
-				if needed < 0 then
-					-- Integer overflow: the request is impossibly large.
-					error_code := Error_no_memory
-
-				elseif needed <= buffer_lim then
-					-- Existing allocation fits once we compact.
-					offset := parsed - keep
-					if offset > 0 then
-						shift_buffer_left (offset)
-					end
-					Result := True
-
-				else
-					-- Must grow. Double from current capacity until large enough.
-					new_size := buffer_lim.max (Default_buffer_size)
-					from until new_size >= needed or new_size <= 0 loop
-						if new_size > {INTEGER}.max_value // 2 then
-							new_size := -1   -- overflow sentinel
-						else
-							new_size := new_size * 2
-						end
-					end
-					if new_size <= 0 then
-						error_code := Error_no_memory
-					elseif attached new_buffer_area (new_size) as new_buffer then
-						new_buffer.copy_data (buffer, 0, 0, buffer_lim)
-						buffer := new_buffer
-						buffer_lim := new_size
-						offset := parsed - keep
-						if offset > 0 then
-							shift_buffer_left (offset)
-						end
-						Result := True
-					end
-				end
-			end
-		ensure
-			space_when_ok:       Result implies buffer_end + a_count <= buffer_lim
-			error_when_not_ok:   not Result implies error_code /= Error_none
-			ptr_within_end:      buffer_index <= buffer_end
-			end_within_lim:      buffer_end <= buffer_lim
-			ptr_non_negative:    buffer_index >= 0
-		end
-
-	shift_buffer_left (a_offset: INTEGER)
-			-- Slide all live content left by `a_offset' bytes and adjust
-			-- every index that points into `buffer'.
-			-- Safe for a forward (left) copy because destination < source.
-		require
-			positive_offset: a_offset > 0
-			offset_leq_ptr: a_offset <= buffer_index
-		do
-			buffer.copy_data (buffer, a_offset, 0, buffer_end - a_offset)
-			buffer_end := buffer_end - a_offset
-			buffer_index := buffer_index - a_offset
-			position_index := (position_index - a_offset).max (0)
-			parse_end_index := (parse_end_index - a_offset).max (0)
-		ensure
-			buffer_ptr_reduced:  buffer_index  = old buffer_index  - a_offset
-			buffer_end_reduced:  buffer_end  = old buffer_end  - a_offset
-			ptr_non_negative:    buffer_index >= 0
-			end_non_negative:    buffer_end >= 0
-		end
 
 feature {NONE} -- Processor dispatch
 
@@ -360,10 +266,7 @@ feature {NONE} -- Processor dispatch
 				enough := True
 			end
 
-			if enough and then attached buffer as buf
-				and then attached text_data_intervals.additions_buffer as text_data_lower_upper
-				and then attached attribute_intervals as l_attribute_intervals
-			then
+			if enough and then attached buffer as buf and then attached attribute_intervals as l_attribute_intervals then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				from done := False until done loop
@@ -420,7 +323,7 @@ feature {NONE} -- Processor dispatch
 			error_set_on_failure: not Result implies error_code /= Error_none
 		end
 
-	do_process_bytes (buf: like buffer; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS; a_start, a_end_index: INTEGER): INTEGER
+	do_process_bytes (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; a_start, a_end_index: INTEGER): INTEGER
 		-- Scan tokens from `buf' `a_start .. a_end_index` and
 		-- triggers relevant XML events.  Advances `buffer_ptr'.
 		-- Execute one pass of the current processor over
@@ -433,9 +336,9 @@ feature {NONE} -- Processor dispatch
 			end_in_buf:     a_end_index <= buffer_end
 			ptr_at_start:   buffer_index = a_start
 		local
-			index, tok: INTEGER; done: BOOLEAN
+			index, tok: INTEGER; done: BOOLEAN; lower_upper: SPECIAL [INTEGER]
 		do
-			index := a_start
+			index := a_start; create lower_upper.make_empty (2)
 			from until index >= a_end_index or done loop
 				if in_prolog then
 					tok := encoding.scan_prolog (buf, index, a_end_index)
@@ -457,11 +360,12 @@ feature {NONE} -- Processor dispatch
 					tok := encoding.scan_cdata_section (buf, index, a_end_index)
 					inspect tok
 						when Tok_cdata_sect_close then
-							in_cdata_section := False; cdata_pending := True
+							in_cdata_section := False
 							index := encoding.next_token_index
 
 						when Tok_data_chars, Tok_data_newline then
-							text_data_intervals.extend (index, encoding.next_token_index - 1)
+							lower_upper.extend (index); lower_upper.extend (encoding.next_token_index - 1)
+							text_data_intervals.transfer (lower_upper)
 							index := encoding.next_token_index
 
 					else
@@ -475,14 +379,14 @@ feature {NONE} -- Processor dispatch
 					tok := encoding.scan_content (buf, index, a_end_index)
 					inspect tok
 						when Tok_cdata_sect_open then
-							in_cdata_section := True
+							in_cdata_section := True; text_data_intervals.set_is_c_data
 							index := encoding.next_token_index
 
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
 					else
 						if tok > 0 then
-							process_token (buf, a_attribute_intervals, tok, index)
+							process_token (buf, attributes, lower_upper, tok, index)
 							index := encoding.next_token_index
 						else
 							done := True  -- partial; wait for more data
@@ -495,9 +399,9 @@ feature {NONE} -- Processor dispatch
 			buffer_ptr_advanced: buffer_index >= a_start and buffer_index <= a_end_index
 		end
 
-	process_token (buf: like buffer; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS; tok, tok_start: INTEGER)
-			-- Print the XML event for a complete token at tok_start.
-			-- encoding.next_token_ptr is the first byte after the token.
+	process_token (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; lower_upper: SPECIAL [INTEGER]; tok, tok_start: INTEGER)
+		-- Process an XML event for a complete token at tok_start.
+		-- `encoding.next_token_index' is the first byte after the token.
 		local
 			tok_end, null_index, lower, upper: INTEGER; c, null: CHARACTER
 		do
@@ -508,32 +412,29 @@ feature {NONE} -- Processor dispatch
 			else
 				if text_data_intervals.index_count > 0 then
 					on_content (text_data_intervals)
-					if cdata_pending then
-						cdata_pending := False
-					end
 					text_data_intervals.wipe_out
 				end
 			end
 			inspect tok
 				when Tok_start_tag_no_attributes then
-					on_tag_start (buffer_name (buf, tok_start +  1), a_attribute_intervals)
+					on_tag_start (encoding.tag_name (buf, tok_start +  1), attributes)
 
 				when Tok_start_tag_with_attributes then
-					on_tag_start (buffer_name (buf, tok_start +  1), a_attribute_intervals)
-					a_attribute_intervals.wipe_out
+					on_tag_start (encoding.tag_name (buf, tok_start +  1), attributes)
+					attributes.wipe_out
 
 				when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
-					if attached buffer_name (buf, tok_start +  1) as tag_name then
-						on_tag_start (tag_name, a_attribute_intervals)
+					if attached encoding.tag_name (buf, tok_start +  1) as tag_name then
+						on_tag_start (tag_name, attributes)
 						inspect tok when Tok_empty_element_with_attributes then
-							a_attribute_intervals.wipe_out
+							attributes.wipe_out
 						else
 						end
 						on_tag_end (tag_name)
 					end
 
 				when Tok_end_tag then
-					on_tag_end (buffer_name (buf, tok_start + 2))  -- skip '</'
+					on_tag_end (encoding.tag_name (buf, tok_start + 2))  -- skip '</'
 
 				when Tok_comment then
 					lower := tok_start + 4; upper := tok_end - 4
@@ -544,7 +445,8 @@ feature {NONE} -- Processor dispatch
 					buf [null_index] := c
 
 				when Tok_data_chars then
-					text_data_intervals.extend (tok_start, tok_end - 1)
+					lower_upper.extend (tok_start); lower_upper.extend (tok_end - 1)
+					text_data_intervals.transfer (lower_upper)
 
 			else
 				-- PIs, BOM, xml declaration, CDATA open: skip
@@ -634,21 +536,13 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_tag_start (name: STRING_8; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (name: STRING_8; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		require
-			valid_attribute_indices_count: a_attribute_intervals.is_valid_count
+			valid_attribute_indices_count: attributes.is_valid_count
 		deferred
 		end
 
 feature {NONE} -- Internal attributes
-
-	cdata_pending: BOOLEAN
-		-- `True' if accumulated text in `text_data_list' CDATA
-
-	encoding: XT_NORMAL_ENCODING
-
-	position_index: INTEGER
-		-- Start index for the next line/column position update.
 
 	last_buffer_request_size: INTEGER
 
