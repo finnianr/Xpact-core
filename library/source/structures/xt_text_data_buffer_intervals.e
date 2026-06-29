@@ -24,11 +24,62 @@ feature -- Status report
 
 	is_cdata: BOOLEAN
 
-feature -- Status report
+feature -- Status setting
 
 	set_is_c_data
 		do
 			is_cdata := True
+		end
+
+feature -- Access
+
+	adjusted_concatenation (buffer: SPECIAL [CHARACTER_8]): STRING_8
+		-- concatenated `text_intervals' substrings found in `buffer'
+		-- Trims leading and trailing white space and first and last intervals
+		do
+			Result := output_buffer
+			Result.wipe_out
+			append_to (buffer, Result)
+			Result.right_adjust
+		ensure
+			is_text_buffer: Result = output_buffer
+		end
+
+feature -- Basic operations
+
+	append_to (a_buffer: SPECIAL [CHARACTER_8]; str: STRING)
+		-- append all substring intervals in `buffer' to `str'
+		local
+			i, j, upper_index: INTEGER; c_i: CHARACTER; first_copied: BOOLEAN
+			buffer: SPECIAL [CHARACTER_8]
+		do
+			buffer := a_buffer
+			str.grow (character_count)
+			if attached str.area as area_out and then attached overflow_buffer_area as overflow then
+				from j := 0 start until after loop
+					if attached item_interval as array then
+						if attached overflow [(index - 1) // 2] as overflow_buffer then
+							buffer := overflow_buffer
+						else
+							buffer := a_buffer
+						end
+						upper_index := array [1]
+						from i := array [0] until i > upper_index loop
+							c_i := buffer [i]
+							if not first_copied then
+								first_copied := not c_i.is_space
+							end
+							if first_copied then
+								area_out [j] := c_i
+								j := j + 1
+							end
+							i := i + 1
+						end
+					end
+					forth
+				end
+				str.set_count (j)
+			end
 		end
 
 	wipe_out

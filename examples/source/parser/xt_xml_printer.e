@@ -61,7 +61,7 @@ feature {NONE} -- Event handlers
 		local
 			is_double: BOOLEAN
 		do
-			if attached adjusted_concatenation (text_intervals) as str and then str.count > 0 then
+			if attached text_intervals.adjusted_concatenation (buffer) as str and then str.count > 0 then
 				is_double := str.is_double
 				io.put_string (Tab_string)
 				if text_intervals.is_cdata then
@@ -82,15 +82,15 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_tag_start (name: STRING_8; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (name: STRING_8; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			io.put_string (name)
 			io.put_character (':')
 			io.put_new_line
-			if a_attribute_intervals.index_count > 0 then
-				a_attribute_intervals.null_terminate_values (buffer) -- purely to test null termination
+			if attributes.index_count > 0 then
+				attributes.null_terminate_values (buffer) -- purely to test null termination
 
-				across filled_attribute_table (a_attribute_intervals) as value loop
+				across attributes.as_table (buffer, False) as value loop
 					if @ value.is_first then
 						io.put_string (Tab_string)
 						io.put_string ("ATTRIBUTES: {")
@@ -104,12 +104,12 @@ feature {NONE} -- Event handlers
 				end
 				io.put_character ('}')
 				io.put_new_line
-				a_attribute_intervals.undo_null_terminated_values (buffer) -- purely to test restoring value
+				attributes.undo_null_terminated_values (buffer) -- purely to test restoring value
 			end
 		ensure then
 			buffer_unchanged:
-				a_attribute_intervals.upper_plus_1_characters (buffer).is_equal (
-					old a_attribute_intervals.upper_plus_1_characters (buffer) -- purely to test upper_plus_1_characters
+				attributes.upper_plus_1_characters (buffer).is_equal (
+					old attributes.upper_plus_1_characters (buffer) -- purely to test upper_plus_1_characters
 				)
 		end
 

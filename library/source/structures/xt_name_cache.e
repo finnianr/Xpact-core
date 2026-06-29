@@ -51,7 +51,7 @@ inherit
 		end
 
 create
-	make
+	make, make_empty
 
 feature {NONE} -- Initialization
 
@@ -64,6 +64,8 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING
+		require
+			not_empty: not is_empty
 		local
 			i, bucket_count, count: INTEGER; bucket_list: like cache_item
 			found_name: detachable STRING

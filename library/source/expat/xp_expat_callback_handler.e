@@ -1319,31 +1319,33 @@ feature {NONE} -- Xpact core event handlers
 		end
 
 	on_tag_start (name: STRING_8; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		require else
+			null_terminated_name: name.area [name.count] = '%U'
 		local
-			allocation_size, j: INTEGER; c_name: ANY; call_back_ptr: POINTER
+			allocation_size, offset, i: INTEGER; call_back_ptr: POINTER
 		do
 			call_back_ptr := start_element_callback
 			if is_attached (call_back_ptr) and then attached attributes_c_array as c_array
-				and then attached buffer as buf and then attached name_cache as names
+				and then attached buffer as buf
 			then
 				allocation_size := (attributes.count * 2 + 1) * Pointer_bytes
 				if allocation_size > c_array.count then
 					c_array.resize (allocation_size)
 				end
-				attributes.null_terminate_values (buf)
 
-				from attributes.start; j := 0 until attributes.after loop
-					if attached attributes.item_interval as array then
-						c_array.put_pointer (names.item (buf, array [0], array [1]).area.base_address, j)
-						j := j + Pointer_bytes
-						c_array.put_pointer (buf.item_address (array [2]), j)
-						j := j + Pointer_bytes
+				attributes.null_terminate_values (buffer)
+
+				from attributes.start; offset := 0 until attributes.after loop
+					if attached attributes.item_c_name_and_value (buffer) as name_and_value then
+						from i := 0 until i = 2 loop
+							c_array.put_pointer (name_and_value [i], offset)
+							offset := offset + Pointer_bytes; i := i + 1
+						end
 					end
 					attributes.forth
 				end
-				c_array.put_pointer (default_pointer, j)
-				c_name := name.to_c
-				call_start_element_callback (call_back_ptr, user_data, $name, c_array.item)
+				c_array.put_pointer (default_pointer, offset)
+				call_start_element_callback (call_back_ptr, user_data, name.area.base_address, c_array.item)
 
 				attributes.undo_null_terminated_values (buf)
 			end

@@ -14,18 +14,19 @@ export:
 			<void_safety support="all" use="all"/>
 		</capability>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="c_zlib" location="$ISE_LIBRARY\C_library\zlib\clibs_zlib.ecf"/>
 		<external_include location="$(XPACT_INCLUDE)"/>
 		<cluster name="xpact" location="source" recursive="true">
 			<file_rule>
 				<exclude>/small-size$</exclude>
-				<exclude>/expat$</exclude>
+				<!--exclude>/expat$</exclude-->
 				<condition>
 					<custom name="buffer_size" excluded_value="small"/>
 				</condition>
 			</file_rule>
 			<file_rule>
 				<exclude>/big-size$</exclude>
-				<exclude>/expat$</exclude>
+				<!--exclude>/expat$</exclude-->
 				<condition>
 					<custom name="buffer_size" excluded_value="big"/>
 				</condition>

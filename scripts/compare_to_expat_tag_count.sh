@@ -19,7 +19,7 @@ xml_reader -count_tags -duration $DURATION_MS -compare_to_expat test/data/XML/Le
 
 cd $HOME/Dev/C/libexpat
 
-for name in ns_att_test.xml recset.xml wordnet_glossary-20010201.rdf; do
+for name in nes96.xml ns_att_test.xml recset.xml wordnet_glossary-20010201.rdf; do
 	xml_reader -count_tags -compare_to_expat -duration $DURATION_MS testdata/largefiles/$name
 done
 

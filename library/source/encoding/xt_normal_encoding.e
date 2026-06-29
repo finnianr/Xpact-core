@@ -39,8 +39,8 @@ feature {NONE} -- Initialisation
 
 	make
 		do
-			create attribute_intervals.make (5)
 			create name_cache.make
+			create attribute_intervals.make (5, name_cache)
 			create index_x4_buffer.make_empty (4)
 		end
 

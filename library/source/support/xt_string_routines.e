@@ -1,5 +1,5 @@
 note
-	description: "Incremental XML file parser"
+	description: "${XT_STRING_ROUTINES_I} for use as local variable, no creation required"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -12,20 +12,7 @@ note
 expanded class
 	XT_STRING_ROUTINES
 
-feature -- Access
+inherit
+	XT_STRING_ROUTINES_I
 
-	frozen substitute (template: STRING; insertions: ARRAY [STRING]): STRING
-		require
-			enough_place_holders: template.occurrences ('%S') = insertions.count
-		local
-			index: INTEGER
-		do
-			Result := template.twin
-			across insertions as str loop
-				index := Result.index_of ('%S', 1)
-				if index > 0 then
-					Result.replace_substring (str, index, index)
-				end
-			end
-		end
 end

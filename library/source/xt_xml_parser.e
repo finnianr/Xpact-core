@@ -19,8 +19,16 @@ inherit
 		end
 
 	XT_BYTE_TYPE_CONSTANTS
+		export
+			{NONE} all
+		end
 
 	XT_TOKEN_CONSTANTS
+		export
+			{NONE} all
+		end
+
+	STRING_HANDLER
 
 feature {NONE} -- Initialisation
 
@@ -89,7 +97,7 @@ feature -- Basic operations
 					error_code := Error_finished
 					Result := Status_error
 			else
-				-- State_initialized or State_parsing
+			-- State_initialized or State_parsing
 				parsing_state := State_parsing
 				if not call_on_start_parsing then
 					Result := Status_error
@@ -122,7 +130,7 @@ feature -- Basic operations
 feature -- Handler depth tracking
 
 	increment_handler_depth
-			-- Signal entry into a parse-event callback.
+		-- Signal entry into a parse-event callback.
 		require
 			parsing_active: parsing_state = State_parsing
 		do
@@ -132,7 +140,7 @@ feature -- Handler depth tracking
 		end
 
 	decrement_handler_depth
-			-- Signal exit from a parse-event callback.
+		-- Signal exit from a parse-event callback.
 		require
 			in_handler: handler_call_depth > 0
 		do
@@ -144,11 +152,11 @@ feature -- Handler depth tracking
 feature {NONE} -- Buffer implementation
 
 	parse_buffer (a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
-			-- Parse `a_count' bytes that the caller has already written into
-			-- `buffer' starting at the old `buffer_end'.
-			-- Returns Status_ok, Status_suspended, or Status_error.
-			--
-			-- Corresponds to XML_ParseBuffer() in xmlparse.c.
+		-- Parse `a_count' bytes that the caller has already written into
+		-- `buffer' starting at the old `buffer_end'.
+		-- Returns Status_ok, Status_suspended, or Status_error.
+		--
+		-- Corresponds to XML_ParseBuffer() in xmlparse.c.
 		require
 			non_negative_count: a_count >= 0
 			not_in_handler:     handler_call_depth = 0
@@ -266,11 +274,13 @@ feature {NONE} -- Processor dispatch
 				enough := True
 			end
 
-			if enough and then attached buffer as buf and then attached attribute_intervals as l_attribute_intervals then
+			if enough and then attached buffer as buf and then attached attribute_intervals as attributes
+				and then attached text_data_intervals as text_data
+			then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				from done := False until done loop
-					err := do_process_bytes (buf, l_attribute_intervals, buffer_index, a_end_index)
+					err := do_process_bytes (buf, attributes, text_data, buffer_index, a_end_index)
 
 					-- Suspended state overrides the reenter request.
 					if parsing_state /= State_parsing then
@@ -323,7 +333,10 @@ feature {NONE} -- Processor dispatch
 			error_set_on_failure: not Result implies error_code /= Error_none
 		end
 
-	do_process_bytes (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; a_start, a_end_index: INTEGER): INTEGER
+	do_process_bytes (
+		buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; text_data: XT_TEXT_DATA_BUFFER_INTERVALS
+		a_start, a_end_index: INTEGER
+	): INTEGER
 		-- Scan tokens from `buf' `a_start .. a_end_index` and
 		-- triggers relevant XML events.  Advances `buffer_ptr'.
 		-- Execute one pass of the current processor over
@@ -365,7 +378,7 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_data_chars, Tok_data_newline then
 							lower_upper.extend (index); lower_upper.extend (encoding.next_token_index - 1)
-							text_data_intervals.transfer (lower_upper)
+							text_data.transfer (lower_upper)
 							index := encoding.next_token_index
 
 					else
@@ -379,14 +392,14 @@ feature {NONE} -- Processor dispatch
 					tok := encoding.scan_content (buf, index, a_end_index)
 					inspect tok
 						when Tok_cdata_sect_open then
-							in_cdata_section := True; text_data_intervals.set_is_c_data
+							in_cdata_section := True; text_data.set_is_c_data
 							index := encoding.next_token_index
 
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
 					else
 						if tok > 0 then
-							process_token (buf, attributes, lower_upper, tok, index)
+							process_token (buf, attributes, text_data, lower_upper, tok, index)
 							index := encoding.next_token_index
 						else
 							done := True  -- partial; wait for more data
@@ -399,20 +412,34 @@ feature {NONE} -- Processor dispatch
 			buffer_ptr_advanced: buffer_index >= a_start and buffer_index <= a_end_index
 		end
 
-	process_token (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; lower_upper: SPECIAL [INTEGER]; tok, tok_start: INTEGER)
+	process_comment (buf: like buffer; str: C_STRING_8; lower, upper: INTEGER)
+		local
+			null_index: INTEGER; c, null: CHARACTER
+		do
+			str.make_shared (buf.item_address (lower), upper - lower + 1)
+			null_index := upper + 1
+			c := buf [null_index]; buf [null_index] := null
+			on_comment (str) -- null terminated temporarily for C strlen
+			buf [null_index] := c
+		end
+
+	process_token (
+		buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; text_data: XT_TEXT_DATA_BUFFER_INTERVALS
+		lower_upper: SPECIAL [INTEGER]; tok, tok_start: INTEGER
+	)
 		-- Process an XML event for a complete token at tok_start.
 		-- `encoding.next_token_index' is the first byte after the token.
 		local
-			tok_end, null_index, lower, upper: INTEGER; c, null: CHARACTER
+			tok_end: INTEGER
 		do
 			tok_end := encoding.next_token_index
 			inspect tok
 				when Tok_data_chars then
 					do_nothing
 			else
-				if text_data_intervals.index_count > 0 then
-					on_content (text_data_intervals)
-					text_data_intervals.wipe_out
+				if text_data.index_count > 0 then
+					on_content (text_data)
+					text_data.wipe_out
 				end
 			end
 			inspect tok
@@ -437,16 +464,11 @@ feature {NONE} -- Processor dispatch
 					on_tag_end (encoding.tag_name (buf, tok_start + 2))  -- skip '</'
 
 				when Tok_comment then
-					lower := tok_start + 4; upper := tok_end - 4
-					comment_string.make_shared (buf.item_address (lower), upper - lower + 1)
-					null_index := upper + 1
-					c := buf [null_index]; buf [null_index] := null
-					on_comment (comment_string) -- null terminated temporarily for C strlen
-					buf [null_index] := c
+					process_comment (buf, comment_string, tok_start + 4, tok_end - 4)
 
 				when Tok_data_chars then
 					lower_upper.extend (tok_start); lower_upper.extend (tok_end - 1)
-					text_data_intervals.transfer (lower_upper)
+					text_data.transfer (lower_upper)
 
 			else
 				-- PIs, BOM, xml declaration, CDATA open: skip

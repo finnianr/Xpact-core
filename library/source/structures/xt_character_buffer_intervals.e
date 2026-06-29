@@ -23,10 +23,12 @@ inherit
 		undefine
 			new_filled_list
 		redefine
-			make, wipe_out, index_count
+			make, wipe_out
 		end
 
-	STRING_HANDLER
+	XT_STRING_ROUTINES_I
+		export
+			{NONE} all
 		undefine
 			copy, is_equal
 		end
@@ -35,8 +37,9 @@ feature -- Initialization
 
 	make (n: INTEGER)
 		do
-			Precursor (Group_size * n)
-			create interval_item_buffer.make_empty (Group_size)
+			Precursor (group_size * n)
+			create overflow_buffer_area.make_empty (area.capacity // 2)
+			create interval_item_buffer.make_empty (group_size)
 		end
 
 feature -- Measurement
@@ -47,13 +50,39 @@ feature -- Measurement
 			Result := index_count // Group_size
 		end
 
-	group_size: INTEGER
-		deferred
+	character_count: INTEGER
+		-- sum of all substring interval counts
+		local
+			i: INTEGER
+		do
+			if attached area as l_area then
+				from until i = l_area.count loop
+					Result := Result + l_area [i + 1] - l_area [i] + 1
+					i := i + 2
+				end
+			end
 		end
 
-	index_count: INTEGER
+	append_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
+		local
+			i: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
-			Result := Precursor
+			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area then
+				from start until after loop
+					i := index + data_offset - 1
+					if attached overflow_area [i // 2] as overflow_buffer then
+						buffer := overflow_buffer
+					else
+						buffer := a_buffer
+					end
+--					value := characters_crc_32 (value, buffer, l_area [i], l_area [i + 1])
+					forth
+				end
+			end
+		end
+
+	group_size: INTEGER
+		deferred
 		end
 
 	item_interval: SPECIAL [INTEGER]
@@ -62,17 +91,23 @@ feature -- Measurement
 			Result.copy_data (area_v2, index - 1, 0, group_size)
 		end
 
-	character_count: INTEGER
-		-- sum of all substring interval counts
+	item_c_string_8 (buffer: SPECIAL [CHARACTER_8]): C_STRING_8
 		local
-			i: INTEGER
+			i, lower_index: INTEGER; address_ptr: POINTER
 		do
-			if attached area as a then
-				from until i = a.count loop
-					Result := Result + a [i + 1] - a [i] + 1
-					i := i + 2
-				end
+			i := index + data_offset - 1
+			if attached area_v2 as l_area then
+				lower_index := l_area [i]
+				address_ptr := i_th_select (buffer, i).item_address (lower_index)
+				create Result.make_shared (address_ptr, l_area [i + 1] - lower_index + 1)
+			else
+				create Result.make_empty
 			end
+		end
+
+	overflow_buffers_count: INTEGER
+		do
+			Result := overflow_buffer_area.count
 		end
 
 feature -- Status query
@@ -93,30 +128,27 @@ feature -- Cursor movement
 
 feature -- Basic operations
 
-	append_to (buffer: SPECIAL [CHARACTER_8]; str: STRING)
+	shift_buffer_left (buffer: SPECIAL [CHARACTER_8]; offset: INTEGER)
+		-- Slide all live content left by `a_offset' bytes and adjust every index that points into `buffer'.
 		local
-			i, j, lower_index, upper_index: INTEGER; c_i: CHARACTER; first_copied: BOOLEAN
+			i, i_final, lower_index, upper_index, l_count: INTEGER
 		do
-			str.grow (character_count)
-			if attached str.area as area_out then
-				from j := 0 start until after loop
-					if attached item_interval as array then
-						upper_index := array [1]
-						from i := array [0] until i > upper_index loop
-							c_i := buffer [i]
-							if not first_copied then
-								first_copied := not c_i.is_space
-							end
-							if first_copied then
-								area_out [j] := c_i
-								j := j + 1
-							end
-							i := i + 1
+			if attached overflow_buffer_area as overflow and attached area_v2 as l_area then
+				i_final := count * 2
+				from i := 0 until i = i_final loop
+					lower_index := l_area [i]; upper_index := l_area [i + 1]
+					if lower_index - offset < 0 then
+						if overflow [i // 2] = Void then
+							l_count := upper_index - lower_index + 1
+							l_area [i] := 0; l_area [i + 1] := l_count - 1
+							overflow [i // 2] := copied_buffer (buffer, i, lower_index, l_count)
 						end
+					else
+					-- still fits in current buffer
+						l_area [i] := lower_index - offset; l_area [i + 1] := upper_index - offset
 					end
-					forth
+					i := i + 2
 				end
-				str.set_count (j)
 			end
 		end
 
@@ -125,31 +157,88 @@ feature -- Basic operations
 		require
 			full_buffer: additions.count = group_size
 		local
-			i: INTEGER; l_area: like area_v2
+			i, l_count, new_capacity: INTEGER; l_area: like area_v2
 		do
-			i := index_count + additions.count
 			l_area := area_v2
+			i := l_area.count + additions.count
 			if i > l_area.capacity then
-				l_area := l_area.aliased_resized_area (i + additional_space)
+				new_capacity := i + additional_space
+				if new_capacity.integer_remainder (2) = 1 then
+					new_capacity := new_capacity + 1
+				end
+				l_area := l_area.aliased_resized_area (new_capacity)
 				area_v2 := l_area
-				on_resize
+				on_resize (new_capacity)
 			end
 			l_area.copy_data (additions, 0, index_count, additions.count)
+			if attached overflow_buffer_area as overflow then
+				l_count := group_size // 2
+				from i := 0 until i = l_count loop
+					overflow.extend (Void)
+					i := i + 1
+				end
+			end
 			additions.wipe_out
 		ensure
 			empty_additions_buffer: additions.count = 0
 		end
 
 	wipe_out
+		local
+			i, i_final: INTEGER
 		do
 			index := 0
+			if attached overflow_buffer_area as overflow then
+				if not overflow.filled_with (Void, 0, overflow.count - 1) then
+					i_final := overflow.count
+					from i := 0 until i = i_final loop
+						if is_value (i) and then attached overflow [i] as buffer then
+							Buffer_pool.return (buffer)
+						end
+						i := i + 1
+					end
+				end
+				overflow.wipe_out
+			end
 			area.wipe_out; interval_item_buffer.wipe_out
 		end
 
 feature {NONE} -- Implementation
 
-	on_resize
+	copied_buffer (buffer: SPECIAL [CHARACTER_8]; i, lower_index, a_count: INTEGER): SPECIAL [CHARACTER_8]
 		do
+			Result := Buffer_pool.borrow_item (a_count)
+			Result.wipe_out
+			Result.copy_data (buffer, lower_index, 0, a_count)
+		end
+
+	i_th_select (buffer: SPECIAL [CHARACTER_8]; i: INTEGER): SPECIAL [CHARACTER_8]
+		-- select between `buffer' and overflow buffer corresponding to `area' index `i'
+		do
+			if attached overflow_buffer_area [i // 2] as overflow_buffer then
+				Result := overflow_buffer
+			else
+				Result := buffer
+			end
+		end
+
+	is_value (overflow_index: INTEGER): BOOLEAN
+		-- True if `overflow_index' is for l_area value and not l_area name
+		do
+			Result := True
+		end
+
+	data_offset: INTEGER
+		-- redefined in `XT_ATTRIBUTE_BUFFER_INTERVALS' to return 2 (skipping the attribute name)
+		do
+			-- default zero
+		end
+
+	on_resize (a_capacity: INTEGER)
+		require
+			even_number: a_capacity.integer_remainder (2) = 0
+		do
+			overflow_buffer_area := overflow_buffer_area.aliased_resized_area (a_capacity // 2)
 		end
 
 feature {NONE} -- Internal attributes
@@ -157,6 +246,14 @@ feature {NONE} -- Internal attributes
 	interval_item_buffer: SPECIAL [INTEGER]
 		-- buffer for single name-value pair interval indices
 
+	overflow_buffer_area: SPECIAL [detachable SPECIAL [CHARACTER_8]]
+
+	Buffer_pool: XT_CHARACTER_BUFFER_POOL
+		once
+			create Result.make (10)
+		end
+
 invariant
-	lower_upper_pairs: index_count \\ 2 = 0
+	lower_upper_pairs: index_count.integer_remainder (group_size) = 0
+	proportional_overflow_buffer_capacity: overflow_buffer_area.capacity = area.capacity // 2
 end

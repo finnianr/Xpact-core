@@ -10,6 +10,9 @@ note
 		**-print** Reads from specified XML path and prints each XML event to standard output via XT_XML_PRINTER.
 
 		**-count_tags** Reads from specified XML path and compiles a table of tag occurrence frequency.
+		
+		**-test** Peforms tests on various classes developed for the Xpact-core project. The name of the test
+		can be specified as an argument
 
 	]"
 
@@ -31,62 +34,39 @@ inherit
 			{NONE} all
 		end
 
+	XT_TOKEN_CONSTANTS
+		rename
+			Tok_data_chars as Tok_text,
+			Tok_cdata_sect_open as Tok_cdata,
+			Tok_end_tag as Tok_tag,
+			Tok_attribute_value_s as Tok_attribute
+		export
+			{NONE} all
+		end
+
 create make
 
 feature {NONE} -- Initialisation
 
 	make
 		local
-			file: PLAIN_TEXT_FILE; time_start: TIME; count, chunk_size, duration_ms: INTEGER
+			file_path: PATH
 		do
 			IO.put_string ("Program: Xpact-core XML parser (Eiffel)")
 			IO.put_new_line
-			if argument_count >= 2
-				and then attached new_parser as parser
-				and then attached argument (argument_count).to_string_8 as file_path
-			then
-				create file.make_with_name (file_path)
-				chunk_size := new_integer_argument ("chunk_size", 0)
-				duration_ms := new_integer_argument ("duration", 500)
+			create file_path.make_empty
+			if argument_count >= 2 then
+				if attached new_argument_8 (0, "test") as name and then name.count > 0 then
+					do_tests (name)
 
-				if file.exists then
-					IO.put_string ("Parsing: " + file_path)
-					IO.put_new_line
+				elseif attached new_parser as parser and then attached argument (argument_count) as path_arg then
+					create file_path.make_from_string (path_arg)
+					do_parsing (parser, file_path, new_integer_argument ("chunk_size", 0))
 
-					create time_start.make_now -- start timer
-					parse (parser, file_path, chunk_size)
-					inspect parse_status
-						when Status_error then
-							IO.put_string ("Parse error code: " + parser.error_code.out)
-
-						when Status_unreadable then
-							IO.put_string ("Cannot read: " + file_path)
-							IO.put_new_line
-					else
-						if attached {XT_TAG_COUNTER} parser as counter then
-							counter.print_stats
-						end
-						if duration_ms > 0 then
-							from count := 1 until elapsed_milliseconds (time_start) > duration_ms loop
-								count := count + 1
-								parse (parser, file_path, chunk_size)
-								parser.reset
-							end
-							IO.put_string ("Total number of passes in ")
-							IO.put_string (duration_ms.out + " ms: " + count.out)
-							IO.put_new_line
-							if index_of_word_option ("compare_to_expat") > 0 then
-								if attached Environ.item ("BENCHMARKS_DIR") as dir_path then
-									compare_to_expat (create {PATH}.make_from_string (dir_path), file.path, count, duration_ms)
-								else
-									io.put_string ("BENCHMARKS_DIR not defined")
-									io.put_new_line
-								end
-							end
-						end
-					end
+				elseif invalid_event_type then
+					put_parse_event_error
 				else
-					IO.put_string ("File not found: " + file_path + "%N")
+					put_usage
 				end
 			else
 				put_usage
@@ -130,20 +110,89 @@ feature {NONE} -- Factory
 
 			elseif index_of_word_option ("print") > 0 then
 				create {XT_XML_PRINTER} Result.make
+
+			else
+				if attached new_argument_8 (0, "crc_32") as data_type then
+					if Parse_event_types.has_key (data_type) then
+						create {XT_TAG_CRC_32_GENERATOR} Result.make (Parse_event_types.found_item, data_type)
+					else
+						invalid_event_type := True
+					end
+				end
 			end
 		end
 
 feature {NONE} -- Implementation
 
-	elapsed_milliseconds (time_start: TIME): INTEGER
+	do_parsing (parser: XT_XML_PARSER; file_path: PATH; chunk_size: INTEGER)
 		local
-			time_now: TIME
+			file: PLAIN_TEXT_FILE; time_start: TIME;
 		do
-			create time_now.make_now
-			Result := (time_now.relative_duration (time_start).fine_seconds_count * 1000).rounded
+			create file.make_with_path (file_path)
+
+			if file.exists then
+				IO.put_string ("Parsing: " + file_path.out)
+				IO.put_new_line
+
+				create time_start.make_now -- start timer
+				parse (parser, file_path, chunk_size)
+				inspect parse_status
+					when Status_error then
+						IO.put_string ("Parse error code: " + parser.error_code.out)
+
+					when Status_unreadable then
+						IO.put_string ("Cannot read: " + file_path.out)
+						IO.put_new_line
+				else
+					if attached {XT_DOCUMENT_STATS} parser as counter then
+						counter.print_stats
+						do_benchmarking (parser, file_path, time_start, new_integer_argument ("duration", 500), chunk_size)
+					end
+				end
+			else
+				IO.put_string ("File not found: " + file_path.out + "%N")
+			end
 		end
 
-	compile: TUPLE [XT_ASCII_ENCODING, XT_LATIN1_ENCODING] -- XP_EXPAT_CALLBACK_HANDLER
+	do_benchmarking (parser: XT_XML_PARSER; file_path: PATH; time_start: TIME; duration_ms, chunk_size: INTEGER)
+		local
+			count: INTEGER
+		do
+			if duration_ms > 0 then
+			-- Do benchmarking
+				from count := 1 until elapsed_milliseconds (time_start) > duration_ms loop
+					count := count + 1
+					parser.reset
+					parse (parser, file_path, chunk_size)
+				end
+				IO.put_string ("Total number of passes in ")
+				IO.put_string (duration_ms.out + " ms: " + count.out)
+				IO.put_new_line
+				check_compare_to_expat (file_path, count, duration_ms)
+			end
+		end
+
+	do_tests (name: STRING)
+		local
+			test_set: XT_TEST_SET
+		do
+			create test_set.make
+			test_set.execute (name)
+		end
+
+	check_compare_to_expat (file_path: PATH; xpact_pass_count, duration_ms: INTEGER)
+		do
+			if index_of_word_option ("compare_to_expat") > 0 then
+				if attached Environ.item ("BENCHMARKS_DIR") as dir_path then
+					compare_to_expat (create {PATH}.make_from_string (dir_path), file_path, xpact_pass_count, duration_ms)
+				else
+					io.put_string ("BENCHMARKS_DIR not defined")
+					io.put_new_line
+				end
+			end
+		end
+
+	compile: TUPLE [XT_ASCII_ENCODING, XT_LATIN1_ENCODING, XP_EXPAT_CALLBACK_HANDLER] --
 		do
 			create Result
 		end
@@ -151,7 +200,7 @@ feature {NONE} -- Implementation
 	compare_to_expat (benchmark_dir, file_path: PATH; xpact_pass_count, duration_ms: INTEGER)
 		--
 		local
-			command, relative_performance, log_line, xml_file_name: STRING
+			command, log_line, xml_file_name: STRING
 			index_colon, expat_pass_count: INTEGER; time_stamp: DATE_TIME
 			expat_output, log_file: PLAIN_TEXT_FILE done: BOOLEAN; s: XT_STRING_ROUTINES
 			log_path: PATH
@@ -184,11 +233,10 @@ feature {NONE} -- Implementation
 							if line.starts_with ("Number of passes") then
 								index_colon := line.last_index_of (':', line.count)
 								expat_pass_count := line.substring (index_colon + 2, line.count).to_integer
-								relative_performance := (xpact_pass_count / expat_pass_count * 100).rounded.out
-								relative_performance.insert_character ('.', 2)
-								log_line := s.substitute (Log_template,
-									<< xml_file_name, expat_pass_count.out, xpact_pass_count.out, relative_performance.out >>
-								)
+								log_line := s.substitute (Log_template, <<
+									xml_file_name, expat_pass_count.out, xpact_pass_count.out,
+									relative_performance (xpact_pass_count, expat_pass_count)
+								>>)
 							end
 						end
 					end
@@ -213,9 +261,17 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	parse (parser: XT_XML_PARSER; file_path: STRING; chunk_size: INTEGER)
+	elapsed_milliseconds (time_start: TIME): INTEGER
 		local
-			file: XT_XML_FILE;
+			time_now: TIME
+		do
+			create time_now.make_now
+			Result := (time_now.relative_duration (time_start).fine_seconds_count * 1000).rounded
+		end
+
+	parse (parser: XT_XML_PARSER; file_path: PATH; chunk_size: INTEGER)
+		local
+			file: XT_XML_FILE
 		do
 			create file.make (file_path, parser)
 			file.collection_off
@@ -231,6 +287,21 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	put_parse_event_error
+		do
+			IO.put_string ("ERROR: Invalid parse event type for CRC-32 scan")
+			IO.put_new_line
+			IO.put_string ("Must be one of: {")
+			across Parse_event_types.current_keys as type loop
+				if not @ type.is_first then
+					IO.put_string (", ")
+				end
+				IO.put_string (type)
+			end
+			IO.put_character ('}')
+			IO.put_new_line
+		end
+
 	put_usage
 		do
 			IO.put_string (
@@ -242,9 +313,24 @@ feature {NONE} -- Implementation
 			IO.put_new_line
 		end
 
+	relative_performance (xpact_pass_count, expat_pass_count: INTEGER): STRING
+		local
+			ratio: DOUBLE
+		do
+			ratio := xpact_pass_count / expat_pass_count
+			Result := (ratio * 100).rounded.out
+			if ratio < ratio.one then
+				Result.prepend ("0.")
+			else
+				Result.insert_character ('.', 2)
+			end
+		end
+
 feature {NONE} -- Internal attributes
 
 	parse_status: INTEGER
+
+	invalid_event_type: BOOLEAN
 
 feature {NONE} -- Constants
 
@@ -261,6 +347,17 @@ feature {NONE} -- Constants
 	Log_template: STRING
 		once
 			Result := "%S: eXpat passes = %S; Xpact-core passes = %S (x%S to eXpat)"
+		end
+
+	Parse_event_types: HASH_TABLE [INTEGER, STRING]
+		once
+			create Result.make_from_iterable_tuples (<<
+				[Tok_text, "text"],
+				[Tok_cdata, "cdata"],
+				[Tok_comment, "comment"],
+				[Tok_tag, "tag"],
+				[Tok_attribute, "attribute"]
+			>>)
 		end
 
 	Status_unreadable: INTEGER = 4

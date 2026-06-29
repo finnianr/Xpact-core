@@ -33,9 +33,9 @@ create
 
 feature -- Initialization	
 
-	make (fn: READABLE_STRING_GENERAL; a_parser: like parser)
+	make (file_path: PATH; a_parser: like parser)
 		do
-			make_with_name (fn)
+			make_with_path (file_path)
 			parser := a_parser
 			set_chunk_size (Default_chunk_size)
 

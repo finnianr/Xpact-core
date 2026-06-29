@@ -133,19 +133,13 @@ feature {NONE} -- Implementation
 			Result := index + min_bytes_per_char
 		end
 
-	new_substring (buf: SPECIAL [CHARACTER]; index: INTEGER): STRING_8
+	leading_10 (buf: SPECIAL [CHARACTER]; index: INTEGER): STRING_8
+		-- leading 10 characters in `buf' starting from `index'
 		local
-			i, count: INTEGER
+			upper: INTEGER; s: XT_STRING_ROUTINES
 		do
-			count := (buf.count - index).min (10)
-			create Result.make_filled ('%U', count)
-			if attached Result.area as area then
-				from i := 0 until i = count loop
-					area [i] := buf [i + index]
-					i := i + 1
-				end
-				Result.set_count (i)
-			end
+			upper := (buf.count - 1).min (index + 10)
+			Result := s.buffer_substring (buf, index, upper, True)
 		end
 
 	has_chars (a_end, index, count: INTEGER): BOOLEAN

@@ -444,7 +444,7 @@ feature {XT_STRING_BUFFERS} -- Internal attributes
 	index_x4_buffer: SPECIAL [INTEGER]
 
 	name_cache: XT_NAME_CACHE
-		-- efficient lookup of attribute/
+		-- efficient lookup of attribute/tag names
 
 feature {NONE} -- Constants
 

@@ -25,6 +25,8 @@ inherit
 			on_tag_end_ as on_tag_end
 		end
 
+	XT_DOCUMENT_STATS
+
 create
 	make
 

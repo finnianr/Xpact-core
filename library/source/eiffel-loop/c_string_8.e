@@ -12,8 +12,8 @@ note
 	contact: "finnian at eiffel hyphen loop dot com"
 
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
-	date: "2026-06-20 15:50:02 GMT (Saturday 20th June 2026)"
-	revision: "4"
+	date: "2026-06-29 15:50:02 GMT (Monday 29th June 2026)"
+	revision: "5"
 
 class
 	C_STRING_8
@@ -43,6 +43,16 @@ inherit
 		end
 
 	DEBUG_OUTPUT
+		undefine
+			copy, is_equal
+		end
+
+	C_STRING_8_API
+		undefine
+			copy, is_equal
+		end
+
+	EL_ZLIB_CRC_32_API
 		undefine
 			copy, is_equal
 		end
@@ -83,7 +93,29 @@ feature -- Access
 		require
 			valid_index: valid_index (i)
 		do
-			Result := read_character_8 (area, i - 1)
+			Result := c_read_character_8 (area, i - 1)
+		end
+
+feature -- Access
+
+	crc_32: NATURAL
+		-- CRC-32/ISO-HDLC
+		do
+			Result := crc_32_continue (CRC_initial)
+		end
+
+	crc_32_continue (a_value: NATURAL_64): NATURAL
+		-- continue adding to a previously calculated CRC-32/ISO-HDLC `a_value'
+		local
+			value: NATURAL
+		do
+			inspect a_value
+				when CRC_initial then
+					value := c_crc_32_seed
+			else
+				value := a_value.to_natural_32
+			end
+			Result := c_crc_32 (value, area, count)
 		end
 
 feature -- Measurement
@@ -99,7 +131,7 @@ feature -- Measurement
 		do
 			l_area := area; l_count := count
 			if start_index <= l_count then
-				from i := start_index - 1 until i = l_count or else read_character_8 (l_area, i) = c loop
+				from i := start_index - 1 until i = l_count or else c_read_character_8 (l_area, i) = c loop
 					i := i + 1
 				end
 				if i < l_count then
@@ -118,7 +150,7 @@ feature -- Measurement
 		do
 			l_area := area; l_count := count
 			from i := 0 until i = l_count loop
-				if read_character_8 (l_area, i) = c then
+				if c_read_character_8 (l_area, i) = c then
 					Result := Result + 1
 				end
 				i := i + 1
@@ -133,7 +165,7 @@ feature -- Status report
 		-- Does `area' start with the same bytes as `other.area'?
 		do
 			if other.count <= count then
-				Result := memory_compare (area, other.area, other.count)
+				Result := c_memory_compare (area, other.area, other.count)
 			end
 		ensure
 			same_as_string: Result = to_string.starts_with (other.to_string)
@@ -158,7 +190,7 @@ feature -- Conversion
 			if attached Result.area as area_out then
 				l_area := area; l_count := count
 				from i := 0 until i = l_count loop
-					area_out [i] := read_character_8 (l_area, i)
+					area_out [i] := c_read_character_8 (l_area, i)
 					i := i + 1
 				end
 			end
@@ -191,31 +223,9 @@ feature -- Duplication
 			Result := str
 		end
 
-feature {NONE} -- Implementation
+feature {NONE} -- C Externals
 
-	frozen c_strcmp_n (p1: POINTER; n1: INTEGER; p2: POINTER; n2: INTEGER): INTEGER
-			-- Lexicographic comparison of `n1' bytes at `p1' with `n2' bytes at `p2'.
-			-- Returns negative if p1 < p2, zero if equal, positive if p1 > p2.
-		external
-			"C inline use <string.h>"
-		alias
-			"[
-				int n = ($n1 < $n2) ? $n1 : $n2;
-				int cmp = memcmp($p1, $p2, n);
-				if (cmp != 0) return cmp;
-				return ($n1 < $n2) ? -1 : ($n1 > $n2) ? 1 : 0;
-			]"
-		end
-
-	frozen memory_compare (p1, p2: POINTER; n: INTEGER): BOOLEAN
-		-- True if first `n' bytes at `p1' and `p2' are identical.
-		external
-			"C inline use <string.h>"
-		alias
-			"return (memcmp ($p1, $p2, $n) == 0);"
-		end
-
-	frozen read_character_8 (a_area: POINTER; i: INTEGER): CHARACTER_8
+	frozen c_read_character_8 (a_area: POINTER; i: INTEGER): CHARACTER_8
 			-- Character at offset `i' in buffer `a_area'.
 		require
 			valid_index: valid_index (i + 1)
