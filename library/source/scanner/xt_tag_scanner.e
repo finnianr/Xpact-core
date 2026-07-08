@@ -248,7 +248,7 @@ feature {NONE} -- Tag scanning
 			end
 			if not done then
 				Result := Tok_partial
-				attributes.wipe_out
+				attributes.wipe_out; index_x4_buffer.wipe_out
 			end
 		ensure
 			attribute_intervals_valid_count:

@@ -46,36 +46,35 @@ class XT_XML_PRINTER
 inherit
 	XT_XML_PARSER
 
-create make
+create
+	make
 
 feature {NONE} -- Event handlers
 
-	on_comment (text: C_STRING_8)
+	on_comment (text: STRING_8)
 		do
 			io.put_string ("COMMENT: ")
-			io.put_string (text.to_string)
+			io.put_string (text)
 			io.put_new_line
 		end
 
-	on_content (text_intervals: XT_TEXT_DATA_BUFFER_INTERVALS)
+	on_content (text: STRING)
 		local
 			is_double: BOOLEAN
 		do
-			if attached text_intervals.adjusted_concatenation (buffer) as str and then str.count > 0 then
-				is_double := str.is_double
-				io.put_string (Tab_string)
-				if text_intervals.is_cdata then
-					io.put_string ("CDATA: ")
-				end
-				if not is_double then
-					io.put_character ('"')
-				end
-				io.put_string (str)
-				if not is_double then
-					io.put_character ('"')
-				end
-				io.put_new_line
+			is_double := text.is_double
+			io.put_string (Tab_string)
+			if in_cdata_section then
+				io.put_string ("CDATA: ")
 			end
+			if not is_double then
+				io.put_character ('"')
+			end
+			io.put_string (text)
+			if not is_double then
+				io.put_character ('"')
+			end
+			io.put_new_line
 		end
 
 	on_tag_end (name: STRING_8)

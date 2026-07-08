@@ -14,5 +14,9 @@ expanded class
 
 inherit
 	XT_STRING_ROUTINES_I
+		export
+			{NONE} Output_buffer
+			{ANY} all
+		end
 
 end

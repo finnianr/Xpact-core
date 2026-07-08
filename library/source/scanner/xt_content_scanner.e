@@ -112,8 +112,8 @@ feature -- Content tokenization
 		end
 
 	cdata_section_tok (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
-			-- Return the next token inside a CDATA section.
-			-- Sets next_token_ptr.  Corresponds to cdataSectionTok() in xmltok_impl.c.
+		-- Return the next token inside a CDATA section.
+		-- Sets next_token_ptr.  Corresponds to cdataSectionTok() in xmltok_impl.c.
 		require
 			valid_range: start_index <= a_end and a_end <= buf.count
 		local

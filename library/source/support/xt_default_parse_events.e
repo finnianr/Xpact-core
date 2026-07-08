@@ -28,11 +28,15 @@ class
 
 feature {NONE} -- Event handlers
 
-	on_comment_ (text: C_STRING_8)
+	on_cdata_section_close_
 		do
 		end
 
-	on_content_ (text_intervals: XT_TEXT_DATA_BUFFER_INTERVALS)
+	on_comment_ (buf: SPECIAL [CHARACTER]; lower, upper: INTEGER)
+		do
+		end
+
+	on_content_ (buf: SPECIAL [CHARACTER]; a_start, a_end_index: INTEGER)
 		do
 		end
 

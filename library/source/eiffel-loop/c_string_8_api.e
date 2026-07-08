@@ -45,4 +45,12 @@ feature {NONE} -- C Externals
 			"return (memcmp ($p1, $p2, $n) == 0);"
 		end
 
+	frozen c_read_character_8 (a_area: POINTER; i: INTEGER): CHARACTER_8
+			-- Character at offset `i' in buffer `a_area'.
+		external
+			"C inline"
+		alias
+			"return ((EIF_CHARACTER_8 *)$a_area)[$i];"
+		end
+
 end

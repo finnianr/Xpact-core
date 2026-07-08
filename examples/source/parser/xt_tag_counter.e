@@ -13,13 +13,14 @@ class
 	XT_TAG_COUNTER
 
 inherit
-	XT_XML_PARSER
+	XT_XML_PARSER_BASE
 		redefine
 			make
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
 		rename
+			on_cdata_section_close_ as on_cdata_section_close,
 			on_comment_ as on_comment,
 			on_content_ as on_content,
 			on_tag_end_ as on_tag_end

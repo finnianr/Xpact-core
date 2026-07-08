@@ -5,7 +5,9 @@ class
 	XP_EXPAT_CALLBACK_HANDLER
 
 inherit
-	XT_XML_PARSER
+	XT_XML_PARSER_BASE
+		rename
+			on_cdata_section_close as on_end_cdata_section
 		redefine
 			make
 		end
@@ -13,6 +15,7 @@ inherit
 	XP_EVENT_HANDLER
 		rename
 			on_comment as on_comment_x
+
 		redefine
 			wants_start_element_events,
 			wants_end_element_events,
@@ -1274,35 +1277,32 @@ feature -- External entity resolution
 
 feature {NONE} -- Xpact core event handlers
 
-	on_comment (text: C_STRING_8)
+	on_comment (buf: like buffer; lower, upper: INTEGER)
 		local
-			call_back_ptr: POINTER
+			null_index: INTEGER; c, null: CHARACTER; call_back_ptr: POINTER
 		do
 			call_back_ptr := comment_callback
 			if is_attached (call_back_ptr) then
-				call_comment_callback (call_back_ptr, user_data, text.area)
+				null_index := upper + 1
+				c := buf [null_index]; buf [null_index] := null
+				call_comment_callback (call_back_ptr, user_data, buf.item_address (lower))
+				buf [null_index] := c
 			end
 		end
 
-	on_content (text_intervals: XT_TEXT_DATA_BUFFER_INTERVALS)
+	on_content (buf: SPECIAL [CHARACTER]; lower, upper: INTEGER)
 		local
-			lower, upper: INTEGER; call_back_ptr: POINTER
+			call_back_ptr: POINTER
 		do
 			call_back_ptr := character_data_callback
 			if is_attached (call_back_ptr) then
-				if text_intervals.is_cdata then
+				if in_cdata_section then
 					call_cdata_section_callback (start_cdata_section_callback, user_data)
 				end
 				set_native_active_callback_kind (native_parser_handle, Native_callback_character_data)
-				from text_intervals.start until text_intervals.after loop
-					if attached text_intervals.item_interval as array then
-						lower := array [0]; upper := array [1]
-						call_character_data_callback (call_back_ptr, user_data, buffer.item_address (lower), upper - lower + 1)
-					end
-					text_intervals.forth
-				end
+				call_character_data_callback (call_back_ptr, user_data, buffer.item_address (lower), upper - lower + 1)
 				set_native_active_callback_kind (native_parser_handle, Native_callback_none)
-				if text_intervals.is_cdata then
+				if in_cdata_section then
 					call_cdata_section_callback (end_cdata_section_callback, user_data)
 				end
 			end
@@ -1322,7 +1322,7 @@ feature {NONE} -- Xpact core event handlers
 		require else
 			null_terminated_name: name.area [name.count] = '%U'
 		local
-			allocation_size, offset, i: INTEGER; call_back_ptr: POINTER
+			allocation_size: INTEGER; call_back_ptr: POINTER
 		do
 			call_back_ptr := start_element_callback
 			if is_attached (call_back_ptr) and then attached attributes_c_array as c_array
@@ -1335,16 +1335,7 @@ feature {NONE} -- Xpact core event handlers
 
 				attributes.null_terminate_values (buffer)
 
-				from attributes.start; offset := 0 until attributes.after loop
-					if attached attributes.item_c_name_and_value (buffer) as name_and_value then
-						from i := 0 until i = 2 loop
-							c_array.put_pointer (name_and_value [i], offset)
-							offset := offset + Pointer_bytes; i := i + 1
-						end
-					end
-					attributes.forth
-				end
-				c_array.put_pointer (default_pointer, offset)
+				attributes.append_pointers_to (c_array, buffer)
 				call_start_element_callback (call_back_ptr, user_data, name.area.base_address, c_array.item)
 
 				attributes.undo_null_terminated_values (buf)

@@ -7,7 +7,6 @@
 		<price>30.00</price>
 	</book>
 	<book category="children">
-		
 		<title lang="en">
 			<!--Test leading/trailing space adjust-->
 			Harry Potter

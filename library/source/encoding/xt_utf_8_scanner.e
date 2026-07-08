@@ -17,10 +17,10 @@ note
 	date: "2026-06-18 19:48:47 GMT (Thursday 18th June 2026)"
 	revision: "1"
 
-class XT_UTF8_ENCODING
+class XT_UTF_8_SCANNER
 
 inherit
-	XT_NORMAL_ENCODING
+	XT_DOCUMENT_SCANNER
 		undefine
 			is_name_char_2, is_name_char_3, is_name_char_4,
 			is_name_start_char_2, is_name_start_char_3, is_name_start_char_4,

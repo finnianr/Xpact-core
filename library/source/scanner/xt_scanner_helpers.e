@@ -32,7 +32,7 @@ inherit
 	XT_BYTE_TYPE_CONSTANTS
 	XT_TOKEN_CONSTANTS
 
-	STRING_HANDLER
+	XT_STRING_ROUTINES_I
 
 feature -- Output of the last scan (shared with XT_ENCODING via join)
 
@@ -136,10 +136,10 @@ feature {NONE} -- Implementation
 	leading_10 (buf: SPECIAL [CHARACTER]; index: INTEGER): STRING_8
 		-- leading 10 characters in `buf' starting from `index'
 		local
-			upper: INTEGER; s: XT_STRING_ROUTINES
+			upper: INTEGER
 		do
 			upper := (buf.count - 1).min (index + 10)
-			Result := s.buffer_substring (buf, index, upper, True)
+			Result := area_substring (buf, index, upper, True)
 		end
 
 	has_chars (a_end, index, count: INTEGER): BOOLEAN
@@ -148,7 +148,7 @@ feature {NONE} -- Implementation
 			Result := a_end - index >= count * min_bytes_per_char
 		end
 
-feature {XT_XML_PARSER} -- Deferred
+feature {XT_XML_PARSER_BASE} -- Deferred
 
 	byte_type_table: SPECIAL [NATURAL_8]
 			-- 256-entry table mapping each byte value to its BT_* type.

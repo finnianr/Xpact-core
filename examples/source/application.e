@@ -103,7 +103,7 @@ feature {NONE} -- Factory
 			end
 		end
 
-	new_parser: detachable XT_XML_PARSER
+	new_parser: detachable XT_XML_PARSER_BASE
 		do
 			if index_of_word_option ("count_tags") > 0 then
 				create {XT_TAG_COUNTER} Result.make
@@ -124,7 +124,7 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Implementation
 
-	do_parsing (parser: XT_XML_PARSER; file_path: PATH; chunk_size: INTEGER)
+	do_parsing (parser: XT_XML_PARSER_BASE; file_path: PATH; chunk_size: INTEGER)
 		local
 			file: PLAIN_TEXT_FILE; time_start: TIME;
 		do
@@ -154,7 +154,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	do_benchmarking (parser: XT_XML_PARSER; file_path: PATH; time_start: TIME; duration_ms, chunk_size: INTEGER)
+	do_benchmarking (parser: XT_XML_PARSER_BASE; file_path: PATH; time_start: TIME; duration_ms, chunk_size: INTEGER)
 		local
 			count: INTEGER
 		do
@@ -192,7 +192,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	compile: TUPLE [XT_ASCII_ENCODING, XT_LATIN1_ENCODING, XP_EXPAT_CALLBACK_HANDLER] --
+	compile: TUPLE [XT_ASCII_SCANNER, XT_LATIN_1_SCANNER, XP_EXPAT_CALLBACK_HANDLER] --
 		do
 			create Result
 		end
@@ -269,7 +269,7 @@ feature {NONE} -- Implementation
 			Result := (time_now.relative_duration (time_start).fine_seconds_count * 1000).rounded
 		end
 
-	parse (parser: XT_XML_PARSER; file_path: PATH; chunk_size: INTEGER)
+	parse (parser: XT_XML_PARSER_BASE; file_path: PATH; chunk_size: INTEGER)
 		local
 			file: XT_XML_FILE
 		do

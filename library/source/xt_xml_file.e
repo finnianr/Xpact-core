@@ -43,7 +43,7 @@ feature -- Initialization
 				open_read; read_line; close
 				last_string.to_upper
 				if last_string.has_substring ("ISO-8859-1") then
-					parser.set_encoding (Latin_1)
+					parser.set_scanner (Latin_1)
 				end
 			end
 		end
@@ -121,7 +121,7 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
-	parser: XT_XML_PARSER
+	parser: XT_XML_PARSER_BASE
 
 feature {NONE} -- Constants
 

@@ -42,10 +42,10 @@ feature -- Partial / error sentinels (negative or zero)
 
 feature -- Element content tokens (positive)
 
-	tok_start_tag_with_attributes: INTEGER = 1
-	tok_start_tag_no_attributes: INTEGER = 2
-	tok_empty_element_with_attributes: INTEGER = 3
-	tok_empty_element_no_attributes: INTEGER = 4
+	Tok_start_tag_with_attributes: INTEGER = 1
+	Tok_start_tag_no_attributes: INTEGER = 2
+	Tok_empty_element_with_attributes: INTEGER = 3
+	Tok_empty_element_no_attributes: INTEGER = 4
 	Tok_end_tag: INTEGER = 5
 	Tok_data_chars: INTEGER = 6
 	Tok_data_newline: INTEGER = 7

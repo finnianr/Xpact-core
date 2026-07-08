@@ -22,13 +22,18 @@ class
 	XT_TAG_CRC_32_GENERATOR
 
 inherit
-	XT_XML_PARSER
+	XT_XML_PARSER_BASE
 		rename
 			make as make_parser,
 			Tok_data_chars as Tok_text,
 			Tok_cdata_sect_open as Tok_cdata,
 			Tok_end_tag as Tok_tag,
 			Tok_attribute_value_s as Tok_attribute
+		end
+
+	XT_DEFAULT_PARSE_EVENTS
+		rename
+			on_cdata_section_close_ as on_cdata_section_close
 		end
 
 	XT_DOCUMENT_STATS
@@ -60,20 +65,20 @@ feature -- Basic operations
 
 feature {NONE} -- Event handlers
 
-	on_comment (text: C_STRING_8)
+	on_comment (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
 		do
 			inspect data_type
 				when Tok_comment then
-					checksum.add_bytes (text.area, text.count)
+					checksum.add_characters (area, lower, upper)
 			else
 			end
 		end
 
-	on_content (text_intervals: XT_TEXT_DATA_BUFFER_INTERVALS)
+	on_content (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
 		do
 			inspect data_type
 				when Tok_cdata, Tok_text then
-					text_intervals.append_to_crc_32 (checksum, buffer)
+					checksum.add_characters (area, lower, upper)
 			else
 			end
 		end

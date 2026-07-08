@@ -1,6 +1,6 @@
 note
 	description: "${STRING_8} routines"
-	
+
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
 	contact: "finnian at eiffel hyphen loop dot com"
@@ -16,7 +16,64 @@ class
 inherit
 	STRING_HANDLER
 
-feature -- Access
+feature {NONE} -- Access
+
+	frozen new_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_8
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		do
+			Result := area_substring (area, lower, upper, True)
+		end
+
+	frozen area_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; keep_ref: BOOLEAN): STRING_8
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		do
+			Result := Output_buffer
+			Result.wipe_out
+			append_area (Result, area, lower, upper)
+			if keep_ref then
+				Result := Result.twin
+			end
+		ensure
+			not_keeping_definition: not keep_ref implies Result = Output_buffer
+		end
+
+feature {NONE} -- Measurement
+
+	frozen leading_white_space (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): INTEGER
+		-- append contents of `area' from `lower' to `upper' to `str'
+		require
+			valid_range: upper + 1 >= lower and then upper >= lower implies area.valid_index (lower) and area.valid_index (upper)
+		local
+			i: INTEGER
+		do
+			from i := lower until i > upper loop
+				if area [i].is_space then
+					Result := Result + 1; i := i + 1
+				else
+					i := upper + 1 -- break
+				end
+			end
+		end
+
+feature {NONE} -- Basic operations
+
+	frozen append_area (str: STRING_8; area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER)
+		-- append contents of `area' from `lower' to `upper' to `str'
+		require
+			valid_range: upper + 1 >= lower and then upper >= lower implies area.valid_index (lower) and area.valid_index (upper)
+		local
+			count, new_count, i, j: INTEGER
+		do
+			count := str.count; new_count := count + upper - lower + 1
+			str.grow (new_count)
+			if attached str.area as area_out then
+				from i := lower; j := count until i > upper loop
+					area_out [j] := area [i]
+					i := i + 1; j := j + 1
+				end
+				str.set_count (new_count)
+			end
+		end
 
 	frozen substitute (template: STRING; insertions: ARRAY [STRING]): STRING
 		require
@@ -33,34 +90,9 @@ feature -- Access
 			end
 		end
 
-	frozen buffer_substring (buffer: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; keep_ref: BOOLEAN): STRING_8
-		-- `lower .. upper' substring of `buffer' placed in `output_buffer'
-		require
-			valid_range: upper + 1 >= lower and then upper >= lower implies buffer.valid_index (lower) and buffer.valid_index (upper)
-		local
-			count, i: INTEGER
-		do
-			Result := output_buffer
-			Result.wipe_out
-			count := upper - lower + 1
-			Result.grow (count)
-			if attached Result.area as area_out then
-				from i := 0 until i = count loop
-					area_out [i] := buffer [i + lower]
-					i := i + 1
-				end
-				Result.set_count (i)
-			end
-			if keep_ref then
-				Result := Result.twin
-			end
-		ensure
-			not_keeping_definition: not keep_ref implies Result = output_buffer
-		end
-
 feature {NONE} -- Constants
 
-	output_buffer: STRING_8
+	Output_buffer: STRING_8
 		-- used to accumulate text for output
 		once
 			create Result.make (20)

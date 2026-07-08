@@ -14,10 +14,10 @@ note
 	date: "2026-06-18 19:02:35 GMT (Thursday 18th June 2026)"
 	revision: "1"
 
-class XT_ASCII_ENCODING
+class XT_ASCII_SCANNER
 
 inherit
-	XT_NORMAL_ENCODING
+	XT_DOCUMENT_SCANNER
 
 create
 	make

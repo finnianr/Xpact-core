@@ -25,7 +25,7 @@ note
 	date: "2026-06-20 20:42:32 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XT_NORMAL_ENCODING
+deferred class XT_DOCUMENT_SCANNER
 
 inherit
 	XT_ENCODING

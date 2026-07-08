@@ -39,11 +39,10 @@ feature {NONE} -- Initialisation
 			error_code := Error_none
 			buffer_lim := Default_buffer_size
 
-			buffer := new_buffer_area (Default_buffer_size)
-			set_encoding (Utf_8)
+			check attached Token_names end
 
-			create comment_string.make_shared (default_pointer, 0)
-			create text_data_intervals.make (5)
+			buffer := new_buffer_area (Default_buffer_size)
+			set_scanner (Utf_8)
 
 		ensure then
 			empty_buffer: buffer_end = 0 and buffer_index = 0
@@ -59,10 +58,10 @@ feature -- Access
 
 feature -- Element change
 
-	set_encoding (type: NATURAL_8)
+	set_scanner (type: NATURAL_8)
 		do
-			encoding := new_encoding (type)
-			attribute_intervals := encoding.attribute_intervals
+			scanner := new_scanner (type)
+			attribute_intervals := scanner.attribute_intervals
 		end
 
 feature {NONE} -- Factory
@@ -74,18 +73,18 @@ feature {NONE} -- Factory
 			room_for_null_terminator: Result.count = n + 1
 		end
 
-	new_encoding (type: NATURAL_8): XT_NORMAL_ENCODING
+	new_scanner (type: NATURAL_8): XT_DOCUMENT_SCANNER
 		do
 			inspect type
 				when Ascii then
-					create {XT_ASCII_ENCODING} Result.make
+					create {XT_ASCII_SCANNER} Result.make
 				when Latin_1 then
-					create {XT_LATIN1_ENCODING} Result.make
+					create {XT_LATIN_1_SCANNER} Result.make
 			else
 				check
 					type_utf_8: type = Utf_8
 				end
-				create {XT_UTF8_ENCODING} Result.make
+				create {XT_UTF_8_SCANNER} Result.make
 			end
 		end
 
@@ -170,7 +169,6 @@ feature {NONE} -- Implementation
 			positive_offset: offset > 0
 			offset_leq_ptr: offset <= buffer_index
 		do
-			text_data_intervals.shift_buffer_left (buffer, offset)
 			attribute_intervals.shift_buffer_left (buffer, offset)
 
 			buffer.copy_data (buffer, offset, 0, buffer_end - offset)
@@ -199,7 +197,7 @@ feature {NONE} -- Internal attributes
 	position_index: INTEGER
 		-- Start index for the next line/column position update.
 
-feature {XT_NORMAL_ENCODING} -- Internal structures
+feature {NONE} -- Internal structures
 
 	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
 		-- collected attribute name-value pair indices into `buffer'
@@ -207,12 +205,27 @@ feature {XT_NORMAL_ENCODING} -- Internal structures
 	buffer: SPECIAL [CHARACTER_8]
 		-- Raw byte buffer; do not modify indices outside this class.
 
-	encoding: XT_NORMAL_ENCODING
+	scanner: XT_DOCUMENT_SCANNER
 
-	text_data_intervals: XT_TEXT_DATA_BUFFER_INTERVALS
-		-- list of substring intervals `lower .. upper' of `buffer' text
+feature {NONE} -- Element content tokens (positive)
 
-	comment_string: C_STRING_8
-		-- shared substring of text `buffer'
-
+	Token_names: ARRAY [STRING]
+		once
+			Result := <<
+				"start_tag_with_attributes",   	-- 1
+				"start_tag_no_attributes",     	-- 2
+				"empty_element_with_attributes", -- 3
+				"empty_element_no_attributes",   -- 4
+				"end_tag",          -- 5
+				"data_chars",       -- 6
+				"data_newline",     -- 7
+				"cdata_sect_open",  -- 8
+				"entity_ref",       -- 9
+				"char_ref",         -- 10
+				"pi",               -- 11
+				"xml_decl",         -- 12
+				"comment",          -- 13
+				"bom"               -- 14
+			>>
+		end
 end

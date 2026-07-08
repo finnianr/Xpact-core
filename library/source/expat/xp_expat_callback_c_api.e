@@ -112,7 +112,7 @@ feature {NONE} -- C Externals
 		external
 			"C inline"
 		alias
-			"((void (*)(void *)) $a_callback) ((void *) $a_user_data);"
+			"if ($a_callback) ((void (*)(void *)) $a_callback) ((void *) $a_user_data);"
 		end
 
 	call_default_callback (a_callback, a_user_data, a_text: POINTER; a_length: INTEGER)

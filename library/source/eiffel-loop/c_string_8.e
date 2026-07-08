@@ -58,7 +58,7 @@ inherit
 		end
 
 create
-	make, make_from_string, make_shared, make_empty
+	make, make_filled, make_from_string, make_shared, make_empty
 
 convert
 	make_from_string ({STRING_8})
@@ -68,6 +68,23 @@ feature {NONE} -- Initialization
 	make_empty
 		do
 			make (0)
+		end
+
+	make_filled (c: CHARACTER_8; n: INTEGER)
+			-- Create string of length `n' filled with `c'.
+		require
+			valid_count: n >= 0
+		local
+			i: INTEGER
+		do
+			make (n)
+			from until i = n loop
+				put_character (c, i)
+				i := i + 1
+			end
+		ensure
+			count_set: count = n
+			filled: occurrences (c) = count
 		end
 
 	make_from_string (s: STRING_8)
@@ -182,20 +199,24 @@ feature -- Status report
 feature -- Conversion
 
 	to_string, debug_output: STRING_8
-		local
-			i, l_count: INTEGER; l_area: POINTER
 		do
 			create Result.make (count)
+			append_to_string_area (Result.area, 0)
 			Result.set_count (count)
-			if attached Result.area as area_out then
-				l_area := area; l_count := count
-				from i := 0 until i = l_count loop
-					area_out [i] := c_read_character_8 (l_area, i)
-					i := i + 1
-				end
-			end
 		ensure then
 			round_trip: is_equal (new_string (Result))
+		end
+
+feature -- Basic operations
+
+	append_to_string_8 (str: STRING_8)
+		local
+			new_count: INTEGER
+		do
+			new_count := str.count + count
+			str.grow (new_count)
+			append_to_string_area (str.area, str.count)
+			str.set_count (new_count)
 		end
 
 feature -- Duplication
@@ -223,16 +244,19 @@ feature -- Duplication
 			Result := str
 		end
 
-feature {NONE} -- C Externals
+feature {NONE} -- Implementation
 
-	frozen c_read_character_8 (a_area: POINTER; i: INTEGER): CHARACTER_8
-			-- Character at offset `i' in buffer `a_area'.
+	append_to_string_area (area_out: SPECIAL [CHARACTER]; offset: INTEGER)
 		require
-			valid_index: valid_index (i + 1)
-		external
-			"C inline"
-		alias
-			"return ((EIF_CHARACTER_8 *)$a_area)[$i];"
+			big_enough_str: offset + count <= area_out.capacity - 1
+		local
+			i, l_count: INTEGER; l_area: POINTER
+		do
+			l_area := area; l_count := count
+			from i := 0 until i = l_count loop
+				area_out [offset + i] := c_read_character_8 (l_area, i)
+				i := i + 1
+			end
 		end
 
 end
