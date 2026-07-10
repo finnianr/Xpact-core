@@ -1,0 +1,36 @@
+Write a C program named xml_crc_32 that takes an XML file path as a final command line argument and calculates a CRC-32/ISO-HDLC checksum on a XML data type specified on the command line by option -type. The program should use libexpat to parse the XML.
+
+Program usage:
+	xml_crc_32 -type <data-type> -duration <time-window-ms> [-trace] <xml-file-path>
+
+Valid data-types: {text, cdata, comment, tag, attribute}
+
+The value 'tag' means add the name of every tag  to the checksum for each tag_open parsing event.
+The value 'attribute' means the value of every attribute is added to the checksum.
+
+The -duration option is optional and defaults to value 0. If it is greater than 0 then it specifies a window of time in milliseconds that the calculation should be repeated on the same file and the number of passes counted.
+
+Program output should look like the following if -duration is specified as 2000, and basename of the XML file path is "Legislation.xml", and -type is set to attribute. The checksum should only be output once on the first pass. After that the parser should be silent. The final output line is the number of passes that occurred in 2000 millisecs.
+
+	Program: eXpat XML CRC-32 parser (C lang)
+	Parsing: Legislation.xml
+	Checksum for attribute: 3798666684
+	Number of passes in 2000 ms: 9
+	
+The program should also have an optional -trace option for debugging. If this flag is enabled, on the first pass the program should output all the numbered intermediate CRC checksums
+
+for example
+
+	Program: eXpat XML CRC-32 parser (C lang)
+	Parsing: Legislation.xml
+	1. 1847293015
+	2. 923481662
+	3. 561092847
+	4. 1738204913
+	5. 2014857392
+	6. 347829105
+	7. 918472036
+	8. 1592847301
+	9. 63847291
+	10. 2038472915
+	Checksum for attribute: 3798666684

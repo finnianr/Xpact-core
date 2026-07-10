@@ -62,7 +62,7 @@ feature {NONE} -- Initialization
 		do
 			Precursor
 			create events.make (16)
-			create attributes_c_array.make (21 * Pointer_bytes)
+			create attributes_c_string_array.make_empty (21)
 			create delivered_character_data_lengths.make (16)
 			current_id_attribute_index := -1
 			diagnostic_events_enabled := True
@@ -1322,29 +1322,27 @@ feature {NONE} -- Xpact core event handlers
 		require else
 			null_terminated_name: name.area [name.count] = '%U'
 		local
-			allocation_size: INTEGER; call_back_ptr: POINTER
+			call_back_ptr: POINTER; array_size: INTEGER; c_string_array: SPECIAL [POINTER]
 		do
 			call_back_ptr := start_element_callback
-			if is_attached (call_back_ptr) and then attached attributes_c_array as c_array
-				and then attached buffer as buf
-			then
-				allocation_size := (attributes.count * 2 + 1) * Pointer_bytes
-				if allocation_size > c_array.count then
-					c_array.resize (allocation_size)
-				end
-
+			c_string_array := attributes_c_string_array
+			if is_attached (call_back_ptr) and then attached buffer as buf then
 				attributes.null_terminate_values (buffer)
 
-				attributes.append_pointers_to (c_array, buffer)
-				call_start_element_callback (call_back_ptr, user_data, name.area.base_address, c_array.item)
+				array_size := attributes.count * 2 + 1
+				if array_size > c_string_array.capacity then
+					c_string_array := c_string_array.resized_area (array_size)
+					attributes_c_string_array := c_string_array
+				end
+				c_string_array.wipe_out
+				attributes.append_pointers_to (c_string_array, buffer)
+				call_start_element_callback (call_back_ptr, user_data, name.area.base_address, c_string_array.base_address)
 
 				attributes.undo_null_terminated_values (buf)
 			end
 		ensure then
 			buffer_unchanged:
-				attributes.upper_plus_1_characters (buffer).is_equal (
-					old attributes.upper_plus_1_characters (buffer)
-				)
+				attributes.upper_plus_1_characters (buffer) ~ old attributes.upper_plus_1_characters (buffer)
 		end
 
 feature {NONE} -- Native callback calls
@@ -1550,7 +1548,7 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
-	attributes_c_array: MANAGED_POINTER
+	attributes_c_string_array: SPECIAL [POINTER]
 
 feature {NONE} -- Constants
 

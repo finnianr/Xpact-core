@@ -39,13 +39,6 @@ inherit
 			copy, is_equal
 		end
 
-	PLATFORM
-		export
-			{NONE} all
-		undefine
-			copy, is_equal
-		end
-
 create
 	make, make_sized
 
@@ -94,8 +87,7 @@ feature -- Access
 			if attached area_v2 as l_area and then attached Result.area as str_area
 				and then attached overflow_buffer_area as overflow_area
 			then
-				i_final := index_count
-				from i := 0 until i = i_final loop
+				from i := 0; i_final := index_count until i = i_final loop
 					upper_plus_1 := l_area [i + 3] + 1
 					str_area [j] := i_th_buffer (i, buffer, overflow_area) [upper_plus_1]
 					i := i + Group_size; j := j + 1
@@ -118,8 +110,7 @@ feature -- Status change
 				and then attached overflow_buffer_area as overflow_area
 			then
 				swap_area.wipe_out
-				i_final := index_count
-				from i := 0 until i = i_final loop
+				from i := 0; i_final := index_count until i = i_final loop
 					upper_plus_1 := l_area [i + 3] + 1
 					if attached i_th_buffer (i, a_buffer, overflow_area) as buffer then
 						swap_area.extend (buffer [upper_plus_1])
@@ -141,11 +132,11 @@ feature -- Status change
 			if attached character_swap_area as swap_area and attached area_v2 as l_area
 				and then attached overflow_buffer_area as overflow_area
 			then
-				i_final := index_count
-				from i := 0; j := 0 until i = i_final loop
+				from i := 0; j := 0; i_final := index_count until i = i_final loop
 					upper_plus_1 := l_area [i + 3] + 1
 					i_th_buffer (i, buffer, overflow_area) [upper_plus_1] := swap_area [j]
-					i := i + Group_size; j := j + 1
+					i := i + Group_size
+					j := j + 1
 				end
 			end
 			is_null_terminated := False
@@ -185,36 +176,40 @@ feature -- Constants
 
 feature -- Basic operations
 
-	append_pointers_to (c_array: MANAGED_POINTER; a_buffer: SPECIAL [CHARACTER_8])
+	append_pointers_to (c_string_array: SPECIAL [POINTER]; a_buffer: SPECIAL [CHARACTER_8])
+		-- append alternating name and value strings to `c_string_array' as pointers to null terminated C strings
+		-- and terminated with a null pointer
 		require
-			big_enough: c_array.count >= (count * 2 + 1) * Pointer_bytes
+			null_terminated: is_null_terminated
+			empty_c_string_array: c_string_array.count = 0
+			big_enough: c_string_array.capacity >= count * 2 + 1
 		local
-			i, offset, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
-			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area then
-				i_final := index_count
-				from i := 0 until i = i_final loop
+			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area
+				and then attached name_cache as names
+			then
+				from i := 0; i_final := index_count until i = i_final loop
 					buffer := i_th_buffer (i, a_buffer, overflow_area)
-					if attached name_cache.item (buffer, l_area [0], l_area [1]) as name then
-						c_array.put_pointer (name.area.base_address, offset) -- name
+					if attached names.item (buffer, l_area [0], l_area [1]) as name then
+						c_string_array.extend (name.area.base_address) -- name
 					end
-					offset := offset + Pointer_bytes
-					c_array.put_pointer (buffer.item_address (l_area [2]), offset) -- value
-					offset := offset + Pointer_bytes
+					c_string_array.extend (buffer.item_address (l_area [2])) -- value
 					i := i + Group_size
 				end
-				c_array.put_pointer (default_pointer, offset)
+				c_string_array.extend (default_pointer)
 			end
+		ensure
+			filled: c_string_array.count = count * 2 + 1
 		end
 
-	append_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
+	append_values_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
 		local
 			i, i_final: INTEGER
 		do
 			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area then
-				i_final := index_count
-				from i := 0 until i = i_final loop
-					checksum.add_characters (i_th_buffer (i, a_buffer, overflow_area), l_area [i], l_area [i + 1])
+				from i := 0; i_final := index_count until i = i_final loop
+					checksum.add_characters (i_th_buffer (i, a_buffer, overflow_area), l_area [i + 2], l_area [i + 3])
 					i := i + Group_size
 				end
 			end
@@ -223,21 +218,23 @@ feature -- Basic operations
 	shift_buffer_left (buffer: SPECIAL [CHARACTER_8]; offset: INTEGER)
 		-- Slide all live content left by `a_offset' bytes and adjust every index that points into `buffer'.
 		local
-			i, i_final, lower_index, upper_index, l_count: INTEGER
+			i, i_final, shifted_lower_index, lower_index, upper_index, l_count: INTEGER
 		do
 			if attached overflow_buffer_area as overflow and attached area_v2 as l_area then
-				i_final := count * 2
-				from i := 0 until i = i_final loop
+			-- iterate over each name and value interval
+				from i := 0; i_final := index_count until i = i_final loop
 					lower_index := l_area [i]; upper_index := l_area [i + 1]
-					if lower_index - offset < 0 then
+					shifted_lower_index := lower_index - offset
+					if shifted_lower_index < 0 then
+					-- no longer fits in `buffer' so make a temporary copy to use instead
 						if overflow [i // 2] = Void then
 							l_count := upper_index - lower_index + 1
 							l_area [i] := 0; l_area [i + 1] := l_count - 1
 							overflow [i // 2] := copied_buffer (buffer, i, lower_index, l_count)
 						end
 					else
-					-- still fits in current buffer
-						l_area [i] := lower_index - offset; l_area [i + 1] := upper_index - offset
+					-- still fits in current `buffer`
+						l_area [i] := shifted_lower_index; l_area [i + 1] := upper_index - offset
 					end
 					i := i + 2
 				end
@@ -289,14 +286,12 @@ feature -- Basic operations
 		do
 			index := 0
 			if attached overflow_buffer_area as overflow then
-				if not overflow.filled_with (Void, 0, overflow.count - 1) then
-					i_final := overflow.count
-					from i := 0 until i = i_final loop
-						if is_value (i) and then attached overflow [i] as buffer then
-							Buffer_pool.return (buffer)
-						end
-						i := i + 1
+			-- recycle value buffers
+				from i := 1; i_final := overflow.count until i > i_final loop
+					if attached overflow [i] as buffer then
+						Buffer_pool.return (buffer)
 					end
+					i := i + 2
 				end
 				overflow.wipe_out
 			end
@@ -338,7 +333,7 @@ feature -- Contract support
 feature -- Conversion
 
 	as_table (a_buffer: SPECIAL [CHARACTER_8]; keep_ref: BOOLEAN): like attribute_table
-		-- convert to hash table
+		-- convert all values to hash table keyed by names
 		require
 			valid_attributes_count: is_valid_count
 		local
@@ -347,8 +342,7 @@ feature -- Conversion
 			Result := attribute_table
 			Result.wipe_out
 			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area then
-				i_final := index_count
-				from i := 0 until i = i_final loop
+				from i := 0; i_final := index_count until i = i_final loop
 					buffer := i_th_buffer (i, a_buffer, overflow_area)
 					if attached name_cache.item (buffer, l_area [i], l_area [i + 1]) as name then
 						Result.put (area_substring (buffer, l_area [i + 2], l_area [i + 3], True), name)
@@ -377,12 +371,6 @@ feature {NONE} -- Implementation
 				Result.wipe_out
 				Result.copy_data (buffer, lower_index, 0, a_count)
 			end
-		end
-
-	is_value (overflow_index: INTEGER): BOOLEAN
-		-- True if `overflow_index' is for a value and not a name
-		do
-			Result := overflow_index.integer_remainder (2) = 1
 		end
 
 	i_th_buffer (i: INTEGER; buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]

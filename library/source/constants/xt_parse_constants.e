@@ -23,6 +23,7 @@ feature -- Parse status (XML_Status enum)
 	Status_error:     INTEGER = 0
 	Status_ok:        INTEGER = 1
 	Status_suspended: INTEGER = 2
+	Status_unreadable: INTEGER = 4
 
 feature -- Error codes (XML_Error enum)
 

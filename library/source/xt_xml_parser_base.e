@@ -30,7 +30,7 @@ inherit
 
 	STRING_HANDLER
 
-feature {NONE} -- Initialisation
+feature {NONE} -- Initialization
 
 	make
 		do
@@ -71,6 +71,26 @@ feature -- Status query
 	in_prolog: BOOLEAN
 
 feature -- Basic operations
+
+	parse_file (file_path: PATH; chunk_size: INTEGER; collection_off: BOOLEAN): INTEGER
+		local
+			file: XT_XML_FILE
+		do
+			create file.make (file_path, Current)
+			if collection_off then
+				file.collection_off
+			end
+
+			if chunk_size > 0 then
+				file.set_chunk_size (chunk_size)
+			end
+			if file.is_readable then
+				file.parse
+				Result := file.status
+			else
+				Result := Status_unreadable
+			end
+		end
 
 	parse (s: SPECIAL [CHARACTER]; a_offset, a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
 			-- Accept `a_count' bytes from `s[a_offset]' as the next chunk.
@@ -338,9 +358,9 @@ feature {NONE} -- Processor dispatch
 			end_in_buf:     upper <= buffer_end
 			ptr_at_start:   buffer_index = lower
 		local
-			index, tok, tok_end: INTEGER; done: BOOLEAN; lower_upper: SPECIAL [INTEGER]
+			index, tok, tok_end, count: INTEGER; done: BOOLEAN
 		do
-			index := lower; create lower_upper.make_empty (2)
+			index := lower
 			from until index >= upper or done loop
 				if in_prolog then
 					tok := scanner.scan_prolog (buf, index, upper)
@@ -360,15 +380,16 @@ feature {NONE} -- Processor dispatch
 					end
 				elseif in_cdata_section then
 					tok := scanner.scan_cdata_section (buf, index, upper)
+					tok_end := scanner.next_token_index
 					inspect tok
 						when Tok_cdata_sect_close then
 							on_cdata_section_close
 							in_cdata_section := False
-							index := scanner.next_token_index
+							index := tok_end
 
 						when Tok_data_chars, Tok_data_newline then
-							on_content (buf, index, scanner.next_token_index - 1)
-							index := scanner.next_token_index
+							on_content (buf, index, tok_end - 1)
+							index := tok_end
 
 					else
 						if tok = Tok_invalid then
@@ -428,36 +449,7 @@ feature {NONE} -- Processor dispatch
 			buffer_ptr_advanced: buffer_index >= lower and buffer_index <= upper
 		end
 
-	process_comment (buf: like buffer; str: C_STRING_8; lower, upper: INTEGER)
-		local
-			null_index: INTEGER; c, null: CHARACTER
-		do
-			str.make_shared (buf.item_address (lower), upper - lower + 1)
-			null_index := upper + 1
-			c := buf [null_index]; buf [null_index] := null
---			on_comment (str) -- null terminated temporarily for C strlen
-			buf [null_index] := c
-		end
-
 feature {NONE} -- Implementation
-
-	is_quote_or_apostrophe (bt: INTEGER): BOOLEAN
-		do
-			inspect bt
-				when BT_quote, BT_apostrophe then
-					Result := True
-			else
-			end
-		end
-
-	not_name_character (bt: INTEGER): BOOLEAN
-		do
-			inspect bt
-				when BT_CR, BT_LF, BT_gt, BT_equals, BT_forward_slash, BT_whitespace then
-					Result := True
-			else
-			end
-		end
 
 	processor_wants_reenter: BOOLEAN
 		-- True when the processor has set its reenter flag, requesting

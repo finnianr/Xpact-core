@@ -37,10 +37,30 @@ feature {NONE} -- Access
 			not_keeping_definition: not keep_ref implies Result = Output_buffer
 		end
 
+feature {NONE} -- Status report
+
+	frozen is_white_space (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): BOOLEAN
+		-- count of leading whitespace in `area' from `lower' to `upper'
+		require
+			valid_range: upper + 1 >= lower and then upper >= lower implies area.valid_index (lower) and area.valid_index (upper)
+		local
+			i: INTEGER
+		do
+			Result := True
+			from i := lower until i > upper loop
+				if area [i].is_space then
+					i := i + 1
+				else
+					Result := False
+					i := upper + 1 -- break
+				end
+			end
+		end
+
 feature {NONE} -- Measurement
 
 	frozen leading_white_space (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): INTEGER
-		-- append contents of `area' from `lower' to `upper' to `str'
+		-- count of leading whitespace in `area' from `lower' to `upper'
 		require
 			valid_range: upper + 1 >= lower and then upper >= lower implies area.valid_index (lower) and area.valid_index (upper)
 		local

@@ -13,7 +13,7 @@ class
 	XT_XML_FILE
 
 inherit
-	PLAIN_TEXT_FILE
+	RAW_FILE
 		rename
 			make as make_file
 		export
@@ -86,17 +86,22 @@ feature -- Basic operations
 		require
 			readable: is_readable
 		local
-			n: INTEGER
+			n: INTEGER; final_chunk: BOOLEAN
 		do
 			if is_readable then
 				if not gc_enabled then
 					Memory.collection_off
 				end
 				from open_read; status := Status_ok until off or status = Status_error loop
-					read_chunk
-					n := bytes_read
+					read_chunk; n := bytes_read
+					final_chunk := off
 					if n > 0 then
-						status := parser.parse (chunk, 0, n, off)
+					-- This aligns with C examples which excludes final newline
+					-- but Claude thinks this is a parsing issue, so this is just a workaround.
+						if final_chunk and then chunk [n - 1] = '%N' then
+							n := n - 1
+						end
+						status := parser.parse (chunk, 0, n, final_chunk)
 					end
 				end
 				if not gc_enabled then

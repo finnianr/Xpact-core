@@ -1,5 +1,5 @@
 note
-	description: "Summary description for {EL_CRC_32_DIGEST}."
+	description: "Digest for CRC-32/ISO-HDLC"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"

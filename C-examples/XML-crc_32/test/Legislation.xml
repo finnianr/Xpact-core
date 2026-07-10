@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- top level comment -->
+<Legislation id="L1" status="active">
+  <Title lang="en">An Act to Test CRC</Title>
+  <Body>
+    <Section number="1">
+      <Text>This is the first section text.</Text>
+      <Note><![CDATA[Some <raw> cdata content here.]]></Note>
+    </Section>
+    <Section number="2">
+      <!-- inner comment -->
+      <Text>Second section text follows.</Text>
+    </Section>
+  </Body>
+</Legislation>

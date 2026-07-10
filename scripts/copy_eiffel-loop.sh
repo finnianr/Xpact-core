@@ -8,11 +8,12 @@ cd $EIFFEL/library/Eiffel-Loop/library/language_interface/C/string/managed
 cp -u c_string*.e $DEST
 cp -u c_nulled_string_8.e $DEST
 
-cd $EIFFEL/library/Eiffel-Loop/library/utility/compression
+cd $EIFFEL/library/Eiffel-Loop/library/utility/compression/crc-32
 
-for name in el_zlib_crc_32_api el_crc_32_constants el_crc_32_digest; do
-	cp -u $name.e $DEST
-done
+cp -u *.e $DEST
 
+cd ../zlib
+
+cp -u el_zlib_crc_32_api.e $DEST
 
 popd

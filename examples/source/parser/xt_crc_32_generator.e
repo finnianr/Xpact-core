@@ -19,7 +19,7 @@ note
 	revision: "1"
 
 class
-	XT_TAG_CRC_32_GENERATOR
+	XT_CRC_32_GENERATOR
 
 inherit
 	XT_XML_PARSER_BASE
@@ -29,6 +29,8 @@ inherit
 			Tok_cdata_sect_open as Tok_cdata,
 			Tok_end_tag as Tok_tag,
 			Tok_attribute_value_s as Tok_attribute
+		redefine
+			make_parser
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
@@ -50,8 +52,13 @@ feature {NONE} -- Initialisation
 
 	make (a_data_type: INTEGER; a_data_type_name: STRING)
 		do
-			make_parser
 			data_type := a_data_type; data_type_name := a_data_type_name
+			make_parser
+		end
+
+	make_parser
+		do
+			Precursor
 			create checksum
 		end
 
@@ -62,6 +69,17 @@ feature -- Basic operations
 			IO.put_string ("Checksum for " + data_type_name + ": " + checksum.out)
 			IO.put_new_line
 		end
+
+feature -- Status change
+
+	enable_trace
+		do
+			create {EL_TRACEABLE_CRC_32_DIGEST} checksum
+		end
+
+feature -- Status report
+
+	trace_enabled: BOOLEAN
 
 feature {NONE} -- Event handlers
 
@@ -75,6 +93,8 @@ feature {NONE} -- Event handlers
 		end
 
 	on_content (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
+		local
+			s: XT_STRING_ROUTINES
 		do
 			inspect data_type
 				when Tok_cdata, Tok_text then
@@ -94,7 +114,7 @@ feature {NONE} -- Event handlers
 					checksum.add_string (name)
 
 				when Tok_attribute then
-					attributes.append_to_crc_32 (checksum, buffer)
+					attributes.append_values_to_crc_32 (checksum, buffer)
 			else
 			end
 		end
