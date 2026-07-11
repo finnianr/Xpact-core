@@ -127,11 +127,11 @@ feature -- Prolog tokenization
 					when BT_name_start, BT_hex_digit then
 						tok := Tok_name
 						index := advance (index)
-						Result := scan_name_or_nmtoken (buf, index, a_end, tok)
+						Result := scan_name_or_name_token (buf, index, a_end, tok)
 					when BT_digit, BT_name_only, BT_minus then
-						tok := Tok_nmtoken
+						tok := tok_name_token
 						index := advance (index)
-						Result := scan_name_or_nmtoken (buf, index, a_end, tok)
+						Result := scan_name_or_name_token (buf, index, a_end, tok)
 
 					when BT_lead_2_byte then
 						if a_end - index < 2 then
@@ -140,10 +140,10 @@ feature -- Prolog tokenization
 							next_token_index := index; Result := Tok_invalid
 						elseif is_name_start_char_2 (buf, index) then
 							tok := Tok_name; index := index + 2
-							Result := scan_name_or_nmtoken (buf, index, a_end, tok)
+							Result := scan_name_or_name_token (buf, index, a_end, tok)
 						elseif is_name_char_2 (buf, index) then
-							tok := Tok_nmtoken; index := index + 2
-							Result := scan_name_or_nmtoken (buf, index, a_end, tok)
+							tok := tok_name_token; index := index + 2
+							Result := scan_name_or_name_token (buf, index, a_end, tok)
 						else
 							next_token_index := index; Result := Tok_invalid
 						end
@@ -154,10 +154,10 @@ feature -- Prolog tokenization
 							next_token_index := index; Result := Tok_invalid
 						elseif is_name_start_char_3 (buf, index) then
 							tok := Tok_name; index := index + 3
-							Result := scan_name_or_nmtoken (buf, index, a_end, tok)
+							Result := scan_name_or_name_token (buf, index, a_end, tok)
 						elseif is_name_char_3 (buf, index) then
-							tok := Tok_nmtoken; index := index + 3
-							Result := scan_name_or_nmtoken (buf, index, a_end, tok)
+							tok := tok_name_token; index := index + 3
+							Result := scan_name_or_name_token (buf, index, a_end, tok)
 						else
 							next_token_index := index; Result := Tok_invalid
 						end
@@ -322,7 +322,7 @@ feature {NONE} -- Prolog sub-scanners
 			end
 		end
 
-	scan_name_or_nmtoken (buf: SPECIAL [CHARACTER]; start_index, a_end, a_tok: INTEGER): INTEGER
+	scan_name_or_name_token (buf: SPECIAL [CHARACTER]; start_index, a_end, a_tok: INTEGER): INTEGER
 			-- Continue scanning a name or nmtoken started by caller.
 			-- a_tok is Tok_name or Tok_nmtoken from the first character.
 			-- Returns the token (possibly with suffix +, *, ?) or negative if partial.
@@ -339,21 +339,21 @@ feature {NONE} -- Prolog sub-scanners
 						     BT_percent, BT_whitespace, BT_CR, BT_LF then
 							next_token_index := index; Result := tok; done := True
 						when BT_plus then
-							if tok = Tok_nmtoken then
+							if tok = tok_name_token then
 								next_token_index := index; Result := Tok_invalid
 							else
 								next_token_index := advance (index); Result := Tok_name_plus
 							end
 							done := True
 						when BT_asterisk then
-							if tok = Tok_nmtoken then
+							if tok = tok_name_token then
 								next_token_index := index; Result := Tok_invalid
 							else
 								next_token_index := advance (index); Result := Tok_name_asterisk
 							end
 							done := True
 						when BT_question then
-							if tok = Tok_nmtoken then
+							if tok = tok_name_token then
 								next_token_index := index; Result := Tok_invalid
 							else
 								next_token_index := advance (index); Result := Tok_name_question

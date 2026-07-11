@@ -160,6 +160,24 @@ feature -- Measurement
 			same_as_string_8: Result = to_string.index_of (c, start_index)
 		end
 
+
+	match_count (other: SPECIAL [CHARACTER_8]; offset: INTEGER): INTEGER
+		-- count of characters in `other' from `offset' matching those in `area'
+		local
+			i, l_count: INTEGER; l_area: POINTER
+		do
+			l_count := count.min (other.count - offset)
+			l_area := area
+			from i := 0; until i = l_count loop
+				if c_read_character_8 (l_area, i) = other [offset + i] then
+					Result := Result + 1
+					i := i + 1
+				else
+					i := l_count -- break
+				end
+			end
+		end
+
 	occurrences (c: CHARACTER_8): INTEGER
 		-- Number of times `c' appears in `area'
 		local
@@ -177,6 +195,17 @@ feature -- Measurement
 		end
 
 feature -- Status report
+
+	same_characters (other: SPECIAL [CHARACTER_8]; offset: INTEGER): BOOLEAN
+		-- `True' if characters in `other' from `offset' match those in `Current'
+		local
+			l_count: INTEGER
+		do
+			l_count := count
+			if other.valid_index (offset + l_count - 1) then
+				Result := c_memory_compare (area, other.item_address (offset), l_count)
+			end
+		end
 
 	starts_with (other: C_STRING_8): BOOLEAN
 		-- Does `area' start with the same bytes as `other.area'?

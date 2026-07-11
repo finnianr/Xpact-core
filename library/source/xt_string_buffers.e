@@ -28,6 +28,20 @@ inherit
 			{NONE} all
 		end
 
+	XT_BYTE_TYPE_CONSTANTS
+		export
+			{NONE} all
+		end
+
+	XT_TOKEN_CONSTANTS
+		export
+			{NONE} all
+		end
+
+	XT_STRING_CONSTANTS
+
+	STRING_HANDLER
+
 feature {NONE} -- Initialisation
 
 	make
@@ -42,6 +56,7 @@ feature {NONE} -- Initialisation
 			check attached Token_names end
 
 			buffer := new_buffer_area (Default_buffer_size)
+			create last_name.make_empty
 			set_scanner (Utf_8)
 
 		ensure then
@@ -62,6 +77,7 @@ feature -- Element change
 		do
 			scanner := new_scanner (type)
 			attribute_intervals := scanner.attribute_intervals
+			entity_table := attribute_intervals.entity_table
 		end
 
 feature {NONE} -- Factory
@@ -204,6 +220,11 @@ feature {NONE} -- Internal structures
 
 	buffer: SPECIAL [CHARACTER_8]
 		-- Raw byte buffer; do not modify indices outside this class.
+
+	entity_table: HASH_TABLE [STRING, STRING]
+		-- table of expanded entities defined in DOCTYPE by ENTITY
+
+	last_name: STRING
 
 	scanner: XT_DOCUMENT_SCANNER
 

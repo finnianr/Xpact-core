@@ -93,11 +93,13 @@ feature {NONE} -- Event handlers
 		end
 
 	on_content (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
-		local
-			s: XT_STRING_ROUTINES
 		do
 			inspect data_type
-				when Tok_cdata, Tok_text then
+				when Tok_cdata then
+					if in_cdata_section then
+						checksum.add_characters (area, lower, upper)
+					end
+				when Tok_text then
 					checksum.add_characters (area, lower, upper)
 			else
 			end

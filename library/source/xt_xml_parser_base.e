@@ -18,18 +18,6 @@ inherit
 			make
 		end
 
-	XT_BYTE_TYPE_CONSTANTS
-		export
-			{NONE} all
-		end
-
-	XT_TOKEN_CONSTANTS
-		export
-			{NONE} all
-		end
-
-	STRING_HANDLER
-
 feature {NONE} -- Initialization
 
 	make
@@ -45,6 +33,8 @@ feature {NONE} -- Initialization
 			last_buffer_request_size   := 0
 			partial_token_bytes_before := 0
 			parse_end_byte_index       := 0
+
+			declaration := Empty_string
 
 			Precursor
 		ensure then
@@ -356,18 +346,39 @@ feature {NONE} -- Processor dispatch
 		require
 			valid_range:    lower >= 0 and then lower <= upper
 			end_in_buf:     upper <= buffer_end
-			ptr_at_start:   buffer_index = lower
+			buffer_index_at_start:   buffer_index = lower
 		local
-			index, tok, tok_end, count: INTEGER; done: BOOLEAN
+			index, tok, tok_end: INTEGER; done: BOOLEAN
+			s: XT_STRING_ROUTINES
 		do
 			index := lower
 			from until index >= upper or done loop
 				if in_prolog then
 					tok := scanner.scan_prolog (buf, index, upper)
+					tok_end := scanner.next_token_index
 					inspect tok
 						when Tok_instance_start then
 							in_prolog := False
-							index := scanner.next_token_index
+							index := tok_end
+
+						when Tok_decl_open then
+							declaration := select_declaration (buf, index + 2)
+							index := tok_end
+
+						when Tok_literal then
+							if declaration = Entity then
+								entity_table.put (s.new_substring (buf, index + 1, tok_end - 2), last_name)
+								check
+									no_duplicate: entity_table.inserted
+								end
+							end
+							index := tok_end
+
+						when Tok_name then
+							if declaration = Entity then
+								last_name := s.new_substring (buf, index, tok_end - 1)
+							end
+							index := tok_end
 
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
@@ -375,7 +386,7 @@ feature {NONE} -- Processor dispatch
 						if tok <= 0 then
 							done := True  -- partial; wait for more data
 						else
-							index := scanner.next_token_index  -- skip prolog token
+							index := tok_end  -- skip prolog token
 						end
 					end
 				elseif in_cdata_section then
@@ -451,6 +462,18 @@ feature {NONE} -- Processor dispatch
 
 feature {NONE} -- Implementation
 
+	select_declaration (buf: like buffer; offset: INTEGER): C_STRING_8
+		do
+			if Doctype.same_characters (buf, offset) then
+				Result := Doctype
+
+			elseif Entity.same_characters (buf, offset) then
+				Result := Entity
+			else
+				Result := Empty_string
+			end
+		end
+
 	processor_wants_reenter: BOOLEAN
 		-- True when the processor has set its reenter flag, requesting
 		-- another pass through `do_process_bytes' to avoid stack overflow.
@@ -523,6 +546,8 @@ feature {NONE} -- Deferred event handlers
 		end
 
 feature {NONE} -- Internal attributes
+
+	declaration: C_STRING_8
 
 	in_cdata_section: BOOLEAN
 

@@ -187,9 +187,11 @@ feature {NONE} -- PI and comment scanning
 								when BT_name_start, BT_hex_digit then
 									index := advance (index)
 								when BT_whitespace, BT_CR, BT_LF, BT_percent then
-									next_token_index := index; Result := Tok_decl_open; done := True
+									next_token_index := index
+									Result := Tok_decl_open; done := True
 							else
-								next_token_index := index; Result := Tok_invalid; done := True
+								next_token_index := index
+								Result := Tok_invalid; done := True
 							end
 						end
 						if not done then
@@ -205,25 +207,16 @@ feature {NONE} -- PI and comment scanning
 			-- Verify 'CDATA[' after '<!['.  Returns Tok_cdata_sect_open or error.
 		require
 			start_index <= a_end
-		local
-			index, i: INTEGER
 		do
-			index := start_index
-			if a_end - index < 6 then
+			if a_end - start_index < Cdata_lsqb.count then
 				Result := Tok_partial
 			else
-				from i := 0 until i >= 6 loop
-					if buf [index + i] /= Cdata_lsqb [i] then
-						next_token_index := index + i
-						Result := Tok_invalid
-						i := 6 -- exit
-					else
-						i := i + 1
-					end
-				end
-				if Result = 0 then
-					next_token_index := index + 6
+				if Cdata_lsqb.same_characters (buf, start_index) then
 					Result := Tok_cdata_sect_open
+					next_token_index := start_index + Cdata_lsqb.count
+				else
+					Result := Tok_invalid
+					next_token_index := start_index + Cdata_lsqb.match_count (buf, start_index) + 1
 				end
 			end
 		end
@@ -304,14 +297,6 @@ feature {NONE} -- PI helpers
 			if not done then
 				Result := Tok_partial
 			end
-		end
-
-feature {NONE} -- CDATA constant
-
-	Cdata_lsqb: SPECIAL [CHARACTER]
-			-- ASCII codes for "CDATA[" (C, D, A, T, A, [).
-		once
-			Result := ("CDATA[").area
 		end
 
 end

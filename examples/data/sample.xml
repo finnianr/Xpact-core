@@ -12,7 +12,7 @@
 			Harry Potter
 		</title>
 		<author>J K. Rowling</author>
-	<price>29.99</price>
+		<price>29.99</price>
 	</book>
-<dvd region="2" format="PAL"/>
+	<dvd region="2" format="PAL"/>
 </bookstore>

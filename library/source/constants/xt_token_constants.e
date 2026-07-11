@@ -63,7 +63,7 @@ feature -- Prolog / DTD tokens
 	Tok_decl_open: INTEGER = 16
 	Tok_decl_close: INTEGER = 17
 	Tok_name: INTEGER = 18
-	Tok_nmtoken: INTEGER = 19
+	Tok_name_token: INTEGER = 19
 	Tok_pound_name: INTEGER = 20
 	Tok_or: INTEGER = 21
 	Tok_percent: INTEGER = 22

@@ -57,6 +57,25 @@ feature {NONE} -- Status report
 			end
 		end
 
+	frozen same_characters (area, string_area: SPECIAL [CHARACTER_8]; offset: INTEGER): BOOLEAN
+		-- `True' if characters in `area' from `offset' match those in `string_area' from 0 to `string_area.count - 2'
+		require
+			null_terminated: string_area [string_area.count - 1] = '%U'
+			inside_area: area.valid_index (offset + string_area.count - 2)
+		local
+			i, string_count: INTEGER
+		do
+			Result := True
+			from i := 0; string_count := string_area.count - 1 until i = string_count loop
+				if area [offset + i] = string_area [i] then
+					i := i + 1
+				else
+					Result := False
+					i := string_count -- break
+				end
+			end
+		end
+
 feature {NONE} -- Measurement
 
 	frozen leading_white_space (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): INTEGER
@@ -71,6 +90,24 @@ feature {NONE} -- Measurement
 					Result := Result + 1; i := i + 1
 				else
 					i := upper + 1 -- break
+				end
+			end
+		end
+
+	frozen match_count (area, string_area: SPECIAL [CHARACTER_8]; offset: INTEGER): INTEGER
+		-- count of characters in `area' from `offset' matching those in `string_area' from 0 to `string_area.count - 2'
+		require
+			null_terminated: string_area [string_area.count - 1] = '%U'
+			inside_area: area.valid_index (offset + string_area.count - 2)
+		local
+			i, string_count: INTEGER
+		do
+			from i := 0; string_count := string_area.count - 1 until i = string_count loop
+				if area [offset + i] = string_area [i] then
+					Result := Result + 1
+					i := i + 1
+				else
+					i := string_count -- break
 				end
 			end
 		end

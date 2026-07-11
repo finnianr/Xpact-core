@@ -15,8 +15,10 @@ class
 
 inherit
 	NATURAL_64_REF
+		export
+			{NONE} item, set_item
 		redefine
-			default_create
+			default_create, out
 		end
 
 	EL_ZLIB_CRC_32_API
@@ -44,19 +46,26 @@ feature {NONE} -- Initialization
 			set_item (CRC_initial)
 		end
 
+feature -- Access
+
+	value: NATURAL_32
+		do
+			Result := item.to_natural_32
+		end
+
 feature -- Element change
 
 	add_bytes (byte_array: POINTER; count: INTEGER)
 		local
-			value: NATURAL
+			l_value: NATURAL
 		do
 			inspect item
 				when CRC_initial then
-					value := c_crc_32_seed
+					l_value := c_crc_32_seed
 			else
-				value := item.to_natural_32
+				l_value := item.to_natural_32
 			end
-			set_item (c_crc_32 (value, byte_array, count))
+			set_item (c_crc_32 (l_value, byte_array, count))
 		end
 
 	add_characters (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
@@ -68,4 +77,13 @@ feature -- Element change
 		do
 			set_item (characters_crc_32 (item, str.area, 0, str.count - 1))
 		end
+
+feature -- Output
+
+	out: STRING
+		-- Printable representation of value.
+		do
+			Result := value.out
+		end
+
 end

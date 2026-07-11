@@ -55,6 +55,7 @@ feature -- Initialization
 			Precursor (n)
 			create character_swap_area.make_empty (n)
 			create attribute_table.make (11)
+			create entity_table.make (11)
 			create overflow_buffer_area.make_empty (area.capacity // 2)
 			name_cache := Empty_name_cache
 		end
@@ -76,6 +77,9 @@ feature -- Status query
 		end
 
 feature -- Access
+
+	entity_table: HASH_TABLE [STRING, STRING]
+		-- table of expanded entities defined in DOCTYPE by ENTITY
 
 	upper_plus_1_characters (buffer: SPECIAL [CHARACTER_8]): STRING
 		require
@@ -201,6 +205,7 @@ feature -- Basic operations
 			end
 		ensure
 			filled: c_string_array.count = count * 2 + 1
+			same_character_count: sum_c_string_lengths (c_string_array) = character_count
 		end
 
 	append_values_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
@@ -306,6 +311,22 @@ feature -- Contract support
 			Result := valid_intervals (area_v2)
 		end
 
+	sum_c_string_lengths (c_string_array: SPECIAL [POINTER]): INTEGER
+		local
+			i: INTEGER; c_str: C_STRING
+		do
+			create c_str.make_empty (0)
+			from until i = c_string_array.count loop
+				if c_string_array [i] = default_pointer then
+					i := c_string_array.count -- break
+				else
+					c_str.set_shared_from_pointer (c_string_array [i])
+					Result := Result + c_str.count
+					i := i + 1
+				end
+			end
+		end
+
 	item_value (buffer: SPECIAL [CHARACTER_8]): STRING
 		-- value at current iteration position
 		local
@@ -337,7 +358,7 @@ feature -- Conversion
 		require
 			valid_attributes_count: is_valid_count
 		local
-			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			i, i_final, amp_index, colon_index: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
 			Result := attribute_table
 			Result.wipe_out
@@ -345,7 +366,19 @@ feature -- Conversion
 				from i := 0; i_final := index_count until i = i_final loop
 					buffer := i_th_buffer (i, a_buffer, overflow_area)
 					if attached name_cache.item (buffer, l_area [i], l_area [i + 1]) as name then
-						Result.put (area_substring (buffer, l_area [i + 2], l_area [i + 3], True), name)
+						if attached area_substring (buffer, l_area [i + 2], l_area [i + 3], True) as value then
+							amp_index := value.index_of ('&', 1)
+							if amp_index > 0 then
+								colon_index := value.index_of (';', amp_index + 1)
+								if colon_index > 0 and then colon_index > amp_index + 1 then
+									Result.put (expanded_value (entity_table, value, amp_index, colon_index), name)
+								else
+									Result.put (value, name)
+								end
+							else
+								Result.put (value, name)
+							end
+						end
 					end
 					check
 						not_duplicate_name: Result.inserted
@@ -370,6 +403,32 @@ feature {NONE} -- Implementation
 				Result := Buffer_pool.borrow_item (a_count)
 				Result.wipe_out
 				Result.copy_data (buffer, lower_index, 0, a_count)
+			end
+		end
+
+	expanded_value (table: like entity_table; value: STRING; a_amp_index, a_colon_index: INTEGER): STRING
+		local
+			amp_index, colon_index: INTEGER; done: BOOLEAN
+		do
+			Result := value
+			from amp_index := a_amp_index; colon_index := a_colon_index until done loop
+				if attached Result.substring (amp_index + 1, colon_index - 1) as entity
+					and then attached table [entity] as entity_value
+				then
+					Result.replace_substring (entity_value, amp_index, colon_index)
+					colon_index := colon_index + entity_table.count - 2
+				end
+				amp_index := Result.index_of ('&', colon_index + 1)
+				if amp_index > 0 then
+					colon_index := Result.index_of (';', amp_index + 1)
+					if colon_index > 0 and then colon_index > amp_index + 1 then
+						do_nothing
+					else
+						done := True
+					end
+				else
+					done := True
+				end
 			end
 		end
 

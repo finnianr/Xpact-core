@@ -32,6 +32,8 @@ inherit
 	XT_BYTE_TYPE_CONSTANTS
 	XT_TOKEN_CONSTANTS
 
+	XT_STRING_CONSTANTS
+
 	XT_STRING_ROUTINES_I
 
 feature -- Output of the last scan (shared with XT_ENCODING via join)
