@@ -41,6 +41,7 @@ feature {NONE} -- Initialisation
 		do
 			create name_cache.make
 			create attribute_intervals.make (5, name_cache)
+			create scanned_entity_buffer.make (5)
 			create index_x4_buffer.make_empty (4)
 		end
 
@@ -48,7 +49,7 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 
 	scan_content (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
 		do
-			Result := content_tok (buf, start_index, a_end)
+			Result := content_tok (buf, scanned_entity_buffer, start_index, a_end)
 		end
 
 	scan_prolog (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
@@ -63,7 +64,7 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 
 	scan_entity_value (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
 		do
-			Result := entity_value_tok (buf, start_index, a_end)
+			Result := entity_value_tok (buf, scanned_entity_buffer, start_index, a_end)
 		end
 
 feature -- Name utilities (implements XT_ENCODING deferred features)

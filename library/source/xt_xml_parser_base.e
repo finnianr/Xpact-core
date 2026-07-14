@@ -367,7 +367,7 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_literal then
 							if declaration = Entity then
-								entity_table.put (s.new_substring (buf, index + 1, tok_end - 2), last_name)
+								entity_table.put (s.new_substring (buf, index + 1, tok_end - 2), last_entity_ref)
 								check
 									no_duplicate: entity_table.inserted
 								end
@@ -376,7 +376,7 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_name then
 							if declaration = Entity then
-								last_name := s.new_substring (buf, index, tok_end - 1)
+								last_entity_ref := name_cache.entity_ref_item (buf, index, tok_end - 1)
 							end
 							index := tok_end
 

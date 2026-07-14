@@ -21,14 +21,14 @@ inherit XT_SCANNER_HELPERS
 
 feature {NONE} -- PI and comment scanning
 
-	scan_comment (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan comment after '<!-'.  Returns Tok_comment or error.
-		require start_index <= a_end
+		require start_index <= end_index
 		local
 			index: INTEGER; done: BOOLEAN
 		do
 			index := start_index
-			if index >= a_end then
+			if index >= end_index then
 				Result := Tok_partial
 			elseif buf [index] /= '-' then
 				next_token_index := index
@@ -36,15 +36,15 @@ feature {NONE} -- PI and comment scanning
 
 			elseif attached byte_type_table as bt_table then
 				index := advance (index)
-				from until index >= a_end or done loop
+				from until index >= end_index or done loop
 					inspect bt_table [buf [index].code].to_integer_32
 						when BT_minus then
 							index := advance (index)
-							if index >= a_end then
+							if index >= end_index then
 								Result := Tok_partial; done := True
 							elseif buf [index] = '-' then
 								index := advance (index)
-								if index >= a_end then
+								if index >= end_index then
 									Result := Tok_partial; done := True
 								elseif buf [index] = '>' then
 									next_token_index := advance (index)
@@ -56,7 +56,7 @@ feature {NONE} -- PI and comment scanning
 						when BT_non_xml, BT_malform, BT_continuation_byte then
 							next_token_index := index; Result := Tok_invalid; done := True
 						when BT_lead_2_byte then
-							if a_end - index < 2 then
+							if end_index - index < 2 then
 								Result := Tok_partial_char; done := True
 							elseif is_invalid_char_2 (buf, index) then
 								next_token_index := index; Result := Tok_invalid; done := True
@@ -64,7 +64,7 @@ feature {NONE} -- PI and comment scanning
 								index := index + 2
 							end
 						when BT_lead_3_byte then
-							if a_end - index < 3 then
+							if end_index - index < 3 then
 								Result := Tok_partial_char; done := True
 							elseif is_invalid_char_3 (buf, index) then
 								next_token_index := index; Result := Tok_invalid; done := True
@@ -72,7 +72,7 @@ feature {NONE} -- PI and comment scanning
 								index := index + 3
 							end
 						when BT_lead_4_byte then
-							if a_end - index < 4 then
+							if end_index - index < 4 then
 								Result := Tok_partial_char; done := True
 							elseif is_invalid_char_4 (buf, index) then
 								next_token_index := index; Result := Tok_invalid; done := True
@@ -89,24 +89,24 @@ feature {NONE} -- PI and comment scanning
 			end
 		end
 
-	scan_pi (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_pi (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan processing instruction after '<?'.
 			-- Returns Tok_pi (or Tok_xml_decl if target is "xml").
 		require
-			valid_range: start_index <= a_end
+			valid_range: start_index <= end_index
 		local
 			index, tok: INTEGER; target_start: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			target_start := index
-			if index >= a_end then
+			if index >= end_index then
 				Result := Tok_partial
 			else
 				inspect byte_type (buf, index)
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
 					when BT_lead_2_byte then
-						if a_end - index >= 2 and then not is_invalid_char_2 (buf, index)
+						if end_index - index >= 2 and then not is_invalid_char_2 (buf, index)
 							and then is_name_start_char_2 (buf, index)
 						then
 							index := index + 2
@@ -114,7 +114,7 @@ feature {NONE} -- PI and comment scanning
 							next_token_index := index; Result := Tok_invalid; done := True
 						end
 					when BT_lead_3_byte then
-						if a_end - index >= 3 and then not is_invalid_char_3 (buf, index)
+						if end_index - index >= 3 and then not is_invalid_char_3 (buf, index)
 							and then is_name_start_char_3 (buf, index)
 						then index := index + 3
 						else
@@ -124,7 +124,7 @@ feature {NONE} -- PI and comment scanning
 					next_token_index := index; Result := Tok_invalid; done := True
 				end
 				if not done and then attached byte_type_table as bt_table then
-					from until index >= a_end or done loop
+					from until index >= end_index or done loop
 						inspect bt_table [buf [index].code].to_integer_32
 							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 								index := advance (index)
@@ -134,7 +134,7 @@ feature {NONE} -- PI and comment scanning
 									next_token_index := index; Result := Tok_invalid; done := True
 								else
 									index := advance (index)
-									Result := scan_pi_content (buf, index, a_end, tok); done := True
+									Result := scan_pi_content (buf, index, end_index, tok); done := True
 								end
 							when BT_question then
 								tok := check_pi_target (buf, target_start, index)
@@ -142,7 +142,7 @@ feature {NONE} -- PI and comment scanning
 									next_token_index := index; Result := Tok_invalid; done := True
 								else
 									index := advance (index)
-									if index >= a_end then Result := Tok_partial; done := True
+									if index >= end_index then Result := Tok_partial; done := True
 									elseif buf [index] = '>' then
 										next_token_index := advance (index)
 										Result := tok; done := True
@@ -161,20 +161,20 @@ feature {NONE} -- PI and comment scanning
 			end
 		end
 
-	scan_decl (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_decl (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan declaration keyword after '<!'.  Returns Tok_decl_open or error.
-		require start_index <= a_end
+		require start_index <= end_index
 		local
 			index: INTEGER; done: BOOLEAN
 		do
 			index := start_index
-			if index >= a_end then
+			if index >= end_index then
 				Result := Tok_partial
 
 			elseif attached byte_type_table as bt_table then
 				inspect bt_table [buf [index].code].to_integer_32
 					when BT_minus then
-						Result := scan_comment (buf, advance (index), a_end)
+						Result := scan_comment (buf, advance (index), end_index)
 
 					when BT_left_square_bracket then
 						next_token_index := advance (index)
@@ -182,7 +182,7 @@ feature {NONE} -- PI and comment scanning
 
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
-						from until index >= a_end or done loop
+						from until index >= end_index or done loop
 							inspect bt_table [buf [index].code].to_integer_32
 								when BT_name_start, BT_hex_digit then
 									index := advance (index)
@@ -203,12 +203,12 @@ feature {NONE} -- PI and comment scanning
 			end
 		end
 
-	scan_cdata_section_open (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_cdata_section_open (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Verify 'CDATA[' after '<!['.  Returns Tok_cdata_sect_open or error.
 		require
-			start_index <= a_end
+			start_index <= end_index
 		do
-			if a_end - start_index < Cdata_lsqb.count then
+			if end_index - start_index < Cdata_lsqb.count then
 				Result := Tok_partial
 			else
 				if Cdata_lsqb.same_characters (buf, start_index) then
@@ -223,14 +223,14 @@ feature {NONE} -- PI and comment scanning
 
 feature {NONE} -- PI helpers
 
-	check_pi_target (buf: SPECIAL [CHARACTER]; a_start, a_end: INTEGER): INTEGER
+	check_pi_target (buf: SPECIAL [CHARACTER]; a_start, end_index: INTEGER): INTEGER
 			-- Return Tok_xml_decl if target is exactly "xml" (case-sensitive),
 			-- Tok_pi otherwise, or 0 if target is a case variation of "xml"
 			-- (forbidden by XML spec: "<?XML" etc. are reserved).
 		local
 			len: INTEGER
 		do
-			len := a_end - a_start
+			len := end_index - a_start
 			if len = 3 * min_bytes_per_char then
 				if buf [a_start] = 'x'
 					and buf [a_start + min_bytes_per_char] = 'm'
@@ -250,33 +250,33 @@ feature {NONE} -- PI helpers
 			end
 		end
 
-	scan_pi_content (buf: SPECIAL [CHARACTER]; start_index, a_end, tok: INTEGER): INTEGER
+	scan_pi_content (buf: SPECIAL [CHARACTER]; start_index, end_index, tok: INTEGER): INTEGER
 			-- Scan PI content until '?>'.  Returns tok (Tok_pi or Tok_xml_decl).
 		local
 			index: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			if attached byte_type_table as bt_table then
-				from until index >= a_end or done loop
+				from until index >= end_index or done loop
 					inspect bt_table [buf [index].code].to_integer_32
 						when BT_non_xml, BT_malform, BT_continuation_byte then
 							next_token_index := index; Result := Tok_invalid; done := True
 						when BT_lead_2_byte then
-							if a_end - index < 2 then Result := Tok_partial_char; done := True
+							if end_index - index < 2 then Result := Tok_partial_char; done := True
 							elseif is_invalid_char_2 (buf, index) then
 								next_token_index := index; Result := Tok_invalid; done := True
 							else
 								index := index + 2
 							end
 						when BT_lead_3_byte then
-							if a_end - index < 3 then Result := Tok_partial_char; done := True
+							if end_index - index < 3 then Result := Tok_partial_char; done := True
 							elseif is_invalid_char_3 (buf, index) then
 								next_token_index := index; Result := Tok_invalid; done := True
 							else
 								index := index + 3
 							end
 						when BT_lead_4_byte then
-							if a_end - index < 4 then Result := Tok_partial_char; done := True
+							if end_index - index < 4 then Result := Tok_partial_char; done := True
 							elseif is_invalid_char_4 (buf, index) then
 								next_token_index := index; Result := Tok_invalid; done := True
 							else
@@ -284,7 +284,7 @@ feature {NONE} -- PI helpers
 							end
 						when BT_question then
 							index := advance (index)
-							if index >= a_end then Result := Tok_partial; done := True
+							if index >= end_index then Result := Tok_partial; done := True
 							elseif buf [index] = '>' then
 								next_token_index := advance (index)
 								Result := tok; done := True

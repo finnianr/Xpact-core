@@ -63,6 +63,21 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
+	entity_ref_item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING
+		require
+			buffer_wide_enough: buffer.valid_index (start_index - 1) and buffer.valid_index (end_index + 1)
+		local
+			start_c, end_c: CHARACTER
+		do
+			start_c := buffer [start_index - 1]; end_c := buffer [end_index + 1]
+			buffer [start_index - 1] := '&'; buffer [end_index + 1] := ';'
+			Result := item (buffer, start_index - 1, end_index + 1)
+			buffer [start_index - 1] := start_c; buffer [end_index + 1] := end_c
+		ensure
+			buffer_start_unchanged: buffer [start_index - 1] = old buffer [start_index - 1]
+			buffer_start_unchanged: buffer [end_index + 1] = old buffer [end_index + 1]
+		end
+
 	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING
 		require
 			not_empty: not is_empty

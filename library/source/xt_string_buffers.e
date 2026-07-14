@@ -56,7 +56,7 @@ feature {NONE} -- Initialisation
 			check attached Token_names end
 
 			buffer := new_buffer_area (Default_buffer_size)
-			create last_name.make_empty
+			create last_entity_ref.make_empty
 			set_scanner (Utf_8)
 
 		ensure then
@@ -77,6 +77,7 @@ feature -- Element change
 		do
 			scanner := new_scanner (type)
 			attribute_intervals := scanner.attribute_intervals
+			name_cache := attribute_intervals.name_cache
 			entity_table := attribute_intervals.entity_table
 		end
 
@@ -224,7 +225,10 @@ feature {NONE} -- Internal structures
 	entity_table: HASH_TABLE [STRING, STRING]
 		-- table of expanded entities defined in DOCTYPE by ENTITY
 
-	last_name: STRING
+	last_entity_ref: STRING
+
+	name_cache: XT_NAME_CACHE
+		-- efficient lookup of attribute/tag name
 
 	scanner: XT_DOCUMENT_SCANNER
 

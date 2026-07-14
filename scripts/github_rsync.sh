@@ -15,7 +15,7 @@ rsync -av --itemize-changes $DRY_RUN --safe-links --delete --delete-excluded \
 	--exclude-from=$XPACT_CORE/rsync-excludes.txt \
 	$XPACT_CORE $HOME/github | sort | grep --invert-match -F ".d..t...... Eif"
 
-if [[ "$DRY_RUN" == "" ]]; then
+if [[ "$1" == "live" ]]; then
 	cd $HOME/github/Xpact-core
 
 	# Warn if any EIFGENs got copied

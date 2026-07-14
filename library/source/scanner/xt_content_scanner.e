@@ -22,16 +22,16 @@ inherit
 
 feature -- Content tokenization
 
-	content_tok (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	content_tok (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
 			-- Return the token type for the next token in element content.
 			-- Sets next_token_ptr.  Corresponds to contentTok() in xmltok_impl.c.
 		require
-			valid_start_index: start_index <= a_end and a_end <= buf.count
+			valid_start_index: start_index <= end_index and end_index <= buf.count
 		local
 			index, a_end_adj: INTEGER
 		do
 			index := start_index
-			a_end_adj := a_end
+			a_end_adj := end_index
 			if index >= a_end_adj then
 				Result := Tok_none
 			else
@@ -39,7 +39,7 @@ feature -- Content tokenization
 					when BT_lt then
 						Result := scan_lt (buf, advance (index), a_end_adj)
 					when BT_ampersand then
-						Result := scan_ref (buf, advance (index), a_end_adj)
+						Result := scan_ref (buf, entity_buffer, advance (index), a_end_adj)
 					when BT_CR then
 						index := advance (index)
 						if index >= a_end_adj then
@@ -111,41 +111,41 @@ feature -- Content tokenization
 			end
 		end
 
-	cdata_section_tok (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	cdata_section_tok (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- Return the next token inside a CDATA section.
 		-- Sets next_token_ptr.  Corresponds to cdataSectionTok() in xmltok_impl.c.
 		require
-			valid_range: start_index <= a_end and a_end <= buf.count
+			valid_range: start_index <= end_index and end_index <= buf.count
 		local
 			index: INTEGER
 		do
 			index := start_index
-			if index >= a_end then
+			if index >= end_index then
 				Result := Tok_none
 			else
 				inspect byte_type (buf, index)
 					when BT_right_square_bracket then
 						index := advance (index)
-						if index >= a_end then
+						if index >= end_index then
 							Result := Tok_partial
 						elseif buf [index] /= ']' then
 							-- lone ']'
-							Result := scan_cdata_data_chars (buf, index, a_end)
+							Result := scan_cdata_data_chars (buf, index, end_index)
 						else
 							index := advance (index)
-							if index >= a_end then
+							if index >= end_index then
 								Result := Tok_partial
 							elseif buf [index] = '>' then
 								next_token_index := advance (index)
 								Result := Tok_cdata_sect_close
 							else
 								index := advance (index)
-								Result := scan_cdata_data_chars (buf, index, a_end)
+								Result := scan_cdata_data_chars (buf, index, end_index)
 							end
 						end
 					when BT_CR then
 						index := advance (index)
-						if index >= a_end then
+						if index >= end_index then
 							Result := Tok_partial
 						else
 							if byte_type (buf, index) = BT_LF then
@@ -160,42 +160,42 @@ feature -- Content tokenization
 					when BT_non_xml, BT_malform, BT_continuation_byte then
 						next_token_index := index; Result := Tok_invalid
 					when BT_lead_2_byte then
-						if a_end - index < 2 then
+						if end_index - index < 2 then
 							Result := Tok_partial_char
 						elseif is_invalid_char_2 (buf, index) then
 							next_token_index := index; Result := Tok_invalid
 						else
 							index := index + 2
-							Result := scan_cdata_data_chars (buf, index, a_end)
+							Result := scan_cdata_data_chars (buf, index, end_index)
 						end
 					when BT_lead_3_byte then
-						if a_end - index < 3 then
+						if end_index - index < 3 then
 							Result := Tok_partial_char
 						elseif is_invalid_char_3 (buf, index) then
 							next_token_index := index; Result := Tok_invalid
 						else
 							index := index + 3
-							Result := scan_cdata_data_chars (buf, index, a_end)
+							Result := scan_cdata_data_chars (buf, index, end_index)
 						end
 					when BT_lead_4_byte then
-						if a_end - index < 4 then
+						if end_index - index < 4 then
 							Result := Tok_partial_char
 						elseif is_invalid_char_4 (buf, index) then
 							next_token_index := index; Result := Tok_invalid
 						else
 							index := index + 4
-							Result := scan_cdata_data_chars (buf, index, a_end)
+							Result := scan_cdata_data_chars (buf, index, end_index)
 						end
 				else
 					index := advance (index)
-					Result := scan_cdata_data_chars (buf, index, a_end)
+					Result := scan_cdata_data_chars (buf, index, end_index)
 				end
 			end
 		end
 
 feature {NONE} -- Data character accumulation
 
-	scan_data_chars (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_data_chars (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- Accumulate data characters in content context until a delimiter.
 		-- Returns Tok_data_chars.
 		local
@@ -203,22 +203,22 @@ feature {NONE} -- Data character accumulation
 		do
 			index := start_index
 			if attached byte_type_table as BT_table then
-				from until index >= a_end or done loop
+				from until index >= end_index or done loop
 					inspect BT_table [buf [index].code].to_integer_32
 						when BT_lead_2_byte then
-							if a_end - index < 2 or else is_invalid_char_2 (buf, index) then
+							if end_index - index < 2 or else is_invalid_char_2 (buf, index) then
 								next_token_index := index; Result := Tok_data_chars; done := True
 							else
 								index := index + 2
 							end
 						when BT_lead_3_byte then
-							if a_end - index < 3 or else is_invalid_char_3 (buf, index) then
+							if end_index - index < 3 or else is_invalid_char_3 (buf, index) then
 								next_token_index := index; Result := Tok_data_chars; done := True
 							else
 								index := index + 3
 							end
 						when BT_lead_4_byte then
-							if a_end - index < 4 or else is_invalid_char_4 (buf, index) then
+							if end_index - index < 4 or else is_invalid_char_4 (buf, index) then
 								next_token_index := index; Result := Tok_data_chars; done := True
 							else
 								index := index + 4
@@ -236,23 +236,23 @@ feature {NONE} -- Data character accumulation
 			end
 		end
 
-	scan_cdata_data_chars (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_cdata_data_chars (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Accumulate data characters inside a CDATA section.
 		local
 			index: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			if attached byte_type_table as bt_table then
-				from until index >= a_end or done loop
+				from until index >= end_index or done loop
 					inspect bt_table [buf [index].code].to_integer_32
 						when BT_lead_2_byte then
-							if a_end - index < 2 or else is_invalid_char_2 (buf, index) then
+							if end_index - index < 2 or else is_invalid_char_2 (buf, index) then
 								next_token_index := index; Result := Tok_data_chars; done := True
 							else
 								index := index + 2
 							end
 						when BT_lead_3_byte then
-							if a_end - index < 3 or else is_invalid_char_3 (buf, index) then
+							if end_index - index < 3 or else is_invalid_char_3 (buf, index) then
 								next_token_index := index; Result := Tok_data_chars; done := True
 							else
 								index := index + 3

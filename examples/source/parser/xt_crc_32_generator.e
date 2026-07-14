@@ -100,7 +100,9 @@ feature {NONE} -- Event handlers
 						checksum.add_characters (area, lower, upper)
 					end
 				when Tok_text then
-					checksum.add_characters (area, lower, upper)
+					if not in_cdata_section then
+						checksum.add_characters (area, lower, upper)
+					end
 			else
 			end
 		end

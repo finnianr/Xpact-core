@@ -17,7 +17,7 @@ class
 inherit
 	EL_CRC_32_DIGEST
 		redefine
-			add_bytes, add_characters, add_string
+			add_bytes, add_characters
 		end
 
 create
@@ -31,19 +31,38 @@ feature -- Element change
 	add_bytes (byte_array: POINTER; count: INTEGER)
 		do
 			Precursor (byte_array, count)
-			put_digest_trace
+			if count > 0 then
+				put_digest_trace
+			end
 		end
 
 	add_characters (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
+		local
+			c_i, code: CHARACTER; i: INTEGER
 		do
 			Precursor (area, lower, upper)
-			put_digest_trace
-		end
-
-	add_string (str: STRING_8)
-		do
-			Precursor (str)
-			put_digest_trace
+			if upper >= lower then
+				from i := lower until i > upper loop
+					c_i := area [i]
+					inspect c_i
+						when '%N' then
+							code := 'N'
+						when '%R' then
+							code := 'R'
+						when '%T' then
+							code := 'T'
+					else
+						code := '%U'
+						io.put_character (c_i)
+					end
+					if code > '%U' then
+						io.put_character ('%%'); io.put_character (code)
+					end
+					i := i + 1
+				end
+				io.put_new_line
+				put_digest_trace
+			end
 		end
 
 feature {NONE} -- Implementation

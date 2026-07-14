@@ -59,23 +59,27 @@ feature -- Element change
 		local
 			l_value: NATURAL
 		do
-			inspect item
-				when CRC_initial then
-					l_value := c_crc_32_seed
-			else
-				l_value := item.to_natural_32
+			if count > 0 then
+				inspect item
+					when CRC_initial then
+						l_value := c_crc_32_seed
+				else
+					l_value := item.to_natural_32
+				end
+				set_item (c_crc_32 (l_value, byte_array, count))
 			end
-			set_item (c_crc_32 (l_value, byte_array, count))
 		end
 
 	add_characters (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
 		do
-			set_item (characters_crc_32 (item, area, lower, upper))
+			if upper >= lower then
+				set_item (characters_crc_32 (item, area, lower, upper))
+			end
 		end
 
 	add_string (str: STRING_8)
 		do
-			set_item (characters_crc_32 (item, str.area, 0, str.count - 1))
+			add_characters (str.area, 0, str.count - 1)
 		end
 
 feature -- Output

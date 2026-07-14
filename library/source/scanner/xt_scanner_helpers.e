@@ -11,8 +11,8 @@ note
 		  BYTE_TO_ASCII(enc, p)     -> char_at (buf, index)
 		  CHAR_MATCHES(enc, p, c)   -> char_at (buf, index) = c
 		  MINBPC(enc)               -> min_bytes_per_char
-		  HAS_CHAR(enc, p, end)     -> index < a_end   (written inline)
-		  HAS_CHARS(enc, p, end, n) -> a_end - index >= n * min_bytes_per_char
+		  HAS_CHAR(enc, p, end)     -> index < end_index   (written inline)
+		  HAS_CHARS(enc, p, end, n) -> end_index - index >= n * min_bytes_per_char
 		  IS_NAME_CHAR(enc, p, n)   -> is_name_char_n (buf, index)
 		  IS_NMSTRT_CHAR(enc, p, n) -> is_name_start_char_n (buf, index)
 		  IS_INVALID_CHAR(enc, p, n)-> is_invalid_char_n (buf, index)
@@ -144,10 +144,10 @@ feature {NONE} -- Implementation
 			Result := area_substring (buf, index, upper, True)
 		end
 
-	has_chars (a_end, index, count: INTEGER): BOOLEAN
-			-- a_end - index >= count * min_bytes_per_char  (HAS_CHARS macro)
+	has_chars (end_index, index, count: INTEGER): BOOLEAN
+			-- end_index - index >= count * min_bytes_per_char  (HAS_CHARS macro)
 		do
-			Result := a_end - index >= count * min_bytes_per_char
+			Result := end_index - index >= count * min_bytes_per_char
 		end
 
 feature {XT_XML_PARSER_BASE} -- Deferred

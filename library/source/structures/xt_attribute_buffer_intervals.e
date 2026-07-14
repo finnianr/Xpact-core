@@ -53,10 +53,14 @@ feature -- Initialization
 	make_sized (n: INTEGER)
 		do
 			Precursor (n)
-			create character_swap_area.make_empty (n)
+			create character_swap_area.make_empty (area.capacity // Group_size)
 			create attribute_table.make (11)
 			create entity_table.make (11)
+			create entity_refs_pool.make (10)
+			create entity_refs_area.make_empty (area.capacity // Group_size)
 			create overflow_buffer_area.make_empty (area.capacity // 2)
+			create buffer_pool.make (10)
+			create substring.make_empty
 			name_cache := Empty_name_cache
 		end
 
@@ -80,6 +84,9 @@ feature -- Access
 
 	entity_table: HASH_TABLE [STRING, STRING]
 		-- table of expanded entities defined in DOCTYPE by ENTITY
+
+	name_cache: XT_NAME_CACHE
+		-- efficient lookup of attribute/tag name
 
 	upper_plus_1_characters (buffer: SPECIAL [CHARACTER_8]): STRING
 		require
@@ -212,9 +219,17 @@ feature -- Basic operations
 		local
 			i, i_final: INTEGER
 		do
-			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area then
+			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area
+				and then attached entity_refs_area as entity_refs
+			then
 				from i := 0; i_final := index_count until i = i_final loop
-					checksum.add_characters (i_th_buffer (i, a_buffer, overflow_area), l_area [i + 2], l_area [i + 3])
+					if attached i_th_buffer (i, a_buffer, overflow_area) as buffer then
+						if attached entity_refs [i // Group_size] as entity_list then
+							mix_in_entity_values_to_crc_32 (checksum, buffer, entity_list, entity_table, l_area [i + 2], l_area [i + 3])
+						else
+							checksum.add_characters (buffer, l_area [i + 2], l_area [i + 3])
+						end
+					end
 					i := i + Group_size
 				end
 			end
@@ -248,13 +263,14 @@ feature -- Basic operations
 			all_valid: all_valid
 		end
 
-	transfer (additions: like area)
-		-- move contents of `additions' into `area'
+	transfer (additions: like area; entity_list: ARRAYED_LIST [STRING])
+		-- transfer contents of `additions' into `area' and contents of `entity_list'
+		-- into `entity_refs_area'
 		require
 			full_buffer: additions.count = Group_size
 			valid_intervals: valid_intervals (additions)
 		local
-			i, l_count, new_capacity: INTEGER; l_area: like area_v2
+			i, new_capacity: INTEGER; l_area: like area_v2
 		do
 			l_area := area_v2
 			i := l_area.count + additions.count
@@ -269,19 +285,30 @@ feature -- Basic operations
 					even_number: new_capacity.integer_remainder (2) = 0
 				end
 				overflow_buffer_area := overflow_buffer_area.aliased_resized_area (new_capacity // 2)
+				entity_refs_area := entity_refs_area.aliased_resized_area (new_capacity // Group_size)
 				character_swap_area := character_swap_area.aliased_resized_area (new_capacity // Group_size)
 			end
 			l_area.copy_data (additions, 0, index_count, additions.count)
 			if attached overflow_buffer_area as overflow then
-				l_count := Group_size // 2
-				from i := 0 until i = l_count loop
-					overflow.extend (Void)
-					i := i + 1
-				end
+				overflow.extend (Void); overflow.extend (Void)
 			end
-			additions.wipe_out
+			if entity_list.count > 0 and then attached entity_refs_pool as pool then
+				if pool.count > 0 and then attached pool.item as pool_entity_buffer then
+					check
+						is_empty_buffer: pool_entity_buffer.is_empty
+					end
+					pool_entity_buffer.append (entity_list)
+					entity_refs_area.extend (pool_entity_buffer)
+				else
+					entity_refs_area.extend (entity_list.twin)
+				end
+			else
+				entity_refs_area.extend (Void)
+			end
+			additions.wipe_out; entity_list.wipe_out
 		ensure
 			empty_additions_buffer: additions.count = 0
+			empty_entity_list_buffer: entity_list.count = 0
 			all_valid: all_valid
 		end
 
@@ -290,15 +317,19 @@ feature -- Basic operations
 			i, i_final: INTEGER
 		do
 			index := 0
-			if attached overflow_buffer_area as overflow then
-			-- recycle value buffers
+			if attached overflow_buffer_area as overflow and then attached entity_refs_area as entity_refs then
+			-- recycle value and entity reference list buffers
 				from i := 1; i_final := overflow.count until i > i_final loop
 					if attached overflow [i] as buffer then
-						Buffer_pool.return (buffer)
+						buffer_pool.return (buffer)
+					end
+					if attached entity_refs [(i - 1) // 2] as list then
+						list.wipe_out
+						entity_refs_pool.put (list)
 					end
 					i := i + 2
 				end
-				overflow.wipe_out
+				entity_refs.wipe_out; overflow.wipe_out
 			end
 			area.wipe_out
 		end
@@ -358,7 +389,7 @@ feature -- Conversion
 		require
 			valid_attributes_count: is_valid_count
 		local
-			i, i_final, amp_index, colon_index: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
 			Result := attribute_table
 			Result.wipe_out
@@ -367,14 +398,8 @@ feature -- Conversion
 					buffer := i_th_buffer (i, a_buffer, overflow_area)
 					if attached name_cache.item (buffer, l_area [i], l_area [i + 1]) as name then
 						if attached area_substring (buffer, l_area [i + 2], l_area [i + 3], True) as value then
-							amp_index := value.index_of ('&', 1)
-							if amp_index > 0 then
-								colon_index := value.index_of (';', amp_index + 1)
-								if colon_index > 0 and then colon_index > amp_index + 1 then
-									Result.put (expanded_value (entity_table, value, amp_index, colon_index), name)
-								else
-									Result.put (value, name)
-								end
+							if attached entity_refs_area [i // Group_size] as entity_list then
+								Result.put (expanded_value (entity_list, entity_table, value), name)
 							else
 								Result.put (value, name)
 							end
@@ -395,39 +420,62 @@ feature -- Conversion
 
 feature {NONE} -- Implementation
 
+	mix_in_entity_values_to_crc_32 (
+		checksum: EL_CRC_32_DIGEST; buffer: SPECIAL [CHARACTER_8]; entity_list: LIST [STRING]; table: like entity_table
+		lower_index, upper_index: INTEGER
+	)
+		-- expand entities defined in DOCTYPE for attribute value between `lower_index' and `upper_index'
+		local
+			amp_index, start_index: INTEGER; done: BOOLEAN
+		do
+			if attached substring as value then
+				value.make_shared (buffer.item_address (lower_index), upper_index - lower_index + 1)
+				from entity_list.start; start_index := 1; amp_index := 1; done := False until done loop
+					amp_index := value.index_of ('&', start_index)
+					if amp_index > 0 then
+						checksum.add_characters (buffer, lower_index + start_index - 1, lower_index + amp_index - 2)
+						if entity_list.after then
+							checksum.add_characters (buffer, lower_index + amp_index - 1, upper_index)
+							done := True
+
+						elseif value.has_substring_at (entity_list.item, amp_index) then
+							if attached table [entity_list.item] as entity_value then
+								checksum.add_string (entity_value)
+							end
+							start_index := amp_index + entity_list.item.count
+							entity_list.forth
+						else
+							start_index := amp_index + 1
+						end
+					else
+						checksum.add_characters (buffer, lower_index + start_index - 1, upper_index)
+						done := True
+					end
+				end
+			end
+		end
+
 	copied_buffer (buffer: SPECIAL [CHARACTER_8]; i, lower_index, a_count: INTEGER): SPECIAL [CHARACTER_8]
 		do
 			if i.integer_remainder (Group_size) = 0 then
 				Result := name_cache.item (buffer, lower_index, lower_index + a_count - 1).area
 			else
-				Result := Buffer_pool.borrow_item (a_count)
+				Result := buffer_pool.borrow_item (a_count)
 				Result.wipe_out
 				Result.copy_data (buffer, lower_index, 0, a_count)
 			end
 		end
 
-	expanded_value (table: like entity_table; value: STRING; a_amp_index, a_colon_index: INTEGER): STRING
+	expanded_value (entity_list: LIST [STRING]; table: like entity_table; value: STRING): STRING
 		local
-			amp_index, colon_index: INTEGER; done: BOOLEAN
+			entity_index, start_index: INTEGER
 		do
-			Result := value
-			from amp_index := a_amp_index; colon_index := a_colon_index until done loop
-				if attached Result.substring (amp_index + 1, colon_index - 1) as entity
-					and then attached table [entity] as entity_value
-				then
-					Result.replace_substring (entity_value, amp_index, colon_index)
-					colon_index := colon_index + entity_table.count - 2
-				end
-				amp_index := Result.index_of ('&', colon_index + 1)
-				if amp_index > 0 then
-					colon_index := Result.index_of (';', amp_index + 1)
-					if colon_index > 0 and then colon_index > amp_index + 1 then
-						do_nothing
-					else
-						done := True
-					end
-				else
-					done := True
+			Result := value; start_index := 1
+			across entity_list as entity loop
+				entity_index := value.substring_index (entity, start_index)
+				if attached table [entity] as entity_value then
+					Result.replace_substring (entity_value, entity_index, entity_index + entity.count - 1)
+					start_index := entity_index - entity.count + entity_value.count + 1
 				end
 			end
 		end
@@ -453,20 +501,20 @@ feature {NONE} -- Internal attributes
 
 	character_swap_area: SPECIAL [CHARACTER_8]
 
-	name_cache: XT_NAME_CACHE
-		-- efficient lookup of attribute/tag name
+	entity_refs_area: SPECIAL [detachable ARRAYED_LIST [STRING]]
 
 	overflow_buffer_area: SPECIAL [detachable SPECIAL [CHARACTER_8]]
 
-feature {NONE} -- Constants
+	buffer_pool: XT_CHARACTER_BUFFER_POOL
 
-	Buffer_pool: XT_CHARACTER_BUFFER_POOL
-		once
-			create Result.make (10)
-		end
+	entity_refs_pool: ARRAYED_STACK [ARRAYED_LIST [STRING]]
+
+	substring: C_STRING_8
 
 invariant
 	lower_upper_pairs: index_count.integer_remainder (Group_size) = 0
+	proportional_character_swap_capacity: character_swap_area.capacity = area.capacity // Group_size
+	proportional_entity_refs_area_capacity: entity_refs_area.capacity = area.capacity // Group_size
 	proportional_overflow_buffer_capacity: overflow_buffer_area.capacity = area.capacity // 2
 
 end
