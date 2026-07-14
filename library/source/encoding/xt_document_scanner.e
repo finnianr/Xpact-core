@@ -121,12 +121,16 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 			Result := -1
 			inspect len
 				when 2 then
-					if Predefined_gt.same_characters (buf, start_index) then
-						Result := {ASCII}.Greaterthan -- 0x3E
-
-					elseif Predefined_lt.same_characters (buf, start_index) then
-						Result := {ASCII}.Lessthan -- 0x3C
-					end
+					inspect buf [start_index]
+						when 'g' then
+							if Predefined_gt.same_characters (buf, start_index) then
+								Result := {ASCII}.Greaterthan -- 0x3E
+							end
+						when 'l' then
+							if Predefined_lt.same_characters (buf, start_index) then
+								Result := {ASCII}.Lessthan -- 0x3C
+							end
+					else end
 				when 3 then
 					if Predefined_amp.same_characters (buf, start_index) then
 						Result := {ASCII}.Ampersand -- 0x26
@@ -141,45 +145,8 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 							if Predefined_apos.same_characters (buf, start_index) then
 								Result := {ASCII}.Singlequote -- 0x27
 							end
-					else -- no match
-					end
-			else -- no match
-			end
-		end
-
-feature -- Character reference utilities
-
-	char_ref_number (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
-			-- Parse &#N; or &#xH; starting at '&'.  Returns the code point or -1.
-		local
-			index, accum: INTEGER; is_hex: BOOLEAN; c: CHARACTER
-		do
-			index := start_index + 2 * min_bytes_per_char  -- skip '&' and '#'
-			if index < a_end and buf [index] = 'x' then
-				is_hex := True; index := index + min_bytes_per_char
-			end
-			from until index >= a_end or buf [index] = ';' loop
-				c := buf [index]
-				if is_hex then
-					inspect c
-						when '0'..'9' then
-							accum := (accum |<< 4) | (c - 48).code
-						when 'A'..'F' then
-							accum := (accum |<< 4) | (c - 55).code
-					else
-					-- 'a'..'f'
-						accum := (accum |<< 4) | (c - 87).code
-					end
-				else
-					accum := accum * 10 + (c - 48).code
-				end
-				if accum >= 0x110000 then
-					accum := -1; index := a_end
-				else
-					index := index + min_bytes_per_char
-				end
-			end
-			Result := valid_char_ref (accum)
+					else end
+			else end
 		end
 
 feature -- Public ID validation
@@ -201,7 +168,7 @@ feature -- Public ID validation
 						then
 							index := index + min_bytes_per_char
 					else
-						bad_char_ptr := index; ok := False
+						bad_char_index := index; ok := False
 					end
 				end
 			end
@@ -232,26 +199,6 @@ feature -- Position tracking
 					end
 					index := index + min_bytes_per_char
 				end
-			end
-		end
-
-feature {NONE} -- Implementation
-
-	valid_char_ref (cp: INTEGER): INTEGER
-			-- Return cp if it is a legal XML character, else -1.
-		do
-			if cp < 0 then
-				Result := -1
-			elseif (cp |>> 8) >= 0xD8 and (cp |>> 8) <= 0xDF then
-				Result := -1  -- UTF-16 surrogate range
-			elseif cp < 0x20 and cp /= 0x09 and cp /= 0x0A and cp /= 0x0D then
-				Result := -1  -- forbidden C0 control characters
-			elseif cp = 0xFFFE or cp = 0xFFFF then
-				Result := -1  -- non-characters
-			elseif cp > 0x10FFFF then
-				Result := -1  -- beyond Unicode range
-			else
-				Result := cp
 			end
 		end
 

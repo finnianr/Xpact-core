@@ -22,7 +22,7 @@ note
 	date: "2026-06-18 19:48:47 GMT (Thursday 18th June 2026)"
 	revision: "1"
 
-class XT_UTF8_NAME_CHECKER
+class XT_UTF_8_NAME_CHECKER
 
 inherit
 	XT_NAME_BITMAP

@@ -34,7 +34,7 @@ feature {NONE} -- Initialization
 			partial_token_bytes_before := 0
 			parse_end_byte_index       := 0
 
-			declaration := Empty_string
+			declaration := Empty_c_string
 
 			Precursor
 		ensure then
@@ -348,7 +348,7 @@ feature {NONE} -- Processor dispatch
 			end_in_buf:     upper <= buffer_end
 			buffer_index_at_start:   buffer_index = lower
 		local
-			index, tok, tok_end, cp: INTEGER; done: BOOLEAN
+			index, tok, tok_end, code: INTEGER; done: BOOLEAN
 			s: XT_STRING_ROUTINES
 		do
 			index := lower
@@ -446,20 +446,20 @@ feature {NONE} -- Processor dispatch
 							on_comment (buf, index + 4, tok_end - 4)
 
 						when Tok_entity_ref then
-							cp := scanner.predefined_entity_name (buf, index + 1, tok_end - 1)
-							inspect cp when -1 then
+							code := scanner.predefined_entity_name (buf, index + 1, tok_end - 1)
+							inspect code when -1 then
 								Result := Error_undefined_entity; done := True
 							else
-								on_content (unescaped (cp), 0, 0)
+								on_content (s.unescaped (code), 0, 0)
 							end
 
 						when Tok_char_ref then
 							-- index is '&'; tok_end is exclusive end past ';'
-							cp := scanner.char_ref_number (buf, index, tok_end)
-							inspect cp when -1 then
+							code := scanner.char_ref_number (buf, index, tok_end)
+							inspect code when -1 then
 								Result := Error_bad_char_ref; done := True
 							else
-								if attached utf_8_encoded (cp) as l_utf_8 then
+								if attached s.utf_8_encoded (code) as l_utf_8 then
 									on_content (l_utf_8, 0, l_utf_8.count - 1)
 								end
 							end
@@ -489,7 +489,7 @@ feature {NONE} -- Implementation
 			elseif Entity.same_characters (buf, offset) then
 				Result := Entity
 			else
-				Result := Empty_string
+				Result := Empty_c_string
 			end
 		end
 

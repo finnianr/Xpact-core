@@ -10,7 +10,7 @@ note
 
 		Buffer arguments use integer indices rather than C pointers:
 		  start_index  -- start of region to scan (inclusive)
-		  a_end  -- end of region (exclusive)
+		  end_index  -- end of region (exclusive)
 		  buf    -- the shared parse buffer (SPECIAL [CHARACTER])
 	]"
 
@@ -31,36 +31,36 @@ inherit
 
 feature -- Token scanner dispatch (XML_Parsing state selects which scanner)
 
-	scan_content (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_content (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan the next token in element content.
 			-- Sets `next_token_ptr'.  Corresponds to scanners[XML_CONTENT_STATE].
 		require
-			valid_range: start_index >= 0 and start_index <= a_end and a_end <= buf.count
+			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		deferred
 		ensure result_in_range: Result >= Tok_trailing_rsqb and Result <= Tok_ignore_sect
 		end
 
-	scan_prolog (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_prolog (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan the next token in the document prolog or DTD.
 			-- Corresponds to scanners[XML_PROLOG_STATE].
 		require
-			valid_range: start_index >= 0 and start_index <= a_end and a_end <= buf.count
+			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		deferred
 		end
 
-	scan_cdata_section (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_cdata_section (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan the next token inside a CDATA section.
 			-- Corresponds to scanners[XML_CDATA_SECTION_STATE].
 		require
-			valid_range: start_index >= 0 and start_index <= a_end and a_end <= buf.count
+			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		deferred
 		end
 
-	scan_entity_value (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_entity_value (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan the next token inside an entity value literal.
 			-- Corresponds to literalScanners[XML_ENTITY_VALUE_LITERAL].
 		require
-			valid_range: start_index >= 0 and start_index <= a_end and a_end <= buf.count
+			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		deferred
 		end
 
@@ -81,14 +81,14 @@ feature -- Encoding properties
 		ensure positive: Result >= 1
 		end
 
-	is_utf8: BOOLEAN deferred end
-	is_utf16: BOOLEAN deferred end
+	is_utf_8: BOOLEAN deferred end
+	is_utf_16: BOOLEAN deferred end
 
 feature -- Name utilities
 
 	name_matches_ascii (buf: SPECIAL [CHARACTER];
-	                    start_index, a_end: INTEGER; match: STRING_8): BOOLEAN
-			-- True when the encoded name in buf[start_index..a_end) equals match.
+	                    start_index, end_index: INTEGER; match: STRING_8): BOOLEAN
+			-- True when the encoded name in buf[start_index..end_index) equals match.
 		deferred
 		end
 
@@ -108,47 +108,47 @@ feature -- Name utilities
 
 feature -- Attribute and reference utilities
 
-	char_ref_number (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	char_ref_number (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Unicode code point of the character reference starting at start_index ('&').
 			-- Returns -1 if the value is not a legal XML character.
 		deferred
 		end
 
-	predefined_entity_name (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	predefined_entity_name (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Code point for a predefined entity (lt=0x3C, gt=0x3E, amp=0x26,
 			-- quot=0x22, apos=0x27), or -1 if not recognized.
 		deferred
 		end
 
-	is_public_id (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): BOOLEAN
-			-- True when buf[start_index..a_end) is a valid PUBLIC identifier literal.
-			-- On False, `bad_char_ptr' is set to the invalid character's index.
+	is_public_id (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): BOOLEAN
+			-- True when buf[start_index..end_index) is a valid PUBLIC identifier literal.
+			-- On False, `bad_char_index' is set to the invalid character's index.
 		deferred
 		end
 
-	bad_char_ptr: INTEGER
+	bad_char_index: INTEGER
 			-- Set by `is_public_id' on failure: index of the bad character.
 
 feature -- Position tracking
 
-	update_position (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER;
+	update_position (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER;
 	                 pos: XT_POSITION)
-			-- Advance `pos' (line/column) by scanning buf[start_index..a_end).
+			-- Advance `pos' (line/column) by scanning buf[start_index..end_index).
 		require
-			valid_range: start_index >= 0 and start_index <= a_end and a_end <= buf.count
+			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		deferred
 		end
 
 feature -- Encoding conversion
 
-	to_utf8 (src: SPECIAL [CHARACTER]; a_from_ptr, a_from_end: INTEGER;
+	to_utf_8 (src: SPECIAL [CHARACTER]; a_from_ptr, a_from_end: INTEGER;
 	          dst: SPECIAL [NATURAL_8]; a_to_ptr, a_to_end: INTEGER)
 			-- Convert src[a_from_ptr..a_from_end) to UTF-8 in dst[a_to_ptr..a_to_end).
 			-- Sets consumed_from and written_to.
 		deferred
 		end
 
-	to_utf16 (src: SPECIAL [CHARACTER]; a_from_ptr, a_from_end: INTEGER;
+	to_utf_16 (src: SPECIAL [CHARACTER]; a_from_ptr, a_from_end: INTEGER;
 	           dst: SPECIAL [NATURAL_16]; a_to_ptr, a_to_end: INTEGER)
 			-- Convert src[a_from_ptr..a_from_end) to UTF-16 in dst.
 			-- Sets consumed_from and written_to.
@@ -156,9 +156,9 @@ feature -- Encoding conversion
 		end
 
 	consumed_from: INTEGER
-			-- Updated by `to_utf8' / `to_utf16': index after last consumed source byte.
+			-- Updated by `to_utf_8' / `to_utf_16': index after last consumed source byte.
 
 	written_to: INTEGER
-			-- Updated by `to_utf8' / `to_utf16': index after last written destination unit.
+			-- Updated by `to_utf_8' / `to_utf_16': index after last written destination unit.
 
 end

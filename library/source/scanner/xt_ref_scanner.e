@@ -24,7 +24,8 @@ note
 
 deferred class XT_REF_SCANNER
 
-inherit XT_SCANNER_HELPERS
+inherit
+	XT_SCANNER_HELPERS
 
 feature {NONE} -- Reference scanning
 
@@ -42,7 +43,7 @@ feature {NONE} -- Reference scanning
 			elseif attached byte_type_table as bt_table then
 				inspect bt_table [buf [index].code].to_integer_32
 					when BT_hash then
-						Result := scan_char_ref (buf, advance (index), end_index)
+						Result := scan_char_ref (buf, entity_buffer, advance (index), end_index)
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
 						from until index >= end_index loop
@@ -90,7 +91,7 @@ feature {NONE} -- Reference scanning
 			end
 		end
 
-	scan_char_ref (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_char_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
 			-- Scan character reference after '&#'.  Returns Tok_char_ref or error.
 		require start_index <= end_index
 		local
@@ -100,7 +101,7 @@ feature {NONE} -- Reference scanning
 			if index >= end_index then
 				Result := Tok_partial
 			elseif buf [index] = 'x' then
-				Result := scan_hex_char_ref (buf, advance (index), end_index)
+				Result := scan_hex_char_ref (buf, entity_buffer, advance (index), end_index)
 
 			elseif attached byte_type_table as bt_table then
 				inspect bt_table [buf [index].code].to_integer_32
@@ -130,7 +131,7 @@ feature {NONE} -- Reference scanning
 			end
 		end
 
-	scan_hex_char_ref (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_hex_char_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
 			-- Scan hex character reference after '&#x'.  Returns Tok_char_ref or error.
 		require start_index <= end_index
 		local
@@ -150,6 +151,7 @@ feature {NONE} -- Reference scanning
 							index := advance (index)
 						elseif bt = BT_semicolon then
 							next_token_index := advance (index)
+							entity_buffer.extend (name_cache.item (buf, start_index - 3, index))
 							Result := Tok_char_ref
 							index := end_index
 						else

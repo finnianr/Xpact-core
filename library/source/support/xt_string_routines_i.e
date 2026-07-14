@@ -18,6 +18,39 @@ inherit
 
 feature {NONE} -- Access
 
+	frozen char_ref_number (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+			-- Parse &#N; or &#xH; starting at '&'.  Returns the code point or -1.
+		local
+			index, accum: INTEGER; is_hex: BOOLEAN; c: CHARACTER
+		do
+			index := start_index + 2  -- skip '&' and '#'
+			if index < end_index and buf [index] = 'x' then
+				is_hex := True; index := index + 1
+			end
+			from until index >= end_index or buf [index] = ';' loop
+				c := buf [index]
+				if is_hex then
+					inspect c
+						when '0'..'9' then
+							accum := (accum |<< 4) | (c - 48).code
+						when 'A'..'F' then
+							accum := (accum |<< 4) | (c - 55).code
+					else
+					-- 'a'..'f'
+						accum := (accum |<< 4) | (c - 87).code
+					end
+				else
+					accum := accum * 10 + (c - 48).code
+				end
+				if accum >= 0x110000 then
+					accum := -1; index := end_index
+				else
+					index := index + 1
+				end
+			end
+			Result := valid_char_ref (accum)
+		end
+
 	frozen new_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_8
 		-- `lower .. upper' substring of `area' placed in `output_area'
 		do
@@ -35,6 +68,54 @@ feature {NONE} -- Access
 			end
 		ensure
 			not_keeping_definition: not keep_ref implies Result = Output_buffer
+		end
+
+	frozen unescaped (code: INTEGER): like Char_area
+		do
+			Result := Char_area
+			Result [0] := code.to_character_8
+		end
+
+	frozen utf_8_encoded (cp: INTEGER): like Char_area
+		-- Encode Unicode code point `cp' as UTF-8 into `area'.
+		-- Returns the number of bytes written (1..4).
+		do
+			Result := Char_area
+			Result.wipe_out
+
+			if cp <= 0x7F then
+				Result.extend (cp.to_character_8)
+			elseif cp <= 0x7FF then
+				Result.extend ((0xC0 | (cp |>> 6)).to_character_8)
+				Result.extend ((0x80 | (cp & 0x3F)).to_character_8)
+			elseif cp <= 0xFFFF then
+				Result.extend ((0xE0 | (cp |>> 12)).to_character_8)
+				Result.extend ((0x80 | ((cp |>> 6) & 0x3F)).to_character_8)
+				Result.extend ((0x80 | (cp & 0x3F)).to_character_8)
+			else
+				Result.extend ((0xF0 | (cp |>> 18)).to_character_8)
+				Result.extend ((0x80 | ((cp |>> 12) & 0x3F)).to_character_8)
+				Result.extend ((0x80 | ((cp |>> 6) & 0x3F)).to_character_8)
+				Result.extend ((0x80 | (cp & 0x3F)).to_character_8)
+			end
+		end
+
+	frozen valid_char_ref (code: INTEGER): INTEGER
+			-- Return code if it is a legal XML character, else -1.
+		do
+			if code < 0 then
+				Result := -1
+			elseif (code |>> 8) >= 0xD8 and (code |>> 8) <= 0xDF then
+				Result := -1  -- UTF-16 surrogate range
+			elseif code < 0x20 and code /= 0x09 and code /= 0x0A and code /= 0x0D then
+				Result := -1  -- forbidden C0 control characters
+			elseif code = 0xFFFE or code = 0xFFFF then
+				Result := -1  -- non-characters
+			elseif code > 0x10FFFF then
+				Result := -1  -- beyond Unicode range
+			else
+				Result := code
+			end
 		end
 
 feature {NONE} -- Status report
@@ -149,10 +230,24 @@ feature {NONE} -- Basic operations
 
 feature {NONE} -- Constants
 
+	Char_area: SPECIAL [CHARACTER]
+		-- scratch 4-byte buffer for resolved entity/char-ref characters
+		once
+			create Result.make_filled ('%U', 4)
+		end
+
+	Empty_string: STRING_8
+		-- used to accumulate text for output
+		once
+			create Result.make_empty
+		end
+
 	Output_buffer: STRING_8
 		-- used to accumulate text for output
 		once
 			create Result.make (20)
 		end
 
+invariant
+	empty_definition: Empty_string.is_empty
 end

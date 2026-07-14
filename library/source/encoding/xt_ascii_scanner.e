@@ -26,8 +26,8 @@ feature -- Encoding identity
 
 	min_bytes_per_char: INTEGER = 1
 
-	is_utf8: BOOLEAN = False
-	is_utf16: BOOLEAN = False
+	is_utf_8: BOOLEAN = False
+	is_utf_16: BOOLEAN = False
 
 feature -- Byte-type table
 
@@ -40,7 +40,7 @@ feature -- Byte-type table
 
 feature -- Encoding conversion
 
-	to_utf8 (src: SPECIAL [CHARACTER]; a_src_from, a_src_to: INTEGER;
+	to_utf_8 (src: SPECIAL [CHARACTER]; a_src_from, a_src_to: INTEGER;
 	          dst: SPECIAL [NATURAL_8]; a_dst_from, a_dst_to: INTEGER)
 			-- ASCII to UTF-8: identical bytes (all code points < 0x80).
 		local
@@ -55,7 +55,7 @@ feature -- Encoding conversion
 			written_to    := a_dst_from + count
 		end
 
-	to_utf16 (src: SPECIAL [CHARACTER]; a_src_from, a_src_to: INTEGER;
+	to_utf_16 (src: SPECIAL [CHARACTER]; a_src_from, a_src_to: INTEGER;
 	           dst: SPECIAL [NATURAL_16]; a_dst_from, a_dst_to: INTEGER)
 			-- ASCII to UTF-16.
 		local

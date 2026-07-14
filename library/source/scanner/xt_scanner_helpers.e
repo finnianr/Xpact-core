@@ -135,6 +135,7 @@ feature {NONE} -- Implementation
 			Result := index + min_bytes_per_char
 		end
 
+
 	leading_10 (buf: SPECIAL [CHARACTER]; index: INTEGER): STRING_8
 		-- leading 10 characters in `buf' starting from `index'
 		local

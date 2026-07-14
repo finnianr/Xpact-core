@@ -62,6 +62,7 @@ feature -- Initialization
 			create buffer_pool.make (10)
 			create substring.make_empty
 			name_cache := Empty_name_cache
+			create character_reference_table.make (0)
 		end
 
 feature -- Status query
@@ -81,6 +82,8 @@ feature -- Status query
 		end
 
 feature -- Access
+
+	character_reference_table: HASH_TABLE [STRING, STRING]
 
 	entity_table: HASH_TABLE [STRING, STRING]
 		-- table of expanded entities defined in DOCTYPE by ENTITY
@@ -221,11 +224,14 @@ feature -- Basic operations
 		do
 			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area
 				and then attached entity_refs_area as entity_refs
+				and then attached character_reference_table as char_ref_table
 			then
 				from i := 0; i_final := index_count until i = i_final loop
 					if attached i_th_buffer (i, a_buffer, overflow_area) as buffer then
 						if attached entity_refs [i // Group_size] as entity_list then
-							mix_in_entity_values_to_crc_32 (checksum, buffer, entity_list, entity_table, l_area [i + 2], l_area [i + 3])
+							mix_in_entity_values_to_crc_32 (
+								checksum, buffer, entity_list, entity_table, char_ref_table, l_area [i + 2], l_area [i + 3]
+							)
 						else
 							checksum.add_characters (buffer, l_area [i + 2], l_area [i + 3])
 						end
@@ -294,6 +300,7 @@ feature -- Basic operations
 			end
 			if entity_list.count > 0 and then attached entity_refs_pool as pool then
 				if pool.count > 0 and then attached pool.item as pool_entity_buffer then
+					pool.remove
 					check
 						is_empty_buffer: pool_entity_buffer.is_empty
 					end
@@ -314,7 +321,7 @@ feature -- Basic operations
 
 	wipe_out
 		local
-			i, i_final: INTEGER
+			i, j, i_final: INTEGER
 		do
 			index := 0
 			if attached overflow_buffer_area as overflow and then attached entity_refs_area as entity_refs then
@@ -323,8 +330,10 @@ feature -- Basic operations
 					if attached overflow [i] as buffer then
 						buffer_pool.return (buffer)
 					end
-					if attached entity_refs [(i - 1) // 2] as list then
+					j := (i - 1) // 2
+					if attached entity_refs [j] as list then
 						list.wipe_out
+						entity_refs [j] := Void
 						entity_refs_pool.put (list)
 					end
 					i := i + 2
@@ -399,7 +408,7 @@ feature -- Conversion
 					if attached name_cache.item (buffer, l_area [i], l_area [i + 1]) as name then
 						if attached area_substring (buffer, l_area [i + 2], l_area [i + 3], True) as value then
 							if attached entity_refs_area [i // Group_size] as entity_list then
-								Result.put (expanded_value (entity_list, entity_table, value), name)
+								Result.put (expanded_value (entity_list, entity_table, character_reference_table, value), name)
 							else
 								Result.put (value, name)
 							end
@@ -420,8 +429,72 @@ feature -- Conversion
 
 feature {NONE} -- Implementation
 
+	copied_buffer (buffer: SPECIAL [CHARACTER_8]; i, lower_index, a_count: INTEGER): SPECIAL [CHARACTER_8]
+		do
+			if i.integer_remainder (Group_size) = 0 then
+				Result := name_cache.item (buffer, lower_index, lower_index + a_count - 1).area
+			else
+				Result := buffer_pool.borrow_item (a_count)
+				Result.wipe_out
+				Result.copy_data (buffer, lower_index, 0, a_count)
+			end
+		end
+
+	entity_value (name: STRING; table, char_ref_table: HASH_TABLE [STRING, STRING]): STRING
+		require
+			valid_length: name.count >= 3
+		local
+			code: INTEGER
+		do
+			Result := Empty_string
+			inspect name [2]
+				when '#' then
+					inspect name [3] when 'x' then
+						if attached char_ref_table [name] as value then
+							Result := value
+						else
+							code := char_ref_number (name.area, 0, name.count - 1)
+							if attached utf_8_encoded (code) as l_area then
+								Result := new_substring (l_area, 0, l_area.count - 1)
+								char_ref_table.extend (Result, name)
+							end
+						end
+					else end
+			else
+				if attached table [name] as value then
+					Result := value
+				end
+			end
+		ensure
+			result_not_empty: Result /= Empty_string
+		end
+
+	expanded_value (entity_list: LIST [STRING]; table, char_ref_table: HASH_TABLE [STRING, STRING]; value: STRING): STRING
+		local
+			entity_index, start_index: INTEGER
+		do
+			Result := value; start_index := 1
+			across entity_list as entity loop
+				entity_index := value.substring_index (entity, start_index)
+				if attached entity_value (entity, table, char_ref_table) as l_entity_value then
+					Result.replace_substring (l_entity_value, entity_index, entity_index + entity.count - 1)
+					start_index := entity_index - entity.count + l_entity_value.count + 1
+				end
+			end
+		end
+
+	i_th_buffer (i: INTEGER; buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]
+		do
+			if attached overflow_area [i // 2] as overflow then
+				Result := overflow
+			else
+				Result := buffer
+			end
+		end
+
 	mix_in_entity_values_to_crc_32 (
 		checksum: EL_CRC_32_DIGEST; buffer: SPECIAL [CHARACTER_8]; entity_list: LIST [STRING]; table: like entity_table
+		char_ref_table: HASH_TABLE [STRING, STRING]
 		lower_index, upper_index: INTEGER
 	)
 		-- expand entities defined in DOCTYPE for attribute value between `lower_index' and `upper_index'
@@ -439,9 +512,7 @@ feature {NONE} -- Implementation
 							done := True
 
 						elseif value.has_substring_at (entity_list.item, amp_index) then
-							if attached table [entity_list.item] as entity_value then
-								checksum.add_string (entity_value)
-							end
+							checksum.add_string (entity_value (entity_list.item, table, char_ref_table))
 							start_index := amp_index + entity_list.item.count
 							entity_list.forth
 						else
@@ -452,40 +523,6 @@ feature {NONE} -- Implementation
 						done := True
 					end
 				end
-			end
-		end
-
-	copied_buffer (buffer: SPECIAL [CHARACTER_8]; i, lower_index, a_count: INTEGER): SPECIAL [CHARACTER_8]
-		do
-			if i.integer_remainder (Group_size) = 0 then
-				Result := name_cache.item (buffer, lower_index, lower_index + a_count - 1).area
-			else
-				Result := buffer_pool.borrow_item (a_count)
-				Result.wipe_out
-				Result.copy_data (buffer, lower_index, 0, a_count)
-			end
-		end
-
-	expanded_value (entity_list: LIST [STRING]; table: like entity_table; value: STRING): STRING
-		local
-			entity_index, start_index: INTEGER
-		do
-			Result := value; start_index := 1
-			across entity_list as entity loop
-				entity_index := value.substring_index (entity, start_index)
-				if attached table [entity] as entity_value then
-					Result.replace_substring (entity_value, entity_index, entity_index + entity.count - 1)
-					start_index := entity_index - entity.count + entity_value.count + 1
-				end
-			end
-		end
-
-	i_th_buffer (i: INTEGER; buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]
-		do
-			if attached overflow_area [i // 2] as overflow then
-				Result := overflow
-			else
-				Result := buffer
 			end
 		end
 

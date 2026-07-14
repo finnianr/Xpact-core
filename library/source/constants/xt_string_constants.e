@@ -24,7 +24,7 @@ feature {NONE} -- CDATA constant
 			Result := "ENTITY"
 		end
 
-	Empty_string: C_STRING_8
+	Empty_c_string: C_STRING_8
 		once
 			create Result.make_empty
 		end
