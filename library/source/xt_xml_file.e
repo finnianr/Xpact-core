@@ -90,13 +90,14 @@ feature -- Basic operations
 		local
 			n: INTEGER; final_chunk: BOOLEAN
 		do
-			if is_readable and then attached chunk_string as str then
+			if is_readable and then attached chunk_string as c_str then
 				if not gc_enabled then
 					Memory.collection_off
 				end
-				zero_CR_count := 0
+				positive_CR_count := 0; skip_CR_checking := False
+				new_line_occurrences := 0; new_line_check_count := 0
 				from open_read; status := Status_ok until off or status = Status_error loop
-					read_chunk (str); n := bytes_read
+					read_chunk (c_str); n := bytes_read
 					final_chunk := off
 					if n > 0 then
 					-- This aligns with C examples which excludes final newline
@@ -139,7 +140,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	read_chunk (str: like chunk_string)
+	read_chunk (c_str: like chunk_string)
 		require
 			is_readable: file_readable
 		local
@@ -149,21 +150,28 @@ feature {NONE} -- Implementation
 				byte_count := file_gss (file_pointer, area.base_address, area.count)
 				bytes_read := byte_count
 
-				if zero_CR_count < Maximum_zero_CR_count then
-					str.make_shared (area.base_address, byte_count)
-					cr_index := str.index_of ('%R', 1)
-					if cr_index = 0 then
-						zero_CR_count := zero_CR_count + 1
-					else
-						read_pruned_chunk (area, str, cr_index)
-					end
+				if skip_CR_checking then
+					do_nothing -- Encountered >= 5 newlines and zero CR characters, so stopped checking.
 				else
-					do_nothing -- Assume no '%R' if `Maximum_zero_CR_count' chunks checked and none found
+					c_str.make_shared (area.base_address, byte_count)
+					cr_index := c_str.index_of ('%R', 1)
+					if cr_index = 0 then
+						if new_line_check_count < 5 then
+							new_line_occurrences := new_line_occurrences + c_str.occurrences ('%N')
+							new_line_check_count := new_line_check_count + 1
+							if new_line_occurrences >= 5 and then positive_CR_count = 0 then
+								skip_CR_checking := True
+							end
+						end
+					else
+						positive_CR_count := positive_CR_count + 1
+						read_pruned_chunk (area, c_str, cr_index)
+					end
 				end
 			end
 		end
 
-	read_pruned_chunk (area: like chunk; str: C_STRING_8; cr_index: INTEGER)
+	read_pruned_chunk (area: like chunk; c_str: C_STRING_8; cr_index: INTEGER)
 		-- replace CR/NL character pairs with NL. Replace isolated CR to NL
 		local
 			i, i_final, j, byte_count, start_index, pass_count: INTEGER
@@ -220,7 +228,13 @@ feature {NONE} -- Internal attributes
 
 	chunk_string: C_STRING_8
 
-	zero_CR_count: INTEGER
+	positive_CR_count: INTEGER
+
+	new_line_occurrences: INTEGER
+
+	new_line_check_count: INTEGER
+
+	skip_CR_checking: BOOLEAN
 
 feature {NONE} -- Constants
 
@@ -232,9 +246,5 @@ feature {NONE} -- Constants
 		once
 			create Result
 		end
-
-	Maximum_zero_CR_count: INTEGER = 20
-		-- maximum number of times to check for CR character if there are none found
-		-- Assumes if you haven't found one after 4096 x 10 bytes
 
 end

@@ -348,7 +348,7 @@ feature {NONE} -- Processor dispatch
 			end_in_buf:     upper <= buffer_end
 			buffer_index_at_start:   buffer_index = lower
 		local
-			index, tok, tok_end: INTEGER; done: BOOLEAN
+			index, tok, tok_end, cp: INTEGER; done: BOOLEAN
 			s: XT_STRING_ROUTINES
 		do
 			index := lower
@@ -444,6 +444,25 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_comment then
 							on_comment (buf, index + 4, tok_end - 4)
+
+						when Tok_entity_ref then
+							cp := scanner.predefined_entity_name (buf, index + 1, tok_end - 1)
+							inspect cp when -1 then
+								Result := Error_undefined_entity; done := True
+							else
+								on_content (unescaped (cp), 0, 0)
+							end
+
+						when Tok_char_ref then
+							-- index is '&'; tok_end is exclusive end past ';'
+							cp := scanner.char_ref_number (buf, index, tok_end)
+							inspect cp when -1 then
+								Result := Error_bad_char_ref; done := True
+							else
+								if attached utf_8_encoded (cp) as l_utf_8 then
+									on_content (l_utf_8, 0, l_utf_8.count - 1)
+								end
+							end
 
 					else
 						if tok < 0 then

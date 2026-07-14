@@ -33,4 +33,32 @@ feature {NONE} -- CDATA constant
 		once
 			Result := "DOCTYPE"
 		end
+
+feature {NONE} -- Predefine entities
+
+	Predefined_apos: C_STRING_8
+		once
+			Result := "apos"
+		end
+
+	Predefined_amp: C_STRING_8
+		once
+			Result := "amp"
+		end
+
+	Predefined_gt: C_STRING_8
+		once
+			Result := "gt"
+		end
+
+	Predefined_lt: C_STRING_8
+		once
+			Result := "lt"
+		end
+
+	Predefined_quot: C_STRING_8
+		once
+			Result := "quot"
+		end
+
 end

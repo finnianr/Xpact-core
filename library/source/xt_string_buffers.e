@@ -57,6 +57,7 @@ feature {NONE} -- Initialisation
 
 			buffer := new_buffer_area (Default_buffer_size)
 			create last_entity_ref.make_empty
+			create char_area.make_filled ('%U', 4)
 			set_scanner (Utf_8)
 
 		ensure then
@@ -200,6 +201,36 @@ feature {NONE} -- Implementation
 			end_non_negative:    buffer_end >= 0
 		end
 
+	unescaped (cp: INTEGER): like char_area
+		do
+			Result := char_area
+			Result [0] := cp.to_character_8
+		end
+
+	utf_8_encoded (cp: INTEGER): like char_area
+		-- Encode Unicode code point `cp' as UTF-8 into `area'.
+		-- Returns the number of bytes written (1..4).
+		do
+			Result := char_area
+			Result.wipe_out
+
+			if cp <= 0x7F then
+				Result.extend (cp.to_character_8)
+			elseif cp <= 0x7FF then
+				Result.extend ((0xC0 | (cp |>> 6)).to_character_8)
+				Result.extend ((0x80 | (cp & 0x3F)).to_character_8)
+			elseif cp <= 0xFFFF then
+				Result.extend ((0xE0 | (cp |>> 12)).to_character_8)
+				Result.extend ((0x80 | ((cp |>> 6) & 0x3F)).to_character_8)
+				Result.extend ((0x80 | (cp & 0x3F)).to_character_8)
+			else
+				Result.extend ((0xF0 | (cp |>> 18)).to_character_8)
+				Result.extend ((0x80 | ((cp |>> 12) & 0x3F)).to_character_8)
+				Result.extend ((0x80 | ((cp |>> 6) & 0x3F)).to_character_8)
+				Result.extend ((0x80 | (cp & 0x3F)).to_character_8)
+			end
+		end
+
 feature {NONE} -- Internal attributes
 
 	buffer_end: INTEGER
@@ -221,6 +252,9 @@ feature {NONE} -- Internal structures
 
 	buffer: SPECIAL [CHARACTER_8]
 		-- Raw byte buffer; do not modify indices outside this class.
+
+	char_area: SPECIAL [CHARACTER]
+		-- scratch 4-byte buffer for resolved entity/char-ref characters
 
 	entity_table: HASH_TABLE [STRING, STRING]
 		-- table of expanded entities defined in DOCTYPE by ENTITY

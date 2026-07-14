@@ -6,7 +6,6 @@ DEST=$PWD/library/source/eiffel-loop
 cd $EIFFEL/library/Eiffel-Loop/library/language_interface/C/string/managed
 
 cp -u c_string*.e $DEST
-cp -u c_nulled_string_8.e $DEST
 
 cd $EIFFEL/library/Eiffel-Loop/library/utility/compression/crc-32
 

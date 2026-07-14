@@ -35,6 +35,8 @@ inherit
 
 	XT_LITERAL_SCANNER
 
+	XT_STRING_CONSTANTS
+
 feature {NONE} -- Initialisation
 
 	make
@@ -119,38 +121,26 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 			Result := -1
 			inspect len
 				when 2 then
-					if buf [start_index] = 'l'
-						and buf [start_index + min_bytes_per_char] = 't'
-					then
-						Result := 0x3C
-					elseif buf [start_index] = 'g'
-						and buf [start_index + min_bytes_per_char] = 't'
-					then
-						Result := 0x3E
+					if Predefined_gt.same_characters (buf, start_index) then
+						Result := {ASCII}.Greaterthan -- 0x3E
+
+					elseif Predefined_lt.same_characters (buf, start_index) then
+						Result := {ASCII}.Lessthan -- 0x3C
 					end
 				when 3 then
-					if buf [start_index] = 'a'
-						and buf [start_index + min_bytes_per_char] = 'm'
-						and buf [start_index + 2 * min_bytes_per_char] = 'p'
-					then
-						Result := 0x26
+					if Predefined_amp.same_characters (buf, start_index) then
+						Result := {ASCII}.Ampersand -- 0x26
 					end
 				when 4 then
 					inspect buf [start_index]
 						when 'q' then
-							if buf [start_index + min_bytes_per_char] = 'u'
-								and buf [start_index + 2 * min_bytes_per_char] = 'o'
-								and buf [start_index + 3 * min_bytes_per_char] = 't'
-							then
-								Result := 0x22
+							if Predefined_quot.same_characters (buf, start_index) then
+								Result := {ASCII}.Doublequote -- 0x22
 							end
-					when 'a' then
-						if buf [start_index + min_bytes_per_char] = 'p'
-							and buf [start_index + 2 * min_bytes_per_char] = 'o'
-							and buf [start_index + 3 * min_bytes_per_char] = 's'
-						then
-							Result := 0x27
-						end
+						when 'a' then
+							if Predefined_apos.same_characters (buf, start_index) then
+								Result := {ASCII}.Singlequote -- 0x27
+							end
 					else -- no match
 					end
 			else -- no match
@@ -195,8 +185,8 @@ feature -- Character reference utilities
 feature -- Public ID validation
 
 	is_public_id (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): BOOLEAN
-			-- True if every byte in start_index..a_end-1 is a valid PubidChar.
-			-- Sets bad_char_ptr on failure.
+		-- True if every byte in start_index..a_end-1 is a valid PubidChar.
+		-- Sets bad_char_ptr on failure.
 		local
 			index: INTEGER; ok: BOOLEAN
 		do
