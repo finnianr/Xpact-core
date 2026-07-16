@@ -193,14 +193,14 @@ feature {NONE} -- Tag scanning
 			if attached byte_type_table as bt_table and then attached index_x4_buffer as index_buffer
 				and then attached scanned_entity_buffer as entity_buffer
 			then
-				index_buffer.extend (index) -- name lower
+				index_buffer.extend (index + buf [index].is_space.to_integer) -- name lower
 				from until index >= end_index or done loop
 					byte := bt_table [buf [index].code].to_integer_32
 					inspect byte
 						when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon, BT_lead_2_byte, BT_lead_3_byte,
 							BT_lead_4_byte then
 							inspect index_buffer.count when 0 then
-								index_buffer.extend (index - 1) -- name lower
+								index_buffer.extend (index + buf [index].is_space.to_integer) -- name lower
 							else
 							end
 							index := advance (index)
@@ -235,6 +235,8 @@ feature {NONE} -- Tag scanning
 						when BT_forward_slash then
 							index := advance (index)
 							if index >= end_index then
+								-- seen '/' but '>' not yet in buffer; all transferred attrs must be cleared
+								attributes.wipe_out; index_buffer.wipe_out; entity_buffer.wipe_out
 								Result := Tok_partial; done := True
 							elseif buf [index] = '>' then
 								next_token_index := advance (index)
@@ -439,7 +441,7 @@ feature {NONE} -- Contract support
 			Result := index - start_index
 		end
 
-feature {XT_STRING_BUFFERS} -- Internal attributes
+feature {XT_PARSING_BUFFERS} -- Internal attributes
 
 	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
 

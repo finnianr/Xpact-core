@@ -1,0 +1,59 @@
+Log of benchmarks for parsing file: recset.xml
+
+2024 26 JUN 14:50
+recset.xml: eXpat passes = 17; Xpact-core passes = 35 (x2.06 to eXpat)
+
+2026 26 JUN 14:05
+recset.xml: eXpat passes = 17; Xpact-core passes = 33 (x1.94 to eXpat)
+
+2026 26 JUN 14:19
+recset.xml: eXpat passes = 17; Xpact-core passes = 33 (x1.94 to eXpat)
+
+2026 26 JUN 15:59
+Using early tag_name lookup and argument pointers
+recset.xml: eXpat passes = 17; Xpact-core passes = 30 (x1.76 to eXpat)
+
+2026 26 JUN 16:53
+recset.xml: eXpat passes = 17; Xpact-core passes = 33 (x1.94 to eXpat)
+
+2026 26 JUN 19:03
+recset.xml: eXpat passes = 17; Xpact-core passes = 33 (x1.94 to eXpat)
+
+2026 26 JUN 19:40
+recset.xml: eXpat passes = 17; Xpact-core passes = 33 (x1.94 to eXpat)
+
+2026 26 JUN 19:46
+recset.xml: eXpat passes = 17; Xpact-core passes = 32 (x1.88 to eXpat)
+
+2026 29 JUN 15:08
+recset.xml: eXpat passes = 17; Xpact-core passes = 32 (x1.88 to eXpat)
+
+2026 29 JUN 18:25
+recset.xml: eXpat passes = 17; Xpact-core passes = 30 (x1.76 to eXpat)
+
+2026 29 JUN 18:41
+recset.xml: eXpat passes = 17; Xpact-core passes = 30 (x1.76 to eXpat)
+
+2026 08 JUL 15:35
+recset.xml: eXpat passes = 17; Xpact-core passes = 32 (x1.88 to eXpat)
+
+2026 08 JUL 15:37
+recset.xml: eXpat passes = 17; Xpact-core passes = 31 (x1.82 to eXpat)
+
+2026 08 JUL 16:06
+recset.xml: eXpat passes = 17; Xpact-core passes = 31 (x1.82 to eXpat)
+
+2026 08 JUL 18:44
+recset.xml: eXpat passes = 17; Xpact-core passes = 31 (x1.82 to eXpat)
+
+2026 09 JUL 10:02
+recset.xml: eXpat passes = 17; Xpact-core passes = 31 (x1.82 to eXpat)
+
+2026 10 JUL 21:13
+recset.xml: eXpat passes = 17; Xpact-core passes = 32 (x1.88 to eXpat)
+
+2026 10 JUL 21:18
+recset.xml: eXpat passes = 17; Xpact-core passes = 32 (x1.88 to eXpat)
+
+2026 16 JUL 19:24
+recset.xml: eXpat passes = 17; Xpact-core passes = 30 (x1.76 to eXpat)

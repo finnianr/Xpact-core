@@ -47,6 +47,8 @@ static void crc32_table_init(void) {
 	}
 }
 
+static void println_escaped(const char *s, int len);
+
 static void crc32_update(crc_ctx_t *ctx, const unsigned char *buf, size_t len) {
 	uint32_t crc = ctx->crc;
 	for (size_t i = 0; i < len; i++) {
@@ -56,11 +58,10 @@ static void crc32_update(crc_ctx_t *ctx, const unsigned char *buf, size_t len) {
 
 	ctx->event_count++;
 	if (ctx->trace && ctx->verbose_output) {
-		printf("%d. %u\n", ctx->event_count, ctx->crc ^ 0xFFFFFFFFu);
+		printf("#%07d (%u): \"", ctx->event_count, ctx->crc ^ 0xFFFFFFFFu);
+		println_escaped ((const char *) buf, len);
 	}
 }
-
-static void println_escaped(const char *s, int len);
 
 static void XMLCALL on_start_cdata(void *userData) {
 	crc_ctx_t *ctx = (crc_ctx_t *) userData;
@@ -75,10 +76,8 @@ static void XMLCALL on_end_cdata(void *userData) {
 static void XMLCALL on_character_data(void *userData, const XML_Char *s, int len) {
 	crc_ctx_t *ctx = (crc_ctx_t *) userData;
 	if (ctx->type == TYPE_TEXT && !ctx->in_cdata) {
-		if (ctx->trace && ctx->verbose_output) println_escaped((const char *) s, len);
 		crc32_update(ctx, (const unsigned char *) s, (size_t) len);
 	} else if (ctx->type == TYPE_CDATA && ctx->in_cdata) {
-		if (ctx->trace && ctx->verbose_output) println_escaped((const char *) s, len);
 		crc32_update(ctx, (const unsigned char *) s, (size_t) len);
 	}
 }
@@ -97,7 +96,6 @@ static void XMLCALL on_start_element(void *userData, const XML_Char *name,
 		crc32_update(ctx, (const unsigned char *) name, strlen(name));
 	} else if (ctx->type == TYPE_ATTRIBUTE) {
 		for (int i = 0; atts[i]; i += 2) {
-			if (ctx->trace && ctx->verbose_output) printf("%s\n", atts[i + 1]);
 			crc32_update(ctx, (const unsigned char *) atts[i + 1], strlen(atts[i + 1]));
 		}
 	}
@@ -188,6 +186,7 @@ static void println_escaped (const char *s, int len) {
 			putchar(code);
 		}
 	}
+	putchar('"');
 	putchar('\n');
 }
 

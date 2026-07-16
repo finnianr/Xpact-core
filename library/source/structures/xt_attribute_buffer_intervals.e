@@ -62,7 +62,6 @@ feature -- Initialization
 			create buffer_pool.make (10)
 			create substring.make_empty
 			name_cache := Empty_name_cache
-			create character_reference_table.make (0)
 		end
 
 feature -- Status query
@@ -83,9 +82,7 @@ feature -- Status query
 
 feature -- Access
 
-	character_reference_table: HASH_TABLE [STRING, STRING]
-
-	entity_table: HASH_TABLE [STRING, STRING]
+	entity_table: XT_ENTITY_TABLE
 		-- table of expanded entities defined in DOCTYPE by ENTITY
 
 	name_cache: XT_NAME_CACHE
@@ -98,12 +95,12 @@ feature -- Access
 			i, j, i_final, upper_plus_1: INTEGER
 		do
 			create Result.make_filled ('%U', count)
-			if attached area_v2 as l_area and then attached Result.area as str_area
+			if attached area_v2 as a and then attached Result.area as str_area
 				and then attached overflow_buffer_area as overflow_area
 			then
 				from i := 0; i_final := index_count until i = i_final loop
-					upper_plus_1 := l_area [i + 3] + 1
-					str_area [j] := i_th_buffer (i, buffer, overflow_area) [upper_plus_1]
+					upper_plus_1 := a [i + 3] + 1
+					str_area [j] := i_th_value (i, buffer, overflow_area) [upper_plus_1]
 					i := i + Group_size; j := j + 1
 				end
 			end
@@ -120,13 +117,13 @@ feature -- Status change
 		local
 			i, i_final, upper_plus_1: INTEGER
 		do
-			if attached character_swap_area as swap_area and attached area_v2 as l_area
+			if attached character_swap_area as swap_area and attached area_v2 as a
 				and then attached overflow_buffer_area as overflow_area
 			then
 				swap_area.wipe_out
 				from i := 0; i_final := index_count until i = i_final loop
-					upper_plus_1 := l_area [i + 3] + 1
-					if attached i_th_buffer (i, a_buffer, overflow_area) as buffer then
+					upper_plus_1 := a [i + 3] + 1
+					if attached i_th_value (i, a_buffer, overflow_area) as buffer then
 						swap_area.extend (buffer [upper_plus_1])
 						buffer [upper_plus_1] := '%U'
 					end
@@ -143,12 +140,12 @@ feature -- Status change
 		local
 			i, j, i_final, upper_plus_1: INTEGER
 		do
-			if attached character_swap_area as swap_area and attached area_v2 as l_area
+			if attached character_swap_area as swap_area and attached area_v2 as a
 				and then attached overflow_buffer_area as overflow_area
 			then
 				from i := 0; j := 0; i_final := index_count until i = i_final loop
-					upper_plus_1 := l_area [i + 3] + 1
-					i_th_buffer (i, buffer, overflow_area) [upper_plus_1] := swap_area [j]
+					upper_plus_1 := a [i + 3] + 1
+					i_th_value (i, buffer, overflow_area) [upper_plus_1] := swap_area [j]
 					i := i + Group_size
 					j := j + 1
 				end
@@ -169,10 +166,10 @@ feature -- Measurement
 		local
 			i, l_count: INTEGER
 		do
-			if attached area as l_area then
-				l_count := l_area.count
+			if attached area as a then
+				l_count := a.count
 				from until i = l_count loop
-					Result := Result + l_area [i + 1] - l_area [i] + 1
+					Result := Result + a [i + 1] - a [i] + 1
 					i := i + 2
 				end
 			end
@@ -200,15 +197,16 @@ feature -- Basic operations
 		local
 			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
-			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area
+			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
 				and then attached name_cache as names
 			then
 				from i := 0; i_final := index_count until i = i_final loop
-					buffer := i_th_buffer (i, a_buffer, overflow_area)
-					if attached names.item (buffer, l_area [0], l_area [1]) as name then
+					buffer := i_th_name (i, a_buffer, overflow_area)
+					if attached names.item (buffer, a [0], a [1]) as name then
 						c_string_array.extend (name.area.base_address) -- name
 					end
-					c_string_array.extend (buffer.item_address (l_area [2])) -- value
+					buffer := i_th_value (i, a_buffer, overflow_area)
+					c_string_array.extend (buffer.item_address (a [2])) -- value
 					i := i + Group_size
 				end
 				c_string_array.extend (default_pointer)
@@ -222,18 +220,15 @@ feature -- Basic operations
 		local
 			i, i_final: INTEGER
 		do
-			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area
-				and then attached entity_refs_area as entity_refs
-				and then attached character_reference_table as char_ref_table
+			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
+				and then attached entity_refs_area as entity_refs and then attached entity_table as table
 			then
 				from i := 0; i_final := index_count until i = i_final loop
-					if attached i_th_buffer (i, a_buffer, overflow_area) as buffer then
+					if attached i_th_value (i, a_buffer, overflow_area) as buffer then
 						if attached entity_refs [i // Group_size] as entity_list then
-							mix_in_entity_values_to_crc_32 (
-								checksum, buffer, entity_list, entity_table, char_ref_table, l_area [i + 2], l_area [i + 3]
-							)
+							table.mix_in_values_to_crc_32 (checksum, buffer, entity_list, a [i + 2], a [i + 3])
 						else
-							checksum.add_characters (buffer, l_area [i + 2], l_area [i + 3])
+							checksum.add_characters (buffer, a [i + 2], a [i + 3])
 						end
 					end
 					i := i + Group_size
@@ -244,25 +239,33 @@ feature -- Basic operations
 	shift_buffer_left (buffer: SPECIAL [CHARACTER_8]; offset: INTEGER)
 		-- Slide all live content left by `a_offset' bytes and adjust every index that points into `buffer'.
 		local
-			i, i_final, shifted_lower_index, lower_index, upper_index, l_count: INTEGER
+			i, j, i_final, shifted_lower_index, lower_index, upper_index, l_count: INTEGER
 		do
-			if attached overflow_buffer_area as overflow and attached area_v2 as l_area then
+--			io.put_string ("shift_buffer_left"); io.put_new_line
+			if attached overflow_buffer_area as overflow and attached area_v2 as a
+				and then attached buffer_pool as pool
+			then
 			-- iterate over each name and value interval
-				from i := 0; i_final := index_count until i = i_final loop
-					lower_index := l_area [i]; upper_index := l_area [i + 1]
+				from i := 0; j := 0; i_final := index_count until i = i_final loop
+					lower_index := a [i]; upper_index := a [i + 1]
 					shifted_lower_index := lower_index - offset
 					if shifted_lower_index < 0 then
 					-- no longer fits in `buffer' so make a temporary copy to use instead
-						if overflow [i // 2] = Void then
-							l_count := upper_index - lower_index + 1
-							l_area [i] := 0; l_area [i + 1] := l_count - 1
-							overflow [i // 2] := copied_buffer (buffer, i, lower_index, l_count)
+						l_count := upper_index - lower_index + 1
+						a [i] := 0; a [i + 1] := l_count - 1
+						if j.integer_remainder (2) = 0 then
+							overflow [j] := name_cache.item (buffer, lower_index, upper_index).area
+
+						elseif attached pool.borrow_item (l_count) as l_buffer then
+							l_buffer.wipe_out
+							l_buffer.copy_data (buffer, lower_index, 0, l_count)
+							overflow [j] := l_buffer
 						end
 					else
 					-- still fits in current `buffer`
-						l_area [i] := shifted_lower_index; l_area [i + 1] := upper_index - offset
+						a [i] := shifted_lower_index; a [i + 1] := upper_index - offset
 					end
-					i := i + 2
+					i := i + 2; j := j + 1
 				end
 			end
 		ensure
@@ -276,17 +279,17 @@ feature -- Basic operations
 			full_buffer: additions.count = Group_size
 			valid_intervals: valid_intervals (additions)
 		local
-			i, new_capacity: INTEGER; l_area: like area_v2
+			i, new_capacity: INTEGER; a: like area_v2
 		do
-			l_area := area_v2
-			i := l_area.count + additions.count
-			if i > l_area.capacity then
+			a := area_v2
+			i := a.count + additions.count
+			if i > a.capacity then
 				new_capacity := i + additional_space
 				if new_capacity.integer_remainder (2) = 1 then
 					new_capacity := new_capacity + 1
 				end
-				l_area := l_area.aliased_resized_area (new_capacity)
-				area_v2 := l_area
+				a := a.aliased_resized_area (new_capacity)
+				area_v2 := a
 				check
 					even_number: new_capacity.integer_remainder (2) = 0
 				end
@@ -294,7 +297,7 @@ feature -- Basic operations
 				entity_refs_area := entity_refs_area.aliased_resized_area (new_capacity // Group_size)
 				character_swap_area := character_swap_area.aliased_resized_area (new_capacity // Group_size)
 			end
-			l_area.copy_data (additions, 0, index_count, additions.count)
+			a.copy_data (additions, 0, index_count, additions.count)
 			if attached overflow_buffer_area as overflow then
 				overflow.extend (Void); overflow.extend (Void)
 			end
@@ -324,16 +327,17 @@ feature -- Basic operations
 			i, j, i_final: INTEGER
 		do
 			index := 0
-			if attached overflow_buffer_area as overflow and then attached entity_refs_area as entity_refs then
+			if attached overflow_buffer_area as overflow and then attached entity_refs_area as entity_refs
+				and then attached buffer_pool as pool
+			then
 			-- recycle value and entity reference list buffers
 				from i := 1; i_final := overflow.count until i > i_final loop
 					if attached overflow [i] as buffer then
-						buffer_pool.return (buffer)
+						pool.return (buffer)
 					end
 					j := (i - 1) // 2
 					if attached entity_refs [j] as list then
 						list.wipe_out
-						entity_refs [j] := Void
 						entity_refs_pool.put (list)
 					end
 					i := i + 2
@@ -341,6 +345,71 @@ feature -- Basic operations
 				entity_refs.wipe_out; overflow.wipe_out
 			end
 			area.wipe_out
+		end
+
+feature -- Debug helpers
+
+	has_value (a_buffer: SPECIAL [CHARACTER_8]; name, value: STRING): BOOLEAN
+		local
+			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]
+		do
+			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
+				and then attached name_cache as names
+			then
+				from i := 0; i_final := index_count until i = i_final or Result loop
+					buffer := i_th_name (i, a_buffer, overflow_area)
+					if name_cache.item (buffer, a [i], a [i + 1]) ~ name then
+						buffer := i_th_value (i, a_buffer, overflow_area)
+						if area_substring (buffer, a [i + 2], a [i + 3], False) ~ value then
+							Result := True
+						end
+					end
+					i := i + Group_size
+				end
+			end
+		end
+
+	last_name (a_buffer: SPECIAL [CHARACTER_8]): STRING
+		local
+			i: INTEGER; buffer: SPECIAL [CHARACTER_8]
+		do
+			if count > 0 and then attached area_v2 as a and then attached overflow_buffer_area as overflow_area
+				and then attached name_cache as names
+			then
+				i := (count - 1) * Group_size
+				buffer := i_th_name (i, a_buffer, overflow_area)
+				Result := name_cache.item (buffer, a [i], a [i + 1])
+			else
+				Result := Empty_string
+			end
+		end
+
+	last_value (a_buffer: SPECIAL [CHARACTER_8]): STRING
+		local
+			i: INTEGER; buffer: SPECIAL [CHARACTER_8]
+		do
+			if count > 0 and then attached area_v2 as a and then attached overflow_buffer_area as overflow_area
+				and then attached name_cache as names
+			then
+				i := (count - 1) * Group_size
+				buffer := i_th_value (i, a_buffer, overflow_area)
+				Result := area_substring (buffer, a [i + 2], a [i + 3], False)
+			else
+				Result := Empty_string
+			end
+		end
+
+	stop_on_criteria (a_buffer: SPECIAL [CHARACTER_8])
+		local
+			name, value: STRING
+		do
+			if has_value (a_buffer, once "tb1:TSNLACTUALDEPTH", once "103123")
+				and then has_value (a_buffer, once "ROWID", once "AAAHcmAALAAAACnAAA")
+			then
+				name := Empty_string; value := Empty_string
+			else
+				name := last_name (a_buffer); value := last_value (a_buffer)
+			end
 		end
 
 feature -- Contract support
@@ -365,15 +434,6 @@ feature -- Contract support
 					i := i + 1
 				end
 			end
-		end
-
-	item_value (buffer: SPECIAL [CHARACTER_8]): STRING
-		-- value at current iteration position
-		local
-			i: INTEGER
-		do
-			i := index - 1
-			Result := area_substring (buffer, area_v2 [i + 2], area_v2 [i + 3], False)
 		end
 
 	valid_intervals (a_area: like area): BOOLEAN
@@ -402,13 +462,14 @@ feature -- Conversion
 		do
 			Result := attribute_table
 			Result.wipe_out
-			if attached area_v2 as l_area and then attached overflow_buffer_area as overflow_area then
+			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area then
 				from i := 0; i_final := index_count until i = i_final loop
-					buffer := i_th_buffer (i, a_buffer, overflow_area)
-					if attached name_cache.item (buffer, l_area [i], l_area [i + 1]) as name then
-						if attached area_substring (buffer, l_area [i + 2], l_area [i + 3], True) as value then
+					buffer := i_th_name (i, a_buffer, overflow_area)
+					if attached name_cache.item (buffer, a [i], a [i + 1]) as name then
+						buffer := i_th_value (i, a_buffer, overflow_area)
+						if attached area_substring (buffer, a [i + 2], a [i + 3], True) as value then
 							if attached entity_refs_area [i // Group_size] as entity_list then
-								Result.put (expanded_value (entity_list, entity_table, character_reference_table, value), name)
+								Result.put (expanded_value (entity_list, entity_table, value), name)
 							else
 								Result.put (value, name)
 							end
@@ -429,61 +490,24 @@ feature -- Conversion
 
 feature {NONE} -- Implementation
 
-	copied_buffer (buffer: SPECIAL [CHARACTER_8]; i, lower_index, a_count: INTEGER): SPECIAL [CHARACTER_8]
-		do
-			if i.integer_remainder (Group_size) = 0 then
-				Result := name_cache.item (buffer, lower_index, lower_index + a_count - 1).area
-			else
-				Result := buffer_pool.borrow_item (a_count)
-				Result.wipe_out
-				Result.copy_data (buffer, lower_index, 0, a_count)
-			end
-		end
-
-	entity_value (name: STRING; table, char_ref_table: HASH_TABLE [STRING, STRING]): STRING
-		require
-			valid_length: name.count >= 3
-		local
-			code: INTEGER
-		do
-			Result := Empty_string
-			inspect name [2]
-				when '#' then
-					inspect name [3] when 'x' then
-						if attached char_ref_table [name] as value then
-							Result := value
-						else
-							code := char_ref_number (name.area, 0, name.count - 1)
-							if attached utf_8_encoded (code) as l_area then
-								Result := new_substring (l_area, 0, l_area.count - 1)
-								char_ref_table.extend (Result, name)
-							end
-						end
-					else end
-			else
-				if attached table [name] as value then
-					Result := value
-				end
-			end
-		ensure
-			result_not_empty: Result /= Empty_string
-		end
-
-	expanded_value (entity_list: LIST [STRING]; table, char_ref_table: HASH_TABLE [STRING, STRING]; value: STRING): STRING
+	expanded_value (entity_list: LIST [STRING]; table: XT_ENTITY_TABLE; value: STRING): STRING
 		local
 			entity_index, start_index: INTEGER
 		do
 			Result := value; start_index := 1
 			across entity_list as entity loop
 				entity_index := value.substring_index (entity, start_index)
-				if attached entity_value (entity, table, char_ref_table) as l_entity_value then
-					Result.replace_substring (l_entity_value, entity_index, entity_index + entity.count - 1)
-					start_index := entity_index - entity.count + l_entity_value.count + 1
+				if attached table.item (entity_list.item) as entity_value then
+					Result.replace_substring (entity_value, entity_index, entity_index + entity.count - 1)
+					start_index := entity_index - entity.count + entity_value.count + 1
 				end
 			end
 		end
 
-	i_th_buffer (i: INTEGER; buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]
+	i_th_name (i: INTEGER; buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]
+		-- override `buffer' with `overflow_area [i // 2]' if not Void (consequence of `shift_buffer_left' )
+		require
+			index_at_start_of_group: i.integer_remainder (Group_size) = 0
 		do
 			if attached overflow_area [i // 2] as overflow then
 				Result := overflow
@@ -492,37 +516,14 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	mix_in_entity_values_to_crc_32 (
-		checksum: EL_CRC_32_DIGEST; buffer: SPECIAL [CHARACTER_8]; entity_list: LIST [STRING]; table: like entity_table
-		char_ref_table: HASH_TABLE [STRING, STRING]
-		lower_index, upper_index: INTEGER
-	)
-		-- expand entities defined in DOCTYPE for attribute value between `lower_index' and `upper_index'
-		local
-			amp_index, start_index: INTEGER; done: BOOLEAN
+	i_th_value (i: INTEGER; buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]
+		-- override `buffer' with `overflow_area [i // 2 + 1]' if not Void (consequence of `shift_buffer_left' )
+		require
+			index_at_start_of_group: i.integer_remainder (Group_size) = 0
 		do
-			if attached substring as value then
-				value.make_shared (buffer.item_address (lower_index), upper_index - lower_index + 1)
-				from entity_list.start; start_index := 1; amp_index := 1; done := False until done loop
-					amp_index := value.index_of ('&', start_index)
-					if amp_index > 0 then
-						checksum.add_characters (buffer, lower_index + start_index - 1, lower_index + amp_index - 2)
-						if entity_list.after then
-							checksum.add_characters (buffer, lower_index + amp_index - 1, upper_index)
-							done := True
-
-						elseif value.has_substring_at (entity_list.item, amp_index) then
-							checksum.add_string (entity_value (entity_list.item, table, char_ref_table))
-							start_index := amp_index + entity_list.item.count
-							entity_list.forth
-						else
-							start_index := amp_index + 1
-						end
-					else
-						checksum.add_characters (buffer, lower_index + start_index - 1, upper_index)
-						done := True
-					end
-				end
+			Result := buffer
+			if attached overflow_area [i // 2 + 1] as overflow then
+				Result := overflow
 			end
 		end
 

@@ -1,18 +1,27 @@
 
+
+DEST=$PWD/contrib/Eiffel-Loop
+
+EIFFEL_LOOP=$EIFFEL/library/Eiffel-Loop
+
+names=(c_string_8_api el_c_api el_crc_32_digest c_string_8 el_crc_32_constants \
+	el_expanded_routines el_traceable_crc_32_digest el_routines \
+	el_integer_math_i el_integer_math el_memory_routines el_zlib_crc_32_api)
+	
+args=()
+for n in "${names[@]}"; do
+	args+=(-o -name "$n.e")
+done
 pushd .
 
-DEST=$PWD/library/source/eiffel-loop
+cd $EIFFEL_LOOP/library
 
-cd $EIFFEL/library/Eiffel-Loop/library/language_interface/C/string/managed
+file_list=$(find . \( "${args[@]:1}" \))
 
-cp -u c_string*.e $DEST
-
-cd $EIFFEL/library/Eiffel-Loop/library/utility/compression/crc-32
-
-cp -u *.e $DEST
-
-cd ../zlib
-
-cp -u el_zlib_crc_32_api.e $DEST
+while IFS= read -r f; do
+	mkdir -p "$DEST/$(dirname "$f")"
+	cp -u "$f" "$DEST/$f"
+done <<< "$file_list"
 
 popd
+

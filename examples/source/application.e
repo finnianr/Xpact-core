@@ -29,17 +29,9 @@ class APPLICATION
 inherit
 	XT_PARSE_CONSTANTS
 
-	ARGUMENTS_32
-		export
-			{NONE} all
-		end
+	PARSE_EVENT_CONSTANTS
 
-	XT_TOKEN_CONSTANTS
-		rename
-			Tok_data_chars as Tok_text,
-			Tok_cdata_sect_open as Tok_cdata,
-			Tok_end_tag as Tok_tag,
-			Tok_attribute_value_s as Tok_attribute
+	ARGUMENTS_32
 		export
 			{NONE} all
 		end
@@ -105,13 +97,13 @@ feature {NONE} -- Factory
 
 	new_parser: detachable XT_XML_PARSER_BASE
 		local
-			crc_32_generator: XT_CRC_32_GENERATOR
+			crc_32_generator: CRC_32_GENERATOR
 		do
 			if index_of_word_option (Option.count_tags) > 0 then
-				create {XT_TAG_COUNTER} Result.make
+				create {TAG_COUNTER} Result.make
 
 			elseif index_of_word_option (Option.print_) > 0 then
-				create {XT_XML_PRINTER} Result.make
+				create {XML_PRINTER} Result.make
 
 			else
 				if attached new_argument_8 (0, Option.crc_32) as data_type then
@@ -132,7 +124,7 @@ feature {NONE} -- Implementation
 
 	do_parsing (parser: XT_XML_PARSER_BASE; file_path: PATH; chunk_size: INTEGER)
 		local
-			file: PLAIN_TEXT_FILE; time_start: TIME; benchmark: XT_BENCHMARK_COMPARISON
+			file: PLAIN_TEXT_FILE; time_start: TIME; duration: INTEGER
 		do
 			create file.make_with_path (file_path)
 
@@ -150,12 +142,14 @@ feature {NONE} -- Implementation
 						IO.put_string ("Cannot read: " + file_path.out)
 						IO.put_new_line
 				else
-					if attached {XT_DOCUMENT_STATS} parser as counter then
-						counter.print_stats
-						create benchmark.make (parser, file_path, time_start, new_integer_argument (Option.duration, 0), chunk_size)
-						benchmark.execute
-						if index_of_word_option (Option.compare_to_expat) > 0 then
-							benchmark.try_compare_to_expat
+					if attached {XT_EXPAT_COMPARABLE} parser as ec then
+						duration := new_integer_argument (Option.duration, 0)
+						ec.print_stats
+						if attached ec.new_benchmark (file_path, time_start, duration, chunk_size) as benchmark then
+							benchmark.execute
+							if index_of_word_option (Option.compare_to_expat) > 0 then
+								benchmark.try_compare_to_expat
+							end
 						end
 					end
 				end
@@ -218,17 +212,6 @@ feature {NONE} -- Constants
 				word.left_adjust
 				Result.put_reference (word, @ word.cursor_index)
 			end
-		end
-
-	Parse_event_types: HASH_TABLE [INTEGER, STRING]
-		once
-			create Result.make_from_iterable_tuples (<<
-				[Tok_text, "text"],
-				[Tok_cdata, "cdata"],
-				[Tok_comment, "comment"],
-				[Tok_tag, "tag"],
-				[Tok_attribute, "attribute"]
-			>>)
 		end
 
 end

@@ -121,7 +121,7 @@ feature -- Access
 			null_terminated: Result.area [Result.count] = '%U'
 		end
 
-feature {XT_STRING_BUFFERS} -- Implementation
+feature {XT_PARSING_BUFFERS} -- Implementation
 
 	buffer_string_8 (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING_8
 			-- Buffer bytes [start_index .. end_index) as a STRING_8.

@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: wordnet_glossary-20010201.rdf
+
+2026 16 JUL 19:23
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 57 (x1.68 to eXpat)

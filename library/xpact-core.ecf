@@ -14,8 +14,10 @@ export:
 			<void_safety support="all" use="all"/>
 		</capability>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf"/>
 		<library name="c_zlib" location="$ISE_LIBRARY\C_library\zlib\clibs_zlib.ecf"/>
 		<external_include location="$(XPACT_INCLUDE)"/>
+		<cluster name="eiffel_loop" location="../contrib/Eiffel-Loop" recursive="true"/>
 		<cluster name="xpact" location="source" recursive="true">
 			<file_rule>
 				<exclude>/small-size$</exclude>

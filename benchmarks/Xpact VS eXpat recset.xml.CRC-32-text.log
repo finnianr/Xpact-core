@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: recset.xml
+
+2026 16 JUL 19:22
+recset.xml: eXpat passes = 18; Xpact-core passes = 29 (x1.61 to eXpat)
