@@ -1,0 +1,58 @@
+
+Now write an introduction on that report for posting on Eiffel users forum. Put in the context of the paper I wrote: https://www.eiffel.org/blog/Finnian%20Reilly/2026/05/finding-billion-user-project-eiffel-how-dbc-catches-security-flaws-rust-misses
+
+Explain that as it turned out, the easy part was making Xpact fast. The hard part was making it correct and matching the output of eXpat exactly.
+
+To this end I got Claude to make this C eXpat program https://github.com/finnianr/Xpact-core/blob/main/C-examples/XML-crc_32/src/xml_crc_32.c
+
+This dual use program accomplishes two things
+1. provide a CRC-32 value for 5 different data types that can be compared with Xpact 
+2. Also provide benchmarking capabilities, running the parser many times in a time window
+
+This program corresponds to the the Xpact example class CRC_32_GENERATOR
+https://github.com/finnianr/Xpact-core/blob/main/examples/source/parser/crc_32_generator.e
+
+The five data types are explained by this code
+
+feature {NONE} -- Constants
+
+	Parse_event_types: HASH_TABLE [INTEGER, STRING]
+		once
+			create Result.make_from_iterable_tuples (<<
+				[Tok_text, "text"],				-- text content
+				[Tok_cdata, "cdata"],			-- CDATA text content
+				[Tok_comment, "comment"],		-- comment
+				[Tok_tag, "tag"],					-- tag name (open element)
+				[Tok_attribute, "attribute"]	-- attribute value
+			>>)
+		end
+		
+Originally I was testing with the C eXpat program 
+https://github.com/finnianr/Xpact-core/blob/main/C-examples/tag-counter/xml_tag_counter.c
+
+which provides tag name only correctness testing and benchmarking.
+
+It corresponds to the example class TAG_COUNTER
+https://github.com/finnianr/Xpact-core/blob/main/examples/source/parser/tag_counter.e
+
+This simple program generates a table of tag name occurrence frequency in a document.
+
+I used these two scripts to perform a benckmarking session, adding the results to log file that tracks performance regression.
+
+https://github.com/finnianr/Xpact-core/blob/main/scripts/benchmark_Xpact_crc_32.sh
+https://github.com/finnianr/Xpact-core/blob/main/scripts/benchmark_Xpact_tag_count.sh
+
+Overall I am happy with the result. I lost some performance during the "correctness phase" of the project but not too much.
+
+Am I getting near the Pareto proportion, hopefully. but more testing is needed. The next goal is to write a program that does mass correctness testing on thousands of different files. As it turns out the average Linux install has thousands of test subjects lying around.
+
+Test environment:
+Linux Mint 22.2 (Ubuntu 24.04 Noble base)
+PC: ThinkCentre M90a Pro Gen 6 with CPU Intel Core Ultra 9 285
+Eiffel Studio: 25.15, void-safe compilation
+libexpat 2.6.1
+gcc version 13.3.0
+
+
+
+

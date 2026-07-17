@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xpact-core vs eXpat — Benchmark Report</title>
+<style>
+:root {
+  --bg: #EFF3F8;
+  --surface: #FAFCFF;
+  --card: #FFFFFF;
+  --border: #C5D3E0;
+  --text: #0E1C2B;
+  --text-muted: #3C5670;
+  --text-subtle: #8A9EAF;
+  --xpact: #067B70;
+  --expat: #3B5978;
+  --rh: #1A7A3D;
+  --rg: #3C6B22;
+  --rm: #7A5E00;
+  --rl: #4A6070;
+  --rh-bg: rgba(26,122,61,0.10);
+  --rg-bg: rgba(60,107,34,0.09);
+  --rm-bg: rgba(122,94,0,0.09);
+  --rl-bg: rgba(74,96,112,0.07);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #ECF0F6;
+    --surface: #F4F6FA;
+    --card: #FFFFFF;
+    --border: #C8D4E0;
+    --text: #0F1C2D;
+    --text-muted: #3D5570;
+    --text-subtle: #8A9CB0;
+    --xpact: #0A7A6E;
+    --expat: #3B5C7A;
+    --rh: #166534;
+    --rg: #365314;
+    --rm: #713F12;
+    --rl: #374151;
+    --rh-bg: rgba(22,101,52,0.10);
+    --rg-bg: rgba(54,83,20,0.09);
+    --rm-bg: rgba(113,63,18,0.09);
+    --rl-bg: rgba(55,65,81,0.07);
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+a { color: var(--xpact); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+/* ── Header ── */
+.site-header {
+  padding: 52px 0 38px;
+  border-bottom: 1px solid var(--border);
+}
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--xpact);
+  margin-bottom: 14px;
+}
+h1 {
+  font-size: clamp(26px, 5vw, 46px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  color: var(--text);
+  text-wrap: balance;
+}
+.header-sub {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin-top: 10px;
+}
+.header-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.chip {
+  font-size: 12px;
+  font-family: 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  color: var(--text-muted);
+}
+
+/* ── Methodology ── */
+.method {
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+.method-item {
+  flex: 1 1 220px;
+  padding: 12px 20px 12px 0;
+  border-right: 1px solid var(--border);
+  margin-right: 20px;
+}
+.method-item:last-child { border-right: none; margin-right: 0; }
+.method-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 4px;
+}
+.method-value { font-size: 13px; color: var(--text-muted); }
+
+/* ── File sections ── */
+.file-section {
+  padding: 36px 0;
+  border-bottom: 1px solid var(--border);
+}
+.file-header { margin-bottom: 20px; }
+.file-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.file-name {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+  color: var(--text);
+}
+.file-name a { color: inherit; }
+.file-name a:hover { color: var(--xpact); }
+.file-size {
+  font-size: 13px;
+  font-family: 'SF Mono', Consolas, monospace;
+  color: var(--text-subtle);
+}
+.tag-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.file-body {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 640px) {
+  .file-body { grid-template-columns: 1fr; }
+}
+
+.file-profile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+.profile-heading {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 10px;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.stat-row:last-of-type { border-bottom: none; }
+.stat-label { font-size: 12px; color: var(--text-muted); }
+.stat-value {
+  font-size: 13px;
+  font-family: 'SF Mono', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-align: right;
+}
+.file-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.results-wrap { overflow-x: auto; }
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.results-table th {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  padding: 8px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.results-table th.num { text-align: right; }
+.results-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.results-table tr:last-child td { border-bottom: none; }
+.type-cell {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.num-cell {
+  font-family: 'SF Mono', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  text-align: right;
+}
+.num-cell.xp { color: var(--expat); }
+.num-cell.xc { color: var(--xpact); }
+.ratio-cell { text-align: right; }
+.rb {
+  display: inline-block;
+  font-family: 'SF Mono', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 4px;
+}
+.rb.rh { color: var(--rh); background: var(--rh-bg); }
+.rb.rg { color: var(--rg); background: var(--rg-bg); }
+.rb.rm { color: var(--rm); background: var(--rm-bg); }
+.rb.rl { color: var(--rl); background: var(--rl-bg); }
+
+/* ── Summary ── */
+.summary-section { padding: 48px 0 0; }
+.section-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 8px;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  text-wrap: balance;
+  margin-bottom: 6px;
+}
+.section-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+.legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ld { width: 12px; height: 12px; border-radius: 2px; }
+.ld.rh { background: var(--rh-bg); border: 1.5px solid var(--rh); }
+.ld.rg { background: var(--rg-bg); border: 1.5px solid var(--rg); }
+.ld.rm { background: var(--rm-bg); border: 1.5px solid var(--rm); }
+.ld.rl { background: var(--rl-bg); border: 1.5px solid var(--rl); }
+
+.summary-wrap { overflow-x: auto; margin-top: 4px; }
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 660px;
+}
+.summary-table th {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  padding: 8px 10px;
+  text-align: center;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.summary-table th:first-child { text-align: left; }
+.summary-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  vertical-align: middle;
+}
+.summary-table td:first-child {
+  text-align: left;
+  font-family: 'SF Mono', Consolas, monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.summary-table .avg-col {
+  background: var(--surface);
+  font-weight: 700;
+}
+.summary-table .avg-row td {
+  background: var(--surface);
+  border-top: 2px solid var(--border);
+  border-bottom: none;
+  font-weight: 700;
+}
+.summary-table .avg-row td:first-child {
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  font-weight: 700;
+}
+.cr {
+  display: inline-block;
+  font-family: 'SF Mono', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 3px;
+}
+.cr.rh { color: var(--rh); background: var(--rh-bg); }
+.cr.rg { color: var(--rg); background: var(--rg-bg); }
+.cr.rm { color: var(--rm); background: var(--rm-bg); }
+.cr.rl { color: var(--rl); background: var(--rl-bg); }
+
+/* ── Observations ── */
+.obs-section { padding: 40px 0 56px; }
+.obs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+.obs-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 20px;
+}
+.obs-num {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: var(--xpact);
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+.obs-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 7px;
+  text-wrap: balance;
+  line-height: 1.3;
+}
+.obs-body { font-size: 13px; color: var(--text-muted); line-height: 1.55; }
+.obs-body strong { color: var(--text); font-weight: 600; }
+
+/* ── Introduction ── */
+.intro-section {
+  padding: 36px 0;
+  border-bottom: 1px solid var(--border);
+  max-width: 740px;
+}
+.intro-lead {
+  font-size: 16px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  margin-bottom: 28px;
+}
+.intro-section h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin: 26px 0 8px;
+}
+.intro-section p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  margin-bottom: 14px;
+}
+.intro-section ol {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  margin: 10px 0 14px 22px;
+}
+.intro-section ol li { margin-bottom: 6px; }
+.intro-section code {
+  font-family: 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+.env-block {
+  display: inline-block;
+  margin-top: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 20px;
+  min-width: 360px;
+}
+.env-heading {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 10px;
+}
+.env-table { border-collapse: collapse; width: 100%; }
+.env-table td { padding: 5px 0; vertical-align: top; }
+.env-key {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding-right: 24px;
+  white-space: nowrap;
+}
+.env-val {
+  font-size: 12.5px;
+  font-family: 'SF Mono', Consolas, monospace;
+  color: var(--text);
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <div class="eyebrow">Performance Analysis</div>
+    <h1>Xpact-core vs eXpat</h1>
+    <p class="header-sub">Pure-Eiffel XML Parser · Comparative Benchmark Report</p>
+    <div class="header-meta">
+      <span class="chip">2026-07-17</span>
+      <span class="chip">5 corpora · 6 benchmark types</span>
+      <span class="chip">2 s timing window</span>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="container">
+
+  <section class="intro-section">
+    <p class="intro-lead">This report presents benchmark results for <a href="https://github.com/finnianr/Xpact-core">Xpact-core</a>, a pure-Eiffel XML parser porting the behaviour of the widely-used C library <a href="https://libexpat.github.io/">eXpat (libexpat)</a>. It accompanies the paper <a href="https://www.eiffel.org/blog/Finnian%20Reilly/2026/05/finding-billion-user-project-eiffel-how-dbc-catches-security-flaws-rust-misses"><em>Finding a Billion-User Project for Eiffel: How DbC Catches Security Flaws Rust Misses</em></a>, where the motivation and architecture of Xpact-core are described in detail.</p>
+
+    <h3>Making it fast was the easy part</h3>
+    <p>Getting Xpact to run quickly turned out to be relatively straightforward. The hard part was making it <em>correct</em> — matching eXpat's output exactly across every edge case: predefined entity resolution, partial-token buffer boundaries, CDATA section handling, namespace attribute semantics, and character-reference encoding. A mismatch in any one of these produces a different CRC-32 value from the two parsers, which is immediately detectable.</p>
+
+    <h3>A dual-purpose correctness and benchmarking tool</h3>
+    <p>To verify correctness and measure performance in the same run, I had Claude write a C program — <a href="https://github.com/finnianr/Xpact-core/blob/main/C-examples/XML-crc_32/src/xml_crc_32.c"><code>xml_crc_32.c</code></a> — that serves two purposes:</p>
+    <ol>
+      <li>It computes a CRC-32/ISO-HDLC hash over one of five parse-event data types (selectable on the command line), producing a single value that can be compared directly against Xpact's output.</li>
+      <li>It counts complete parse passes in a fixed time window, giving a throughput figure for benchmarking.</li>
+    </ol>
+    <p>The five data types are text content, CDATA sections, comments, start-tag names, and attribute values. The Eiffel counterpart is <a href="https://github.com/finnianr/Xpact-core/blob/main/examples/source/parser/crc_32_generator.e"><code>CRC_32_GENERATOR</code></a>. When both programs produce identical CRC-32 values for a given file and data type, the parsers are in agreement for that combination.</p>
+
+    <p>Earlier in the project I used a simpler program — <a href="https://github.com/finnianr/Xpact-core/blob/main/C-examples/tag-counter/xml_tag_counter.c"><code>xml_tag_counter.c</code></a> — which generates a table of tag-name occurrence frequencies. Its Eiffel counterpart is <a href="https://github.com/finnianr/Xpact-core/blob/main/examples/source/parser/tag_counter.e"><code>TAG_COUNTER</code></a>. This confirmed basic parse-tree correctness but cannot detect errors in text content or attribute values.</p>
+
+    <p>Benchmark sessions are driven by two scripts — <a href="https://github.com/finnianr/Xpact-core/blob/main/scripts/benchmark_Xpact_crc_32.sh"><code>benchmark_Xpact_crc_32.sh</code></a> and <a href="https://github.com/finnianr/Xpact-core/blob/main/scripts/benchmark_Xpact_tag_count.sh"><code>benchmark_Xpact_tag_count.sh</code></a> — which run both parsers against each test file and append results to log files, allowing performance regressions to be tracked over time.</p>
+
+    <h3>Where things stand</h3>
+    <p>Overall I am happy with the result. I lost some performance during the correctness phase of the project, but not too much. I am hopefully approaching the Pareto proportion, though more testing is needed. The next goal is a mass-correctness testing program that exercises thousands of different files — as it turns out, a typical Linux install already has thousands of suitable test subjects on disk.</p>
+
+    <p>One robustness milestone worth noting: Xpact-core passes all five of the libexpat "hack attack" test files — <code>aaaaaa_attr.xml</code>, <code>aaaaaa_cdata.xml</code>, <code>aaaaaa_comment.xml</code>, <code>aaaaaa_tag.xml</code>, and <code>aaaaaa_text.xml</code>. Each is a ~10 MB document consisting of a single pathologically large token: a giant attribute value, CDATA block, comment, tag name, or text run with no newlines. They are designed to exercise exactly the buffer-shift and partial-token handling paths that are most likely to fail silently under adversarial input.</p>
+
+    <div class="env-block">
+      <div class="env-heading">Test environment</div>
+      <table class="env-table">
+        <tbody>
+          <tr><td class="env-key">OS</td><td class="env-val">Linux Mint 22.2 (Ubuntu 24.04 Noble base)</td></tr>
+          <tr><td class="env-key">PC</td><td class="env-val">ThinkCentre M90a Pro Gen 6 · Intel Core Ultra 9 285</td></tr>
+          <tr><td class="env-key">EiffelStudio</td><td class="env-val">25.15, void-safe compilation</td></tr>
+          <tr><td class="env-key">libexpat</td><td class="env-val">2.6.1</td></tr>
+          <tr><td class="env-key">GCC</td><td class="env-val">13.3.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="method">
+    <div class="method-item">
+      <div class="method-label">Metric</div>
+      <div class="method-value">Complete parse passes in a fixed 2-second window — higher is faster</div>
+    </div>
+    <div class="method-item">
+      <div class="method-label">CRC-32 benchmarks</div>
+      <div class="method-value">
+        <a href="https://github.com/finnianr/Xpact-core/blob/main/scripts/benchmark_Xpact_crc_32.sh">benchmark_Xpact_crc_32.sh</a>
+        · <a href="https://github.com/finnianr/Xpact-core/blob/main/C-examples/XML-crc_32/src/xml_crc_32.c">xml_crc_32.c</a>
+      </div>
+    </div>
+    <div class="method-item">
+      <div class="method-label">Tag-count benchmark</div>
+      <div class="method-value">
+        <a href="https://github.com/finnianr/Xpact-core/blob/main/scripts/benchmark_Xpact_tag_count.sh">benchmark_Xpact_tag_count.sh</a>
+        · <a href="https://github.com/finnianr/Xpact-core/blob/main/C-examples/tag-counter/xml_tag_counter.c">xml_tag_counter.c</a>
+      </div>
+    </div>
+    <div class="method-item">
+      <div class="method-label">Speed ratio</div>
+      <div class="method-value">Xpact passes ÷ eXpat passes · a value of ×1.50 means Xpact is 50% faster</div>
+    </div>
+  </section>
+
+  <!-- vision2.ecf -->
+  <section class="file-section">
+    <div class="file-header">
+      <div class="file-name-row">
+        <span class="file-name"><a href="https://github.com/finnianr/Xpact-core/blob/main/benchmarks/vision2.ecf">vision2.ecf</a></span>
+        <span class="file-size">13 KB</span>
+      </div>
+      <div class="tag-list">
+        <span class="tag">ISE Eiffel config</span>
+        <span class="tag">attribute-driven</span>
+        <span class="tag">no text content</span>
+        <span class="tag">shallow nesting</span>
+      </div>
+    </div>
+    <div class="file-body">
+      <div class="file-profile">
+        <div class="profile-heading">Structure</div>
+        <div class="stat-row"><span class="stat-label">Size</span><span class="stat-value">13 KB</span></div>
+        <div class="stat-row"><span class="stat-label">Open tags</span><span class="stat-value">212</span></div>
+        <div class="stat-row"><span class="stat-label">Attributes</span><span class="stat-value">238</span></div>
+        <div class="stat-row"><span class="stat-label">Avg attrs / tag</span><span class="stat-value">1.1</span></div>
+        <div class="stat-row"><span class="stat-label">CDATA sections</span><span class="stat-value">0</span></div>
+        <div class="stat-row"><span class="stat-label">Comments</span><span class="stat-value">0</span></div>
+        <div class="stat-row"><span class="stat-label">Entity refs</span><span class="stat-value">0</span></div>
+        <div class="file-desc">The ISE Eiffel project configuration format — a compact, well-formed document. Its tiny size (~13 KB) means each parse completes in tens of microseconds, producing very high loop counts and exposing per-invocation dispatch overhead more clearly than throughput.</div>
+      </div>
+      <div class="results-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Benchmark</th>
+              <th class="num">eXpat passes</th>
+              <th class="num">Xpact passes</th>
+              <th class="num">Speed ratio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="type-cell">attribute</td><td class="num-cell xp">28,026</td><td class="num-cell xc">38,205</td><td class="ratio-cell"><span class="rb rm">×1.36</span></td></tr>
+            <tr><td class="type-cell">cdata</td><td class="num-cell xp">29,907</td><td class="num-cell xc">43,463</td><td class="ratio-cell"><span class="rb rg">×1.45</span></td></tr>
+            <tr><td class="type-cell">comment</td><td class="num-cell xp">29,928</td><td class="num-cell xc">43,740</td><td class="ratio-cell"><span class="rb rg">×1.46</span></td></tr>
+            <tr><td class="type-cell">tag</td><td class="num-cell xp">29,502</td><td class="num-cell xc">41,533</td><td class="ratio-cell"><span class="rb rg">×1.41</span></td></tr>
+            <tr><td class="type-cell">text</td><td class="num-cell xp">29,415</td><td class="num-cell xc">40,629</td><td class="ratio-cell"><span class="rb rg">×1.38</span></td></tr>
+            <tr><td class="type-cell">tag_count</td><td class="num-cell xp">29,295</td><td class="num-cell xc">38,767</td><td class="ratio-cell"><span class="rb rm">×1.32</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Legislation.xml -->
+  <section class="file-section">
+    <div class="file-header">
+      <div class="file-name-row">
+        <span class="file-name"><a href="https://github.com/finnianr/Xpact-core/blob/main/examples/data/Legislation.xml">Legislation.xml</a></span>
+        <span class="file-size">419 KB</span>
+      </div>
+      <div class="tag-list">
+        <span class="tag">legislative text</span>
+        <span class="tag">mixed content</span>
+        <span class="tag">named entity refs</span>
+        <span class="tag">attribute-heavy</span>
+      </div>
+    </div>
+    <div class="file-body">
+      <div class="file-profile">
+        <div class="profile-heading">Structure</div>
+        <div class="stat-row"><span class="stat-label">Size</span><span class="stat-value">419 KB</span></div>
+        <div class="stat-row"><span class="stat-label">Open tags</span><span class="stat-value">7,628</span></div>
+        <div class="stat-row"><span class="stat-label">Attributes</span><span class="stat-value">13,669</span></div>
+        <div class="stat-row"><span class="stat-label">Avg attrs / tag</span><span class="stat-value">1.8</span></div>
+        <div class="stat-row"><span class="stat-label">CDATA sections</span><span class="stat-value">0</span></div>
+        <div class="stat-row"><span class="stat-label">Comments</span><span class="stat-value">0</span></div>
+        <div class="stat-row"><span class="stat-label">Entity refs</span><span class="stat-value">20</span></div>
+        <div class="file-desc">New Zealand legislation in XML form — a realistic mixed-content document with meaningful text between elements, moderate attribute density, and 20 named entity references requiring predefined entity resolution (&amp;amp;, &amp;lt;, etc.).</div>
+      </div>
+      <div class="results-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Benchmark</th>
+              <th class="num">eXpat passes</th>
+              <th class="num">Xpact passes</th>
+              <th class="num">Speed ratio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="type-cell">attribute</td><td class="num-cell xp">1,294</td><td class="num-cell xc">1,344</td><td class="ratio-cell"><span class="rb rl">×1.04</span></td></tr>
+            <tr><td class="type-cell">cdata</td><td class="num-cell xp">1,313</td><td class="num-cell xc">1,515</td><td class="ratio-cell"><span class="rb rm">×1.15</span></td></tr>
+            <tr><td class="type-cell">comment</td><td class="num-cell xp">1,302</td><td class="num-cell xc">1,512</td><td class="ratio-cell"><span class="rb rm">×1.16</span></td></tr>
+            <tr><td class="type-cell">tag</td><td class="num-cell xp">1,277</td><td class="num-cell xc">1,449</td><td class="ratio-cell"><span class="rb rm">×1.13</span></td></tr>
+            <tr><td class="type-cell">text</td><td class="num-cell xp">1,151</td><td class="num-cell xc">1,248</td><td class="ratio-cell"><span class="rb rl">×1.08</span></td></tr>
+            <tr><td class="type-cell">tag_count</td><td class="num-cell xp">1,279</td><td class="num-cell xc">1,355</td><td class="ratio-cell"><span class="rb rl">×1.06</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- nes96.xml -->
+  <section class="file-section">
+    <div class="file-header">
+      <div class="file-name-row">
+        <span class="file-name"><a href="https://github.com/finnianr/Xpact-core/blob/main/benchmarks/nes96.xml">nes96.xml</a></span>
+        <span class="file-size">2.9 MB</span>
+      </div>
+      <div class="tag-list">
+        <span class="tag">survey data</span>
+        <span class="tag">mixed content</span>
+        <span class="tag">no namespaces</span>
+        <span class="tag">text-heavy</span>
+      </div>
+    </div>
+    <div class="file-body">
+      <div class="file-profile">
+        <div class="profile-heading">Structure</div>
+        <div class="stat-row"><span class="stat-label">Size</span><span class="stat-value">2.9 MB</span></div>
+        <div class="stat-row"><span class="stat-label">Open tags</span><span class="stat-value">39,107</span></div>
+        <div class="stat-row"><span class="stat-label">Attributes</span><span class="stat-value">29,479</span></div>
+        <div class="stat-row"><span class="stat-label">Avg attrs / tag</span><span class="stat-value">0.75</span></div>
+        <div class="stat-row"><span class="stat-label">CDATA sections</span><span class="stat-value">0</span></div>
+        <div class="stat-row"><span class="stat-label">Comments</span><span class="stat-value">0</span></div>
+        <div class="stat-row"><span class="stat-label">Entity refs</span><span class="stat-value">39</span></div>
+        <div class="file-desc">US National Election Study 1996 survey data. Fewer attributes per element than Legislation.xml but richer text content — the data-in-text pattern means more time is spent in the data-character scanner, where raw byte throughput dominates over dispatch overhead.</div>
+      </div>
+      <div class="results-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Benchmark</th>
+              <th class="num">eXpat passes</th>
+              <th class="num">Xpact passes</th>
+              <th class="num">Speed ratio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="type-cell">attribute</td><td class="num-cell xp">242</td><td class="num-cell xc">281</td><td class="ratio-cell"><span class="rb rm">×1.16</span></td></tr>
+            <tr><td class="type-cell">cdata</td><td class="num-cell xp">245</td><td class="num-cell xc">297</td><td class="ratio-cell"><span class="rb rm">×1.21</span></td></tr>
+            <tr><td class="type-cell">comment</td><td class="num-cell xp">245</td><td class="num-cell xc">293</td><td class="ratio-cell"><span class="rb rm">×1.20</span></td></tr>
+            <tr><td class="type-cell">tag</td><td class="num-cell xp">237</td><td class="num-cell xc">281</td><td class="ratio-cell"><span class="rb rm">×1.19</span></td></tr>
+            <tr><td class="type-cell">text</td><td class="num-cell xp">210</td><td class="num-cell xc">215</td><td class="ratio-cell"><span class="rb rl">×1.02</span></td></tr>
+            <tr><td class="type-cell">tag_count</td><td class="num-cell xp">244</td><td class="num-cell xc">265</td><td class="ratio-cell"><span class="rb rl">×1.09</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- recset.xml -->
+  <section class="file-section">
+    <div class="file-header">
+      <div class="file-name-row">
+        <span class="file-name"><a href="https://github.com/finnianr/Xpact-core/blob/main/benchmarks/recset.xml">recset.xml</a></span>
+        <span class="file-size">29 MB</span>
+      </div>
+      <div class="tag-list">
+        <span class="tag">record set</span>
+        <span class="tag">flat structure</span>
+        <span class="tag">attribute-dense</span>
+        <span class="tag">partial namespaces</span>
+      </div>
+    </div>
+    <div class="file-body">
+      <div class="file-profile">
+        <div class="profile-heading">Structure</div>
+        <div class="stat-row"><span class="stat-label">Size</span><span class="stat-value">29 MB</span></div>
+        <div class="stat-row"><span class="stat-label">Open tags</span><span class="stat-value">50,069</span></div>
+        <div class="stat-row"><span class="stat-label">Attributes</span><span class="stat-value">1,388,668</span></div>
+        <div class="stat-row"><span class="stat-label">Avg attrs / tag</span><span class="stat-value">27.7</span></div>
+        <div class="stat-row"><span class="stat-label">CDATA sections</span><span class="stat-value">0</span></div>
+        <div class="stat-row"><span class="stat-label">Comments</span><span class="stat-value">0</span></div>
+        <div class="stat-row"><span class="stat-label">Char refs</span><span class="stat-value">316</span></div>
+        <div class="file-desc">Record-set data donated to libexpat by Karl Waclawek. Extremely attribute-dense (≈27.7 per tag), flat, mixed namespace/non-namespace. eXpat's <code>storeAttributes()</code> duplicate-attribute check loop scales with attribute count, increasing its per-element cost significantly.</div>
+      </div>
+      <div class="results-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Benchmark</th>
+              <th class="num">eXpat passes</th>
+              <th class="num">Xpact passes</th>
+              <th class="num">Speed ratio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="type-cell">attribute</td><td class="num-cell xp">17</td><td class="num-cell xc">25</td><td class="ratio-cell"><span class="rb rg">×1.47</span></td></tr>
+            <tr><td class="type-cell">cdata</td><td class="num-cell xp">18</td><td class="num-cell xc">30</td><td class="ratio-cell"><span class="rb rh">×1.67</span></td></tr>
+            <tr><td class="type-cell">comment</td><td class="num-cell xp">18</td><td class="num-cell xc">30</td><td class="ratio-cell"><span class="rb rh">×1.67</span></td></tr>
+            <tr><td class="type-cell">tag</td><td class="num-cell xp">18</td><td class="num-cell xc">30</td><td class="ratio-cell"><span class="rb rh">×1.67</span></td></tr>
+            <tr><td class="type-cell">text</td><td class="num-cell xp">18</td><td class="num-cell xc">29</td><td class="ratio-cell"><span class="rb rh">×1.61</span></td></tr>
+            <tr><td class="type-cell">tag_count</td><td class="num-cell xp">17</td><td class="num-cell xc">30</td><td class="ratio-cell"><span class="rb rh">×1.76</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ns_att_test.xml -->
+  <section class="file-section">
+    <div class="file-header">
+      <div class="file-name-row">
+        <span class="file-name"><a href="https://github.com/finnianr/Xpact-core/blob/main/benchmarks/ns_att_test.xml">ns_att_test.xml</a></span>
+        <span class="file-size">35 MB</span>
+      </div>
+      <div class="tag-list">
+        <span class="tag">namespace stress test</span>
+        <span class="tag">flat structure</span>
+        <span class="tag">28 prefixed attrs / element</span>
+        <span class="tag">largest corpus</span>
+      </div>
+    </div>
+    <div class="file-body">
+      <div class="file-profile">
+        <div class="profile-heading">Structure</div>
+        <div class="stat-row"><span class="stat-label">Size</span><span class="stat-value">35 MB</span></div>
+        <div class="stat-row"><span class="stat-label">Open tags</span><span class="stat-value">50,002</span></div>
+        <div class="stat-row"><span class="stat-label">Attributes</span><span class="stat-value">1,388,340</span></div>
+        <div class="stat-row"><span class="stat-label">Avg attrs / tag</span><span class="stat-value">27.8</span></div>
+        <div class="stat-row"><span class="stat-label">CDATA sections</span><span class="stat-value">0</span></div>
+        <div class="stat-row"><span class="stat-label">Comments</span><span class="stat-value">0</span></div>
+        <div class="stat-row"><span class="stat-label">Char refs</span><span class="stat-value">316</span></div>
+        <div class="file-desc">Designed specifically to stress-test libexpat's namespace attribute handling. Every element carries ≈28 namespace-prefixed attributes, making <code>storeAttributes()</code> and prefix-expansion the dominant cost for eXpat. Xpact's simpler attribute model avoids this overhead entirely.</div>
+      </div>
+      <div class="results-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Benchmark</th>
+              <th class="num">eXpat passes</th>
+              <th class="num">Xpact passes</th>
+              <th class="num">Speed ratio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="type-cell">attribute</td><td class="num-cell xp">15</td><td class="num-cell xc">21</td><td class="ratio-cell"><span class="rb rg">×1.40</span></td></tr>
+            <tr><td class="type-cell">cdata</td><td class="num-cell xp">15</td><td class="num-cell xc">25</td><td class="ratio-cell"><span class="rb rh">×1.67</span></td></tr>
+            <tr><td class="type-cell">comment</td><td class="num-cell xp">15</td><td class="num-cell xc">25</td><td class="ratio-cell"><span class="rb rh">×1.67</span></td></tr>
+            <tr><td class="type-cell">tag</td><td class="num-cell xp">15</td><td class="num-cell xc">26</td><td class="ratio-cell"><span class="rb rh">×1.73</span></td></tr>
+            <tr><td class="type-cell">text</td><td class="num-cell xp">16</td><td class="num-cell xc">25</td><td class="ratio-cell"><span class="rb rh">×1.56</span></td></tr>
+            <tr><td class="type-cell">tag_count</td><td class="num-cell xp">14</td><td class="num-cell xc">24</td><td class="ratio-cell"><span class="rb rh">×1.71</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Summary -->
+  <section class="summary-section">
+    <div class="section-eyebrow">Summary</div>
+    <h2>Speed Ratio — All Benchmarks</h2>
+    <p class="section-sub">Xpact passes ÷ eXpat passes · last run per log · all values ≥ 1.0 (Xpact leads in every case)</p>
+    <div class="legend">
+      <span class="legend-item"><span class="ld rh"></span>≥ ×1.50 — strong lead</span>
+      <span class="legend-item"><span class="ld rg"></span>×1.30–1.49 — clear lead</span>
+      <span class="legend-item"><span class="ld rm"></span>×1.10–1.29 — moderate lead</span>
+      <span class="legend-item"><span class="ld rl"></span>&lt; ×1.10 — marginal lead</span>
+    </div>
+    <div class="summary-wrap">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>attribute</th>
+            <th>cdata</th>
+            <th>comment</th>
+            <th>tag</th>
+            <th>text</th>
+            <th>tag_count</th>
+            <th>avg</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>vision2.ecf</td>
+            <td><span class="cr rm">×1.36</span></td>
+            <td><span class="cr rg">×1.45</span></td>
+            <td><span class="cr rg">×1.46</span></td>
+            <td><span class="cr rg">×1.41</span></td>
+            <td><span class="cr rg">×1.38</span></td>
+            <td><span class="cr rm">×1.32</span></td>
+            <td class="avg-col"><span class="cr rg">×1.40</span></td>
+          </tr>
+          <tr>
+            <td>Legislation.xml</td>
+            <td><span class="cr rl">×1.04</span></td>
+            <td><span class="cr rm">×1.15</span></td>
+            <td><span class="cr rm">×1.16</span></td>
+            <td><span class="cr rm">×1.13</span></td>
+            <td><span class="cr rl">×1.08</span></td>
+            <td><span class="cr rl">×1.06</span></td>
+            <td class="avg-col"><span class="cr rl">×1.10</span></td>
+          </tr>
+          <tr>
+            <td>nes96.xml</td>
+            <td><span class="cr rm">×1.16</span></td>
+            <td><span class="cr rm">×1.21</span></td>
+            <td><span class="cr rm">×1.20</span></td>
+            <td><span class="cr rm">×1.19</span></td>
+            <td><span class="cr rl">×1.02</span></td>
+            <td><span class="cr rl">×1.09</span></td>
+            <td class="avg-col"><span class="cr rm">×1.15</span></td>
+          </tr>
+          <tr>
+            <td>recset.xml</td>
+            <td><span class="cr rg">×1.47</span></td>
+            <td><span class="cr rh">×1.67</span></td>
+            <td><span class="cr rh">×1.67</span></td>
+            <td><span class="cr rh">×1.67</span></td>
+            <td><span class="cr rh">×1.61</span></td>
+            <td><span class="cr rh">×1.76</span></td>
+            <td class="avg-col"><span class="cr rh">×1.64</span></td>
+          </tr>
+          <tr>
+            <td>ns_att_test.xml</td>
+            <td><span class="cr rg">×1.40</span></td>
+            <td><span class="cr rh">×1.67</span></td>
+            <td><span class="cr rh">×1.67</span></td>
+            <td><span class="cr rh">×1.73</span></td>
+            <td><span class="cr rh">×1.56</span></td>
+            <td><span class="cr rh">×1.71</span></td>
+            <td class="avg-col"><span class="cr rh">×1.62</span></td>
+          </tr>
+          <tr class="avg-row">
+            <td>avg per type</td>
+            <td><span class="cr rm">×1.29</span></td>
+            <td><span class="cr rg">×1.43</span></td>
+            <td><span class="cr rg">×1.43</span></td>
+            <td><span class="cr rg">×1.43</span></td>
+            <td><span class="cr rm">×1.33</span></td>
+            <td><span class="cr rg">×1.39</span></td>
+            <td class="avg-col"><span class="cr rg">×1.38</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Observations -->
+  <section class="obs-section">
+    <div class="section-eyebrow">Observations</div>
+    <div class="obs-grid">
+      <div class="obs-card">
+        <div class="obs-num">Finding 01</div>
+        <div class="obs-title">Xpact leads on every single benchmark</div>
+        <div class="obs-body">Across all 5 files and 6 benchmark types (30 data points), Xpact-core is faster in every case. The overall average is <strong>×1.38</strong> — the pure-Eiffel parser completes 38% more parse cycles per second than the reference C library.</div>
+      </div>
+      <div class="obs-card">
+        <div class="obs-num">Finding 02</div>
+        <div class="obs-title">Attribute-heavy files show the largest gains</div>
+        <div class="obs-body">recset.xml (×1.64 avg) and ns_att_test.xml (×1.62 avg) are where the gap is widest. Both carry ~28 attributes per element. eXpat's <code>storeAttributes()</code> runs a duplicate-attribute check that scales linearly with attribute count — a cost Xpact avoids at the scanner level.</div>
+      </div>
+      <div class="obs-card">
+        <div class="obs-num">Finding 03</div>
+        <div class="obs-title">Text-content parsing is the tightest contest</div>
+        <div class="obs-body">The <em>text</em> benchmark is consistently the smallest gain: <strong>×1.02</strong> on nes96.xml (nearly at parity), ×1.08 on Legislation.xml. Text-heavy documents spend most cycles in the data-character scan loop where throughput is dominated by raw memory bandwidth — Eiffel's overhead is smallest here.</div>
+      </div>
+      <div class="obs-card">
+        <div class="obs-num">Finding 04</div>
+        <div class="obs-title">Small files reveal per-invocation overhead</div>
+        <div class="obs-body">vision2.ecf at 13 KB completes ~43,000 Xpact passes per second. Its ×1.40 avg shows Xpact has meaningfully lower per-parse startup and dispatch cost than eXpat — a difference obscured in large files where data movement dominates. Peak Xpact throughput across all runs is <strong>~477 MB/s</strong> (ns_att_test, tag benchmark).</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</main>
+
+</body>
+</html>

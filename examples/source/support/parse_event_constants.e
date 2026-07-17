@@ -1,8 +1,13 @@
 note
 	description: "Parse event types"
-	author: ""
-	date: "$Date$"
-	revision: "$Revision$"
+
+	author: "Finnian Reilly"
+	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
+	contact: "finnian at eiffel hyphen loop dot com"
+
+	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
+	date: "2026-07-16 17:10:00 GMT (Thursday 15th July 2026)"
+	revision: "1"
 
 class
 	PARSE_EVENT_CONSTANTS

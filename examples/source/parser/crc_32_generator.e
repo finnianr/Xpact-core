@@ -35,7 +35,8 @@ inherit
 
 	XT_DEFAULT_PARSE_EVENTS
 		rename
-			on_cdata_section_close_ as on_cdata_section_close
+			on_cdata_section_close_ as on_cdata_section_close,
+			on_tag_end_ as on_tag_end
 		end
 
 	XT_EXPAT_COMPARABLE
@@ -105,10 +106,6 @@ feature {NONE} -- Event handlers
 					end
 			else
 			end
-		end
-
-	on_tag_end (name: STRING_8)
-		do
 		end
 
 	on_tag_start (name: STRING_8; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
