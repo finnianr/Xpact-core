@@ -262,7 +262,7 @@ feature {NONE} -- Tag scanning
 feature {NONE} -- Tag sub-helpers
 
 	scan_start_tag_name (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [NATURAL_8]; start_index, end_index: INTEGER): INTEGER
-			-- After consuming name-start char(s); scan rest of start tag name.
+		-- After consuming name-start char(s); scan rest of start tag name.
 		local
 			index, name_lower, name_upper: INTEGER; done: BOOLEAN
 		do

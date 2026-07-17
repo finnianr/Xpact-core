@@ -22,6 +22,9 @@ feature {NONE} -- Initialization
 			parser := a_parser; file_path := a_file_path
 			time_start := a_time_start; duration_ms := a_duration_ms; chunk_size := a_chunk_size
 			make_default
+			if attached a_file_path.entry as base_name then
+				xml_file_name := base_name.out
+			end
 		end
 
 	make_default
@@ -31,6 +34,7 @@ feature {NONE} -- Initialization
 			else
 				create benchmark_dir_path.make_empty
 			end
+			create xml_file_name.make_empty
 		end
 
 feature -- Access
@@ -74,16 +78,13 @@ feature {NONE} -- Implementation
 		local
 			index_colon, expat_pass_count: INTEGER; time_stamp: DATE_TIME
 			expat_output, log_file: PLAIN_TEXT_FILE done: BOOLEAN
-			log_path: PATH; log_line, xml_file_name: STRING
+			log_line: STRING; log_path: PATH
 		do
 			create log_line.make_empty
 
-			if attached file_path.entry as base_name then
-				xml_file_name := base_name.out
-			else
-				create xml_file_name.make_empty
-			end
-			log_path := benchmark_dir_path.extended (new_log_name (xml_file_name))
+			log_path := benchmark_dir_path.extended (xml_file_name); make_dir (log_path)
+			log_path := log_path.extended (new_log_name)
+
 			if attached Environ.Temporary_directory_path as temp_dir
 				and then attached temp_dir.extended (expat_executable) as temp_path
 				and then attached new_command (command_template.twin, temp_path.out) as command
@@ -144,17 +145,14 @@ feature {NONE} -- Implementation
 			Result := command_template.substring (1, command_template.index_of (' ', 1) - 1)
 		end
 
-	new_command (template, temp_path: STRING): STRING
+	make_dir (path: PATH)
+		local
+			dir: DIRECTORY
 		do
-			Result := template
-			Result.replace_substring_all ("$path", file_path.out)
-			Result.replace_substring_all ("$duration", duration_ms.out)
-			Result.replace_substring_all ("$temp_path", temp_path)
-		end
-
-	new_log_name (xml_file_name: STRING): STRING
-		do
-			Result := substitute (Log_name_template, << xml_file_name >>)
+			create dir.make_with_path (path)
+			if not dir.exists then
+				dir.create_dir
+			end
 		end
 
 	relative_performance (expat_pass_count: INTEGER): STRING
@@ -175,6 +173,21 @@ feature {NONE} -- Implementation
 			Result := pass_count
 		end
 
+feature {NONE} -- Factory
+
+	new_command (template, temp_path: STRING): STRING
+		do
+			Result := template
+			Result.replace_substring_all ("$path", file_path.out)
+			Result.replace_substring_all ("$duration", duration_ms.out)
+			Result.replace_substring_all ("$temp_path", temp_path)
+		end
+
+	new_log_name: STRING
+		do
+			Result := substitute (log_name_template, << new_type_name >>)
+		end
+
 feature {NONE} -- Deferred
 
 	command_template: STRING
@@ -182,6 +195,10 @@ feature {NONE} -- Deferred
 		end
 
 	log_name_template: STRING
+		deferred
+		end
+
+	new_type_name: STRING
 		deferred
 		end
 
@@ -198,6 +215,8 @@ feature {NONE} -- Internal attributes
 	chunk_size: INTEGER
 
 	parser: XT_XML_PARSER_BASE
+
+	xml_file_name: STRING
 
 feature {NONE} -- Constants
 

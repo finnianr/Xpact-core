@@ -7,16 +7,17 @@ export BENCHMARKS_DIR=$EIFFEL/library/Xpact-core/benchmarks
 
 DURATION_MS=2000
 
-pushd .
-
 echo
 echo Benchmarking Eiffel Xpact-core and C eXpat
 echo
 
-cd $EIFFEL/library/Eiffel-Loop
+for path in	$ISE_LIBRARY/library/vision2/vision2.ecf \
+	examples/data/Legislation.xml; do
+	name=${path##*/}
+	xml_reader -count_tags -duration $DURATION_MS -compare_to_expat $path
+done
 
-xml_reader -count_tags -duration $DURATION_MS -compare_to_expat test/data/XML/Legislation.xml
-
+pushd .
 cd $HOME/Dev/C/libexpat
 
 for name in nes96.xml ns_att_test.xml recset.xml wordnet_glossary-20010201.rdf; do

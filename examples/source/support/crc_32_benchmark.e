@@ -15,7 +15,7 @@ class
 inherit
 	XT_BENCHMARK_COMPARISON
 		redefine
-			make_default, new_command, new_log_name
+			make_default, new_command
 		end
 
 	PARSE_EVENT_CONSTANTS
@@ -38,7 +38,7 @@ feature -- Element change
 			data_type := a_data_type
 		end
 
-feature {NONE} -- Implementation
+feature {NONE} -- Factory
 
 	new_command (template, temp_path: STRING): STRING
 		do
@@ -59,11 +59,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	new_log_name (xml_file_name: STRING): STRING
-		do
-			Result := substitute (Log_name_template, << xml_file_name, new_type_name >>)
-		end
-
 feature {NONE} -- Internal attributes
 
 	data_type: INTEGER
@@ -74,7 +69,7 @@ feature {NONE} -- Constants
 
 	Log_name_template: STRING
 		once
-			create Result.make_from_string ("Xpact VS eXpat %S.CRC-32-%S.log")
+			create Result.make_from_string ("Xpact VS eXpat.CRC-32-%S.log")
 		end
 
 end

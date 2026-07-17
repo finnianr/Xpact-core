@@ -7,19 +7,21 @@ export BENCHMARKS_DIR=$EIFFEL/library/Xpact-core/benchmarks
 
 DURATION_MS=2000
 
-pushd .
-
 echo
 echo Benchmarking Eiffel Xpact-core and C eXpat
 echo
 
-cd $EIFFEL/library/Eiffel-Loop
-
-for type in text cdata comment tag attribute; do
-	echo Type: $type in Legislation.xml
-#	xml_reader -crc_32 $type -duration $DURATION_MS -compare_to_expat test/data/XML/Legislation.xml
-	echo
+for path in	$ISE_LIBRARY/library/vision2/vision2.ecf \
+	examples/data/Legislation.xml; do
+	name=${path##*/}
+	for type in text cdata comment tag attribute; do
+		echo Type: $type in $name
+		xml_reader -crc_32 $type -duration $DURATION_MS -compare_to_expat $path
+		echo
+	done
 done
+
+pushd .
 
 cd $HOME/Dev/C/libexpat
 

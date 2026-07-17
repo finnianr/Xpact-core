@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: vision2.ecf
+
+2026 17 JUL 9:40
+vision2.ecf: eXpat passes = 29928; Xpact-core passes = 43740 (x1.46 to eXpat)

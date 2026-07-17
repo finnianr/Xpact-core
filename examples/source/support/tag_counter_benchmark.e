@@ -18,13 +18,20 @@ inherit
 create
 	make
 
+feature {NONE} -- Factory
+
+	new_type_name: STRING
+		do
+			Result := "tag_count"
+		end
+
 feature {NONE} -- Constants
 
 	Command_template: STRING = "xml_tag_counter $path -duration $duration > $temp_path"
 
 	Log_name_template: STRING
 		once
-			create Result.make_from_string ("Xpact VS eXpat %S.log")
+			create Result.make_from_string ("Xpact VS eXpat.%S.log")
 		end
 
 end
