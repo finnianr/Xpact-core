@@ -42,32 +42,27 @@ feature {NONE} -- Initialisation
 
 	make
 		local
-			file_path: PATH
+			l_option: STRING
 		do
 			IO.put_string ("Program: Xpact-core XML parser (Eiffel)")
 			IO.put_new_line
-			create file_path.make_empty
-			if argument_count >= 2 then
-				if attached new_argument_8 (0, Option.test) as name and then name.count > 0 then
-					do_tests (name)
 
-				elseif attached new_parser as parser and then attached argument (argument_count) as path_arg then
-					create file_path.make_from_string (path_arg)
-					do_parsing (parser, file_path, new_integer_argument (Option.chunk_size, 0))
-
-				elseif invalid_event_type then
-					put_parse_event_error
+			if argument_count >= 2 and then attached new_application_table as app_table then
+				l_option := argument (1).to_string_8
+				l_option.prune_all_leading ('-')
+				if attached app_table [l_option] as run then
+					run (l_option)
 				else
-					put_usage
+					put_usage (Operation_parameter)
 				end
 			else
-				put_usage
+				put_usage (Operation_parameter)
 			end
 		end
 
 feature {NONE} -- Factory
 
-	new_argument_8 (index: INTEGER; a_option: detachable STRING): STRING
+	new_argument_8 (index: INTEGER; a_option: detachable STRING): detachable STRING
 		local
 			i: INTEGER
 		do
@@ -81,8 +76,6 @@ feature {NONE} -- Factory
 			end
 			if 0 < i and i <= argument_count then
 				Result := argument (i).to_string_8
-			else
-				create Result.make_empty
 			end
 		end
 
@@ -95,75 +88,99 @@ feature {NONE} -- Factory
 			end
 		end
 
-	new_parser: detachable XT_XML_PARSER_BASE
-		local
-			crc_32_generator: CRC_32_GENERATOR
+	new_crc_32_generator (app_option: STRING): detachable CRC_32_GENERATOR
 		do
-			if index_of_word_option (Option.count_tags) > 0 then
-				create {TAG_COUNTER} Result.make
-
-			elseif index_of_word_option (Option.print_) > 0 then
-				create {XML_PRINTER} Result.make
-
-			else
-				if attached new_argument_8 (0, Option.crc_32) as data_type then
-					if Parse_event_types.has_key (data_type) then
-						create crc_32_generator.make (Parse_event_types.found_item, data_type)
-						if index_of_word_option (Option.trace) > 0 then
-							crc_32_generator.enable_trace
-						end
-						Result := crc_32_generator
-					else
-						invalid_event_type := True
+			if attached new_argument_8 (0, app_option) as data_type then
+				if Parse_data_types.has_key (data_type) then
+					create Result.make (Parse_data_types.found_item)
+					if index_of_word_option (Option.trace) > 0 then
+						Result.enable_trace
 					end
 				end
+			end
+		end
+
+feature {NONE} -- Application options
+
+	do_count_tags (app_option: STRING)
+		do
+			do_parsing (create {TAG_COUNTER}.make)
+		end
+
+	do_crc_32 (app_option: STRING)
+		do
+			if attached new_crc_32_generator (app_option) as crc_32 then
+				do_parsing (crc_32)
+			else
+				put_usage ("-crc_32 <data-type>")
+				put_data_types
+			end
+		end
+
+	do_print (app_option: STRING)
+		do
+			do_parsing (create {XML_PRINTER}.make)
+		end
+
+	do_test (app_option: STRING)
+		local
+			test_set: XT_TEST_SET
+		do
+			if attached new_argument_8 (0, app_option) as name then
+				create test_set.make
+				test_set.execute (name)
+			end
+		end
+
+	do_test_files (app_option: STRING)
+		local
+			tests: FILE_TREE_TESTS
+		do
+			if attached new_argument_8 (0, app_option) as path then
+				create tests.make (create {PATH}.make_from_string (path))
+				tests.execute
+			else
+				IO.put_string ("Usage: xml_reader -test_files <XML-file-path>")
+				IO.put_new_line
 			end
 		end
 
 feature {NONE} -- Implementation
 
-	do_parsing (parser: XT_XML_PARSER_BASE; file_path: PATH; chunk_size: INTEGER)
+	do_parsing (parser: XT_XML_PARSER_BASE)
 		local
 			file: PLAIN_TEXT_FILE; time_start: TIME; duration: INTEGER
+			file_path: PATH; chunk_size: INTEGER
 		do
-			create file.make_with_path (file_path)
+			if attached argument (argument_count) as path_arg then
+				create file_path.make_from_string (path_arg)
+				create file.make_with_path (file_path)
+				chunk_size := new_integer_argument (Option.chunk_size, 0)
+				if file.exists then
+					IO.put_string ("Parsing: " + file_path.out)
+					IO.put_new_line
 
-			if file.exists then
-				IO.put_string ("Parsing: " + file_path.out)
-				IO.put_new_line
-
-				create time_start.make_now -- start timer
-				parse_status := parser.parse_file (file_path, chunk_size, True)
-				inspect parse_status
-					when Status_error then
-						IO.put_string ("Parse error code: " + parser.error_code.out)
-
-					when Status_unreadable then
-						IO.put_string ("Cannot read: " + file_path.out)
-						IO.put_new_line
-				else
-					if attached {XT_EXPAT_COMPARABLE} parser as ec then
-						duration := new_integer_argument (Option.duration, 0)
-						ec.print_stats
-						if attached ec.new_benchmark (file_path, time_start, duration, chunk_size) as benchmark then
-							benchmark.execute
-							if index_of_word_option (Option.compare_to_expat) > 0 then
-								benchmark.try_compare_to_expat
+					create time_start.make_now -- start timer
+					parser.parse_file (file_path, chunk_size, True)
+					inspect parser.parsing_state
+						when Status_ok then
+							if attached {XT_EXPAT_COMPARABLE} parser as ec then
+								duration := new_integer_argument (Option.duration, 0)
+								ec.print_stats
+								if attached ec.new_benchmark (file_path, time_start, duration, chunk_size) as benchmark then
+									benchmark.execute
+									if index_of_word_option (Option.compare_to_expat) > 0 then
+										benchmark.try_compare_to_expat
+									end
+								end
 							end
-						end
+					else
+						parser.put_error (IO.Error, file_path)
 					end
+				else
+					IO.put_string ("File not found: " + file_path.out + "%N")
 				end
-			else
-				IO.put_string ("File not found: " + file_path.out + "%N")
 			end
-		end
-
-	do_tests (name: STRING)
-		local
-			test_set: XT_TEST_SET
-		do
-			create test_set.make
-			test_set.execute (name)
 		end
 
 	compile: TUPLE [XT_ASCII_SCANNER, XT_LATIN_1_SCANNER, XP_EXPAT_CALLBACK_HANDLER] --
@@ -171,12 +188,21 @@ feature {NONE} -- Implementation
 			create Result
 		end
 
-	put_parse_event_error
+	new_application_table: HASH_TABLE [PROCEDURE, STRING]
 		do
-			IO.put_string ("ERROR: Invalid parse event type for CRC-32 scan")
-			IO.put_new_line
-			IO.put_string ("Must be one of: {")
-			across Parse_event_types.current_keys as type loop
+			create Result.make_from_iterable_tuples (<<
+				[agent do_count_tags, "count_tags"],
+				[agent do_crc_32, "crc_32"],
+				[agent do_print, "print"],
+				[agent do_test, "test"],
+				[agent do_test_files, "test_files"]
+			>>)
+		end
+
+	put_data_types
+		do
+			IO.put_string ("Valid data types: {")
+			across Parse_data_types.current_keys as type loop
 				if not @ type.is_first then
 					IO.put_string (", ")
 				end
@@ -186,30 +212,26 @@ feature {NONE} -- Implementation
 			IO.put_new_line
 		end
 
-	put_usage
+	put_usage (operation: STRING)
 		do
 			IO.put_string (
-				"Usage: xml_reader <operation> [-chunk_size <value>] [-duration <duration-window-ms>] <XML-file-path>"
+				"Usage: xml_reader " + operation + " [-chunk_size <value>] [-duration <duration-window-ms>] <XML-file-path>"
 			)
-			IO.put_string ("Valid operations: {-count_tags, -print}")
 			IO.put_string ("OPTIONAL: -chunk_size. Defaults to: 4096")
 			IO.put_string ("OPTIONAL: -duration. Defaults to: 500")
 			IO.put_new_line
 		end
 
-feature {NONE} -- Internal attributes
-
-	parse_status: INTEGER
-
-	invalid_event_type: BOOLEAN
-
 feature {NONE} -- Constants
 
-	Option: TUPLE [compare_to_expat, chunk_size, count_tags, crc_32, duration, print_, test, trace: STRING]
+	Operation_parameter: STRING = "<operation>"
+
+	Option: TUPLE [compare_to_expat, chunk_size, duration, test_files, trace: STRING]
+		local
+			s: XT_STRING_ROUTINES
 		once
 			create Result
-			across ("compare_to_expat, chunk_size, count_tags, crc_32, duration, print, test, trace").split (',') as word loop
-				word.left_adjust
+			across s.to_list ("compare_to_expat, chunk_size, duration, test_files, trace") as word loop
 				Result.put_reference (word, @ word.cursor_index)
 			end
 		end

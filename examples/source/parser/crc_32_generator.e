@@ -39,6 +39,8 @@ inherit
 			on_tag_end_ as on_tag_end
 		end
 
+	PARSE_EVENT_CONSTANTS
+
 	XT_EXPAT_COMPARABLE
 
 	EL_CRC_32_CONSTANTS
@@ -51,9 +53,9 @@ create
 
 feature {NONE} -- Initialisation
 
-	make (a_data_type: INTEGER; a_data_type_name: STRING)
+	make (a_data_type: INTEGER)
 		do
-			data_type := a_data_type; data_type_name := a_data_type_name
+			data_type := a_data_type
 			make_parser
 		end
 
@@ -63,11 +65,16 @@ feature {NONE} -- Initialisation
 			create checksum
 		end
 
+feature -- Access
+
+	checksum: EL_CRC_32_DIGEST
+		-- CRC-32/ISO-HDLC checksum
+
 feature -- Basic operations
 
 	print_stats
 		do
-			IO.put_string ("Checksum for " + data_type_name + ": " + checksum.out)
+			IO.put_string ("Checksum for " + data_type_name (data_type) + ": " + checksum.out)
 			IO.put_new_line
 		end
 
@@ -131,10 +138,5 @@ feature -- Factory
 feature {NONE} -- Internal attributes
 
 	data_type: INTEGER
-
-	data_type_name: STRING
-
-	checksum: EL_CRC_32_DIGEST
-		-- CRC-32/ISO-HDLC checksum
 
 end

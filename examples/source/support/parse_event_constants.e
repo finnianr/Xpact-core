@@ -23,16 +23,31 @@ inherit
 			{NONE} all
 		end
 
+feature {NONE} -- Implementation
+
+	data_type_name (data_type: INTEGER): STRING
+		local
+			done: BOOLEAN
+		do
+			create Result.make_empty
+			across Parse_data_types as type until done loop
+				if type ~ data_type then
+					Result := @ type.key
+					done := True
+				end
+			end
+		end
+
 feature {NONE} -- Constants
 
-	Parse_event_types: HASH_TABLE [INTEGER, STRING]
+	Parse_data_types: HASH_TABLE [INTEGER, STRING]
 		once
 			create Result.make_from_iterable_tuples (<<
-				[Tok_text, "text"],				-- text content
-				[Tok_cdata, "cdata"],			-- CDATA text content
-				[Tok_comment, "comment"],		-- comment
-				[Tok_tag, "tag"],					-- tag name (open element)
-				[Tok_attribute, "attribute"]	-- attribute value
+				[Tok_text,			"text"],			-- text content
+				[Tok_cdata, 		"cdata"],		-- CDATA text content
+				[Tok_comment,		"comment"],		-- comment
+				[Tok_tag,			"tag"],			-- tag name (open element)
+				[Tok_attribute,	"attribute"]	-- attribute value
 			>>)
 		end
 

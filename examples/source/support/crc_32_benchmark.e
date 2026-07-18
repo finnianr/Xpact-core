@@ -40,23 +40,15 @@ feature -- Element change
 
 feature {NONE} -- Factory
 
-	new_command (template, temp_path: STRING): STRING
+	new_command (template: STRING): STRING
 		do
-			Result := Precursor (template, temp_path)
+			Result := Precursor (template)
 			Result.replace_substring_all ("$type", new_type_name)
 		end
 
 	new_type_name: STRING
-		local
-			done: BOOLEAN
 		do
-			create Result.make_empty
-			across Parse_event_types as type until done loop
-				if type ~ data_type then
-					Result := @ type.key
-					done := True
-				end
-			end
+			Result := data_type_name (data_type)
 		end
 
 feature {NONE} -- Internal attributes
@@ -65,7 +57,7 @@ feature {NONE} -- Internal attributes
 
 feature {NONE} -- Constants
 
-	Command_template: STRING = "xml_crc_32 -type $type -duration $duration $path > $temp_path"
+	Command_template: STRING = "xml_crc_32 -type $type -duration $duration $path"
 
 	Log_name_template: STRING
 		once

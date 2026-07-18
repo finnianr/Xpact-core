@@ -70,6 +70,12 @@ feature {NONE} -- Access
 			not_keeping_definition: not keep_ref implies Result = Output_buffer
 		end
 
+	frozen to_list (str: STRING): LIST [STRING]
+		do
+			Result := str.split (',')
+			Result.do_all (agent {STRING}.left_adjust)
+		end
+
 	frozen unescaped (code: INTEGER): like Char_area
 		do
 			Result := Char_area

@@ -62,7 +62,7 @@ feature -- Status query
 
 feature -- Basic operations
 
-	parse_file (file_path: PATH; chunk_size: INTEGER; collection_off: BOOLEAN): INTEGER
+	parse_file (file_path: PATH; chunk_size: INTEGER; collection_off: BOOLEAN)
 		local
 			file: XT_XML_FILE
 		do
@@ -76,9 +76,8 @@ feature -- Basic operations
 			end
 			if file.is_readable then
 				file.parse
-				Result := file.status
 			else
-				Result := Status_unreadable
+				parsing_state := Status_unreadable
 			end
 		end
 
@@ -124,6 +123,19 @@ feature -- Basic operations
 				(Result = Status_ok and a_is_final) implies parsing_state = State_finished
 			error_code_set_on_error:
 				Result = Status_error implies error_code /= Error_none
+		end
+
+	put_error (output: IO_MEDIUM; file_path: PATH)
+		do
+			inspect parsing_state
+				when Status_error then
+					output.put_string ("Parse error code: " + error_code.out)
+
+				when Status_unreadable then
+					output.put_string ("Cannot read: " + file_path.out)
+					output.put_new_line
+			else
+			end
 		end
 
 	reset

@@ -1348,7 +1348,7 @@ feature {NONE} -- Xpact core event handlers
 feature {NONE} -- Native callback calls
 
 	suppress_next_callback: BOOLEAN
-			-- Should the next native callback be skipped during resume replay?
+		-- Should the next native callback be skipped during resume replay?
 		do
 			callback_sequence_count := callback_sequence_count + 1
 			Result := callback_sequence_count <= callbacks_to_suppress

@@ -52,7 +52,7 @@ feature -- Basic operations
 				from pass_count := 1 until elapsed_milliseconds (time_start) > duration_ms loop
 					pass_count := pass_count + 1
 					parser.reset
-					parse_status := parser.parse_file (file_path, chunk_size, True)
+					parser.parse_file (file_path, chunk_size, True)
 				end
 				IO.put_string ("Number of passes in ")
 				IO.put_string (duration_ms.out + " ms: " + pass_count.out)
@@ -77,7 +77,7 @@ feature {NONE} -- Implementation
 			benchmark_dir_defined: not benchmark_dir_path.is_empty
 		local
 			index_colon, expat_pass_count: INTEGER; time_stamp: DATE_TIME
-			expat_output, log_file: PLAIN_TEXT_FILE done: BOOLEAN
+			expat_output: XT_COMMAND_OUTPUT_FILE; log_file: PLAIN_TEXT_FILE done: BOOLEAN
 			log_line: STRING; log_path: PATH
 		do
 			create log_line.make_empty
@@ -85,49 +85,43 @@ feature {NONE} -- Implementation
 			log_path := benchmark_dir_path.extended (xml_file_name); make_dir (log_path)
 			log_path := log_path.extended (new_log_name)
 
-			if attached Environ.Temporary_directory_path as temp_dir
-				and then attached temp_dir.extended (expat_executable) as temp_path
-				and then attached new_command (command_template.twin, temp_path.out) as command
-			then
-				Environ.system (command)
-				if Environ.return_code = 0 then
-					create expat_output.make_open_read (temp_path.name)
-					from  until done loop
-						expat_output.read_line
-						if expat_output.end_of_file then
-							done := true
-						elseif attached expat_output.last_string as line then
-							IO.put_string (line)
-							IO.put_new_line
-							if line.starts_with ("Number of passes") then
-								index_colon := line.last_index_of (':', line.count)
-								expat_pass_count := line.substring (index_colon + 2, line.count).to_integer
-								log_line := substitute (Log_template, <<
-									xml_file_name, expat_pass_count.out, xpact_pass_count.out,
-									relative_performance (expat_pass_count)
-								>>)
-							end
+			create expat_output.make_with_output (new_command (command_template))
+			if expat_output.has_output then
+				from until done loop
+					expat_output.read_line
+					if expat_output.end_of_file then
+						done := true
+					elseif attached expat_output.last_string as line then
+						IO.put_string (line)
+						IO.put_new_line
+						if line.starts_with ("Number of passes") then
+							index_colon := line.last_index_of (':', line.count)
+							expat_pass_count := line.substring (index_colon + 2, line.count).to_integer
+							log_line := substitute (Log_template, <<
+								xml_file_name, expat_pass_count.out, xpact_pass_count.out,
+								relative_performance (expat_pass_count)
+							>>)
 						end
 					end
-					expat_output.close; expat_output.delete
+				end
+				expat_output.close
 
-					create time_stamp.make_now
-					create log_file.make_with_path (log_path)
-					if attached log_file as f then
-						if not f.exists then
-							f.open_write
-							f.put_string ("Log of benchmarks for parsing file: " + xml_file_name)
-							f.put_new_line
-							f.close
-						end
-						f.open_append
-						f.put_new_line
-						f.put_string (time_stamp.formatted_out (Date_format))
-						f.put_new_line
-						f.put_string (log_line)
+				create time_stamp.make_now
+				create log_file.make_with_path (log_path)
+				if attached log_file as f then
+					if not f.exists then
+						f.open_write
+						f.put_string ("Log of benchmarks for parsing file: " + xml_file_name)
 						f.put_new_line
 						f.close
 					end
+					f.open_append
+					f.put_new_line
+					f.put_string (time_stamp.formatted_out (Date_format))
+					f.put_new_line
+					f.put_string (log_line)
+					f.put_new_line
+					f.close
 				end
 			end
 		end
@@ -175,12 +169,11 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Factory
 
-	new_command (template, temp_path: STRING): STRING
+	new_command (template: STRING): STRING
 		do
-			Result := template
+			Result := template.twin
 			Result.replace_substring_all ("$path", file_path.out)
 			Result.replace_substring_all ("$duration", duration_ms.out)
-			Result.replace_substring_all ("$temp_path", temp_path)
 		end
 
 	new_log_name: STRING
@@ -225,7 +218,7 @@ feature {NONE} -- Constants
 			Result := "yyyy [0]dd Mmm hh:[0]mi"
 		end
 
-	Environ: EXECUTION_ENVIRONMENT
+	Environ: XT_EXECUTION_ENVIRONMENT
 		once
 			create Result
 		end
