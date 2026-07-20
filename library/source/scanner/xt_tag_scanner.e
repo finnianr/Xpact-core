@@ -388,6 +388,18 @@ feature {NONE} -- Tag sub-helpers
 							end
 						when BT_lt then
 							next_token_index := index; Result := Tok_invalid; closed := True
+						when BT_LF, BT_CR then
+							-- XML §3.3.3 attribute-value normalisation: replace newlines with space
+							buf [index] := ' '
+							index := advance (index)
+						when BT_whitespace then
+							inspect buf [index] when '%T' then
+								-- XML §3.3.3 attribute-value normalisation: replace tabs with space
+								buf [index] := ' '
+							else
+							end
+							index := advance (index)
+
 					else
 						index := advance (index)
 					end

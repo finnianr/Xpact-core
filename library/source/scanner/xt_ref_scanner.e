@@ -113,6 +113,7 @@ feature {NONE} -- Reference scanning
 									index := advance (index)
 								when BT_semicolon then
 									next_token_index := advance (index)
+									entity_buffer.extend (name_cache.item (buf, start_index - 2, index))
 									Result := Tok_char_ref
 									index := end_index
 							else

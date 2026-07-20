@@ -2,3 +2,6 @@ Log of benchmarks for parsing file: wordnet_glossary-20010201.rdf
 
 2026 16 JUL 19:23
 wordnet_glossary-20010201.rdf: eXpat passes = 32; Xpact-core passes = 53 (x1.66 to eXpat)
+
+2026 20 JUL 8:49 -- Using section_state instead of in_cdata_section
+wordnet_glossary-20010201.rdf: eXpat passes = 33; Xpact-core passes = 54 (x1.64 to eXpat)

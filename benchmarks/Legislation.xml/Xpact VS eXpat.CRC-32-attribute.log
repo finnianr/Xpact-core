@@ -2,3 +2,6 @@ Log of benchmarks for parsing file: Legislation.xml
 
 2026 16 JUL 19:20
 Legislation.xml: eXpat passes = 1294; Xpact-core passes = 1344 (x1.04 to eXpat)
+
+2026 20 JUL 8:47 -- Using section_state instead of in_cdata_section
+Legislation.xml: eXpat passes = 1284; Xpact-core passes = 1372 (x1.07 to eXpat)

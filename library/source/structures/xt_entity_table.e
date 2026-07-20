@@ -24,6 +24,15 @@ inherit
 		end
 
 	XT_STRING_ROUTINES_I
+		rename
+			Output_buffer as Shared_output_buffer
+		undefine
+			copy, is_equal
+		end
+
+	XT_STRING_CONSTANTS
+		rename
+			Entity as Entity_uppercase
 		undefine
 			copy, is_equal
 		end
@@ -34,9 +43,18 @@ create
 feature -- Initialization
 
 	make (n: INTEGER)
+		local
+			entity: STRING
 		do
 			Precursor (n)
 			create substring.make_empty
+			create output_buffer.make_empty
+			across Predefined_entities as id loop
+				entity := "&;"
+				entity.insert_string (id.to_string, 2)
+				extend (Predefined_entity_characters [@ id.cursor_index].out, entity)
+			end
+			set_no_status
 		end
 
 feature -- Access
@@ -49,21 +67,45 @@ feature -- Access
 		do
 			inspect key [2]
 				when '#' then
-					inspect key [3] when 'x' then
-						if attached table_item (key) as value then
-							Result := value
-						else
-							code := char_ref_number (key.area, 0, key.count - 1)
-							if attached utf_8_encoded (code) as l_area then
-								Result := new_substring (l_area, 0, l_area.count - 1)
-								extend (Result, key)
-							end
+					if attached table_item (key) as value then
+						Result := value
+					else
+						code := char_ref_number (key.area, 0, key.count - 1)
+						if attached utf_8_encoded (code) as l_area then
+							Result := new_substring (l_area, 0, l_area.count - 1)
+							extend (Result, key)
 						end
-					else end
+					end
 			else
 				if attached table_item (key) as value then
 					Result := value
 				end
+			end
+		end
+
+	expanded_value (entity_list: LIST [STRING]; value: STRING; keep_ref: BOOLEAN): STRING
+		local
+			entity_index, start_index: INTEGER
+		do
+			Result := output_buffer; Result.wipe_out
+			start_index := 1
+			across entity_list as entity loop
+				entity_index := value.substring_index (entity, start_index)
+				if entity_index > 0 then
+					Result.append_substring (value, start_index, entity_index - 1)
+					if attached item (entity) as entity_value then
+						Result.append (entity_value)
+					else
+						Result.append (entity)
+					end
+					start_index := entity_index + entity.count
+				end
+			end
+			if start_index <= value.count then
+				Result.append_substring (value, start_index, value.count)
+			end
+			if keep_ref then
+				Result := Result.twin
 			end
 		end
 
@@ -105,6 +147,8 @@ feature -- Basic operations
 		end
 
 feature {NONE} -- Internal attributes
+
+	output_buffer: STRING_8
 
 	substring: C_STRING_8
 

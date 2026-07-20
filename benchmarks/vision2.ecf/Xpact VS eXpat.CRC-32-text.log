@@ -2,3 +2,6 @@ Log of benchmarks for parsing file: vision2.ecf
 
 2026 17 JUL 9:40
 vision2.ecf: eXpat passes = 29415; Xpact-core passes = 40629 (x1.38 to eXpat)
+
+2026 20 JUL 8:47 -- Using section_state instead of in_cdata_section
+vision2.ecf: eXpat passes = 29478; Xpact-core passes = 39905 (x1.35 to eXpat)

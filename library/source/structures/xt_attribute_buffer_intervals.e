@@ -467,11 +467,11 @@ feature -- Conversion
 					buffer := i_th_name (i, a_buffer, overflow_area)
 					if attached name_cache.item (buffer, a [i], a [i + 1]) as name then
 						buffer := i_th_value (i, a_buffer, overflow_area)
-						if attached area_substring (buffer, a [i + 2], a [i + 3], True) as value then
+						if attached area_substring (buffer, a [i + 2], a [i + 3], False) as value then
 							if attached entity_refs_area [i // Group_size] as entity_list then
-								Result.put (expanded_value (entity_list, entity_table, value), name)
+								Result.put (entity_table.expanded_value (entity_list, value, True), name)
 							else
-								Result.put (value, name)
+								Result.put (value.twin, name) -- must make a twin
 							end
 						end
 					end
@@ -489,20 +489,6 @@ feature -- Conversion
 		end
 
 feature {NONE} -- Implementation
-
-	expanded_value (entity_list: LIST [STRING]; table: XT_ENTITY_TABLE; value: STRING): STRING
-		local
-			entity_index, start_index: INTEGER
-		do
-			Result := value; start_index := 1
-			across entity_list as entity loop
-				entity_index := value.substring_index (entity, start_index)
-				if attached table.item (entity_list.item) as entity_value then
-					Result.replace_substring (entity_value, entity_index, entity_index + entity.count - 1)
-					start_index := entity_index - entity.count + entity_value.count + 1
-				end
-			end
-		end
 
 	i_th_name (i: INTEGER; buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]
 		-- override `buffer' with `overflow_area [i // 2]' if not Void (consequence of `shift_buffer_left' )

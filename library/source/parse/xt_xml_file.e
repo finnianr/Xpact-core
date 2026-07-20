@@ -55,8 +55,8 @@ feature -- Access
 	chunk: SPECIAL [CHARACTER]
 		-- incremental chunk
 
-	status: INTEGER
-		-- one of `XT_PARSE_CONSTANTS' parse status constants
+	parse_status: INTEGER
+		-- one of `XT_PARSE_CONSTANTS' parse Status_* constants
 
 	gc_enabled: BOOLEAN
 
@@ -96,16 +96,19 @@ feature -- Basic operations
 				end
 				positive_CR_count := 0; skip_CR_checking := False
 				new_line_occurrences := 0; new_line_check_count := 0
-				from open_read; status := Status_ok until off or status = Status_error loop
+				from open_read; parse_status := Status_ok until off or parse_status = Status_error loop
 					read_chunk (c_str); n := bytes_read
-					final_chunk := off
+					if off then
+						final_chunk := True
+					-- prune trailing newlines
+						from until n < 0 or else chunk [n - 1] /= '%N' loop
+							n := n - 1
+						end
+					end
 					if n > 0 then
 					-- This aligns with C examples which excludes final newline
 					-- but Claude thinks this is a parsing issue, so this is just a workaround.
-						if final_chunk and then chunk [n - 1] = '%N' then
-							n := n - 1
-						end
-						status := parser.parse (chunk, 0, n, final_chunk)
+						parse_status := parser.parse (chunk, 0, n, final_chunk)
 					end
 				end
 				if not gc_enabled then

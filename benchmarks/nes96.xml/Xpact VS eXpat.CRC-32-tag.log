@@ -2,3 +2,6 @@ Log of benchmarks for parsing file: nes96.xml
 
 2026 16 JUL 19:22
 nes96.xml: eXpat passes = 237; Xpact-core passes = 281 (x1.19 to eXpat)
+
+2026 20 JUL 8:48 -- Using section_state instead of in_cdata_section
+nes96.xml: eXpat passes = 241; Xpact-core passes = 284 (x1.18 to eXpat)

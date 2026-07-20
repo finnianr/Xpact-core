@@ -70,6 +70,24 @@ feature {NONE} -- Access
 			not_keeping_definition: not keep_ref implies Result = Output_buffer
 		end
 
+	frozen key_set_string (key_list: ITERABLE [STRING]; keep_ref: BOOLEAN): STRING
+		-- << "a", "b" >> -> "{a, b}"
+		do
+			Result := Output_buffer
+			Result.wipe_out
+			Result.append_character ('{')
+			across key_list as key loop
+				if Result.count > 2 then
+					Result.append_string (", ")
+				end
+				Result.append_string (key)
+			end
+			Result.append_character ('}')
+			if keep_ref then
+				Result := Result.twin
+			end
+		end
+
 	frozen to_list (str: STRING): LIST [STRING]
 		do
 			Result := str.split (',')

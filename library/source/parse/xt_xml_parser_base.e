@@ -50,6 +50,9 @@ feature -- Access
 	parsing_state: INTEGER
 			-- Current state: one of the State_* constants.
 
+	status: INTEGER
+		-- Current state after reading file: one of the Status_* constants.
+
 	parse_end_byte_index: INTEGER_64
 			-- Cumulative count of bytes committed to the parser.
 
@@ -76,8 +79,9 @@ feature -- Basic operations
 			end
 			if file.is_readable then
 				file.parse
+				status := file.parse_status
 			else
-				parsing_state := Status_unreadable
+				status := Status_unreadable
 			end
 		end
 
@@ -356,9 +360,9 @@ feature {NONE} -- Processor dispatch
 		-- Returns Error_none on success or an Error_* code on failure.
 		-- Corresponds to a single call of `m_processor' in xmlparse.c.
 		require
-			valid_range:    lower >= 0 and then lower <= upper
-			end_in_buf:     upper <= buffer_end
-			buffer_index_at_start:   buffer_index = lower
+			valid_range:lower >= 0 and then lower <= upper
+			end_in_buf: upper <= buffer_end
+			buffer_index_at_start: buffer_index = lower
 		local
 			index, tok, tok_end, code: INTEGER; done: BOOLEAN
 			s: XT_STRING_ROUTINES
@@ -390,6 +394,10 @@ feature {NONE} -- Processor dispatch
 							if declaration = Entity then
 								last_entity_ref := name_cache.entity_ref_item (buf, index, tok_end - 1)
 							end
+							index := tok_end
+
+						when Tok_comment then
+							on_comment (buf, index + 4, tok_end - 4)
 							index := tok_end
 
 						when Tok_invalid then
@@ -515,7 +523,7 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Event handlers
 
-	on_finish (status: INTEGER)
+	on_finish (a_status: INTEGER)
 		do
 		end
 

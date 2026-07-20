@@ -3,16 +3,27 @@ note
 		**Xpact-core example program**
 	
 		Usage:
-			xpact_example <operation> [-chunk_size <value>] [-duration <duration-window-ms>] <XML-file-path>
+			xpact_example <operation> [-trace] [-chunk_size <value>] [-duration <duration-window-ms>] <XML-file-path>
 			
-		Valid operations: {-print, -count_tags}
+		**Valid operations:**
 
-		**-print** Reads from specified XML path and prints each XML event to standard output via XT_XML_PRINTER.
+		**-crc_32** Class: ${CRC_32_GENERATOR}.
+		Reads from specified XML path and prints a CRC-32 checksum for output for specified data type.
 
-		**-count_tags** Reads from specified XML path and compiles a table of tag occurrence frequency.
-		
+
+		**-print** Class: ${XML_PRINTER}.
+		Reads from specified XML path and prints each XML event to standard output.
+
+
+		**-count_tags** Class: ${TAG_COUNTER}
+		Reads from specified XML path and compiles a table of tag occurrence frequency.
+
 		**-test** Peforms tests on various classes developed for the Xpact-core project. The name of the test
 		can be specified as an argument
+		
+		**-test_files** Class: ${FILE_TREE_TESTS}
+		Compare CRC-32 for tree of XML files against eXpat.
+		Usage: xml_reader -test_files <XML-file-path>
 
 	]"
 
@@ -38,23 +49,18 @@ inherit
 
 create make
 
-feature {NONE} -- Initialisation
+feature {NONE} -- Initialization
 
 	make
-		local
-			l_option: STRING
 		do
 			IO.put_string ("Program: Xpact-core XML parser (Eiffel)")
 			IO.put_new_line
 
-			if argument_count >= 2 and then attached new_application_table as app_table then
-				l_option := argument (1).to_string_8
-				l_option.prune_all_leading ('-')
-				if attached app_table [l_option] as run then
-					run (l_option)
-				else
-					put_usage (Operation_parameter)
-				end
+			if argument_count >= 2 and then attached new_application_table as app_table
+				and then attached argument (1).to_string_8 as l_option
+				and then attached app_table [l_option] as run
+			then
+				run (l_option.substring (2, l_option.count))
 			else
 				put_usage (Operation_parameter)
 			end
@@ -90,12 +96,12 @@ feature {NONE} -- Factory
 
 	new_crc_32_generator (app_option: STRING): detachable CRC_32_GENERATOR
 		do
-			if attached new_argument_8 (0, app_option) as data_type then
-				if Parse_data_types.has_key (data_type) then
-					create Result.make (Parse_data_types.found_item)
-					if index_of_word_option (Option.trace) > 0 then
-						Result.enable_trace
-					end
+			if attached new_argument_8 (0, app_option) as data_type_arg
+				and then attached Parse_data_types [data_type_arg] as data_type
+			then
+				create Result.make (data_type)
+				if index_of_word_option (Option.trace) > 0 then
+					Result.enable_trace
 				end
 			end
 		end
@@ -108,12 +114,15 @@ feature {NONE} -- Application options
 		end
 
 	do_crc_32 (app_option: STRING)
+		local
+			s: XT_STRING_ROUTINES
 		do
 			if attached new_crc_32_generator (app_option) as crc_32 then
 				do_parsing (crc_32)
 			else
-				put_usage ("-crc_32 <data-type>")
-				put_data_types
+				put_usage ("-crc_32 <data-type> [-trace]")
+				IO.put_string ("Valid XML data types: " + s.key_set_string (Parse_data_types.current_keys, False))
+				IO.put_new_line
 			end
 		end
 
@@ -162,7 +171,7 @@ feature {NONE} -- Implementation
 
 					create time_start.make_now -- start timer
 					parser.parse_file (file_path, chunk_size, True)
-					inspect parser.parsing_state
+					inspect parser.status
 						when Status_ok then
 							if attached {XT_EXPAT_COMPARABLE} parser as ec then
 								duration := new_integer_argument (Option.duration, 0)
@@ -191,34 +200,28 @@ feature {NONE} -- Implementation
 	new_application_table: HASH_TABLE [PROCEDURE, STRING]
 		do
 			create Result.make_from_iterable_tuples (<<
-				[agent do_count_tags, "count_tags"],
-				[agent do_crc_32, "crc_32"],
-				[agent do_print, "print"],
-				[agent do_test, "test"],
-				[agent do_test_files, "test_files"]
+				[agent do_count_tags, "-count_tags"],
+				[agent do_crc_32, "-crc_32"],
+				[agent do_print, "-print"],
+				[agent do_test, "-test"],
+				[agent do_test_files, "-test_files"]
 			>>)
 		end
 
-	put_data_types
-		do
-			IO.put_string ("Valid data types: {")
-			across Parse_data_types.current_keys as type loop
-				if not @ type.is_first then
-					IO.put_string (", ")
-				end
-				IO.put_string (type)
-			end
-			IO.put_character ('}')
-			IO.put_new_line
-		end
-
 	put_usage (operation: STRING)
+		local
+			s: XT_STRING_ROUTINES
 		do
 			IO.put_string (
 				"Usage: xml_reader " + operation + " [-chunk_size <value>] [-duration <duration-window-ms>] <XML-file-path>"
 			)
+			IO.put_string ("Valid operations: " + s.key_set_string (new_application_table.current_keys, False))
+			IO.put_new_line
 			IO.put_string ("OPTIONAL: -chunk_size. Defaults to: 4096")
+			IO.put_new_line
 			IO.put_string ("OPTIONAL: -duration. Defaults to: 500")
+			IO.put_new_line
+			IO.put_string ("OPTIONAL: -trace. (-crc_32 only) Trace all CRC-32 stages step by step for debugging")
 			IO.put_new_line
 		end
 
@@ -226,12 +229,12 @@ feature {NONE} -- Constants
 
 	Operation_parameter: STRING = "<operation>"
 
-	Option: TUPLE [compare_to_expat, chunk_size, duration, test_files, trace: STRING]
+	Option: TUPLE [compare_to_expat, chunk_size, duration, trace: STRING]
 		local
 			s: XT_STRING_ROUTINES
 		once
 			create Result
-			across s.to_list ("compare_to_expat, chunk_size, duration, test_files, trace") as word loop
+			across s.to_list ("compare_to_expat, chunk_size, duration, trace") as word loop
 				Result.put_reference (word, @ word.cursor_index)
 			end
 		end

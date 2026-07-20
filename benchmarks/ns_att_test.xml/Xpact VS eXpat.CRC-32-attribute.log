@@ -2,3 +2,6 @@ Log of benchmarks for parsing file: ns_att_test.xml
 
 2026 16 JUL 19:22
 ns_att_test.xml: eXpat passes = 15; Xpact-core passes = 21 (x1.40 to eXpat)
+
+2026 20 JUL 8:48 -- Using section_state instead of in_cdata_section
+ns_att_test.xml: eXpat passes = 15; Xpact-core passes = 22 (x1.47 to eXpat)

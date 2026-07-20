@@ -2,3 +2,6 @@ Log of benchmarks for parsing file: recset.xml
 
 2026 16 JUL 19:22
 recset.xml: eXpat passes = 18; Xpact-core passes = 29 (x1.61 to eXpat)
+
+2026 20 JUL 8:48 -- Using section_state instead of in_cdata_section
+recset.xml: eXpat passes = 19; Xpact-core passes = 29 (x1.53 to eXpat)

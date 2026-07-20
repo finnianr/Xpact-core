@@ -20,7 +20,8 @@ class XT_LATIN_1_SCANNER
 inherit
 	XT_DOCUMENT_SCANNER
 
-create make
+create
+	make
 
 feature -- Encoding identity
 
@@ -55,7 +56,7 @@ feature -- Byte-type table
 			-- 0xF8-0xFF: BT_name_start
 			Result.fill_with (22, 248, 255)
 		end
-		
+
 feature -- Encoding conversion
 
 	to_utf_8 (src: SPECIAL [CHARACTER]; a_src_from, a_src_to: INTEGER;

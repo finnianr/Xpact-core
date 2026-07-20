@@ -34,7 +34,16 @@ feature {NONE} -- CDATA constant
 			Result := "DOCTYPE"
 		end
 
-feature {NONE} -- Predefine entities
+feature {NONE} -- Predefined entities
+
+	Predefined_entities: ARRAY [C_STRING_8]
+		once
+			Result := << Predefined_amp, Predefined_lt, Predefined_gt, Predefined_apos, Predefined_quot >>
+		ensure
+			same_count: Result.count = Predefined_entity_characters.count
+		end
+
+	Predefined_entity_characters: STRING = "&<>'%""
 
 	Predefined_apos: C_STRING_8
 		once
