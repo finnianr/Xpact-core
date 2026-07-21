@@ -63,26 +63,12 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	entity_ref_item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING
-		require
-			buffer_wide_enough: buffer.valid_index (start_index - 1) and buffer.valid_index (end_index + 1)
-		local
-			start_c, end_c: CHARACTER
-		do
-			start_c := buffer [start_index - 1]; end_c := buffer [end_index + 1]
-			buffer [start_index - 1] := '&'; buffer [end_index + 1] := ';'
-			Result := item (buffer, start_index - 1, end_index + 1)
-			buffer [start_index - 1] := start_c; buffer [end_index + 1] := end_c
-		ensure
-			buffer_start_unchanged: buffer [start_index - 1] = old buffer [start_index - 1]
-			buffer_start_unchanged: buffer [end_index + 1] = old buffer [end_index + 1]
-		end
-
 	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING
 		require
+			valid_range: start_index <= end_index
 			not_empty: not is_empty
 		local
-			i, bucket_count, count: INTEGER; bucket_list: like cache_item
+			i, bucket_count: INTEGER; bucket_list: like cache_item
 			found_name: detachable STRING
 		do
 			i := bucket_hash (buffer, start_index, end_index)
@@ -98,10 +84,7 @@ feature -- Access
 			-- search for match
 				bucket_count := bucket_list.count
 				from i := 0 until i = bucket_count or attached found_name loop
-					count := end_index - start_index + 1
-					if attached l_area [i] as name and then name.count = count
-						and then same_string (buffer, start_index, count, name)
-					then
+					if attached l_area [i] as name and then same_string (buffer, start_index, end_index, name) then
 						found_name := name
 					else
 						i := i + 1
@@ -149,13 +132,12 @@ feature {NONE} -- Implementation
 			Result := (first |<< 4).bit_xor ((last |<< 1).bit_xor (count)) \\ Size
 		end
 
-	same_string (buffer: SPECIAL [CHARACTER]; start_index, count: INTEGER; name: STRING_8): BOOLEAN
-		require
-			same_size: count = name.count
+	same_string (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; name: STRING_8): BOOLEAN
 		local
-			i: INTEGER
+			i, count: INTEGER
 		do
-			if attached name.area as l_area then
+			count := end_index - start_index + 1
+			if count = name.count and then attached name.area as l_area then
 				Result := True
 				from i := 0 until i = count or not Result loop
 					if l_area [i] = buffer [start_index + i] then

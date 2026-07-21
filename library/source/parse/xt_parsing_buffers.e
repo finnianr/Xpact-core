@@ -23,6 +23,11 @@ inherit
 			{NONE} all
 		end
 
+	XT_PARSE_ERROR_CONSTANTS
+		export
+			{NONE} all
+		end
+
 	XT_ENCODING_TYPE_CONSTANTS
 		export
 			{NONE} all
@@ -71,12 +76,22 @@ feature -- Access
 	error_code: INTEGER
 		-- Most recent error (Error_none if none).
 
+	error_description: STRING
+		do
+			if attached Error_descriptions.split ('%N') as list and then list.valid_index (error_code) then
+				Result := list [error_code]
+			else
+				create Result.make_empty
+			end
+		end
+
 feature -- Element change
 
 	set_scanner (type: NATURAL_8)
 		do
 			scanner := new_scanner (type)
 			attribute_intervals := scanner.attribute_intervals
+			entity_cache := attribute_intervals.entity_cache
 			name_cache := attribute_intervals.name_cache
 			entity_table := attribute_intervals.entity_table
 		end
@@ -224,6 +239,9 @@ feature {NONE} -- Internal structures
 
 	entity_table: XT_ENTITY_TABLE
 		-- table of expanded entities defined in DOCTYPE by ENTITY
+
+	entity_cache: XT_ENTITY_NAME_CACHE
+		-- efficient lookup of entity names from character buffer interval
 
 	last_entity_ref: STRING
 

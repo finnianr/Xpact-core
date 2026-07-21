@@ -21,7 +21,7 @@ feature {NONE} -- Access
 	frozen char_ref_number (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Parse &#N; or &#xH; starting at '&'.  Returns the code point or -1.
 		local
-			index, accum: INTEGER; is_hex: BOOLEAN; c: CHARACTER
+			index: INTEGER; is_hex: BOOLEAN; c: CHARACTER
 		do
 			index := start_index + 2  -- skip '&' and '#'
 			if index < end_index and buf [index] = 'x' then
@@ -32,23 +32,22 @@ feature {NONE} -- Access
 				if is_hex then
 					inspect c
 						when '0'..'9' then
-							accum := (accum |<< 4) | (c - 48).code
+							Result := (Result |<< 4) | (c - 48).code
 						when 'A'..'F' then
-							accum := (accum |<< 4) | (c - 55).code
+							Result := (Result |<< 4) | (c - 55).code
 					else
 					-- 'a'..'f'
-						accum := (accum |<< 4) | (c - 87).code
+						Result := (Result |<< 4) | (c - 87).code
 					end
 				else
-					accum := accum * 10 + (c - 48).code
+					Result := Result * 10 + (c - 48).code
 				end
-				if accum >= 0x110000 then
-					accum := -1; index := end_index
+				if Result >= 0x110000 then
+					Result := -1; index := end_index
 				else
 					index := index + 1
 				end
 			end
-			Result := valid_char_ref (accum)
 		end
 
 	frozen new_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_8
@@ -162,23 +161,25 @@ feature {NONE} -- Status report
 			end
 		end
 
-	frozen same_characters (area, string_area: SPECIAL [CHARACTER_8]; offset: INTEGER): BOOLEAN
-		-- `True' if characters in `area' from `offset' match those in `string_area' from 0 to `string_area.count - 2'
-		require
-			null_terminated: string_area [string_area.count - 1] = '%U'
-			inside_area: area.valid_index (offset + string_area.count - 2)
+	frozen same_characters (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; string: STRING): BOOLEAN
+		-- `True' if characters in `area' from `lower' to `upper' match those in `string'
 		local
-			i, string_count: INTEGER
+			i, j, string_count: INTEGER
 		do
-			Result := True
-			from i := 0; string_count := string_area.count - 1 until i = string_count loop
-				if area [offset + i] = string_area [i] then
-					i := i + 1
-				else
-					Result := False
-					i := string_count -- break
+			if upper - lower + 1 = string.count and then attached string.area as string_area then
+				Result := True
+				from i := lower until i > upper loop
+					if area [i] = string_area [j] then
+						i := i + 1
+						j := j + 1
+					else
+						Result := False
+						i := upper + 1 -- break
+					end
 				end
 			end
+		ensure
+			definition: Result implies area [lower] = string [1] and area [upper] = string [string.count]
 		end
 
 feature {NONE} -- Measurement

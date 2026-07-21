@@ -4,7 +4,7 @@
 	<book category="cooking">
 		<title lang="en">Everyday Italian</title>
 		<author>Giada De Laurentiis</author>
-		<price>30.00</price>
+		<price currency="Euro (&#x20AC;)">30.00</price>
 	</book>
 	<book category="children">
 		<title lang="en">
@@ -12,7 +12,7 @@
 			Harry Potter
 		</title>
 		<author>J K. Rowling</author>
-		<price>29.99</price>
+		<price currency="Euro (&#x20AC;)">29.99</price>
 	</book>
 	<dvd region="2" format="PAL"/>
 </bookstore>

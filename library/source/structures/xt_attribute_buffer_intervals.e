@@ -19,14 +19,13 @@ inherit
 		rename
 			forth as index_forth,
 			extend as extend_index,
-			count as index_count,
-			make as make_sized
+			count as index_count
 		export
 			{NONE} all
 		undefine
 			new_filled_list
 		redefine
-			make_sized, wipe_out
+			make, wipe_out
 		end
 
 	XT_STRING_ROUTINES_I
@@ -34,34 +33,24 @@ inherit
 			copy, is_equal
 		end
 
-	XT_SHARED_NAME_CACHE
-		undefine
-			copy, is_equal
-		end
-
 create
-	make, make_sized
+	make
 
 feature -- Initialization
 
-	make (n: INTEGER; a_name_cache: XT_NAME_CACHE)
-		do
-			make_sized (n)
-			name_cache := a_name_cache
-		end
-
-	make_sized (n: INTEGER)
+	make (n: INTEGER)
 		do
 			Precursor (n)
 			create character_swap_area.make_empty (area.capacity // Group_size)
 			create attribute_table.make (11)
-			create entity_table.make (11)
+			create entity_cache.make
+			create entity_table.make (entity_cache)
 			create entity_refs_pool.make (10)
 			create entity_refs_area.make_empty (area.capacity // Group_size)
 			create overflow_buffer_area.make_empty (area.capacity // 2)
 			create buffer_pool.make (10)
 			create substring.make_empty
-			name_cache := Empty_name_cache
+			create name_cache.make
 		end
 
 feature -- Status query
@@ -81,6 +70,9 @@ feature -- Status query
 		end
 
 feature -- Access
+
+	entity_cache: XT_ENTITY_NAME_CACHE
+		-- efficient lookup of entity names from character buffer interval
 
 	entity_table: XT_ENTITY_TABLE
 		-- table of expanded entities defined in DOCTYPE by ENTITY
@@ -467,7 +459,7 @@ feature -- Conversion
 					buffer := i_th_name (i, a_buffer, overflow_area)
 					if attached name_cache.item (buffer, a [i], a [i + 1]) as name then
 						buffer := i_th_value (i, a_buffer, overflow_area)
-						if attached area_substring (buffer, a [i + 2], a [i + 3], False) as value then
+						if attached area_substring (buffer, a [i + 2], a [i + 3], True) as value then
 							if attached entity_refs_area [i // Group_size] as entity_list then
 								Result.put (entity_table.expanded_value (entity_list, value, True), name)
 							else
@@ -515,7 +507,7 @@ feature {NONE} -- Implementation
 
 	new_filled_list (n: INTEGER): like Current
 		do
-			create Result.make_sized (n)
+			create Result.make (n)
 		end
 
 feature {NONE} -- Internal attributes

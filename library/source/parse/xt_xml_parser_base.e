@@ -53,6 +53,15 @@ feature -- Access
 	status: INTEGER
 		-- Current state after reading file: one of the Status_* constants.
 
+	status_description: STRING
+		do
+			if attached Status_names.split ('%N') as list and then list.valid_index (status + 1) then
+				Result := list [status + 1]
+			else
+				create Result.make_empty
+			end
+		end
+
 	parse_end_byte_index: INTEGER_64
 			-- Cumulative count of bytes committed to the parser.
 
@@ -79,7 +88,11 @@ feature -- Basic operations
 			end
 			if file.is_readable then
 				file.parse
-				status := file.parse_status
+				if file.valid_first_chunk then
+					status := file.parse_status
+				else
+					status := Status_invalid_document
+				end
 			else
 				status := Status_unreadable
 			end
@@ -392,7 +405,7 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_name then
 							if declaration = Entity then
-								last_entity_ref := name_cache.entity_ref_item (buf, index, tok_end - 1)
+								last_entity_ref := entity_cache.item (buf, index, tok_end - 1)
 							end
 							index := tok_end
 
@@ -466,7 +479,7 @@ feature {NONE} -- Processor dispatch
 							on_comment (buf, index + 4, tok_end - 4)
 
 						when Tok_entity_ref then
-							code := scanner.predefined_entity_name (buf, index + 1, tok_end - 1)
+							code := scanner.predefined_entity_code (buf, index + 1, tok_end - 2)
 							inspect code when -1 then
 								Result := Error_undefined_entity; done := True
 							else
@@ -476,7 +489,7 @@ feature {NONE} -- Processor dispatch
 						when Tok_char_ref then
 							-- index is '&'; tok_end is exclusive end past ';'
 							code := scanner.char_ref_number (buf, index, tok_end)
-							inspect code when -1 then
+							inspect s.valid_char_ref (code) when -1 then
 								Result := Error_bad_char_ref; done := True
 							else
 								if attached s.utf_8_encoded (code) as l_utf_8 then

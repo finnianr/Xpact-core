@@ -143,13 +143,17 @@ feature {NONE} -- Application options
 
 	do_test_files (app_option: STRING)
 		local
-			tests: FILE_TREE_TESTS
+			tests: FILE_TREE_TESTS; file_path: PATH
 		do
-			if attached new_argument_8 (0, app_option) as path then
-				create tests.make (create {PATH}.make_from_string (path))
+			if attached argument (argument_count) as path_arg then
+				create file_path.make_from_string (path_arg)
+				create tests.make (file_path)
+				if attached new_argument_8 (0, Option.log) as log_path then
+					tests.set_log (log_path)
+				end
 				tests.execute
 			else
-				IO.put_string ("Usage: xml_reader -test_files <XML-file-path>")
+				IO.put_string ("Usage: xml_reader -test_files -log <error-log-path> <XML-file-path>")
 				IO.put_new_line
 			end
 		end
@@ -229,12 +233,12 @@ feature {NONE} -- Constants
 
 	Operation_parameter: STRING = "<operation>"
 
-	Option: TUPLE [compare_to_expat, chunk_size, duration, trace: STRING]
+	Option: TUPLE [compare_to_expat, chunk_size, duration, log, trace: STRING]
 		local
 			s: XT_STRING_ROUTINES
 		once
 			create Result
-			across s.to_list ("compare_to_expat, chunk_size, duration, trace") as word loop
+			across s.to_list ("compare_to_expat, chunk_size, duration, log, trace") as word loop
 				Result.put_reference (word, @ word.cursor_index)
 			end
 		end

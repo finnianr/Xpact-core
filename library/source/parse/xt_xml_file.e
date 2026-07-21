@@ -40,14 +40,6 @@ feature -- Initialization
 			set_chunk_size (Default_chunk_size)
 
 			create chunk_string.make_empty
-
-			if exists then
-				open_read; read_line; close
-				last_string.to_upper
-				if last_string.has_substring ("ISO-8859-1") then
-					parser.set_scanner (Latin_1)
-				end
-			end
 		end
 
 feature -- Access
@@ -60,12 +52,16 @@ feature -- Access
 
 	gc_enabled: BOOLEAN
 
-feature -- Access
+feature -- Eleement change
 
 	set_chunk_size (chunk_size: INTEGER)
 		do
 			create chunk.make_filled ('%U', chunk_size)
 		end
+
+feature -- Status report
+
+	valid_first_chunk: BOOLEAN
 
 feature -- Status setting
 
@@ -96,13 +92,15 @@ feature -- Basic operations
 				end
 				positive_CR_count := 0; skip_CR_checking := False
 				new_line_occurrences := 0; new_line_check_count := 0
-				from open_read; parse_status := Status_ok until off or parse_status = Status_error loop
+				from open_read; parse_status := Status_ok until final_chunk or parse_status = Status_error loop
 					read_chunk (c_str); n := bytes_read
-					if off then
+					if off or else (n = chunk.count and then position = count) then
 						final_chunk := True
 					-- prune trailing newlines
-						from until n < 0 or else chunk [n - 1] /= '%N' loop
-							n := n - 1
+						if n > 0 then
+							from until n < 0 or else chunk [n - 1] /= '%N' loop
+								n := n - 1
+							end
 						end
 					end
 					if n > 0 then
@@ -120,13 +118,45 @@ feature -- Basic operations
 		end
 
 	all_cr_characters_removed: BOOLEAN
-		-- `True' if chunk as no '%R' (CR) characters
+		-- `True' if `chunk' as no '%R' (CR) characters
 		do
 			chunk_string.make_shared (chunk.base_address, bytes_read)
 			Result := chunk_string.index_of ('%R', 1) = 0
 		end
 
 feature {NONE} -- Implementation
+
+	check_first_chunk (byte_count: INTEGER)
+		local
+			str: C_STRING_8; lt_index, gt_index: INTEGER; u: UTF_CONVERTER
+		do
+			str := chunk_string
+			str.make_shared (chunk.base_address, byte_count)
+			lt_index := str.index_of ('<', 1)
+			if lt_index > 0 then
+				if attached str.substring (1, lt_index - 1).to_string as leading
+					and then attached u.utf_8_bom_to_string_8 as bom
+				then
+				-- check leading bytes before first '<'
+					if leading.starts_with (bom) then
+						leading.remove_head (bom.count)
+					end
+					leading.adjust
+				-- Must exlude /usr/share/app-install/icons/gnome-oregano.svg (Linux Mint 22.2)
+				-- The leading bytes are \x89PNG\r\n, which is the PNG magic header, so it's not XML.
+					if leading.count = 0 then
+						gt_index := str.index_of ('>', lt_index + 1)
+						if gt_index > 0 and then attached str.substring (lt_index, gt_index).to_string as element then
+							valid_first_chunk := True
+							element.to_upper
+							if element.starts_with ("<?XML") and then element.has_substring ("ISO-8859-1") then
+								parser.set_scanner (Latin_1)
+							end
+						end
+					end
+				end
+			end
+		end
 
 	check_newline_ahead: INTEGER
 		do
@@ -152,8 +182,14 @@ feature {NONE} -- Implementation
 			if attached chunk as area then
 				byte_count := file_gss (file_pointer, area.base_address, area.count)
 				bytes_read := byte_count
+				if not valid_first_chunk then
+					check_first_chunk (byte_count)
+				end
+				if not valid_first_chunk then
+					parse_status := Status_error
+					bytes_read := 0
 
-				if skip_CR_checking then
+				elseif skip_CR_checking then
 					do_nothing -- Encountered >= 5 newlines and zero CR characters, so stopped checking.
 				else
 					c_str.make_shared (area.base_address, byte_count)

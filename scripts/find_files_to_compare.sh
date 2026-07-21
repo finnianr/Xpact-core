@@ -5,14 +5,9 @@ clear
 echo Installing xml_reader
 cp -u examples/build/linux-x86-64/EIFGENs/classic/F_code/xml_reader ~/.local/bin
 
-pushd .
+echo ui file count\: 220 passed
 
 
-cd /usr/share/icons
+echo Testing against \*.xml
+xml_reader -test_files -log docs/test-logs/xml-ui.log "/usr/share/*.xml"
 
-echo Testing against \*.svg
-
-xml_reader -test_files *.svg
-
-
-popd

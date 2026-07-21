@@ -15,12 +15,13 @@ class
 inherit
 	HASH_TABLE [STRING, STRING]
 		rename
-			item as table_item
+			item as table_item,
+			make as make_sized
 		export
 			{NONE} all
 			{ANY} put, inserted
 		redefine
-			make
+			make_sized, same_keys
 		end
 
 	XT_STRING_ROUTINES_I
@@ -38,23 +39,26 @@ inherit
 		end
 
 create
-	make
+	make_sized, make
 
 feature -- Initialization
 
-	make (n: INTEGER)
-		local
-			entity: STRING
+	make (entity_cache: XT_ENTITY_NAME_CACHE)
+		do
+			make_sized (109)
+			across new_predefined_table as character loop
+				if attached @ character.key as key and then attached key.area as l_area then
+					extend (character.out, entity_cache.item (l_area, 0, key.count - 1))
+				end
+			end
+			set_no_status
+		end
+
+	make_sized (n: INTEGER)
 		do
 			Precursor (n)
 			create substring.make_empty
 			create output_buffer.make_empty
-			across Predefined_entities as id loop
-				entity := "&;"
-				entity.insert_string (id.to_string, 2)
-				extend (Predefined_entity_characters [@ id.cursor_index].out, entity)
-			end
-			set_no_status
 		end
 
 feature -- Access
@@ -109,6 +113,15 @@ feature -- Access
 			end
 		end
 
+feature -- Comparison
+
+	same_keys (a_search_key, a_key: STRING): BOOLEAN
+			-- Does `a_search_key' equal to `a_key'?
+			--| Default implementation is using ~.
+		do
+			Result := a_search_key = a_key
+		end
+
 feature -- Basic operations
 
 	mix_in_values_to_crc_32 (
@@ -144,6 +157,16 @@ feature -- Basic operations
 					end
 				end
 			end
+		end
+
+feature {NONE} -- Implementation
+
+	new_predefined_table: HASH_TABLE [CHARACTER, STRING]
+		do
+			create Result.make_from_iterable_tuples (<<
+				['&', Predefined_amp], ['<', Predefined_lt], ['>', Predefined_gt],
+				['%'', Predefined_apos], ['"', Predefined_quot]
+			>>)
 		end
 
 feature {NONE} -- Internal attributes

@@ -29,7 +29,14 @@ deferred class XT_DOCUMENT_SCANNER
 
 inherit
 	XT_ENCODING
+		rename
+			predefined_entity_name as predefined_entity_code
+		end
+
 	XT_CONTENT_SCANNER
+		export
+			{XT_PARSING_BUFFERS} attribute_intervals
+		end
 
 	XT_PROLOG_SCANNER
 
@@ -41,32 +48,33 @@ feature {NONE} -- Initialisation
 
 	make
 		do
-			create name_cache.make
-			create attribute_intervals.make (5, name_cache)
+			create attribute_intervals.make (5)
+			name_cache := attribute_intervals.name_cache
+			entity_cache := attribute_intervals.entity_cache
 			create scanned_entity_buffer.make (5)
 			create index_x4_buffer.make_empty (4)
 		end
 
 feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 
-	scan_content (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_content (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		do
-			Result := content_tok (buf, scanned_entity_buffer, start_index, a_end)
+			Result := content_tok (buf, scanned_entity_buffer, start_index, end_index)
 		end
 
-	scan_prolog (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_prolog (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		do
-			Result := prolog_tok (buf, start_index, a_end)
+			Result := prolog_tok (buf, start_index, end_index)
 		end
 
-	scan_cdata_section (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_cdata_section (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		do
-			Result := cdata_section_tok (buf, start_index, a_end)
+			Result := cdata_section_tok (buf, start_index, end_index)
 		end
 
-	scan_entity_value (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
+	scan_entity_value (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		do
-			Result := entity_value_tok (buf, scanned_entity_buffer, start_index, a_end)
+			Result := entity_value_tok (buf, scanned_entity_buffer, start_index, end_index)
 		end
 
 feature -- Name utilities (implements XT_ENCODING deferred features)
@@ -94,55 +102,52 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 			end
 		end
 
-	name_matches_ascii (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER;
+	name_matches_ascii (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER;
 	                    match: STRING_8): BOOLEAN
-			-- True if the name at start_index..a_end equals the ASCII string match.
+			-- True if the name at start_index..end_index equals the ASCII string match.
 		local
 			index, i: INTEGER; ok: BOOLEAN
 		do
 			index := start_index; i := 1; ok := True
 			from until i > match.count or not ok loop
-				if index >= a_end or buf [index] /= match [i] then
+				if index >= end_index or buf [index] /= match [i] then
 					ok := False
 				else
 					index := index + min_bytes_per_char; i := i + 1
 				end
 			end
-			Result := ok and index = a_end
+			Result := ok and index = end_index
 		end
 
-	predefined_entity_name (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): INTEGER
-			-- Code point for predefined entity (lt=0x3C, gt=0x3E, amp=0x26,
-			-- quot=0x22, apos=0x27), or -1 if not a predefined entity.
-		local
-			len: INTEGER
+	predefined_entity_code (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+		-- Code point for predefined entity
+		-- (lt=0x3C, gt=0x3E, amp=0x26, quot=0x22, apos=0x27), or -1 if not a predefined entity.
 		do
-			len := (a_end - start_index) // min_bytes_per_char
 			Result := -1
-			inspect len
+			inspect end_index - start_index + 1
 				when 2 then
 					inspect buf [start_index]
 						when 'g' then
-							if Predefined_gt.same_characters (buf, start_index) then
+							if same_characters (buf, start_index, end_index, Predefined_gt) then
 								Result := {ASCII}.Greaterthan -- 0x3E
 							end
 						when 'l' then
-							if Predefined_lt.same_characters (buf, start_index) then
+							if same_characters (buf, start_index, end_index, Predefined_lt) then
 								Result := {ASCII}.Lessthan -- 0x3C
 							end
 					else end
 				when 3 then
-					if Predefined_amp.same_characters (buf, start_index) then
+					if same_characters (buf, start_index, end_index, Predefined_amp) then
 						Result := {ASCII}.Ampersand -- 0x26
 					end
 				when 4 then
 					inspect buf [start_index]
 						when 'q' then
-							if Predefined_quot.same_characters (buf, start_index) then
+							if same_characters (buf, start_index, end_index, Predefined_quot) then
 								Result := {ASCII}.Doublequote -- 0x22
 							end
 						when 'a' then
-							if Predefined_apos.same_characters (buf, start_index) then
+							if same_characters (buf, start_index, end_index, Predefined_apos) then
 								Result := {ASCII}.Singlequote -- 0x27
 							end
 					else end
@@ -151,15 +156,15 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 
 feature -- Public ID validation
 
-	is_public_id (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER): BOOLEAN
-		-- True if every byte in start_index..a_end-1 is a valid PubidChar.
+	is_public_id (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): BOOLEAN
+		-- True if every byte in start_index..end_index-1 is a valid PubidChar.
 		-- Sets bad_char_ptr on failure.
 		local
 			index: INTEGER; ok: BOOLEAN
 		do
 			ok := True
 			if attached byte_type_table as bt_table then
-				from index := start_index until index >= a_end or not ok loop
+				from index := start_index until index >= end_index or not ok loop
 					inspect bt_table [buf [index].code].to_integer_32
 						when	BT_digit, BT_hex_digit, BT_minus, BT_apostrophe, BT_left_parenthesis, BT_right_parenthesis,
 								BT_plus, BT_comma, BT_forward_slash, BT_equals, BT_question, BT_CR, BT_LF, BT_semicolon,
@@ -177,17 +182,17 @@ feature -- Public ID validation
 
 feature -- Position tracking
 
-	update_position (buf: SPECIAL [CHARACTER]; start_index, a_end: INTEGER; pos: XT_POSITION)
-			-- Update line and column numbers by scanning buf[start_index..a_end-1].
+	update_position (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; pos: XT_POSITION)
+			-- Update line and column numbers by scanning buf[start_index..end_index-1].
 		local
 			index: INTEGER
 		do
 			if attached byte_type_table as bt_table then
-				from index := start_index until index >= a_end loop
+				from index := start_index until index >= end_index loop
 					inspect bt_table [buf [index].code].to_integer_32
 						when BT_CR then
 							pos.advance_line
-							if index + min_bytes_per_char < a_end
+							if index + min_bytes_per_char < end_index
 								and bt_table [buf [index + min_bytes_per_char].code].to_integer_32 = BT_LF
 							then
 								index := index + min_bytes_per_char

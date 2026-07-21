@@ -40,6 +40,9 @@ inherit
 		end
 
 	PARSE_EVENT_CONSTANTS
+		export
+			{NONE} all
+		end
 
 	XT_EXPAT_COMPARABLE
 
@@ -101,16 +104,16 @@ feature {NONE} -- Event handlers
 
 	on_content (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
 		do
-			if in_cdata_section then
-				inspect data_type when Tok_cdata then
-					checksum.add_characters (area, lower, upper)
-				else
-				end
+			inspect data_type
+				when Tok_cdata then
+					if in_cdata_section then
+						checksum.add_characters (area, lower, upper)
+					end
+				when Tok_text then
+					if not in_cdata_section then
+						checksum.add_characters (area, lower, upper)
+					end
 			else
-				inspect data_type when Tok_text then
-					checksum.add_characters (area, lower, upper)
-				else
-				end
 			end
 		end
 

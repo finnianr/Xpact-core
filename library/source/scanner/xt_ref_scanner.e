@@ -52,7 +52,7 @@ feature {NONE} -- Reference scanning
 									index := advance (index)
 								when BT_semicolon then
 									next_token_index := advance (index)
-									entity_buffer.extend (name_cache.item (buf, start_index - 1, index))
+									entity_buffer.extend (entity_cache.item (buf, start_index, index - 1))
 									Result := Tok_entity_ref
 									index := end_index  -- exit loop
 								else
@@ -113,7 +113,7 @@ feature {NONE} -- Reference scanning
 									index := advance (index)
 								when BT_semicolon then
 									next_token_index := advance (index)
-									entity_buffer.extend (name_cache.item (buf, start_index - 2, index))
+									entity_buffer.extend (entity_cache.item (buf, start_index - 1, index - 1))
 									Result := Tok_char_ref
 									index := end_index
 							else
@@ -152,7 +152,7 @@ feature {NONE} -- Reference scanning
 							index := advance (index)
 						elseif bt = BT_semicolon then
 							next_token_index := advance (index)
-							entity_buffer.extend (name_cache.item (buf, start_index - 3, index))
+							entity_buffer.extend (entity_cache.item (buf, start_index - 2, index - 1))
 							Result := Tok_char_ref
 							index := end_index
 						else
@@ -203,7 +203,12 @@ feature {NONE} -- Reference sub-helper
 feature {NONE} -- Internal attributes
 
 	name_cache: XT_NAME_CACHE
-		-- efficient lookup of attribute/tag names
+		-- efficient lookup of attribute/tag names from character buffer interval
+
+	entity_cache: XT_ENTITY_NAME_CACHE
+		-- efficient lookup of entity names from character buffer interval
+
+	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
 
 	scanned_entity_buffer: ARRAYED_LIST [STRING]
 

@@ -36,38 +36,14 @@ feature {NONE} -- CDATA constant
 
 feature {NONE} -- Predefined entities
 
-	Predefined_entities: ARRAY [C_STRING_8]
-		once
-			Result := << Predefined_amp, Predefined_lt, Predefined_gt, Predefined_apos, Predefined_quot >>
-		ensure
-			same_count: Result.count = Predefined_entity_characters.count
-		end
+	Predefined_apos: STRING_8 = "apos"
 
-	Predefined_entity_characters: STRING = "&<>'%""
+	Predefined_amp: STRING_8 = "amp"
 
-	Predefined_apos: C_STRING_8
-		once
-			Result := "apos"
-		end
+	Predefined_gt: STRING_8 = "gt"
 
-	Predefined_amp: C_STRING_8
-		once
-			Result := "amp"
-		end
+	Predefined_lt: STRING_8 = "lt"
 
-	Predefined_gt: C_STRING_8
-		once
-			Result := "gt"
-		end
-
-	Predefined_lt: C_STRING_8
-		once
-			Result := "lt"
-		end
-
-	Predefined_quot: C_STRING_8
-		once
-			Result := "quot"
-		end
+	Predefined_quot: STRING_8 = "quot"
 
 end

@@ -15,6 +15,11 @@ class
 inherit
 	PARSE_EVENT_CONSTANTS
 
+	XT_PARSE_CONSTANTS
+		export
+			{NONE} all
+		end
+
 	XT_STRING_ROUTINES_I
 
 create
@@ -25,11 +30,13 @@ feature {NONE} -- Initialization
 	make (a_dir_path: PATH)
 		require
 			latin_1_path: a_dir_path.name.is_valid_as_string_8
-		local
 		do
 			create wild_card.make_empty
-			if attached a_dir_path.entry as last_step and then attached last_step.name as name then
-				wild_card := name.to_string_8
+			create log.make_with_name (generator.as_lower + ".log")
+			if attached a_dir_path.entry as entry and then attached entry.name.to_string_8 as last_step
+				and then last_step.starts_with ("*.")
+			then
+				wild_card := last_step
 				dir_path := a_dir_path.parent
 			else
 				dir_path := a_dir_path
@@ -40,11 +47,11 @@ feature -- Basic operations
 
 	execute
 		local
-			find_results: XT_COMMAND_OUTPUT_FILE; crc_32: CRC_32_GENERATOR
-			file_path: PATH; done: BOOLEAN; checksum: NATURAL; i, count: INTEGER
+			find_results: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN; i: INTEGER
 		do
 			create find_results.make_with_output (find_command)
 			if find_results.has_output then
+				log.open_write
 				from until done loop
 					find_results.read_line
 					if find_results.end_of_file then
@@ -52,34 +59,65 @@ feature -- Basic operations
 					else
 						i := i + 1
 						IO.put_integer (i); IO.put_string (". ")
-						IO.put_string (find_results.last_string)
-						count := 0
-						across Parse_data_types as data_type until done loop
-							create crc_32.make (data_type)
-							create file_path.make_from_string (find_results.last_string)
-							crc_32.parse_file (file_path, 0, True)
-							checksum := expat_checksum (@ data_type.key, file_path)
-							if crc_32.checksum.value = checksum then
-								count := count + 1
+						if attached find_results.last_string as path then
+							IO.put_string (path)
+							if data_type_pass_count (path) = Parse_data_types.count then
+								IO.put_string (" OK")
 							else
-								IO.put_string (" VALUES DIFFER")
-								IO.put_new_line
-								IO.put_string (substitute (Checksum_comparison, << @ data_type.key, crc_32.checksum.value.out, checksum.out >>))
-								IO.put_new_line
-								done := True
+								IO.put_string (" FAILED")
 							end
-						end
-						if count = Parse_data_types.count then
-							IO.put_string (" OK")
 							IO.put_new_line
 						end
 					end
 				end
 				find_results.close
+				log.close
+				if log.count = 0 then
+					log.delete
+				end
 			end
 		end
 
+	set_log (log_path: STRING)
+		do
+			create log.make_with_name (log_path)
+		end
+
 feature {NONE} -- Implementation
+
+	data_type_pass_count (path: STRING): INTEGER
+		-- count of data types that pass checksum comparison with eXpat
+		local
+			file_path: PATH; values_differ: BOOLEAN; crc_32: CRC_32_GENERATOR
+			checksum: NATURAL; description: STRING
+		do
+			across Parse_data_types as data_type until values_differ loop
+				create crc_32.make (data_type)
+				create file_path.make_from_string (path)
+				crc_32.parse_file (file_path, 0, True)
+				if crc_32.status = Status_ok then
+					checksum := expat_checksum (@ data_type.key, file_path)
+					if crc_32.checksum.value = checksum then
+						Result := Result + 1
+					else
+						log.put_string ("VALUES DIFFER: " + file_path.out)
+						log.put_new_line
+						log.put_string (substitute (Checksum_comparison, << @ data_type.key, crc_32.checksum.value.out, checksum.out >>))
+						log.put_new_line; log.put_new_line
+						values_differ := True
+					end
+				else
+					if crc_32.status = Status_error then
+						description := crc_32.error_description
+					else
+						description := crc_32.status_description
+					end
+					log.put_string (substitute (Error_template, << description, file_path.out >>))
+					log.put_new_line; log.put_new_line
+					values_differ := True
+				end
+			end
+		end
 
 	find_command: STRING
 		do
@@ -119,9 +157,13 @@ feature {NONE} -- Internal attributes
 
 	parse_status: INTEGER
 
+	log: PLAIN_TEXT_FILE
+
 feature {NONE} -- Constants
 
 	Checksum_comparison: STRING = "Checksum for %S: Xpact=%S eXpat=%S"
+
+	Error_template: STRING = "ERROR (%S): %S"
 
 	Find_template: STRING = "find %S -type f"
 

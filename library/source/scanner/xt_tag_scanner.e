@@ -221,7 +221,11 @@ feature {NONE} -- Tag scanning
 								when Tok_partial, Tok_partial_char then
 									attributes.wipe_out; index_buffer.wipe_out; entity_buffer.wipe_out
 							else
-								attributes.transfer (index_buffer, entity_buffer)
+								inspect index_buffer.count when 4 then
+									attributes.transfer (index_buffer, entity_buffer)
+								else
+									index_buffer.wipe_out
+								end
 							end
 							if Result /= 0 then
 								done := True
@@ -453,9 +457,7 @@ feature {NONE} -- Contract support
 			Result := index - start_index
 		end
 
-feature {XT_PARSING_BUFFERS} -- Internal attributes
-
-	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+feature {NONE} -- Internal attributes
 
 	index_x4_buffer: SPECIAL [INTEGER]
 
