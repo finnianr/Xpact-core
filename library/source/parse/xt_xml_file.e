@@ -188,25 +188,26 @@ feature {NONE} -- Implementation
 				if not valid_first_chunk then
 					parse_status := Status_error
 					bytes_read := 0
-
-				elseif skip_CR_checking then
-					do_nothing -- Encountered >= 5 newlines and zero CR characters, so stopped checking.
-				else
-					c_str.make_shared (area.base_address, byte_count)
-					cr_index := c_str.index_of ('%R', 1)
-					if cr_index = 0 then
-						if new_line_check_count < 5 then
-							new_line_occurrences := new_line_occurrences + c_str.occurrences ('%N')
-							new_line_check_count := new_line_check_count + 1
-							if new_line_occurrences >= 5 and then positive_CR_count = 0 then
-								skip_CR_checking := True
-							end
-						end
-					else
-						positive_CR_count := positive_CR_count + 1
-						read_pruned_chunk (area, c_str, cr_index)
-					end
 				end
+
+--				elseif skip_CR_checking then
+--					do_nothing -- Encountered >= 5 newlines and zero CR characters, so stopped checking.
+--				else
+--					c_str.make_shared (area.base_address, byte_count)
+--					cr_index := c_str.index_of ('%R', 1)
+--					if cr_index = 0 then
+--						if new_line_check_count < 5 then
+--							new_line_occurrences := new_line_occurrences + c_str.occurrences ('%N')
+--							new_line_check_count := new_line_check_count + 1
+--							if new_line_occurrences >= 5 and then positive_CR_count = 0 then
+--								skip_CR_checking := True
+--							end
+--						end
+--					else
+--						positive_CR_count := positive_CR_count + 1
+--						read_pruned_chunk (area, c_str, cr_index)
+--					end
+--				end
 			end
 		end
 

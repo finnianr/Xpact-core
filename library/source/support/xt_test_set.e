@@ -20,21 +20,21 @@ feature -- Initialization
 
 	make
 		do
-			create procedure_table.make (10)
-			procedure_table.put (agent test_buffer_pool, "buffer_pool")
 		end
 
 feature -- Basic operations
 
 	execute (name: STRING)
 		do
-			if procedure_table.has_key (name) and then attached procedure_table.found_item as test then
+			if attached new_procedure_table as table and then attached table [name] as test then
 				test.apply
+				if not failed then
+					IO.put_string ("Test: " + name + " OK")
+				end
+			else
+				IO.put_string ("No such test: " + name)
 			end
-			if not failed then
-				io.put_string ("Test: " + name + " OK")
-				io.put_new_line
-			end
+			IO.put_new_line
 		end
 
 feature -- Tests
@@ -64,6 +64,34 @@ feature -- Tests
 			end
 		end
 
+	test_chunk_reading
+		local
+			file: RAW_FILE; chunk: SPECIAL [CHARACTER]
+		do
+			create chunk.make_filled ('%U', Chunk_size)
+			create file.make_open_read ("data/Legislation.xml")
+			IO.put_string ("Remainder: "); IO.put_integer (file.count \\ Chunk_size)
+			IO.put_new_line
+			from until file.end_of_file loop
+				file.read_data (chunk.base_address, Chunk_size)
+				if file.bytes_read = Chunk_size then
+					IO.put_character ('.')
+				else
+					IO.put_new_line
+					IO.put_string ("bytes_read: " + file.bytes_read.out)
+					IO.put_new_line
+				end
+			end
+			file.close
+			if chunk [file.bytes_read - 1] = '%N' then
+				IO.put_string ("Ends with '%%N'")
+			else
+				IO.put_string ("Ends with '"); IO.put_character (chunk [file.bytes_read - 1])
+				IO.put_character ('%'')
+			end
+			IO.put_new_line
+		end
+
 feature -- Status report
 
 	failed: BOOLEAN
@@ -81,8 +109,18 @@ feature {NONE} -- Assertions
 			end
 		end
 
-feature {NONE} -- Internal attributes
+feature {NONE} -- Implementation
 
-	procedure_table: HASH_TABLE [PROCEDURE, STRING]
+	new_procedure_table: HASH_TABLE [PROCEDURE, STRING]
+		do
+			create Result.make_from_iterable_tuples (<<
+				[agent test_buffer_pool, "buffer_pool"],
+				[agent test_chunk_reading, "chunk_reading"]
+			>>)
+		end
+
+feature {NONE} -- Constants
+
+	Chunk_size: INTEGER = 4096
 
 end

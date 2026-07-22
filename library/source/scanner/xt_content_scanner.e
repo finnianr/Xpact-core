@@ -39,7 +39,7 @@ feature -- Content tokenization
 					when BT_lt then
 						Result := scan_lt (buf, advance (index), a_end_adj)
 					when BT_ampersand then
-						Result := scan_ref (buf, entity_buffer, advance (index), a_end_adj)
+						Result := scan_ref (buf, entity_buffer, Tok_data_chars, advance (index), a_end_adj)
 					when BT_CR then
 						index := advance (index)
 						if index >= a_end_adj then
@@ -139,8 +139,11 @@ feature -- Content tokenization
 								next_token_index := advance (index)
 								Result := Tok_cdata_sect_close
 							else
-								index := advance (index)
-								Result := scan_cdata_data_chars (buf, index, end_index)
+								-- ']]' not followed by '>': back up to the second ']' (mirrors C eXpat's ptr -= MINBPC).
+								-- scan_cdata_data_chars stops immediately on BT_right_square_bracket,
+								-- so next_token_index lands on the second ']' and the next call
+								-- will correctly see ']]>' and return Tok_cdata_sect_close.
+								Result := scan_cdata_data_chars (buf, index - min_bytes_per_char, end_index)
 							end
 						end
 					when BT_CR then

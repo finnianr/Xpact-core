@@ -29,7 +29,7 @@ inherit
 
 feature {NONE} -- Reference scanning
 
-	scan_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
+	scan_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; token, start_index, end_index: INTEGER): INTEGER
 			-- Scan entity or character reference after '&'.
 			-- Sets next_token_ptr.  Returns Tok_entity_ref, Tok_char_ref, or error.
 		require
@@ -43,7 +43,7 @@ feature {NONE} -- Reference scanning
 			elseif attached byte_type_table as bt_table then
 				inspect bt_table [buf [index].code].to_integer_32
 					when BT_hash then
-						Result := scan_char_ref (buf, entity_buffer, advance (index), end_index)
+						Result := scan_char_ref (buf, entity_buffer, token, advance (index), end_index)
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
 						from until index >= end_index loop
@@ -52,7 +52,9 @@ feature {NONE} -- Reference scanning
 									index := advance (index)
 								when BT_semicolon then
 									next_token_index := advance (index)
-									entity_buffer.extend (entity_cache.item (buf, start_index, index - 1))
+									inspect token when Tok_attribute_value_s then
+										entity_buffer.extend (entity_cache.item (buf, start_index, index - 1))
+									else end
 									Result := Tok_entity_ref
 									index := end_index  -- exit loop
 								else
@@ -91,7 +93,7 @@ feature {NONE} -- Reference scanning
 			end
 		end
 
-	scan_char_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
+	scan_char_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; token, start_index, end_index: INTEGER): INTEGER
 			-- Scan character reference after '&#'.  Returns Tok_char_ref or error.
 		require start_index <= end_index
 		local
@@ -101,7 +103,7 @@ feature {NONE} -- Reference scanning
 			if index >= end_index then
 				Result := Tok_partial
 			elseif buf [index] = 'x' then
-				Result := scan_hex_char_ref (buf, entity_buffer, advance (index), end_index)
+				Result := scan_hex_char_ref (buf, entity_buffer, token, advance (index), end_index)
 
 			elseif attached byte_type_table as bt_table then
 				inspect bt_table [buf [index].code].to_integer_32
@@ -113,7 +115,9 @@ feature {NONE} -- Reference scanning
 									index := advance (index)
 								when BT_semicolon then
 									next_token_index := advance (index)
-									entity_buffer.extend (entity_cache.item (buf, start_index - 1, index - 1))
+									inspect token when Tok_attribute_value_s then
+										entity_buffer.extend (entity_cache.item (buf, start_index - 1, index - 1))
+									else end
 									Result := Tok_char_ref
 									index := end_index
 							else
@@ -132,7 +136,7 @@ feature {NONE} -- Reference scanning
 			end
 		end
 
-	scan_hex_char_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
+	scan_hex_char_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; token, start_index, end_index: INTEGER): INTEGER
 			-- Scan hex character reference after '&#x'.  Returns Tok_char_ref or error.
 		require start_index <= end_index
 		local
@@ -152,7 +156,9 @@ feature {NONE} -- Reference scanning
 							index := advance (index)
 						elseif bt = BT_semicolon then
 							next_token_index := advance (index)
-							entity_buffer.extend (entity_cache.item (buf, start_index - 2, index - 1))
+							inspect token when Tok_attribute_value_s then
+								entity_buffer.extend (entity_cache.item (buf, start_index - 2, index - 1))
+							else end
 							Result := Tok_char_ref
 							index := end_index
 						else

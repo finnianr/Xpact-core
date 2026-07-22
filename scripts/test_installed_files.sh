@@ -7,7 +7,8 @@ cp -u examples/build/linux-x86-64/EIFGENs/classic/F_code/xml_reader ~/.local/bin
 
 echo ui file count\: 220 passed
 
-
-echo Testing against \*.xml
-xml_reader -test_files -log docs/test-logs/xml-ui.log "/usr/share/*.xml"
+extension=xml
+echo Testing against \*.$extension
+xml_reader -test_files -log docs/test-logs/star-dot-$extension.log \
+	"/usr/share/*.$extension"
 

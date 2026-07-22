@@ -5,10 +5,11 @@ clear
 echo Installing xml_reader
 cp -u examples/build/linux-x86-64/EIFGENs/classic/F_code/xml_reader ~/.local/bin
 
-echo Testing against \*.svg
+echo Testing against examples/data/*
 
 xml_reader -test_files examples/data
 echo
 
+echo Testing against libexpat/testdata/largefiles/*.xml
 xml_reader -test_files "$HOME/Dev/C/libexpat/testdata/largefiles/*.xml"
 

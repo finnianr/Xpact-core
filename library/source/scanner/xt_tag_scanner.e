@@ -384,7 +384,7 @@ feature {NONE} -- Tag sub-helpers
 								index := advance (index)
 							end
 						when BT_ampersand then
-							Result := scan_ref (buf, entity_buffer, advance (index), end_index)
+							Result := scan_ref (buf, entity_buffer, Tok_attribute_value_s, advance (index), end_index)
 							if Result > 0 then
 								index := next_token_index; Result := 0
 							else

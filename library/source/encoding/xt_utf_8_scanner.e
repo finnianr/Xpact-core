@@ -91,7 +91,8 @@ feature -- Encoding conversion
 					dst [dst_ptr] := b0.to_natural_16
 					src_ptr := src_ptr + 1; dst_ptr := dst_ptr + 1
 				elseif b0 < 0xE0 then
-					if src_ptr + 1 >= a_src_to then src_ptr := a_src_to
+					if src_ptr + 1 >= a_src_to then
+						src_ptr := a_src_to
 					else
 						b1 := src [src_ptr + 1].code
 						cp := ((b0 & 0x1F) |<< 6) | (b1 & 0x3F)
@@ -99,7 +100,8 @@ feature -- Encoding conversion
 						src_ptr := src_ptr + 2; dst_ptr := dst_ptr + 1
 					end
 				elseif b0 < 0xF0 then
-					if src_ptr + 2 >= a_src_to then src_ptr := a_src_to
+					if src_ptr + 2 >= a_src_to then
+						src_ptr := a_src_to
 					else
 						b1 := src [src_ptr + 1].code
 						b2 := src [src_ptr + 2].code

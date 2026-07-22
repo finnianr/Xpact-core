@@ -52,6 +52,7 @@ feature -- Basic operations
 			create find_results.make_with_output (find_command)
 			if find_results.has_output then
 				log.open_write
+				pass_count := 0; fail_count := 0
 				from until done loop
 					find_results.read_line
 					if find_results.end_of_file then
@@ -63,8 +64,10 @@ feature -- Basic operations
 							IO.put_string (path)
 							if data_type_pass_count (path) = Parse_data_types.count then
 								IO.put_string (" OK")
+								pass_count := pass_count + 1
 							else
 								IO.put_string (" FAILED")
+								fail_count := fail_count + 1
 							end
 							IO.put_new_line
 						end
@@ -76,6 +79,10 @@ feature -- Basic operations
 					log.delete
 				end
 			end
+			IO.put_new_line
+			IO.put_string ("Tested against eXpat"); IO.put_new_line
+			IO.put_string ("Passed: " + pass_count.out); IO.put_string (" Failed: " + fail_count.out)
+			IO.put_new_line
 		end
 
 	set_log (log_path: STRING)
@@ -150,6 +157,10 @@ feature {NONE} -- Implementation
 		end
 
 feature {NONE} -- Internal attributes
+
+	fail_count: INTEGER
+
+	pass_count: INTEGER
 
 	wild_card: STRING
 

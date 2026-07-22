@@ -17,7 +17,8 @@ note
 
 deferred class XT_PI_COMMENT_SCANNER
 
-inherit XT_SCANNER_HELPERS
+inherit
+	XT_SCANNER_HELPERS
 
 feature {NONE} -- PI and comment scanning
 
@@ -223,23 +224,23 @@ feature {NONE} -- PI and comment scanning
 
 feature {NONE} -- PI helpers
 
-	check_pi_target (buf: SPECIAL [CHARACTER]; a_start, end_index: INTEGER): INTEGER
+	check_pi_target (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Return Tok_xml_decl if target is exactly "xml" (case-sensitive),
 			-- Tok_pi otherwise, or 0 if target is a case variation of "xml"
 			-- (forbidden by XML spec: "<?XML" etc. are reserved).
 		local
-			len: INTEGER
+			count: INTEGER
 		do
-			len := end_index - a_start
-			if len = 3 * min_bytes_per_char then
-				if buf [a_start] = 'x'
-					and buf [a_start + min_bytes_per_char] = 'm'
-					and buf [a_start + 2 * min_bytes_per_char] = 'l'
+			count := end_index - start_index
+			if count = 3 * min_bytes_per_char then
+				if buf [start_index] = 'x'
+					and buf [start_index + min_bytes_per_char] = 'm'
+					and buf [start_index + 2 * min_bytes_per_char] = 'l'
 				then
 					Result := Tok_xml_decl
-				elseif (buf [a_start] = 'x' or buf [a_start] = 'X')
-					and (buf [a_start + min_bytes_per_char] = 'm' or buf [a_start + min_bytes_per_char] = 'M')
-					and (buf [a_start + 2 * min_bytes_per_char] = 'l' or buf [a_start + 2 * min_bytes_per_char] = 'L')
+				elseif (buf [start_index] = 'x' or buf [start_index] = 'X')
+					and (buf [start_index + min_bytes_per_char] = 'm' or buf [start_index + min_bytes_per_char] = 'M')
+					and (buf [start_index + 2 * min_bytes_per_char] = 'l' or buf [start_index + 2 * min_bytes_per_char] = 'L')
 				then
 					Result := 0 -- reserved; caller treats as invalid
 				else

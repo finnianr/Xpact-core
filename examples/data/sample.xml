@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bookstore>
 	<!--Test data for the billion-user project xpact-->
-	<book category="cooking">
+	<book category="Cooking &amp; &apos;fine cuisine&apos;">
 		<title lang="en">Everyday Italian</title>
 		<author>Giada De Laurentiis</author>
 		<price currency="Euro (&#x20AC;)">30.00</price>
