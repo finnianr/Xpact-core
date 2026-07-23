@@ -27,7 +27,7 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Constants
 
-	Command_template: STRING = "xml_tag_counter $path -duration $duration > $temp_path"
+	Command_template: STRING = "xml_tag_counter $path -duration $duration"
 
 	Log_name_template: STRING
 		once

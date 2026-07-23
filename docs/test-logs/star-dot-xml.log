@@ -1,87 +1,9 @@
-ERROR (Invalid token): /usr/share/themes/Mint-X/metacity-1/metacity-theme-3.xml
-
-ERROR (Invalid token): /usr/share/themes/Mint-L-Dark/metacity-1/metacity-theme-3.xml
-
-ERROR (Invalid token): /usr/share/themes/Mint-L/metacity-1/metacity-theme-3.xml
-
-ERROR (Invalid token): /usr/share/themes/Mint-Y/metacity-1/metacity-theme-3.xml
-
-VALUES DIFFER: /usr/share/djvu/osi/fr/libdjvu++.xml
-Checksum for text: Xpact=1376369795 eXpat=2738485084
-
-VALUES DIFFER: /usr/share/djvu/osi/de/libdjvu++.xml
-Checksum for text: Xpact=328628089 eXpat=2607010686
-
-VALUES DIFFER: /usr/share/help/C/xed/legal.xml
-Checksum for text: Xpact=942037891 eXpat=683644669
-
-VALUES DIFFER: /usr/share/doc/libxml-parser-perl/examples/canontst.xml
-Checksum for text: Xpact=2451708190 eXpat=4294833632
-
 ERROR (Undefined entity): /usr/share/doc/libxml-parser-perl/examples/REC-xml-19980210.xml
 
-ERROR (Invalid token): /usr/share/xml/iso-codes/iso_3166-2.xml
-
-ERROR (): /usr/share/xml/iso-codes/iso_3166-3.xml
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.freedesktop.TrackerMiners3.enums.xml
-Checksum for text: Xpact=2676130434 eXpat=3679582464
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.metacity.enums.xml
-Checksum for text: Xpact=2021050704 eXpat=3566512417
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.mate.panel.enums.xml
-Checksum for text: Xpact=3569456445 eXpat=2858853358
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.gnome-system-monitor.enums.xml
-Checksum for text: Xpact=11047317 eXpat=2477342152
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.GWeather4.enums.xml
-Checksum for text: Xpact=1674283557 eXpat=1410983568
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.cinnamon.settings-daemon.enums.xml
-Checksum for text: Xpact=504287940 eXpat=1169608236
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.x.pix.enums.xml
-Checksum for text: Xpact=2917433711 eXpat=3209676146
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.settings-daemon.enums.xml
-Checksum for text: Xpact=247101498 eXpat=4262769595
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.system.gvfs.enums.xml
-Checksum for text: Xpact=2021050704 eXpat=3566512417
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.gedit.plugins.time.enums.xml
-Checksum for text: Xpact=936075890 eXpat=1358550397
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.calendar.enums.xml
-Checksum for text: Xpact=2723582700 eXpat=3908281547
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.mousetweaks.enums.xml
-Checksum for text: Xpact=577051860 eXpat=2999194366
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.gedit.enums.xml
-Checksum for text: Xpact=2021050704 eXpat=3566512417
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.desktop.enums.xml
-Checksum for text: Xpact=2394342919 eXpat=555800616
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.x.viewer.enums.xml
-Checksum for text: Xpact=2700492567 eXpat=17101886
-
 VALUES DIFFER: /usr/share/glib-2.0/schemas/org.onboard.gschema.xml
-Checksum for text: Xpact=820456004 eXpat=3412223856
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.gnome.gedit.plugins.filebrowser.enums.xml
-Checksum for text: Xpact=2871261925 eXpat=3227453750
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.cinnamon.desktop.enums.xml
-Checksum for text: Xpact=3398893254 eXpat=2150699739
+Checksum for text: Xpact=340615259 eXpat=3412223856
 
 ERROR (Undefined entity): /usr/share/gnome/help/synaptic/C/synaptic.xml
-
-VALUES DIFFER: /usr/share/metainfo/org.x.editor.metainfo.xml
-Checksum for text: Xpact=4196676237 eXpat=1948283609
 
 VALUES DIFFER: /usr/share/metainfo/xreader.appdata.xml
 Checksum for tag: Xpact=3487145681 eXpat=4016243667

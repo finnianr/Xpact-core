@@ -122,12 +122,38 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Implementation
 
-	is_null_terminated (text: C_STRING_8): BOOLEAN
+	check_encoding (chunk: SPECIAL [CHARACTER]; byte_count: INTEGER)
+		-- check encoding in XML header calling `set_scanner (Latin_1)' if required
+		-- also check if document is actually XML or something weird
 		local
-			c: CHARACTER
+			str, leading: C_STRING_8; lt_index, gt_index: INTEGER; u: UTF_CONVERTER
 		do
-			(text.area + text.count).memory_copy ($c, 1)
-			Result := c = '%U'
+			create str.make_shared (chunk.base_address, byte_count)
+			lt_index := str.index_of ('<', 1)
+			if lt_index = 0 then
+				error_code := Error_not_started
+			else
+				leading := str.substring (1, lt_index - 1)
+				if attached u.utf_8_bom_to_string_8 as bom then
+				-- check leading bytes before first '<'
+					if leading.starts_with (bom) then
+						leading := leading.substring (bom.count + 1, leading.count)
+					end
+				-- Must exlude /usr/share/app-install/icons/gnome-oregano.svg (Linux Mint 22.2)
+				-- The leading bytes are \x89PNG\r\n, which is the PNG magic header, so it's not XML.
+					if leading.is_whitespace then
+						gt_index := str.index_of ('>', lt_index + 1)
+						if gt_index > 0 and then attached str.substring (lt_index, gt_index).to_string as element then
+							element.to_upper
+							if element.starts_with ("<?XML") and then element.has_substring ("ISO-8859-1") then
+								set_scanner (Latin_1)
+							end
+						end
+					else
+						error_code := Error_not_started
+					end
+				end
+			end
 		end
 
 	prepare_buffer (a_count: INTEGER): BOOLEAN

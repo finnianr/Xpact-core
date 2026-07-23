@@ -52,13 +52,13 @@ feature -- Error codes (XML_Error enum)
 	Error_aborted:                           INTEGER = 35
 	Error_finished:                          INTEGER = 36
 	Error_suspend_pe:                        INTEGER = 37
-	Error_reserved_prefix_xml:              INTEGER = 38
-	Error_reserved_prefix_xmlns:            INTEGER = 39
-	Error_reserved_namespace_uri:           INTEGER = 40
-	Error_invalid_argument:                 INTEGER = 41
-	Error_no_buffer:                        INTEGER = 42
-	Error_amplification_limit_breach:       INTEGER = 43
-	Error_not_started:                      INTEGER = 44
+	Error_reserved_prefix_xml:               INTEGER = 38
+	Error_reserved_prefix_xmlns:             INTEGER = 39
+	Error_reserved_namespace_uri:            INTEGER = 40
+	Error_invalid_argument:                  INTEGER = 41
+	Error_no_buffer:                         INTEGER = 42
+	Error_amplification_limit_breach:        INTEGER = 43
+	Error_not_started:                       INTEGER = 44
 
 	Error_descriptions: STRING = "[
 		No memory

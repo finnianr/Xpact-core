@@ -13,10 +13,22 @@ class XT_PARSE_CONSTANTS
 
 feature -- Parsing states (XML_Parsing enum)
 
-	State_initialized: INTEGER = 0
-	State_parsing:     INTEGER = 1
-	State_finished:    INTEGER = 2
-	State_suspended:   INTEGER = 3
+	Parsing_states: ARRAY [INTEGER]
+		once
+			Result := <<
+				State_check_encoding,
+				State_initialized,
+				State_parsing,
+				State_finished,
+				State_suspended
+			>>
+		end
+
+	State_check_encoding: INTEGER = 0
+	State_initialized: INTEGER = 1
+	State_parsing: INTEGER = 2
+	State_finished: INTEGER = 3
+	State_suspended: INTEGER = 4
 
 feature -- Parse status (XML_Status enum)
 

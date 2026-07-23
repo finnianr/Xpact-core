@@ -32,6 +32,7 @@ feature {NONE} -- Initialization
 			latin_1_path: a_dir_path.name.is_valid_as_string_8
 		do
 			create wild_card.make_empty
+			create expat_error.make_empty
 			create log.make_with_name (generator.as_lower + ".log")
 			if attached a_dir_path.entry as entry and then attached entry.name.to_string_8 as last_step
 				and then last_step.starts_with ("*.")
@@ -47,7 +48,7 @@ feature -- Basic operations
 
 	execute
 		local
-			find_results: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN; i: INTEGER
+			find_results: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN; i, count: INTEGER
 		do
 			create find_results.make_with_output (find_command)
 			if find_results.has_output then
@@ -62,8 +63,14 @@ feature -- Basic operations
 						IO.put_integer (i); IO.put_string (". ")
 						if attached find_results.last_string as path then
 							IO.put_string (path)
-							if data_type_pass_count (path) = Parse_data_types.count then
+							count := data_type_pass_count (path)
+							if count = -1 or count = Parse_data_types.count then
 								IO.put_string (" OK")
+								if count = -1 then
+									IO.put_string (" (Both failed)")
+									IO.put_new_line
+									IO.put_string ("   "); IO.put_string (expat_error)
+								end
 								pass_count := pass_count + 1
 							else
 								IO.put_string (" FAILED")
@@ -94,22 +101,29 @@ feature {NONE} -- Implementation
 
 	data_type_pass_count (path: STRING): INTEGER
 		-- count of data types that pass checksum comparison with eXpat
+		-- -1 if both Xpact and eXpat fail to parse invalid document
 		local
-			file_path: PATH; values_differ: BOOLEAN; crc_32: CRC_32_GENERATOR
-			checksum: NATURAL; description: STRING
+			file_path: PATH; values_differ, both_fail: BOOLEAN; crc_32: CRC_32_GENERATOR
+			description: STRING
 		do
-			across Parse_data_types as data_type until values_differ loop
+			across Parse_data_types as data_type until values_differ or both_fail loop
 				create crc_32.make (data_type)
 				create file_path.make_from_string (path)
 				crc_32.parse_file (file_path, 0, True)
-				if crc_32.status = Status_ok then
-					checksum := expat_checksum (@ data_type.key, file_path)
-					if crc_32.checksum.value = checksum then
+				call_expat_xml_crc_32 (@ data_type.key, file_path)
+				if crc_32.status /= Status_ok and expat_return_code > 0 then
+					both_fail := True
+					Result := -1
+
+				elseif crc_32.status = Status_ok then
+					if crc_32.checksum.value = expat_checksum then
 						Result := Result + 1
 					else
 						log.put_string ("VALUES DIFFER: " + file_path.out)
 						log.put_new_line
-						log.put_string (substitute (Checksum_comparison, << @ data_type.key, crc_32.checksum.value.out, checksum.out >>))
+						log.put_string (
+							substitute (Checksum_comparison, << @ data_type.key, crc_32.checksum.value.out, expat_checksum.out >>)
+						)
 						log.put_new_line; log.put_new_line
 						values_differ := True
 					end
@@ -135,28 +149,43 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	expat_checksum (type: STRING; file_path: PATH): NATURAL
+	call_expat_xml_crc_32 (type: STRING; file_path: PATH)
+		-- call C program xml_crc_32 setting `expat_return_code' and `expat_checksum'
 		local
-			checksum_results: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN
+			output_file: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN
 			index: INTEGER
 		do
-			create checksum_results.make_with_output (substitute (Xml_crc_32, << type, file_path.out >>))
-			if checksum_results.has_output then
+			expat_checksum := 0
+			create output_file.make_with_output (substitute (Xml_crc_32, << type, file_path.out >>))
+			expat_return_code := output_file.return_code
+			if expat_return_code > 0 then
+				expat_error := output_file.error_lines.first
+				if output_file.has_output then
+					output_file.delete
+				end
+
+			elseif output_file.has_output then
 				from until done loop
-					checksum_results.read_line
-					if checksum_results.end_of_file then
+					output_file.read_line
+					if output_file.end_of_file then
 						done := True
-					elseif attached checksum_results.last_string as line and then line.starts_with (once "Checksum") then
+					elseif attached output_file.last_string as line and then line.starts_with (once "Checksum") then
 						index := line.index_of (':', 1)
-						Result := line.substring (index + 2, line.count).to_natural
+						expat_checksum := line.substring (index + 2, line.count).to_natural
 						done := True
 					end
 				end
-				checksum_results.close
+				output_file.close
 			end
 		end
 
 feature {NONE} -- Internal attributes
+
+	expat_checksum: NATURAL
+
+	expat_error: STRING
+
+	expat_return_code: INTEGER
 
 	fail_count: INTEGER
 

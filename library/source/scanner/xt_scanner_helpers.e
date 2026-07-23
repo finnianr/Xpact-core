@@ -35,6 +35,9 @@ inherit
 	XT_STRING_CONSTANTS
 
 	XT_STRING_ROUTINES_I
+		export
+			{XT_XML_PARSER_BASE} all
+		end
 
 feature -- Output of the last scan (shared with XT_ENCODING via join)
 

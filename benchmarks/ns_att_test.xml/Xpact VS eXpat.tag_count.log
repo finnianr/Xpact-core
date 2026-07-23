@@ -60,3 +60,6 @@ ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 25 (x1.79 to eXpat)
 
 2026 17 JUL 10:52 -- Using section_state instead of in_cdata_section
 ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 24 (x1.71 to eXpat)
+
+2026 23 JUL 18:12
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 26 (x1.86 to eXpat)

@@ -49,7 +49,6 @@ feature {NONE} -- Initialisation
 	make
 		do
 			create attribute_intervals.make (5)
-			name_cache := attribute_intervals.name_cache
 			entity_cache := attribute_intervals.entity_cache
 			create scanned_entity_buffer.make (5)
 			create index_x4_buffer.make_empty (4)

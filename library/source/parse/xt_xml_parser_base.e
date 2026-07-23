@@ -22,13 +22,14 @@ feature {NONE} -- Initialization
 
 	make
 		do
-			parsing_state              := State_initialized
+			parsing_state              := State_check_encoding
 
 			is_final_buffer            := False
 			in_prolog						:= True
 			in_cdata_section           := False
 			reparse_deferral_enabled   := True
 
+			element_depth       			:= 0
 			handler_call_depth         := 0
 			last_buffer_request_size   := 0
 			partial_token_bytes_before := 0
@@ -38,14 +39,16 @@ feature {NONE} -- Initialization
 
 			Precursor
 		ensure then
-			initialized:    parsing_state = State_initialized
-			no_error:       error_code = Error_none
-			handler_clean:  handler_call_depth = 0
+			set_to_check_encoding: parsing_state = State_check_encoding
+			no_error: error_code = Error_none
+			handler_clean: handler_call_depth = 0
 		end
 
 feature -- Access
 
 	handler_call_depth: INTEGER
+
+	element_depth: INTEGER
 
 	parsing_state: INTEGER
 			-- Current state: one of the State_* constants.
@@ -82,37 +85,42 @@ feature -- Basic operations
 			if collection_off then
 				file.collection_off
 			end
-
 			if chunk_size > 0 then
 				file.set_chunk_size (chunk_size)
 			end
 			if file.is_readable then
 				file.parse
-				if file.valid_first_chunk then
-					status := file.parse_status
-				else
-					status := Status_invalid_document
-				end
+				status := file.parse_status
 			else
 				status := Status_unreadable
 			end
 		end
 
-	parse (s: SPECIAL [CHARACTER]; a_offset, a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
-			-- Accept `a_count' bytes from `s[a_offset]' as the next chunk.
+	parse (chunk: SPECIAL [CHARACTER]; a_offset, a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
+			-- Accept `a_count' bytes from `chunk[a_offset]' as the next chunk.
 			-- Returns Status_ok, Status_suspended, or Status_error.
 			-- Corresponds to XML_Parse() in xmlparse.c.
 		require
 			non_negative_count: a_count >= 0
-			valid_source_range: a_count = 0 or else (a_offset >= 0 and then a_offset + a_count <= s.count)
+			valid_source_range: a_count = 0 or else (a_offset >= 0 and then a_offset + a_count <= chunk.count)
 			not_in_handler: handler_call_depth = 0
 		local
 			write_start: INTEGER
 		do
 			inspect parsing_state
+				when State_check_encoding then
+					check_encoding (chunk, a_count)
+					if error_code = Error_not_started then
+						status := Status_invalid_document
+					else
+						parsing_state := State_initialized
+						Result := parse (chunk, a_offset, a_count, a_is_final) -- Recurse
+					end
+
 				when State_suspended then
 					error_code := Error_suspended
 					Result := Status_error
+
 				when State_finished then
 					error_code := Error_finished
 					Result := Status_error
@@ -129,7 +137,7 @@ feature -- Basic operations
 						-- Copy caller's bytes into the internal buffer.
 						-- Destination index < source index is impossible here
 						-- (write_start is past all existing data), so copy_data is safe.
-						buffer.copy_data (s, a_offset, write_start, a_count)
+						buffer.copy_data (chunk, a_offset, write_start, a_count)
 					end
 					Result := parse_buffer (a_count, a_is_final)
 				end
@@ -182,6 +190,29 @@ feature -- Handler depth tracking
 			depth_decreased: handler_call_depth = old handler_call_depth - 1
 		end
 
+	increment_element_depth
+		-- Signal entry into a parse-event callback.
+		require
+			parsing_active: parsing_state = State_parsing
+		do
+			element_depth := element_depth + 1
+		ensure
+			depth_increased: element_depth = old element_depth + 1
+		end
+
+	decrement_element_depth
+		-- Signal exit from a parse-event callback.
+		require
+			is_nested: element_depth > 0
+		do
+			inspect element_depth when 1 then
+				in_prolog := True
+			else end
+			element_depth := element_depth - 1
+		ensure
+			depth_decreased: element_depth = old element_depth - 1
+		end
+
 feature {NONE} -- Buffer implementation
 
 	parse_buffer (a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
@@ -199,9 +230,12 @@ feature {NONE} -- Buffer implementation
 			start: INTEGER
 		do
 			inspect parsing_state
+				when State_check_encoding then
+
 				when State_suspended then
 					error_code := Error_suspended
 					Result := Status_error
+
 				when State_finished then
 					error_code := Error_finished
 					Result := Status_error
@@ -307,11 +341,13 @@ feature {NONE} -- Processor dispatch
 				enough := True
 			end
 
-			if enough and then attached buffer as buf and then attached attribute_intervals as attributes then
+			if enough and then attached buffer as buf and then attached attribute_intervals as attributes
+				and then attached scanner as l_scanner and then attached name_cache as names
+			then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				from done := False until done loop
-					err := do_process_bytes (buf, attributes, buffer_index, upper)
+					err := do_process_bytes (buf, buffer_index, upper, attributes, l_scanner, names)
 
 					-- Suspended state overrides the reenter request.
 					if parsing_state /= State_parsing then
@@ -364,7 +400,10 @@ feature {NONE} -- Processor dispatch
 			error_set_on_failure: not Result implies error_code /= Error_none
 		end
 
-	do_process_bytes (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; lower, upper: INTEGER): INTEGER
+	do_process_bytes (
+		buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		s: like scanner; names: like name_cache
+	): INTEGER
 		-- Scan tokens from `buf' `lower .. upper` and
 		-- triggers relevant XML events.  Advances `buffer_ptr'.
 		-- Execute one pass of the current processor over
@@ -378,13 +417,12 @@ feature {NONE} -- Processor dispatch
 			buffer_index_at_start: buffer_index = lower
 		local
 			index, tok, tok_end, code: INTEGER; done: BOOLEAN
-			s: XT_STRING_ROUTINES
 		do
 			index := lower
 			from until index >= upper or done loop
 				if in_prolog then
-					tok := scanner.scan_prolog (buf, index, upper)
-					tok_end := scanner.next_token_index
+					tok := s.scan_prolog (buf, index, upper)
+					tok_end := s.next_token_index
 					inspect tok
 						when Tok_instance_start then
 							in_prolog := False
@@ -397,9 +435,6 @@ feature {NONE} -- Processor dispatch
 						when Tok_literal then
 							if declaration = Entity then
 								entity_table.put (s.new_substring (buf, index + 1, tok_end - 2), last_entity_ref)
-								check
-									no_duplicate: entity_table.inserted
-								end
 							end
 							index := tok_end
 
@@ -423,8 +458,8 @@ feature {NONE} -- Processor dispatch
 						end
 					end
 				elseif in_cdata_section then
-					tok := scanner.scan_cdata_section (buf, index, upper)
-					tok_end := scanner.next_token_index
+					tok := s.scan_cdata_section (buf, index, upper)
+					tok_end := s.next_token_index
 					inspect tok
 						when Tok_cdata_sect_close then
 							on_cdata_section_close
@@ -443,8 +478,8 @@ feature {NONE} -- Processor dispatch
 						end
 					end
 				else
-					tok := scanner.scan_content (buf, index, upper)
-					tok_end := scanner.next_token_index
+					tok := s.scan_content (buf, index, upper)
+					tok_end := s.next_token_index
 					inspect tok
 						when Tok_cdata_sect_open then
 							in_cdata_section := True
@@ -452,43 +487,61 @@ feature {NONE} -- Processor dispatch
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
 
-						when Tok_data_chars, Tok_data_newline then
+						when Tok_data_chars then
 							on_content (buf, index, tok_end - 1)
 
+						when Tok_data_newline then
+							inspect buf [index] when '%R' then
+								on_content (buf, index + 1, tok_end - 1)
+							else
+								on_content (buf, index, tok_end - 1)
+							end
+
 						when Tok_start_tag_no_attributes then
-							on_tag_start (scanner.tag_name (buf, index +  1), attributes)
+							increment_element_depth
+							on_tag_start (s.tag_name (names, buf, index + 1), attributes)
 
 						when Tok_start_tag_with_attributes then
-							on_tag_start (scanner.tag_name (buf, index +  1), attributes)
+							increment_element_depth
+							on_tag_start (s.tag_name (names, buf, index + 1), attributes)
 							attributes.wipe_out
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
-							if attached scanner.tag_name (buf, index +  1) as tag_name then
+							if attached s.tag_name (names, buf, index + 1) as tag_name then
+								increment_element_depth
 								on_tag_start (tag_name, attributes)
 								inspect tok when Tok_empty_element_with_attributes then
 									attributes.wipe_out
 								else
 								end
 								on_tag_end (tag_name)
+								decrement_element_depth
 							end
 
 						when Tok_end_tag then
-							on_tag_end (scanner.tag_name (buf, index + 2))  -- skip '</'
+							on_tag_end (s.tag_name (names, buf, index + 2))  -- skip '</'
+							decrement_element_depth
 
 						when Tok_comment then
 							on_comment (buf, index + 4, tok_end - 4)
 
 						when Tok_entity_ref then
-							code := scanner.predefined_entity_code (buf, index + 1, tok_end - 2)
+							code := s.predefined_entity_code (buf, index + 1, tok_end - 2)
 							inspect code when -1 then
-								Result := Error_undefined_entity; done := True
+								if attached entity_cache.item (buf, index + 1, tok_end - 2) as entity_name
+									and then attached entity_table.item (entity_name) as entity_value
+								then
+									on_content (entity_value.area, 0, entity_value.count - 1)
+								else
+									Result := Error_undefined_entity; done := True
+								end
 							else
 								on_content (s.unescaped (code), 0, 0)
 							end
 
 						when Tok_char_ref then
 							-- index is '&'; tok_end is exclusive end past ';'
-							code := scanner.char_ref_number (buf, index, tok_end)
+							code := s.char_ref_number (buf, index, tok_end)
 							inspect s.valid_char_ref (code) when -1 then
 								Result := Error_bad_char_ref; done := True
 							else
@@ -611,9 +664,7 @@ feature {NONE} -- Internal attributes
 
 invariant
 	room_for_null_terminator: buffer.capacity = buffer_lim + 1
-	valid_state:
-		parsing_state = State_initialized or parsing_state = State_parsing
-		or parsing_state = State_finished or parsing_state = State_suspended
+	valid_state: Parsing_states.has (parsing_state)
 
 	buffer_indices_consistent:
 		buffer_index >= 0 and then buffer_index <= buffer_end and then buffer_end <= buffer_lim

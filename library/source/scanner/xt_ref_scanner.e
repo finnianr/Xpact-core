@@ -208,9 +208,6 @@ feature {NONE} -- Reference sub-helper
 
 feature {NONE} -- Internal attributes
 
-	name_cache: XT_NAME_CACHE
-		-- efficient lookup of attribute/tag names from character buffer interval
-
 	entity_cache: XT_ENTITY_NAME_CACHE
 		-- efficient lookup of entity names from character buffer interval
 

@@ -27,7 +27,7 @@ feature -- Measurement
 
 	tag_name_count: INTEGER
 
-	tag_name (buffer: SPECIAL [CHARACTER_8]; lower: INTEGER): STRING_8
+	tag_name (name_cache: XT_NAME_CACHE; buffer: SPECIAL [CHARACTER_8]; lower: INTEGER): STRING_8
 		do
 			Result := name_cache.item (buffer, lower, lower + tag_name_count - 1)
 		ensure
