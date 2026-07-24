@@ -62,6 +62,7 @@ feature {NONE} -- Initialisation
 
 			buffer := new_buffer_area (Default_buffer_size)
 			create last_entity_ref.make_empty
+			create character_string.make_filled ('%U', 1)
 			set_scanner (Utf_8)
 
 		ensure then
@@ -145,8 +146,13 @@ feature {NONE} -- Implementation
 						gt_index := str.index_of ('>', lt_index + 1)
 						if gt_index > 0 and then attached str.substring (lt_index, gt_index).to_string as element then
 							element.to_upper
-							if element.starts_with ("<?XML") and then element.has_substring ("ISO-8859-1") then
-								set_scanner (Latin_1)
+							if element.starts_with ("<?XML") then
+								if element.has_substring ("ISO-8859-1") then
+									set_scanner (Latin_1)
+
+								elseif element.has_substring ("US-ASCII") then
+									set_scanner (Ascii)
+								end
 							end
 						end
 					else
@@ -243,6 +249,8 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
+	character_string: STRING
+
 	buffer_end: INTEGER
 		-- Index one past the last valid data byte in `buffer'
 
@@ -297,4 +305,7 @@ feature {NONE} -- Element content tokens (positive)
 				"bom"               -- 14
 			>>
 		end
+
+invariant
+	is_one_character: character_string.count = 1
 end

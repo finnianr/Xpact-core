@@ -1,6 +1,6 @@
 note
 	description: "[
-		List of indices demarking name-value attribute pair substrings in ${XT_XML_PARSER}.buffer
+		List of indices demarking name-value attribute pair substrings in ${XT_XML_PARSER_BASE}.buffer
 	]"
 
 	author: "Finnian Reilly"
@@ -11,46 +11,15 @@ note
 	date: "2026-06-22 18:20:41 GMT (Monday 22th June 2026)"
 	revision: "1"
 
-class
+deferred class
 	XT_ATTRIBUTE_BUFFER_INTERVALS
 
 inherit
-	ARRAYED_LIST [INTEGER]
-		rename
-			forth as index_forth,
-			extend as extend_index,
-			count as index_count
-		export
-			{NONE} all
-		undefine
-			new_filled_list
-		redefine
-			make, wipe_out
-		end
+	XT_ATTRIBUTE_INTERVAL_LIST
 
 	XT_STRING_ROUTINES_I
 		undefine
 			copy, is_equal
-		end
-
-create
-	make
-
-feature -- Initialization
-
-	make (n: INTEGER)
-		do
-			Precursor (n)
-			create character_swap_area.make_empty (area.capacity // Group_size)
-			create attribute_table.make (11)
-			create entity_cache.make
-			create entity_table.make (entity_cache)
-			create entity_refs_pool.make (10)
-			create entity_refs_area.make_empty (area.capacity // Group_size)
-			create overflow_buffer_area.make_empty (area.capacity // 2)
-			create buffer_pool.make (10)
-			create substring.make_empty
-			create name_cache.make
 		end
 
 feature -- Status query
@@ -69,16 +38,13 @@ feature -- Status query
 			Result := character_swap_area.capacity >= count
 		end
 
+	valid_utf_8 (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): BOOLEAN
+			-- True if character in `buf' from `start_index .. end_index' are already
+			-- valid as UTF-8
+		deferred
+		end
+
 feature -- Access
-
-	entity_cache: XT_ENTITY_NAME_CACHE
-		-- efficient lookup of entity names from character buffer interval
-
-	entity_table: XT_ENTITY_TABLE
-		-- table of expanded entities defined in DOCTYPE by ENTITY
-
-	name_cache: XT_NAME_CACHE
-		-- efficient lookup of attribute/tag name
 
 	upper_plus_1_characters (buffer: SPECIAL [CHARACTER_8]): STRING
 		require
@@ -96,6 +62,20 @@ feature -- Access
 					i := i + Group_size; j := j + 1
 				end
 			end
+		end
+
+	utf_8_converted (buf: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): SPECIAL [CHARACTER]
+		local
+			byte_count: INTEGER
+		do
+			Result := utf_8_buffer
+			Result.wipe_out
+			byte_count := utf_8_bytes_count (buf, start_index, end_index)
+			if byte_count > Result.capacity then
+				create Result.make_empty (byte_count)
+				utf_8_buffer := Result
+			end
+			to_utf_8 (buf, Result, start_index, end_index)
 		end
 
 feature -- Status change
@@ -172,11 +152,6 @@ feature -- Measurement
 			Result := overflow_buffer_area.count
 		end
 
-feature -- Constants
-
-	Group_size: INTEGER = 4
-		-- number of array items needed to hold intervals of one name-value pair
-
 feature -- Basic operations
 
 	append_pointers_to (c_string_array: SPECIAL [POINTER]; a_buffer: SPECIAL [CHARACTER_8])
@@ -210,18 +185,22 @@ feature -- Basic operations
 
 	append_values_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
 		local
-			i, i_final: INTEGER
+			i, i_final, lower_index, upper_index: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
 			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
 				and then attached entity_refs_area as entity_refs and then attached entity_table as table
 			then
 				from i := 0; i_final := index_count until i = i_final loop
-					if attached i_th_value (i, a_buffer, overflow_area) as buffer then
-						if attached entity_refs [i // Group_size] as entity_list then
-							table.mix_in_values_to_crc_32 (checksum, buffer, entity_list, a [i + 2], a [i + 3])
-						else
-							checksum.add_characters (buffer, a [i + 2], a [i + 3])
-						end
+					buffer := i_th_value (i, a_buffer, overflow_area)
+					lower_index := a [i + 2]; upper_index := a [i + 3]
+					if not valid_utf_8 (buffer, lower_index, upper_index) then
+						buffer := utf_8_converted (buffer, lower_index, upper_index)
+						lower_index := 0; upper_index := buffer.count - 1
+					end
+					if attached entity_refs [i // Group_size] as entity_list then
+						table.mix_in_values_to_crc_32 (checksum, buffer, entity_list, lower_index, upper_index)
+					else
+						checksum.add_characters (buffer, lower_index, upper_index)
 					end
 					i := i + Group_size
 				end
@@ -312,31 +291,6 @@ feature -- Basic operations
 			empty_additions_buffer: additions.count = 0
 			empty_entity_list_buffer: entity_list.count = 0
 			all_valid: all_valid
-		end
-
-	wipe_out
-		local
-			i, j, i_final: INTEGER
-		do
-			index := 0
-			if attached overflow_buffer_area as overflow and then attached entity_refs_area as entity_refs
-				and then attached buffer_pool as pool
-			then
-			-- recycle value and entity reference list buffers
-				from i := 1; i_final := overflow.count until i > i_final loop
-					if attached overflow [i] as buffer then
-						pool.return (buffer)
-					end
-					j := (i - 1) // 2
-					if attached entity_refs [j] as list then
-						list.wipe_out
-						entity_refs_pool.put (list)
-					end
-					i := i + 2
-				end
-				entity_refs.wipe_out; overflow.wipe_out
-			end
-			area.wipe_out
 		end
 
 feature -- Debug helpers
@@ -505,32 +459,51 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	new_filled_list (n: INTEGER): like Current
+	utf_8_bytes_count (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+			-- Number of bytes necessary to encode in UTF-8 `s.substring (start_index, end_index)'.
+			-- Note that this feature can be used for both escaped and non-escaped string.
+			-- In the case of escaped strings, the result will be possibly higher than really needed.
+			-- It does not include the terminating null character.
+		require
+			end_index_big_enough: start_index <= end_index + 1
+			valid_start_index: buf.valid_index (start_index)
+			valid_end_index: buf.valid_index (end_index)
+		local
+			i, code: INTEGER
 		do
-			create Result.make (n)
+			from i := start_index until i > end_index loop
+				code := buf [i].code
+				if code <= 0x7F then
+						-- 0xxxxxxx.
+					Result := Result + 1
+				elseif code <= 0x7FF then
+						-- 110xxxxx 10xxxxxx
+					Result := Result + 2
+				elseif code <= 0xFFFF then
+						-- 1110xxxx 10xxxxxx 10xxxxxx
+					Result := Result + 3
+				else
+					-- code <= 1FFFFF - there are no higher code points
+					-- 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+					Result := Result + 4
+				end
+				i := i + 1
+			end
 		end
 
-feature {NONE} -- Internal attributes
+feature {NONE} -- Deferred
 
-	attribute_table: HASH_TABLE [STRING, STRING]
-		-- reuseable table of name-value attribute pairs
+	to_utf_8 (src, dst: SPECIAL [CHARACTER]; a_from_index, a_from_end: INTEGER)
+			-- Convert src[a_from_index..a_from_end) to UTF-8 in dst [a_to_index .. a_to_end).
+			-- Sets consumed_from and written_to.
+		deferred
+		end
 
-	character_swap_area: SPECIAL [CHARACTER_8]
+	to_utf_16 (src: SPECIAL [CHARACTER]; dst: SPECIAL [NATURAL_16]; a_from_index, a_from_end: INTEGER)
+			-- Convert src[a_from_index..a_from_end) to UTF-16 in dst.
+			-- Sets consumed_from and written_to.
+		deferred
+		end
 
-	entity_refs_area: SPECIAL [detachable ARRAYED_LIST [STRING]]
-
-	overflow_buffer_area: SPECIAL [detachable SPECIAL [CHARACTER_8]]
-
-	buffer_pool: XT_CHARACTER_BUFFER_POOL
-
-	entity_refs_pool: ARRAYED_STACK [ARRAYED_LIST [STRING]]
-
-	substring: C_STRING_8
-
-invariant
-	lower_upper_pairs: index_count.integer_remainder (Group_size) = 0
-	proportional_character_swap_capacity: character_swap_area.capacity = area.capacity // Group_size
-	proportional_entity_refs_area_capacity: entity_refs_area.capacity = area.capacity // Group_size
-	proportional_overflow_buffer_capacity: overflow_buffer_area.capacity = area.capacity // 2
 
 end

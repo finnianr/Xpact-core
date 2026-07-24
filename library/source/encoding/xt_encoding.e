@@ -5,7 +5,7 @@ note
 		Corresponds to `struct encoding' in xmltok.h.
 		Each feature maps to one function-pointer slot in that struct.
 
-		After any scan_* call, `next_token_ptr' holds the index of the first
+		After any scan_* call, `next_token_index' holds the index of the first
 		byte not yet consumed (the C `*nextTokPtr' out-parameter).
 
 		Buffer arguments use integer indices rather than C pointers:
@@ -29,18 +29,25 @@ inherit
 	XT_BYTE_TYPE_CONSTANTS
 	XT_CONVERT_RESULT_CONSTANTS
 
+feature {NONE} -- Initialisation
+
+	make
+		do
+			attribute_intervals := new_attribute_intervals
+		end
+
 feature -- Token scanner dispatch (XML_Parsing state selects which scanner)
 
-	scan_content (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_content (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan the next token in element content.
-			-- Sets `next_token_ptr'.  Corresponds to scanners[XML_CONTENT_STATE].
+			-- Sets `next_token_index'.  Corresponds to scanners[XML_CONTENT_STATE].
 		require
 			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		deferred
 		ensure result_in_range: Result >= Tok_trailing_rsqb and Result <= Tok_ignore_sect
 		end
 
-	scan_prolog (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_prolog (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan the next token in the document prolog or DTD.
 			-- Corresponds to scanners[XML_PROLOG_STATE].
 		require
@@ -48,7 +55,7 @@ feature -- Token scanner dispatch (XML_Parsing state selects which scanner)
 		deferred
 		end
 
-	scan_cdata_section (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_cdata_section (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan the next token inside a CDATA section.
 			-- Corresponds to scanners[XML_CDATA_SECTION_STATE].
 		require
@@ -56,7 +63,7 @@ feature -- Token scanner dispatch (XML_Parsing state selects which scanner)
 		deferred
 		end
 
-	scan_entity_value (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_entity_value (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan the next token inside an entity value literal.
 			-- Corresponds to literalScanners[XML_ENTITY_VALUE_LITERAL].
 		require
@@ -81,8 +88,13 @@ feature -- Encoding properties
 		ensure positive: Result >= 1
 		end
 
-	is_utf_8: BOOLEAN deferred end
-	is_utf_16: BOOLEAN deferred end
+	is_utf_8: BOOLEAN
+		deferred
+		end
+
+	is_utf_16: BOOLEAN
+		deferred
+		end
 
 feature -- Name utilities
 
@@ -103,7 +115,7 @@ feature -- Name utilities
 			-- Index of the first non-whitespace byte at or after start_index.
 		require start_index >= 0
 		deferred
-		ensure result_gte_ptr: Result >= start_index
+		ensure result_gte_index: Result >= start_index
 		end
 
 feature -- Attribute and reference utilities
@@ -126,9 +138,6 @@ feature -- Attribute and reference utilities
 		deferred
 		end
 
-	bad_char_index: INTEGER
-			-- Set by `is_public_id' on failure: index of the bad character.
-
 feature -- Position tracking
 
 	update_position (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER;
@@ -139,26 +148,19 @@ feature -- Position tracking
 		deferred
 		end
 
-feature -- Encoding conversion
+feature {NONE} -- Factory
 
-	to_utf_8 (src: SPECIAL [CHARACTER]; a_from_ptr, a_from_end: INTEGER;
-	          dst: SPECIAL [NATURAL_8]; a_to_ptr, a_to_end: INTEGER)
-			-- Convert src[a_from_ptr..a_from_end) to UTF-8 in dst[a_to_ptr..a_to_end).
-			-- Sets consumed_from and written_to.
+	new_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+		-- collected attribute name-value pair indices into `buffer'
 		deferred
 		end
 
-	to_utf_16 (src: SPECIAL [CHARACTER]; a_from_ptr, a_from_end: INTEGER;
-	           dst: SPECIAL [NATURAL_16]; a_to_ptr, a_to_end: INTEGER)
-			-- Convert src[a_from_ptr..a_from_end) to UTF-16 in dst.
-			-- Sets consumed_from and written_to.
-		deferred
-		end
+feature {NONE} -- Internal attributes
 
-	consumed_from: INTEGER
-			-- Updated by `to_utf_8' / `to_utf_16': index after last consumed source byte.
+	attribute_intervals: like new_attribute_intervals
+		-- collected attribute name-value pair indices into `buffer'
 
-	written_to: INTEGER
-			-- Updated by `to_utf_8' / `to_utf_16': index after last written destination unit.
+	bad_char_index: INTEGER
+			-- Set by `is_public_id' on failure: index of the bad character.
 
 end

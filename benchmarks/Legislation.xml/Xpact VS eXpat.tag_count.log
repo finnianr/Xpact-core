@@ -57,3 +57,10 @@ Legislation.xml: eXpat passes = 1279; Xpact-core passes = 1355 (x1.06 to eXpat)
 
 2026 23 JUL 18:12
 Legislation.xml: eXpat passes = 1272; Xpact-core passes = 1521 (x1.20 to eXpat)
+
+2026 23 JUL 23:09
+-- experiment with tag_name_stack
+Legislation.xml: eXpat passes = 1277; Xpact-core passes = 1481 (x1.16 to eXpat)
+
+2026 24 JUL 19:28
+Legislation.xml: eXpat passes = 1280; Xpact-core passes = 1514 (x1.18 to eXpat)

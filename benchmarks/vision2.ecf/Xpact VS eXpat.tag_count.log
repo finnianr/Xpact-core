@@ -5,3 +5,10 @@ vision2.ecf: eXpat passes = 29295; Xpact-core passes = 38767 (x1.32 to eXpat)
 
 2026 23 JUL 18:12
 vision2.ecf: eXpat passes = 29358; Xpact-core passes = 36594 (x1.25 to eXpat)
+
+2026 23 JUL 23:09
+-- experiment with tag_name_stack
+vision2.ecf: eXpat passes = 29295; Xpact-core passes = 35818 (x1.22 to eXpat)
+
+2026 24 JUL 19:28
+vision2.ecf: eXpat passes = 29320; Xpact-core passes = 36632 (x1.25 to eXpat)

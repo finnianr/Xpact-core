@@ -33,7 +33,7 @@ inherit
 
 feature -- Prolog tokenization
 
-	prolog_tok (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	prolog_tok (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 			-- Return the next prolog/DTD token.  Sets next_token_ptr.
 		require start_index <= end_index and end_index <= buf.count
 		local
@@ -43,7 +43,7 @@ feature -- Prolog tokenization
 			if index >= end_index then
 				Result := Tok_none
 			else
-				inspect byte_type (buf, index)
+				inspect bt_table [buf [index].code]
 					when BT_quote then
 						Result := scan_lit (BT_quote, buf, advance (index), end_index)
 					when BT_apostrophe then
@@ -53,11 +53,11 @@ feature -- Prolog tokenization
 						if index >= end_index then
 							Result := Tok_partial
 						else
-							inspect byte_type (buf, index)
+							inspect bt_table [buf [index].code]
 								when BT_exclamation then
 									Result := scan_decl (buf, advance (index), end_index)
 								when BT_question then
-									Result := scan_pi (buf, advance (index), end_index)
+									Result := scan_pi (buf, bt_table, advance (index), end_index)
 								when BT_name_start, BT_hex_digit, BT_non_ascii, BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
 									next_token_index := index - min_bytes_per_char
 									Result := Tok_instance_start
@@ -105,7 +105,7 @@ feature -- Prolog tokenization
 						if index >= end_index then
 							next_token_index := index; Result := -Tok_close_paren
 						else
-							inspect byte_type (buf, index)
+							inspect bt_table [buf [index].code]
 								when BT_asterisk then
 									next_token_index := advance (index); Result := Tok_close_paren_asterisk
 								when BT_question then
@@ -180,11 +180,11 @@ feature {NONE} -- Prolog sub-scanners
 				Result := Tok_partial
 
 			elseif attached byte_type_table as bt_table then
-				inspect bt_table [buf [index].code].to_integer_32
+				inspect bt_table [buf [index].code]
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
 						from until index >= end_index or done loop
-							inspect bt_table [buf [index].code].to_integer_32
+							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 									index := advance (index)
 								when BT_semicolon then
@@ -216,11 +216,11 @@ feature {NONE} -- Prolog sub-scanners
 				Result := Tok_partial
 
 			elseif attached byte_type_table as bt_table then
-				inspect bt_table [buf [index].code].to_integer_32
+				inspect bt_table [buf [index].code]
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
 						from until index >= end_index or done loop
-							inspect bt_table [buf [index].code].to_integer_32
+							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 									index := advance (index)
 								when BT_CR, BT_LF, BT_whitespace, BT_right_parenthesis, BT_gt, BT_percent, BT_pipe_symbol then
@@ -250,7 +250,7 @@ feature {NONE} -- Prolog sub-scanners
 			index := start_index
 			if attached byte_type_table as bt_table then
 				from until index >= end_index or done loop
-					t := bt_table [buf [index].code].to_integer_32
+					t := bt_table [buf [index].code]
 					inspect t
 						when BT_non_xml, BT_malform, BT_continuation_byte then
 							next_token_index := index; Result := Tok_invalid; done := True
@@ -277,7 +277,7 @@ feature {NONE} -- Prolog sub-scanners
 									Result := -Tok_literal; done := True
 								else
 									next_token_index := index
-									inspect bt_table [buf [index].code].to_integer_32
+									inspect bt_table [buf [index].code]
 										when BT_whitespace, BT_CR, BT_LF, BT_gt, BT_percent, BT_left_square_bracket then
 											Result := Tok_literal
 									else
@@ -304,7 +304,7 @@ feature {NONE} -- Prolog sub-scanners
 			index := start_index
 			if attached byte_type_table as bt_table then
 				from index := advance (index) until index >= end_index loop
-					inspect bt_table [buf [index].code].to_integer_32
+					inspect bt_table [buf [index].code]
 						when BT_whitespace, BT_LF then
 							index := advance (index)
 						when BT_CR then
@@ -332,7 +332,7 @@ feature {NONE} -- Prolog sub-scanners
 			tok := a_tok; index := start_index
 			if attached byte_type_table as bt_table then
 				from until index >= end_index or done loop
-					inspect bt_table [buf [index].code].to_integer_32
+					inspect bt_table [buf [index].code]
 						when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon then
 							index := advance (index)
 						when BT_gt, BT_right_parenthesis, BT_comma, BT_pipe_symbol, BT_left_square_bracket,

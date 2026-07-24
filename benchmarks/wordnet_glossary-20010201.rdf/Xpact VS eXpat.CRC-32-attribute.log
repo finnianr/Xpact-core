@@ -5,3 +5,6 @@ wordnet_glossary-20010201.rdf: eXpat passes = 31; Xpact-core passes = 40 (x1.29 
 
 2026 20 JUL 8:49 -- Using section_state instead of in_cdata_section
 wordnet_glossary-20010201.rdf: eXpat passes = 30; Xpact-core passes = 40 (x1.33 to eXpat)
+
+2026 24 JUL 19:27
+wordnet_glossary-20010201.rdf: eXpat passes = 31; Xpact-core passes = 37 (x1.19 to eXpat)

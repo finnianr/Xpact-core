@@ -94,24 +94,24 @@ feature -- Status report
 
 feature {NONE} -- Event handlers
 
-	on_comment (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
+	on_comment (area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			inspect data_type when Tok_comment then
-				checksum.add_characters (area, lower, upper)
+				add_to_crc_32 (area, lower, upper, attributes, False, checksum)
 			else
 			end
 		end
 
-	on_content (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
+	on_content (area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
 		do
 			inspect data_type
 				when Tok_cdata then
 					if in_cdata_section then
-						checksum.add_characters (area, lower, upper)
+						add_to_crc_32 (area, lower, upper, attributes, is_utf_8_encoded, checksum)
 					end
 				when Tok_text then
 					if not in_cdata_section then
-						checksum.add_characters (area, lower, upper)
+						add_to_crc_32 (area, lower, upper, attributes, is_utf_8_encoded, checksum)
 					end
 			else
 			end
@@ -135,6 +135,21 @@ feature -- Factory
 		do
 			create Result.make (Current, a_file_path, a_time_start, a_duration_ms, a_chunk_size)
 			Result.set_data_type (data_type)
+		end
+
+feature {NONE} -- Implementation
+
+	add_to_crc_32 (
+		area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		is_utf_8_encoded: BOOLEAN; crc_32: like checksum
+	)
+		do
+			if is_utf_8_encoded or else attributes.valid_utf_8 (area, lower, upper) then
+				crc_32.add_characters (area, lower, upper)
+
+			elseif attached attributes.utf_8_converted (area, lower, upper) as utf_8_area then
+				crc_32.add_characters (utf_8_area, 0, utf_8_area.count - 1)
+			end
 		end
 
 feature {NONE} -- Internal attributes

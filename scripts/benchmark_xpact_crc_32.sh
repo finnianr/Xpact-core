@@ -12,7 +12,8 @@ echo Benchmarking Eiffel Xpact-core and C eXpat
 echo
 
 for path in	$ISE_LIBRARY/library/vision2/vision2.ecf \
-	examples/data/Legislation.xml; do
+	examples/data/Legislation.xml \
+	examples/data/recursive-entity-expansion.xml; do
 	name=${path##*/}
 	for type in text cdata comment tag attribute; do
 		echo Type: $type in $name

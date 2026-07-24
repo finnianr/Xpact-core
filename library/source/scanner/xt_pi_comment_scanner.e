@@ -38,7 +38,7 @@ feature {NONE} -- PI and comment scanning
 			elseif attached byte_type_table as bt_table then
 				index := advance (index)
 				from until index >= end_index or done loop
-					inspect bt_table [buf [index].code].to_integer_32
+					inspect bt_table [buf [index].code]
 						when BT_minus then
 							index := advance (index)
 							if index >= end_index then
@@ -90,7 +90,7 @@ feature {NONE} -- PI and comment scanning
 			end
 		end
 
-	scan_pi (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_pi (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan processing instruction after '<?'.
 			-- Returns Tok_pi (or Tok_xml_decl if target is "xml").
 		require
@@ -103,7 +103,7 @@ feature {NONE} -- PI and comment scanning
 			if index >= end_index then
 				Result := Tok_partial
 			else
-				inspect byte_type (buf, index)
+				inspect bt_table [buf [index].code]
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
 					when BT_lead_2_byte then
@@ -124,9 +124,9 @@ feature {NONE} -- PI and comment scanning
 				else
 					next_token_index := index; Result := Tok_invalid; done := True
 				end
-				if not done and then attached byte_type_table as bt_table then
+				if not done then
 					from until index >= end_index or done loop
-						inspect bt_table [buf [index].code].to_integer_32
+						inspect bt_table [buf [index].code]
 							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 								index := advance (index)
 							when BT_whitespace, BT_CR, BT_LF then
@@ -173,7 +173,7 @@ feature {NONE} -- PI and comment scanning
 				Result := Tok_partial
 
 			elseif attached byte_type_table as bt_table then
-				inspect bt_table [buf [index].code].to_integer_32
+				inspect bt_table [buf [index].code]
 					when BT_minus then
 						Result := scan_comment (buf, advance (index), end_index)
 
@@ -184,7 +184,7 @@ feature {NONE} -- PI and comment scanning
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
 						from until index >= end_index or done loop
-							inspect bt_table [buf [index].code].to_integer_32
+							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit then
 									index := advance (index)
 								when BT_whitespace, BT_CR, BT_LF, BT_percent then
@@ -259,7 +259,7 @@ feature {NONE} -- PI helpers
 			index := start_index
 			if attached byte_type_table as bt_table then
 				from until index >= end_index or done loop
-					inspect bt_table [buf [index].code].to_integer_32
+					inspect bt_table [buf [index].code]
 						when BT_non_xml, BT_malform, BT_continuation_byte then
 							next_token_index := index; Result := Tok_invalid; done := True
 						when BT_lead_2_byte then

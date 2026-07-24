@@ -5,3 +5,40 @@ nes96.xml: eXpat passes = 210; Xpact-core passes = 215 (x1.02 to eXpat)
 
 2026 20 JUL 8:47 -- Using section_state instead of in_cdata_section
 nes96.xml: eXpat passes = 210; Xpact-core passes = 211 (x1.00 to eXpat)
+
+2026 24 JUL 19:26
+nes96.xml: eXpat passes = 210; Xpact-core passes = 199 (x0.95 to eXpat)
+
+2026 24 JUL 19:57
+nes96.xml: eXpat passes = 210; Xpact-core passes = 198 (x0.94 to eXpat)
+
+2026 24 JUL 20:40
+nes96.xml: eXpat passes = 209; Xpact-core passes = 196 (x0.94 to eXpat)
+
+2026 24 JUL 21:26
+nes96.xml: eXpat passes = 210; Xpact-core passes = 196 (x0.93 to eXpat)
+
+2026 24 JUL 21:26
+nes96.xml: eXpat passes = 210; Xpact-core passes = 196 (x0.93 to eXpat)
+
+2026 24 JUL 21:32
+nes96.xml: eXpat passes = 210; Xpact-core passes = 197 (x0.94 to eXpat)
+
+2026 24 JUL 21:38
+nes96.xml: eXpat passes = 210; Xpact-core passes = 198 (x0.94 to eXpat)
+
+2026 24 JUL 21:39
+nes96.xml: eXpat passes = 210; Xpact-core passes = 194 (x0.92 to eXpat)
+
+2026 24 JUL 21:41
+nes96.xml: eXpat passes = 210; Xpact-core passes = 192 (x0.91 to eXpat)
+
+2026 24 JUL 21:42
+nes96.xml: eXpat passes = 211; Xpact-core passes = 197 (x0.93 to eXpat)
+
+2026 24 JUL 22:04
+nes96.xml: eXpat passes = 208; Xpact-core passes = 213 (x1.02 to eXpat)
+
+
+2026 24 JUL 22:15
+nes96.xml: eXpat passes = 210; Xpact-core passes = 212 (x1.01 to eXpat)

@@ -1277,7 +1277,7 @@ feature -- External entity resolution
 
 feature {NONE} -- Xpact core event handlers
 
-	on_comment (buf: like buffer; lower, upper: INTEGER)
+	on_comment (buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		local
 			null_index: INTEGER; c, null: CHARACTER; call_back_ptr: POINTER
 		do
@@ -1290,7 +1290,7 @@ feature {NONE} -- Xpact core event handlers
 			end
 		end
 
-	on_content (buf: SPECIAL [CHARACTER]; lower, upper: INTEGER)
+	on_content (buf: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
 		local
 			call_back_ptr: POINTER
 		do

@@ -50,13 +50,6 @@ feature -- Primitive queries (deferred; provided by XT_NORMAL_ENCODING)
 		ensure positive: Result >= 1
 		end
 
-	byte_type (buf: SPECIAL [CHARACTER]; index: INTEGER): INTEGER
-			-- Byte-type category of the byte at buf[index].
-		require
-			valid_index: index >= 0 and index < buf.count
-		deferred
-		end
-
 feature -- Multi-byte name-character checks
 
 -- UTF-8; deferred for UTF-16/etc.
@@ -156,8 +149,8 @@ feature {NONE} -- Implementation
 
 feature {XT_XML_PARSER_BASE} -- Deferred
 
-	byte_type_table: SPECIAL [NATURAL_8]
-			-- 256-entry table mapping each byte value to its BT_* type.
+	byte_type_table: SPECIAL [INTEGER]
+		-- 256-entry table mapping each byte value to its BT_* type.
 		deferred
 		end
 end

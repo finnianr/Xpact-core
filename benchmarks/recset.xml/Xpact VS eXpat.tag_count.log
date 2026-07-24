@@ -63,3 +63,10 @@ recset.xml: eXpat passes = 17; Xpact-core passes = 30 (x1.76 to eXpat)
 
 2026 23 JUL 18:12
 recset.xml: eXpat passes = 17; Xpact-core passes = 30 (x1.76 to eXpat)
+
+2026 23 JUL 23:09
+-- experiment with tag_name_stack
+recset.xml: eXpat passes = 17; Xpact-core passes = 31 (x1.82 to eXpat)
+
+2026 24 JUL 19:29
+recset.xml: eXpat passes = 17; Xpact-core passes = 31 (x1.82 to eXpat)

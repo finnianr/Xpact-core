@@ -39,12 +39,12 @@ feature {NONE} -- Event handlers
 			do_with_content (text_buffer)
 		end
 
-	on_base_commment (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
+	on_base_commment (area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			on_comment (new_substring (area, lower, upper))
 		end
 
-	on_base_content (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
+	on_base_content (area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
 		-- handle content section in `area' from index `lower' to `upper'
 		local
 			count, white_count: INTEGER

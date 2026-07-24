@@ -31,12 +31,13 @@ inherit
 	XT_ENCODING
 		rename
 			predefined_entity_name as predefined_entity_code
+		export
+			{XT_PARSING_BUFFERS} attribute_intervals
+		redefine
+			make
 		end
 
 	XT_CONTENT_SCANNER
-		export
-			{XT_PARSING_BUFFERS} attribute_intervals
-		end
 
 	XT_PROLOG_SCANNER
 
@@ -48,7 +49,7 @@ feature {NONE} -- Initialisation
 
 	make
 		do
-			create attribute_intervals.make (5)
+			Precursor
 			entity_cache := attribute_intervals.entity_cache
 			create scanned_entity_buffer.make (5)
 			create index_x4_buffer.make_empty (4)
@@ -56,33 +57,27 @@ feature {NONE} -- Initialisation
 
 feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 
-	scan_content (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_content (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 		do
-			Result := content_tok (buf, scanned_entity_buffer, start_index, end_index)
+			Result := content_tok (buf, bt_table, scanned_entity_buffer, start_index, end_index)
 		end
 
-	scan_prolog (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_prolog (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 		do
-			Result := prolog_tok (buf, start_index, end_index)
+			Result := prolog_tok (buf, bt_table, start_index, end_index)
 		end
 
-	scan_cdata_section (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_cdata_section (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 		do
-			Result := cdata_section_tok (buf, start_index, end_index)
+			Result := cdata_section_tok (buf, bt_table, start_index, end_index)
 		end
 
-	scan_entity_value (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_entity_value (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 		do
-			Result := entity_value_tok (buf, scanned_entity_buffer, start_index, end_index)
+			Result := entity_value_tok (buf, bt_table, scanned_entity_buffer, start_index, end_index)
 		end
 
 feature -- Name utilities (implements XT_ENCODING deferred features)
-
-	byte_type (buf: SPECIAL [CHARACTER]; index: INTEGER): INTEGER
-			-- Byte-type category of the byte at buf[index].
-		do
-			Result := byte_type_table [buf [index].code].to_integer_32
-		end
 
 	skip_s (buf: SPECIAL [CHARACTER]; start_index: INTEGER): INTEGER
 			-- Index of first non-whitespace byte at or after start_index.
@@ -91,7 +86,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 		do
 			if attached byte_type_table as bt_table then
 				from Result := start_index until Result >= buf.count or done loop
-					inspect bt_table [buf [Result].code].to_integer_32
+					inspect bt_table [buf [Result].code]
 						when BT_whitespace, BT_CR, BT_LF then
 							Result := Result + min_bytes_per_char
 					else
@@ -164,7 +159,7 @@ feature -- Public ID validation
 			ok := True
 			if attached byte_type_table as bt_table then
 				from index := start_index until index >= end_index or not ok loop
-					inspect bt_table [buf [index].code].to_integer_32
+					inspect bt_table [buf [index].code]
 						when	BT_digit, BT_hex_digit, BT_minus, BT_apostrophe, BT_left_parenthesis, BT_right_parenthesis,
 								BT_plus, BT_comma, BT_forward_slash, BT_equals, BT_question, BT_CR, BT_LF, BT_semicolon,
 								BT_exclamation, BT_asterisk, BT_percent, BT_hash, BT_colon, BT_whitespace,
@@ -188,11 +183,11 @@ feature -- Position tracking
 		do
 			if attached byte_type_table as bt_table then
 				from index := start_index until index >= end_index loop
-					inspect bt_table [buf [index].code].to_integer_32
+					inspect bt_table [buf [index].code]
 						when BT_CR then
 							pos.advance_line
 							if index + min_bytes_per_char < end_index
-								and bt_table [buf [index + min_bytes_per_char].code].to_integer_32 = BT_LF
+								and bt_table [buf [index + min_bytes_per_char].code] = BT_LF
 							then
 								index := index + min_bytes_per_char
 							end
@@ -208,7 +203,7 @@ feature -- Position tracking
 
 feature {NONE} -- ASCII half table builder (shared by all single-byte encodings)
 
-	fill_ascii_half (t: SPECIAL [NATURAL_8])
+	fill_ascii_half (t: SPECIAL [INTEGER])
 			-- Fill entries 0..127 with BT_* values from asciitab.h.
 		do
 			-- 0x00-0x08, 0x0B-0x0C, 0x0E-0x1F: BT_non_xml = 0 (make_filled default)

@@ -8,3 +8,6 @@ Legislation.xml: eXpat passes = 1277; Xpact-core passes = 1449 (x1.13 to eXpat)
 
 2026 20 JUL 8:47 -- Using section_state instead of in_cdata_section
 Legislation.xml: eXpat passes = 1287; Xpact-core passes = 1478 (x1.15 to eXpat)
+
+2026 24 JUL 19:25
+Legislation.xml: eXpat passes = 1281; Xpact-core passes = 1636 (x1.28 to eXpat)

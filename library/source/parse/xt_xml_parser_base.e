@@ -14,6 +14,8 @@ deferred class XT_XML_PARSER_BASE
 
 inherit
 	XT_PARSING_BUFFERS
+		rename
+			Entity as Entity_uppercase
 		redefine
 			make
 		end
@@ -191,7 +193,6 @@ feature -- Handler depth tracking
 		end
 
 	increment_element_depth
-		-- Signal entry into a parse-event callback.
 		require
 			parsing_active: parsing_state = State_parsing
 		do
@@ -201,7 +202,6 @@ feature -- Handler depth tracking
 		end
 
 	decrement_element_depth
-		-- Signal exit from a parse-event callback.
 		require
 			is_nested: element_depth > 0
 		do
@@ -319,9 +319,7 @@ feature {NONE} -- Processor dispatch
 			end_in_buf:   upper <= buffer_end
 			ptr_at_start: buffer_index = lower
 		local
-			have_now, had_before, available: INTEGER
-			enough, done: BOOLEAN
-			err: INTEGER
+			err, have_now, had_before, available: INTEGER; enough, done: BOOLEAN
 		do
 			have_now := upper - lower
 
@@ -404,24 +402,23 @@ feature {NONE} -- Processor dispatch
 		buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 		s: like scanner; names: like name_cache
 	): INTEGER
-		-- Scan tokens from `buf' `lower .. upper` and
-		-- triggers relevant XML events.  Advances `buffer_ptr'.
-		-- Execute one pass of the current processor over
-		-- `buf [lower .. upper)'.
+		-- Scan tokens from `buf' `lower .. upper` and triggers relevant XML events.  Advances `buffer_index'.
+		-- Execute one pass of the current processor over `buf [lower .. upper)'.
 		-- Must update `buffer_index' to the first unconsumed byte.
 		-- Returns Error_none on success or an Error_* code on failure.
 		-- Corresponds to a single call of `m_processor' in xmlparse.c.
 		require
 			valid_range:lower >= 0 and then lower <= upper
-			end_in_buf: upper <= buffer_end
+			end_in_buffer: buf = buffer implies upper <= buffer_end
 			buffer_index_at_start: buffer_index = lower
 		local
-			index, tok, tok_end, code: INTEGER; done: BOOLEAN
+			index, tok, tok_end, code, err, buffer_index_copy: INTEGER; done: BOOLEAN
+			bt_table: SPECIAL [INTEGER]
 		do
-			index := lower
+			index := lower; bt_table := s.byte_type_table
 			from until index >= upper or done loop
 				if in_prolog then
-					tok := s.scan_prolog (buf, index, upper)
+					tok := s.scan_prolog (buf, bt_table, index, upper)
 					tok_end := s.next_token_index
 					inspect tok
 						when Tok_instance_start then
@@ -433,19 +430,19 @@ feature {NONE} -- Processor dispatch
 							index := tok_end
 
 						when Tok_literal then
-							if declaration = Entity then
+							if declaration = Entity_uppercase then
 								entity_table.put (s.new_substring (buf, index + 1, tok_end - 2), last_entity_ref)
 							end
 							index := tok_end
 
 						when Tok_name then
-							if declaration = Entity then
+							if declaration = Entity_uppercase then
 								last_entity_ref := entity_cache.item (buf, index, tok_end - 1)
 							end
 							index := tok_end
 
 						when Tok_comment then
-							on_comment (buf, index + 4, tok_end - 4)
+							on_comment (buf, index + 4, tok_end - 4, attributes)
 							index := tok_end
 
 						when Tok_invalid then
@@ -458,7 +455,7 @@ feature {NONE} -- Processor dispatch
 						end
 					end
 				elseif in_cdata_section then
-					tok := s.scan_cdata_section (buf, index, upper)
+					tok := s.scan_cdata_section (buf, bt_table, index, upper)
 					tok_end := s.next_token_index
 					inspect tok
 						when Tok_cdata_sect_close then
@@ -466,8 +463,12 @@ feature {NONE} -- Processor dispatch
 							in_cdata_section := False
 							index := tok_end
 
-						when Tok_data_chars, Tok_data_newline then
-							on_content (buf, index, tok_end - 1)
+						when Tok_data_chars then
+							on_content (buf, index, tok_end - 1, attributes, False)
+							index := tok_end
+
+						when Tok_data_newline then
+							on_content (buf, index, tok_end - 1, attributes, True)
 							index := tok_end
 
 					else
@@ -478,7 +479,7 @@ feature {NONE} -- Processor dispatch
 						end
 					end
 				else
-					tok := s.scan_content (buf, index, upper)
+					tok := s.scan_content (buf, bt_table, index, upper)
 					tok_end := s.next_token_index
 					inspect tok
 						when Tok_cdata_sect_open then
@@ -488,13 +489,13 @@ feature {NONE} -- Processor dispatch
 							Result := Error_invalid_token; done := True
 
 						when Tok_data_chars then
-							on_content (buf, index, tok_end - 1)
+							on_content (buf, index, tok_end - 1, attributes, False)
 
 						when Tok_data_newline then
 							inspect buf [index] when '%R' then
-								on_content (buf, index + 1, tok_end - 1)
+								on_content (buf, index + 1, tok_end - 1, attributes, True)
 							else
-								on_content (buf, index, tok_end - 1)
+								on_content (buf, index, tok_end - 1, attributes, True)
 							end
 
 						when Tok_start_tag_no_attributes then
@@ -523,7 +524,7 @@ feature {NONE} -- Processor dispatch
 							decrement_element_depth
 
 						when Tok_comment then
-							on_comment (buf, index + 4, tok_end - 4)
+							on_comment (buf, index + 4, tok_end - 4, attributes)
 
 						when Tok_entity_ref then
 							code := s.predefined_entity_code (buf, index + 1, tok_end - 2)
@@ -531,12 +532,19 @@ feature {NONE} -- Processor dispatch
 								if attached entity_cache.item (buf, index + 1, tok_end - 2) as entity_name
 									and then attached entity_table.item (entity_name) as entity_value
 								then
-									on_content (entity_value.area, 0, entity_value.count - 1)
+									buffer_index_copy := buffer_index -- save field
+									buffer_index := 0
+									err := do_process_bytes (entity_value.area, 0, entity_value.count, attributes, s, names) -- Recurse
+									buffer_index := buffer_index_copy -- restore field
+									if err /= Error_none then
+										done := True
+									end
+									Result := err
 								else
 									Result := Error_undefined_entity; done := True
 								end
 							else
-								on_content (s.unescaped (code), 0, 0)
+								on_content (s.unescaped (code), 0, 0, attributes, True)
 							end
 
 						when Tok_char_ref then
@@ -546,7 +554,7 @@ feature {NONE} -- Processor dispatch
 								Result := Error_bad_char_ref; done := True
 							else
 								if attached s.utf_8_encoded (code) as l_utf_8 then
-									on_content (l_utf_8, 0, l_utf_8.count - 1)
+									on_content (l_utf_8, 0, l_utf_8.count - 1, attributes, True)
 								end
 							end
 
@@ -572,8 +580,8 @@ feature {NONE} -- Implementation
 			if Doctype.same_characters (buf, offset) then
 				Result := Doctype
 
-			elseif Entity.same_characters (buf, offset) then
-				Result := Entity
+			elseif Entity_uppercase.same_characters (buf, offset) then
+				Result := Entity_uppercase
 			else
 				Result := Empty_c_string
 			end
@@ -632,11 +640,11 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_comment (buf: like buffer; lower, upper: INTEGER)
+	on_comment (buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		deferred
 		end
 
-	on_content (buf: like buffer; lower, upper: INTEGER)
+	on_content (buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
 		deferred
 		end
 

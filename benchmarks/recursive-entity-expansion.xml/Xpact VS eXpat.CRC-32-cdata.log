@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: recursive-entity-expansion.xml
+
+2026 24 JUL 19:25
+recursive-entity-expansion.xml: eXpat passes = 3198; Xpact-core passes = 4021 (x1.26 to eXpat)

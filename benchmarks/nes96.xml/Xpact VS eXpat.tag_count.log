@@ -41,3 +41,10 @@ nes96.xml: eXpat passes = 244; Xpact-core passes = 265 (x1.09 to eXpat)
 
 2026 23 JUL 18:12
 nes96.xml: eXpat passes = 245; Xpact-core passes = 268 (x1.09 to eXpat)
+
+2026 23 JUL 23:09
+-- experiment with tag_name_stack
+nes96.xml: eXpat passes = 247; Xpact-core passes = 255 (x1.03 to eXpat)
+
+2026 24 JUL 19:28
+nes96.xml: eXpat passes = 245; Xpact-core passes = 270 (x1.10 to eXpat)

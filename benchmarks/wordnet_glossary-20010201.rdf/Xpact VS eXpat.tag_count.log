@@ -5,3 +5,10 @@ wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 52 (x1.53 
 
 2026 23 JUL 18:12
 wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 48 (x1.41 to eXpat)
+
+2026 23 JUL 23:09
+-- experiment with tag_name_stack
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 48 (x1.41 to eXpat)
+
+2026 24 JUL 19:29
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 49 (x1.44 to eXpat)

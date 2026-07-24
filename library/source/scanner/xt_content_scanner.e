@@ -22,9 +22,11 @@ inherit
 
 feature -- Content tokenization
 
-	content_tok (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
+	content_tok (
+		buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER
+	): INTEGER
 			-- Return the token type for the next token in element content.
-			-- Sets next_token_ptr.  Corresponds to contentTok() in xmltok_impl.c.
+			-- Sets next_token_index.  Corresponds to contentTok() in xmltok_impl.c.
 		require
 			valid_start_index: start_index <= end_index and end_index <= buf.count
 		local
@@ -35,9 +37,9 @@ feature -- Content tokenization
 			if index >= a_end_adj then
 				Result := Tok_none
 			else
-				inspect byte_type (buf, index)
+				inspect bt_table [buf [index].code]
 					when BT_lt then
-						Result := scan_lt (buf, advance (index), a_end_adj)
+						Result := scan_lt (buf, bt_table, advance (index), a_end_adj)
 					when BT_ampersand then
 						Result := scan_ref (buf, entity_buffer, Tok_data_chars, advance (index), a_end_adj)
 					when BT_CR then
@@ -45,7 +47,7 @@ feature -- Content tokenization
 						if index >= a_end_adj then
 							Result := Tok_trailing_cr
 						else
-							if byte_type (buf, index) = BT_LF then
+							if bt_table [buf [index].code] = BT_LF then
 								index := advance (index)
 							end
 							next_token_index := index
@@ -70,7 +72,6 @@ feature -- Content tokenization
 								next_token_index := index
 								Result := Tok_invalid
 							else
-								index := advance (index)
 								Result := scan_data_chars (buf, index, a_end_adj)
 							end
 						end
@@ -111,9 +112,9 @@ feature -- Content tokenization
 			end
 		end
 
-	cdata_section_tok (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	cdata_section_tok (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 		-- Return the next token inside a CDATA section.
-		-- Sets next_token_ptr.  Corresponds to cdataSectionTok() in xmltok_impl.c.
+		-- Sets next_token_index.  Corresponds to cdataSectionTok() in xmltok_impl.c.
 		require
 			valid_range: start_index <= end_index and end_index <= buf.count
 		local
@@ -123,7 +124,7 @@ feature -- Content tokenization
 			if index >= end_index then
 				Result := Tok_none
 			else
-				inspect byte_type (buf, index)
+				inspect bt_table [buf [index].code]
 					when BT_right_square_bracket then
 						index := advance (index)
 						if index >= end_index then
@@ -151,7 +152,7 @@ feature -- Content tokenization
 						if index >= end_index then
 							Result := Tok_partial
 						else
-							if byte_type (buf, index) = BT_LF then
+							if bt_table [buf [index].code] = BT_LF then
 								index := advance (index)
 							end
 							next_token_index := index
@@ -207,7 +208,7 @@ feature {NONE} -- Data character accumulation
 			index := start_index
 			if attached byte_type_table as BT_table then
 				from until index >= end_index or done loop
-					inspect BT_table [buf [index].code].to_integer_32
+					inspect BT_table [buf [index].code]
 						when BT_lead_2_byte then
 							if end_index - index < 2 or else is_invalid_char_2 (buf, index) then
 								next_token_index := index; Result := Tok_data_chars; done := True
@@ -226,8 +227,8 @@ feature {NONE} -- Data character accumulation
 							else
 								index := index + 4
 							end
-						when BT_right_square_bracket, BT_ampersand, BT_lt, BT_non_xml, BT_malform, BT_continuation_byte,
-						     BT_CR, BT_LF then
+						when BT_right_square_bracket, BT_ampersand, BT_lt, BT_non_xml,
+							BT_malform, BT_continuation_byte, BT_CR, BT_LF then
 							next_token_index := index; Result := Tok_data_chars; done := True
 					else
 						index := advance (index)
@@ -247,7 +248,7 @@ feature {NONE} -- Data character accumulation
 			index := start_index
 			if attached byte_type_table as bt_table then
 				from until index >= end_index or done loop
-					inspect bt_table [buf [index].code].to_integer_32
+					inspect bt_table [buf [index].code]
 						when BT_lead_2_byte then
 							if end_index - index < 2 or else is_invalid_char_2 (buf, index) then
 								next_token_index := index; Result := Tok_data_chars; done := True

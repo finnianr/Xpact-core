@@ -23,7 +23,7 @@ inherit
 
 feature -- Literal content tokenization
 
-	attribute_value_tok (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
+	attribute_value_tok (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
 			-- Tokenize inside an already-identified attribute value literal.
 			-- Corresponds to attributeValueTok() in xmltok_impl.c.
 		require start_index <= end_index and end_index <= buf.count
@@ -34,9 +34,9 @@ feature -- Literal content tokenization
 			if index >= end_index then
 				Result := Tok_none
 
-			elseif attached byte_type_table as bt_table then
+			else
 				from until index >= end_index or done loop
-					inspect bt_table [buf [index].code].to_integer_32
+					inspect bt_table [buf [index].code]
 						when BT_lead_2_byte then
 							index := index + 2
 						when BT_lead_3_byte then
@@ -65,7 +65,7 @@ feature -- Literal content tokenization
 								if index >= end_index then
 									Result := Tok_trailing_cr
 								else
-									inspect bt_table [buf [index].code].to_integer_32 when BT_LF then
+									inspect bt_table [buf [index].code] when BT_LF then
 										index := advance (index)
 									end
 									next_token_index := index; Result := Tok_data_newline
@@ -91,7 +91,7 @@ feature -- Literal content tokenization
 			end
 		end
 
-	entity_value_tok (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
+	entity_value_tok (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
 			-- Tokenize inside an entity value literal.
 			-- Corresponds to entityValueTok() in xmltok_impl.c.
 		require start_index <= end_index and end_index <= buf.count
@@ -102,9 +102,9 @@ feature -- Literal content tokenization
 			if index >= end_index then
 				Result := Tok_none
 
-			elseif attached byte_type_table as bt_table then
+			else
 				from until index >= end_index or done loop
-					inspect bt_table [buf [index].code].to_integer_32
+					inspect bt_table [buf [index].code]
 						when BT_lead_2_byte then
 							index := index + 2
 						when BT_lead_3_byte then
@@ -141,7 +141,7 @@ feature -- Literal content tokenization
 								if index >= end_index then
 									Result := Tok_trailing_cr
 								else
-									inspect bt_table [buf [index].code].to_integer_32 when BT_LF then
+									inspect bt_table [buf [index].code] when BT_LF then
 										index := advance (index)
 									end
 									next_token_index := index; Result := Tok_data_newline

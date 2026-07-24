@@ -5,3 +5,6 @@ vision2.ecf: eXpat passes = 29907; Xpact-core passes = 43463 (x1.45 to eXpat)
 
 2026 20 JUL 8:47 -- Using section_state instead of in_cdata_section
 vision2.ecf: eXpat passes = 30087; Xpact-core passes = 42584 (x1.42 to eXpat)
+
+2026 24 JUL 19:25
+vision2.ecf: eXpat passes = 30051; Xpact-core passes = 40334 (x1.34 to eXpat)

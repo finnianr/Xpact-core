@@ -41,13 +41,13 @@ feature {NONE} -- Reference scanning
 			if index >= end_index then
 				Result := Tok_partial
 			elseif attached byte_type_table as bt_table then
-				inspect bt_table [buf [index].code].to_integer_32
+				inspect bt_table [buf [index].code]
 					when BT_hash then
 						Result := scan_char_ref (buf, entity_buffer, token, advance (index), end_index)
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
 						from until index >= end_index loop
-							inspect bt_table [buf [index].code].to_integer_32
+							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 									index := advance (index)
 								when BT_semicolon then
@@ -106,11 +106,11 @@ feature {NONE} -- Reference scanning
 				Result := scan_hex_char_ref (buf, entity_buffer, token, advance (index), end_index)
 
 			elseif attached byte_type_table as bt_table then
-				inspect bt_table [buf [index].code].to_integer_32
+				inspect bt_table [buf [index].code]
 					when BT_digit then
 						index := advance (index)
 						from until index >= end_index loop
-							inspect bt_table [buf [index].code].to_integer_32
+							inspect bt_table [buf [index].code]
 								when BT_digit then
 									index := advance (index)
 								when BT_semicolon then
@@ -147,11 +147,11 @@ feature {NONE} -- Reference scanning
 				Result := Tok_partial
 
 			elseif attached byte_type_table as bt_table then
-				bt := bt_table [buf [index].code].to_integer_32
+				bt := bt_table [buf [index].code]
 				if bt = BT_digit or bt = BT_hex_digit then
 					index := advance (index)
 					from until index >= end_index loop
-						bt := bt_table [buf [index].code].to_integer_32
+						bt := bt_table [buf [index].code]
 						if bt = BT_digit or bt = BT_hex_digit then
 							index := advance (index)
 						elseif bt = BT_semicolon then
@@ -187,7 +187,7 @@ feature {NONE} -- Reference sub-helper
 			index := start_index
 			if attached byte_type_table as bt_table then
 				from until index >= end_index loop
-					inspect bt_table [buf [index].code].to_integer_32
+					inspect bt_table [buf [index].code]
 						when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 							index := advance (index)
 						when BT_semicolon then
@@ -210,8 +210,6 @@ feature {NONE} -- Internal attributes
 
 	entity_cache: XT_ENTITY_NAME_CACHE
 		-- efficient lookup of entity names from character buffer interval
-
-	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
 
 	scanned_entity_buffer: ARRAYED_LIST [STRING]
 

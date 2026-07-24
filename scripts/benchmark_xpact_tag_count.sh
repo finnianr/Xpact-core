@@ -12,7 +12,8 @@ echo Benchmarking Eiffel Xpact-core and C eXpat
 echo
 
 for path in	$ISE_LIBRARY/library/vision2/vision2.ecf \
-	examples/data/Legislation.xml; do
+	examples/data/Legislation.xml \
+	examples/data/recursive-entity-expansion.xml; do
 	name=${path##*/}
 	xml_reader -count_tags -duration $DURATION_MS -compare_to_expat $path
 done

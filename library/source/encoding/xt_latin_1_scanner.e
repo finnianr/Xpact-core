@@ -26,12 +26,14 @@ create
 feature -- Encoding identity
 
 	min_bytes_per_char: INTEGER = 1
+
 	is_utf_8: BOOLEAN = False
+
 	is_utf_16: BOOLEAN = False
 
 feature -- Byte-type table
 
-	byte_type_table: SPECIAL [NATURAL_8]
+	byte_type_table: SPECIAL [INTEGER]
 			-- Combined ASCII + Latin-1 byte classification table.
 		once
 			create Result.make_filled (0, 256)
@@ -57,44 +59,11 @@ feature -- Byte-type table
 			Result.fill_with (22, 248, 255)
 		end
 
-feature -- Encoding conversion
+feature {NONE} -- Factory
 
-	to_utf_8 (src: SPECIAL [CHARACTER]; a_src_from, a_src_to: INTEGER;
-	          dst: SPECIAL [NATURAL_8]; a_dst_from, a_dst_to: INTEGER)
-			-- Latin-1 to UTF-8 transcoding.  Sets consumed_from and written_to.
-		local
-			src_ptr, dst_ptr, b: INTEGER
+	new_attribute_intervals: XT_LATIN_1_ATTRIBUTE_INTERVALS
+		-- collected attribute name-value pair indices into `buffer'
 		do
-			src_ptr := a_src_from; dst_ptr := a_dst_from
-			from until src_ptr >= a_src_to or dst_ptr >= a_dst_to loop
-				b := src [src_ptr].code
-				if b < 0x80 then
-					dst [dst_ptr] := b.to_natural_8
-					dst_ptr := dst_ptr + 1
-				elseif dst_ptr + 1 < a_dst_to then
-					dst [dst_ptr]     := (0xC0 | (b |>> 6)).to_natural_8
-					dst [dst_ptr + 1] := (0x80 | (b & 0x3F)).to_natural_8
-					dst_ptr := dst_ptr + 2
-				else
-					src_ptr := a_src_to  -- no room; stop
-				end
-				src_ptr := src_ptr + 1
-			end
-			consumed_from := src_ptr; written_to := dst_ptr
+			create Result.make (11)
 		end
-
-	to_utf_16 (src: SPECIAL [CHARACTER]; a_src_from, a_src_to: INTEGER;
-	           dst: SPECIAL [NATURAL_16]; a_dst_from, a_dst_to: INTEGER)
-			-- Latin-1 to UTF-16: each byte is its code point (U+0000..U+00FF).
-		local
-			src_ptr, dst_ptr: INTEGER
-		do
-			src_ptr := a_src_from; dst_ptr := a_dst_from
-			from until src_ptr >= a_src_to or dst_ptr >= a_dst_to loop
-				dst [dst_ptr] := src [src_ptr].code.to_natural_16
-				src_ptr := src_ptr + 1; dst_ptr := dst_ptr + 1
-			end
-			consumed_from := src_ptr; written_to := dst_ptr
-		end
-
 end

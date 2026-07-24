@@ -40,7 +40,7 @@ feature -- Encoding identity
 
 feature -- Byte-type table
 
-	byte_type_table: SPECIAL [NATURAL_8]
+	byte_type_table: SPECIAL [INTEGER]
 			-- Combined ASCII + UTF-8 upper byte classification table.
 		once
 			create Result.make_filled (0, 256)
@@ -59,73 +59,11 @@ feature -- Byte-type table
 			Result [254] := 1; Result [255] := 1   -- BT_malform = 1
 		end
 
-feature -- Encoding conversion
+feature {NONE} -- Factory
 
-	to_utf_8 (src: SPECIAL [CHARACTER]; a_src_from, a_src_to: INTEGER;
-	          dst: SPECIAL [NATURAL_8]; a_dst_from, a_dst_to: INTEGER)
-			-- UTF-8: copy complete characters, stopping before an incomplete
-			-- trailing multi-byte sequence.  Sets consumed_from and written_to.
-		local
-			src_ptr, dst_ptr, count: INTEGER
+	new_attribute_intervals: XT_UTF_8_ATTRIBUTE_INTERVALS
+		-- collected attribute name-value pair indices into `buffer'
 		do
-			count := (a_src_to - a_src_from).min (a_dst_to - a_dst_from)
-			src_ptr := a_src_from; dst_ptr := a_dst_from
-			from until src_ptr >= a_src_from + count loop
-				dst [dst_ptr] := src [src_ptr].code.to_natural_8
-				src_ptr := src_ptr + 1; dst_ptr := dst_ptr + 1
-			end
-			consumed_from := src_ptr
-			written_to := dst_ptr
+			create Result.make (11)
 		end
-
-	to_utf_16 (src: SPECIAL [CHARACTER]; a_src_from, a_src_to: INTEGER;
-	           dst: SPECIAL [NATURAL_16]; a_dst_from, a_dst_to: INTEGER)
-			-- Decode UTF-8 to UTF-16.  Sets consumed_from and written_to.
-		local
-			src_ptr, dst_ptr, cp, b0, b1, b2, b3: INTEGER
-		do
-			src_ptr := a_src_from; dst_ptr := a_dst_from
-			from until src_ptr >= a_src_to or dst_ptr >= a_dst_to loop
-				b0 := src [src_ptr].code
-				if b0 < 0x80 then
-					dst [dst_ptr] := b0.to_natural_16
-					src_ptr := src_ptr + 1; dst_ptr := dst_ptr + 1
-				elseif b0 < 0xE0 then
-					if src_ptr + 1 >= a_src_to then
-						src_ptr := a_src_to
-					else
-						b1 := src [src_ptr + 1].code
-						cp := ((b0 & 0x1F) |<< 6) | (b1 & 0x3F)
-						dst [dst_ptr] := cp.to_natural_16
-						src_ptr := src_ptr + 2; dst_ptr := dst_ptr + 1
-					end
-				elseif b0 < 0xF0 then
-					if src_ptr + 2 >= a_src_to then
-						src_ptr := a_src_to
-					else
-						b1 := src [src_ptr + 1].code
-						b2 := src [src_ptr + 2].code
-						cp := ((b0 & 0x0F) |<< 12) | ((b1 & 0x3F) |<< 6) | (b2 & 0x3F)
-						dst [dst_ptr] := cp.to_natural_16
-						src_ptr := src_ptr + 3; dst_ptr := dst_ptr + 1
-					end
-				else
-					if src_ptr + 3 >= a_src_to or dst_ptr + 1 >= a_dst_to then
-						src_ptr := a_src_to
-					else
-						b1 := src [src_ptr + 1].code
-						b2 := src [src_ptr + 2].code
-						b3 := src [src_ptr + 3].code
-						cp := ((b0 & 0x07) |<< 18) | ((b1 & 0x3F) |<< 12)
-							| ((b2 & 0x3F) |<< 6) | (b3 & 0x3F)
-						cp := cp - 0x10000
-						dst [dst_ptr]     := (0xD800 | (cp |>> 10)).to_natural_16
-						dst [dst_ptr + 1] := (0xDC00 | (cp & 0x3FF)).to_natural_16
-						src_ptr := src_ptr + 4; dst_ptr := dst_ptr + 2
-					end
-				end
-			end
-			consumed_from := src_ptr; written_to := dst_ptr
-		end
-
 end
