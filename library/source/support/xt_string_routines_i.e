@@ -229,13 +229,8 @@ feature {NONE} -- Basic operations
 		do
 			count := str.count; new_count := count + upper - lower + 1
 			str.grow (new_count)
-			if attached str.area as area_out then
-				from i := lower; j := count until i > upper loop
-					area_out [j] := area [i]
-					i := i + 1; j := j + 1
-				end
-				str.set_count (new_count)
-			end
+			str.area.copy_data (area, lower, count, upper - lower + 1)
+			str.set_count (new_count)
 		end
 
 	frozen substitute (template: STRING; insertions: ARRAY [STRING]): STRING
@@ -271,6 +266,12 @@ feature {NONE} -- Constants
 		-- used to accumulate text for output
 		once
 			create Result.make (20)
+		end
+
+	Tab_spaces: STRING_8
+		-- used to accumulate text for output
+		once
+			create Result.make_filled (' ', 3)
 		end
 
 invariant

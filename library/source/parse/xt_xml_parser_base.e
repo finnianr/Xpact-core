@@ -340,12 +340,12 @@ feature {NONE} -- Processor dispatch
 			end
 
 			if enough and then attached buffer as buf and then attached attribute_intervals as attributes
-				and then attached scanner as l_scanner and then attached name_cache as names
+				and then attached scanner as s and then attached name_cache as names
 			then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				from done := False until done loop
-					err := do_process_bytes (buf, buffer_index, upper, attributes, l_scanner, names)
+					err := process_content (buf, buffer_index, upper, attributes, s, s.byte_type_table, names)
 
 					-- Suspended state overrides the reenter request.
 					if parsing_state /= State_parsing then
@@ -398,9 +398,9 @@ feature {NONE} -- Processor dispatch
 			error_set_on_failure: not Result implies error_code /= Error_none
 		end
 
-	do_process_bytes (
+	process_content (
 		buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
-		s: like scanner; names: like name_cache
+		s: like scanner; bt_table: SPECIAL [INTEGER]; names: like name_cache
 	): INTEGER
 		-- Scan tokens from `buf' `lower .. upper` and triggers relevant XML events.  Advances `buffer_index'.
 		-- Execute one pass of the current processor over `buf [lower .. upper)'.
@@ -413,9 +413,8 @@ feature {NONE} -- Processor dispatch
 			buffer_index_at_start: buffer_index = lower
 		local
 			index, tok, tok_end, code, err, buffer_index_copy: INTEGER; done: BOOLEAN
-			bt_table: SPECIAL [INTEGER]
 		do
-			index := lower; bt_table := s.byte_type_table
+			index := lower
 			from until index >= upper or done loop
 				if in_prolog then
 					tok := s.scan_prolog (buf, bt_table, index, upper)
@@ -534,8 +533,10 @@ feature {NONE} -- Processor dispatch
 								then
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
-									err := do_process_bytes (entity_value.area, 0, entity_value.count, attributes, s, names) -- Recurse
+									err := process_content (entity_value.area, 0, entity_value.count, attributes, s, bt_table, names) -- Recurse
 									buffer_index := buffer_index_copy -- restore field
+									in_cdata_section := False -- restore state
+
 									if err /= Error_none then
 										done := True
 									end
@@ -589,7 +590,7 @@ feature {NONE} -- Implementation
 
 	processor_wants_reenter: BOOLEAN
 		-- True when the processor has set its reenter flag, requesting
-		-- another pass through `do_process_bytes' to avoid stack overflow.
+		-- another pass through `process_content' to avoid stack overflow.
 		-- Corresponds to `m_reenter' in xmlparse.c.
 		do
 			Result := False
@@ -634,7 +635,7 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-feature {NONE} -- Deferred event handlers
+feature {NONE} -- Deferred
 
 	on_cdata_section_close
 		deferred

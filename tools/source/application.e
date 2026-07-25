@@ -53,13 +53,12 @@ feature {NONE} -- Initialization
 
 	make
 		do
-			IO.put_string ("Program: Xpact-core XML parser (Eiffel)")
-			IO.put_new_line
-
 			if argument_count >= 2 and then attached new_application_table as app_table
 				and then attached argument (1).to_string_8 as l_option
 				and then attached app_table [l_option] as run
 			then
+				IO.put_string ("Program: Xpact-core XML tools (Eiffel): " + l_option)
+				IO.put_new_line
 				run (l_option.substring (2, l_option.count))
 			else
 				put_usage (Operation_parameter)
@@ -107,6 +106,19 @@ feature {NONE} -- Factory
 		end
 
 feature {NONE} -- Application options
+
+	do_benchmark_sort (app_option: STRING)
+		local
+			sorter: BENCHMARK_SORTER
+		do
+			if attached argument (argument_count) as path_arg then
+				create sorter.make (path_arg)
+				sorter.execute
+			else
+				IO.put_string ("Usage: xml_reader -benchmark_sort <benchmark-dir-path>")
+				IO.put_new_line
+			end
+		end
 
 	do_count_tags (app_option: STRING)
 		do
@@ -204,6 +216,7 @@ feature {NONE} -- Implementation
 	new_application_table: HASH_TABLE [PROCEDURE, STRING]
 		do
 			create Result.make_from_iterable_tuples (<<
+				[agent do_benchmark_sort, "-benchmark_sort"],
 				[agent do_count_tags, "-count_tags"],
 				[agent do_crc_32, "-crc_32"],
 				[agent do_print, "-print"],

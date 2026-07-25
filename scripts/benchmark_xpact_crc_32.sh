@@ -1,7 +1,5 @@
 
-clear
-echo Installing xml_reader
-cp -u examples/build/linux-x86-64/EIFGENs/classic/F_code/xml_reader ~/.local/bin
+. scripts/install_xml_reader.sh
 
 export BENCHMARKS_DIR=$EIFFEL/library/Xpact-core/benchmarks
 
@@ -12,8 +10,8 @@ echo Benchmarking Eiffel Xpact-core and C eXpat
 echo
 
 for path in	$ISE_LIBRARY/library/vision2/vision2.ecf \
-	examples/data/Legislation.xml \
-	examples/data/recursive-entity-expansion.xml; do
+	tools/data/Legislation.xml \
+	tools/data/recursive-entity-expansion.xml; do
 	name=${path##*/}
 	for type in text cdata comment tag attribute; do
 		echo Type: $type in $name

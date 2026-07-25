@@ -1,9 +1,7 @@
 
 # Find XML files to test Xpact against eXpat
 
-clear
-echo Installing xml_reader
-cp -u examples/build/linux-x86-64/EIFGENs/classic/F_code/xml_reader ~/.local/bin
+. scripts/install_xml_reader.sh
 
 echo ui file count\: 220 passed
 

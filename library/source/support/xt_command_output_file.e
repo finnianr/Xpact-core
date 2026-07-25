@@ -65,7 +65,35 @@ feature -- Access
 
 	error_lines: ARRAYED_LIST [STRING]
 
+	first_line: STRING
+		do
+			create Result.make_empty
+			if has_output then
+				read_line
+				if not end_of_file then
+					Result := last_string
+				end
+			end
+		end
+
 feature -- Basic operations
+
+	append_lines_to (list: ARRAYED_LIST [STRING])
+		local
+			done: BOOLEAN
+		do
+			if has_output then
+				from until done loop
+					read_line
+					if end_of_file then
+						done := True
+					else
+						list.extend (last_string.twin)
+					end
+				end
+				close
+			end
+		end
 
 	close
 		require else

@@ -1,13 +1,11 @@
 
 # Basic XML files to test Xpact against eXpat including attack files
 
-clear
-echo Installing xml_reader
-cp -u examples/build/linux-x86-64/EIFGENs/classic/F_code/xml_reader ~/.local/bin
+. scripts/install_xml_reader.sh
 
-echo Testing against examples/data/*
+echo Testing against tools/data/*
 
-xml_reader -test_files examples/data
+xml_reader -test_files tools/data
 echo
 
 echo Testing against libexpat/testdata/largefiles/*.xml

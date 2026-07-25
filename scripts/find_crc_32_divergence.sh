@@ -1,6 +1,4 @@
 
-
-
 path_1=$(ls ~/Desktop/Xpact*.txt)
 path_2=$(ls ~/Desktop/eXpat*.txt)
 

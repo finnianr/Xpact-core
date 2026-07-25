@@ -1,7 +1,5 @@
 
-clear
-echo Installing xml_reader
-cp -u examples/build/linux-x86-64/EIFGENs/classic/F_code/xml_reader ~/.local/bin
+. scripts/install_xml_reader.sh
 
 export BENCHMARKS_DIR=$EIFFEL/library/Xpact-core/benchmarks
 

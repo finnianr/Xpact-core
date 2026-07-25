@@ -53,9 +53,10 @@ feature {NONE} -- Event handlers
 
 	on_comment (text: STRING_8)
 		do
-			io.put_string ("COMMENT: ")
-			io.put_string (text)
-			io.put_new_line
+			put_tabs (element_depth)
+			IO.put_string ("COMMENT: ")
+			IO.put_string (text)
+			IO.put_new_line
 		end
 
 	on_content (text: STRING)
@@ -63,18 +64,18 @@ feature {NONE} -- Event handlers
 			is_double: BOOLEAN
 		do
 			is_double := text.is_double
-			io.put_string (Tab_string)
+			put_tabs (element_depth)
 			if in_cdata_section then
-				io.put_string ("CDATA: ")
+				IO.put_string ("CDATA: ")
 			end
 			if not is_double then
-				io.put_character ('"')
+				IO.put_character ('"')
 			end
-			io.put_string (text)
+			IO.put_string (text)
 			if not is_double then
-				io.put_character ('"')
+				IO.put_character ('"')
 			end
-			io.put_new_line
+			IO.put_new_line
 		end
 
 	on_tag_end (name: STRING_8)
@@ -83,26 +84,27 @@ feature {NONE} -- Event handlers
 
 	on_tag_start (name: STRING_8; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
-			io.put_string (name)
-			io.put_character (':')
-			io.put_new_line
+			put_tabs (element_depth - 1)
+			IO.put_string (name)
+			IO.put_character (':')
+			IO.put_new_line
 			if attributes.index_count > 0 then
 				attributes.null_terminate_values (buffer) -- purely to test null termination
 
 				across attributes.as_table (buffer, False) as value loop
 					if @ value.is_first then
-						io.put_string (Tab_string)
-						io.put_string ("ATTRIBUTES: {")
+						put_tabs (element_depth)
+						IO.put_string ("ATTRIBUTES: {")
 					else
-						io.put_string (", ")
+						IO.put_string (", ")
 					end
-					io.put_string (@ value.key)
-					io.put_string (" : %"")
-					io.put_string (value)
-					io.put_character ('"')
+					IO.put_string (@ value.key)
+					IO.put_string (" : %"")
+					IO.put_string (value)
+					IO.put_character ('"')
 				end
-				io.put_character ('}')
-				io.put_new_line
+				IO.put_character ('}')
+				IO.put_new_line
 				attributes.undo_null_terminated_values (buffer) -- purely to test restoring value
 			end
 		ensure then
@@ -110,6 +112,18 @@ feature {NONE} -- Event handlers
 				attributes.upper_plus_1_characters (buffer).is_equal (
 					old attributes.upper_plus_1_characters (buffer) -- purely to test upper_plus_1_characters
 				)
+		end
+
+feature {NONE} -- Implementation
+
+	put_tabs (n: INTEGER)
+		local
+			i: INTEGER
+		do
+			from i := 1 until i > n loop
+				IO.put_string (Tab_string)
+				i := i + 1
+			end
 		end
 
 feature {NONE} -- Constants

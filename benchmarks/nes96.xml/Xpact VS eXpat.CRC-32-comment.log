@@ -8,3 +8,9 @@ nes96.xml: eXpat passes = 246; Xpact-core passes = 300 (x1.22 to eXpat)
 
 2026 24 JUL 19:26
 nes96.xml: eXpat passes = 245; Xpact-core passes = 294 (x1.20 to eXpat)
+
+2026 25 JUL 6:53
+nes96.xml: eXpat passes = 245; Xpact-core passes = 315 (x1.29 to eXpat)
+
+2026 25 JUL 7:22
+nes96.xml: eXpat passes = 245; Xpact-core passes = 321 (x1.31 to eXpat)
