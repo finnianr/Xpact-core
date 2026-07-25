@@ -1318,15 +1318,17 @@ feature {NONE} -- Xpact core event handlers
 			end
 		end
 
-	on_tag_start (name: STRING_8; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		require else
-			null_terminated_name: name.area [name.count] = '%U'
+			null_terminated_name: context.name.area [context.name.count] = '%U'
 		local
 			call_back_ptr: POINTER; array_size: INTEGER; c_string_array: SPECIAL [POINTER]
 		do
 			call_back_ptr := start_element_callback
 			c_string_array := attributes_c_string_array
-			if is_attached (call_back_ptr) and then attached buffer as buf then
+			if is_attached (call_back_ptr) and then attached buffer as buf
+				and then attached context.name.area as name_area
+			then
 				attributes.null_terminate_values (buffer)
 
 				array_size := attributes.count * 2 + 1
@@ -1336,7 +1338,7 @@ feature {NONE} -- Xpact core event handlers
 				end
 				c_string_array.wipe_out
 				attributes.append_pointers_to (c_string_array, buffer)
-				call_start_element_callback (call_back_ptr, user_data, name.area.base_address, c_string_array.base_address)
+				call_start_element_callback (call_back_ptr, user_data, name_area.base_address, c_string_array.base_address)
 
 				attributes.undo_null_terminated_values (buf)
 			end

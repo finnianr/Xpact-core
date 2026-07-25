@@ -59,11 +59,11 @@ feature -- Basic operations
 
 feature {NONE} -- Event handlers
 
-	on_tag_start (name: STRING_8; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (context: XT_ELEMENT_CONTEXT; a_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			if attached tag_occurrence_table as table then
-				if not table.has_key (name) then
-					table.put (create {TAG_OCCURRENCE_COUNT}.make (name), name)
+				if not table.has_key (context.name) then
+					table.put (create {TAG_OCCURRENCE_COUNT}.make (context.name), context.name)
 				end
 				if attached table.found_item as count then
 					count.increment

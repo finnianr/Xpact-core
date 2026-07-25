@@ -38,6 +38,9 @@ inherit
 		end
 
 	XT_CONTENT_SCANNER
+		export
+			{XT_PARSING_BUFFERS} same_characters
+		end
 
 	XT_PROLOG_SCANNER
 

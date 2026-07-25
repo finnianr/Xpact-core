@@ -49,6 +49,8 @@ feature {NONE} -- Measurement
 
 	frozen c_byte_is_one (a_bytes: POINTER; a_offset: INTEGER): BOOLEAN
 			-- Is the byte at `a_offset` in the byte array `a_bytes` equal to 1?
+		require
+			pointer_attached: is_attached (a_bytes)
 		external
 			"C inline"
 		alias
@@ -59,6 +61,8 @@ feature {NONE} -- Measurement
 
 	frozen c_set_byte (a_bytes: POINTER; a_offset: INTEGER; a_value: BOOLEAN)
 			-- Set the byte at `a_offset` in the byte array `a_bytes` to 1 if `a_value` is True, else 0.
+		require
+			pointer_attached: is_attached (a_bytes)
 		external
 			"C inline"
 		alias

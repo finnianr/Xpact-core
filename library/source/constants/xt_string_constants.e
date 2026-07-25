@@ -14,24 +14,27 @@ class
 
 feature {NONE} -- CDATA constant
 
+	CDATA: STRING = "CDATA"
+
 	Cdata_lsqb: C_STRING_8
 		once
-			Result := "CDATA["
+			Result := CDATA + "["
 		end
 
-	Entity: C_STRING_8
-		once
-			Result := "ENTITY"
-		end
+	Attlist: INTEGER = 1
 
-	Empty_c_string: C_STRING_8
-		once
-			create Result.make_empty
-		end
+	Doctype: INTEGER = 2
 
-	Doctype: C_STRING_8
+	Element: INTEGER = 3
+
+	Entity: INTEGER = 4
+
+	Document_definition_names: LIST [STRING]
 		once
-			Result := "DOCTYPE"
+			Result := ("ATTLIST,DOCTYPE,ELEMENT,ENTITY").split (',')
+		ensure
+			valid_first: Result [Attlist] ~ "ATTLIST"
+			valid_last: Result [Entity] ~ "ENTITY"
 		end
 
 feature {NONE} -- Predefined entities

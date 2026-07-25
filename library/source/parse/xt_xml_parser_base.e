@@ -14,8 +14,6 @@ deferred class XT_XML_PARSER_BASE
 
 inherit
 	XT_PARSING_BUFFERS
-		rename
-			Entity as Entity_uppercase
 		redefine
 			make
 		end
@@ -35,10 +33,12 @@ feature {NONE} -- Initialization
 			partial_token_bytes_before := 0
 			parse_end_byte_index       := 0
 
-			declaration := Empty_c_string
+			declaration						:= 0
 			create section.make (2)
 			set_section (section.item, Prolog, True)
 			set_section (section.item, CDATA, False)
+
+			create element_context.make (section.item)
 
 			Precursor
 		ensure then
@@ -167,49 +167,6 @@ feature -- Basic operations
 	reset
 		do
 			make
-		end
-
-feature -- Handler depth tracking
-
-	increment_handler_depth
-		-- Signal entry into a parse-event callback.
-		require
-			parsing_active: parsing_state = State_parsing
-		do
-			handler_call_depth := handler_call_depth + 1
-		ensure
-			depth_increased: handler_call_depth = old handler_call_depth + 1
-		end
-
-	decrement_handler_depth
-		-- Signal exit from a parse-event callback.
-		require
-			in_handler: handler_call_depth > 0
-		do
-			handler_call_depth := handler_call_depth - 1
-		ensure
-			depth_decreased: handler_call_depth = old handler_call_depth - 1
-		end
-
-	increment_element_depth
-		require
-			parsing_active: parsing_state = State_parsing
-		do
-			element_depth := element_depth + 1
-		ensure
-			depth_increased: element_depth = old element_depth + 1
-		end
-
-	decrement_element_depth
-		require
-			is_nested: element_depth > 0
-		do
-			inspect element_depth when 1 then
-				set_section (section.item, Prolog, True)
-			else end
-			element_depth := element_depth - 1
-		ensure
-			depth_decreased: element_depth = old element_depth - 1
 		end
 
 feature {NONE} -- Buffer implementation
@@ -342,11 +299,12 @@ feature {NONE} -- Processor dispatch
 
 			if enough and then attached buffer as buf and then attached attribute_intervals as attributes
 				and then attached scanner as s and then attached name_cache as names
+				and then attached element_context as context
 			then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				from done := False until done loop
-					err := process_content (buf, buffer_index, upper, attributes, s, s.byte_type_table, names, section_ptr)
+					err := process_content (buf, buffer_index, upper, attributes, s, s.byte_type_table, names, context, section_ptr)
 
 					-- Suspended state overrides the reenter request.
 					if parsing_state /= State_parsing then
@@ -402,7 +360,7 @@ feature {NONE} -- Processor dispatch
 	process_content (
 		buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 		s: like scanner; bt_table: SPECIAL [INTEGER]; names: like name_cache
-		section_ptr: POINTER
+		context: XT_ELEMENT_CONTEXT; section_ptr: POINTER
 	): INTEGER
 		-- Scan tokens from `buf' `lower .. upper` and triggers relevant XML events.  Advances `buffer_index'.
 		-- Execute one pass of the current processor over `buf [lower .. upper)'.
@@ -415,7 +373,6 @@ feature {NONE} -- Processor dispatch
 			buffer_index_at_start: buffer_index = lower
 		local
 			index, tok, tok_end, code, err, buffer_index_copy: INTEGER; done: BOOLEAN
-			r: XT_STRING_ROUTINES
 		do
 			index := lower
 			from until index >= upper or done loop
@@ -428,19 +385,28 @@ feature {NONE} -- Processor dispatch
 							index := tok_end
 
 						when Tok_decl_open then
-							declaration := select_declaration (buf, index + 2)
+							declaration := select_declaration (buf, index + 2, s)
+							attlist_path.wipe_out
 							index := tok_end
 
 						when Tok_literal then
-							if declaration = Entity_uppercase then
-								entity_table.put (s.new_substring (buf, index + 1, tok_end - 2), last_entity_ref)
-							end
+							inspect declaration
+								when Entity_ then
+									entity_table.put (s.new_substring (buf, index + 1, tok_end - 2), last_entity_ref)
+								when Attlist then
+									attlist_path.extend (names.item (buf, index + 1, tok_end - 2))
+									do_nothing
+							else end
 							index := tok_end
 
 						when Tok_name then
-							if declaration = Entity_uppercase then
-								last_entity_ref := entity_cache.item (buf, index, tok_end - 1)
-							end
+							inspect declaration
+								when Entity_ then
+									last_entity_ref := entity_cache.item (buf, index, tok_end - 1)
+								when Attlist then
+									attlist_path.extend (names.item (buf, index, tok_end))
+									do_nothing
+							else end
 							index := tok_end
 
 						when Tok_comment then
@@ -501,29 +467,29 @@ feature {NONE} -- Processor dispatch
 							end
 
 						when Tok_start_tag_no_attributes then
-							increment_element_depth
-							on_tag_start (s.tag_name (names, buf, index + 1), attributes)
+							context.push (s.tag_name (names, buf, index + 1))
+							on_tag_start (context, attributes)
 
 						when Tok_start_tag_with_attributes then
-							increment_element_depth
-							on_tag_start (s.tag_name (names, buf, index + 1), attributes)
+							context.push (s.tag_name (names, buf, index + 1))
+							on_tag_start (context, attributes)
 							attributes.wipe_out
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
 							if attached s.tag_name (names, buf, index + 1) as tag_name then
-								increment_element_depth
-								on_tag_start (tag_name, attributes)
+								context.push (s.tag_name (names, buf, index + 1))
+								on_tag_start (context, attributes)
 								inspect tok when Tok_empty_element_with_attributes then
 									attributes.wipe_out
 								else
 								end
 								on_tag_end (tag_name)
-								decrement_element_depth
+								context.pop
 							end
 
 						when Tok_end_tag then
 							on_tag_end (s.tag_name (names, buf, index + 2))  -- skip '</'
-							decrement_element_depth
+							context.pop
 
 						when Tok_comment then
 							on_comment (buf, index + 4, tok_end - 4, attributes)
@@ -536,7 +502,9 @@ feature {NONE} -- Processor dispatch
 								then
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
-									err := process_content (entity_value.area, 0, entity_value.count, attributes, s, bt_table, names, section_ptr) -- Recurse
+									err := process_content (
+										entity_value.area, 0, entity_value.count, attributes, s, bt_table, names, context, section_ptr
+									) -- Recurse
 									buffer_index := buffer_index_copy -- restore field
 									set_section (section_ptr, CDATA, False) -- restore state
 
@@ -589,38 +557,12 @@ feature {NONE} -- Implementation
 			Result := is_section (section.item, CDATA)
 		end
 
-	select_declaration (buf: like buffer; offset: INTEGER): C_STRING_8
-		do
-			if Doctype.same_characters (buf, offset) then
-				Result := Doctype
-
-			elseif Entity_uppercase.same_characters (buf, offset) then
-				Result := Entity_uppercase
-			else
-				Result := Empty_c_string
-			end
-		end
-
 	processor_wants_reenter: BOOLEAN
 		-- True when the processor has set its reenter flag, requesting
 		-- another pass through `process_content' to avoid stack overflow.
 		-- Corresponds to `m_reenter' in xmlparse.c.
 		do
 			Result := False
-		end
-
-	set_section (section_ptr: POINTER; id: INTEGER; active: BOOLEAN)
-		require
-			valid_id: id = 0 or id = 1
-		do
-			c_set_byte (section_ptr, id, active)
-		end
-
-	is_section (section_ptr: POINTER; id: INTEGER): BOOLEAN
-		require
-			valid_id: id = 0 or id = 1
-		do
-			Result := c_byte_is_one (section_ptr, id)
 		end
 
 feature {NONE} -- Event handlers
@@ -662,6 +604,26 @@ feature {NONE} -- Event handlers
 		do
 		end
 
+	increment_handler_depth
+		-- Signal entry into a parse-event callback.
+		require
+			parsing_active: parsing_state = State_parsing
+		do
+			handler_call_depth := handler_call_depth + 1
+		ensure
+			depth_increased: handler_call_depth = old handler_call_depth + 1
+		end
+
+	decrement_handler_depth
+		-- Signal exit from a parse-event callback.
+		require
+			in_handler: handler_call_depth > 0
+		do
+			handler_call_depth := handler_call_depth - 1
+		ensure
+			depth_decreased: handler_call_depth = old handler_call_depth - 1
+		end
+
 feature {NONE} -- Deferred
 
 	on_cdata_section_close
@@ -680,7 +642,7 @@ feature {NONE} -- Deferred
 		deferred
 		end
 
-	on_tag_start (name: STRING_8; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		require
 			valid_attribute_indices_count: attributes.is_valid_count
 		deferred
@@ -688,9 +650,11 @@ feature {NONE} -- Deferred
 
 feature {NONE} -- Internal attributes
 
+	element_context: XT_ELEMENT_CONTEXT
+
 	section: MANAGED_POINTER
 
-	declaration: C_STRING_8
+	declaration: INTEGER
 
 	last_buffer_request_size: INTEGER
 

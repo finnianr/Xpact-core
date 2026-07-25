@@ -117,11 +117,11 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_tag_start (name: STRING_8; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			inspect data_type
 				when Tok_tag then
-					checksum.add_string (name)
+					checksum.add_string (context.name)
 
 				when Tok_attribute then
 					attributes.append_values_to_crc_32 (checksum, buffer)

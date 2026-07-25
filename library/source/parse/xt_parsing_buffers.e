@@ -46,6 +46,11 @@ inherit
 	EL_MEMORY_ROUTINES
 
 	XT_STRING_CONSTANTS
+		rename
+			CDATA as CDATA_upper,
+			Element as Element_,
+			Entity as Entity_
+		end
 
 	STRING_HANDLER
 
@@ -65,6 +70,7 @@ feature {NONE} -- Initialisation
 			buffer := new_buffer_area (Default_buffer_size)
 			create last_entity_ref.make_empty
 			create character_string.make_filled ('%U', 1)
+			create attlist_path.make (10)
 			set_scanner (Utf_8)
 
 		ensure then
@@ -164,6 +170,13 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	is_section (section_ptr: POINTER; id: INTEGER): BOOLEAN
+		require
+			valid_id: id = 0 or id = 1
+		do
+			Result := c_byte_is_one (section_ptr, id)
+		end
+
 	prepare_buffer (a_count: INTEGER): BOOLEAN
 			-- Ensure `buffer' has room for `a_count' more bytes
 			-- after `buffer_end'.  Compacts or reallocates as needed,
@@ -227,6 +240,22 @@ feature {NONE} -- Implementation
 			ptr_non_negative:    buffer_index >= 0
 		end
 
+	set_section (section_ptr: POINTER; id: INTEGER; active: BOOLEAN)
+		require
+			valid_id: id = 0 or id = 1
+		do
+			c_set_byte (section_ptr, id, active)
+		end
+
+	select_declaration (buf: like buffer; offset: INTEGER; s: like scanner): INTEGER
+		do
+			across Document_definition_names as name until Result > 0 loop
+				if s.same_characters (buf, offset, offset + name.count - 1, name) then
+					Result := @ name.cursor_index
+				end
+			end
+		end
+
 	shift_buffer_left (offset: INTEGER)
 			-- Slide all live content left by `offset' bytes and adjust
 			-- every index that points into `buffer'.
@@ -249,6 +278,7 @@ feature {NONE} -- Implementation
 			end_non_negative:    buffer_end >= 0
 		end
 
+
 feature {NONE} -- Internal attributes
 
 	character_string: STRING
@@ -266,6 +296,10 @@ feature {NONE} -- Internal attributes
 		-- Start index for the next line/column position update.
 
 feature {NONE} -- Internal structures
+
+	attlist_path: ARRAYED_LIST [STRING]
+		-- For example <!ATTLIST magic priority CDATA "50">
+		-- would be: << "magic", "priority", "CDATA", "50" >>
 
 	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
 		-- collected attribute name-value pair indices into `buffer'
@@ -287,9 +321,6 @@ feature {NONE} -- Internal structures
 	scanner: XT_DOCUMENT_SCANNER
 
 feature {NONE} -- Constants
-
-	Prolog: INTEGER = 0
-	CDATA: INTEGER = 1
 
 	Token_names: ARRAY [STRING]
 		once

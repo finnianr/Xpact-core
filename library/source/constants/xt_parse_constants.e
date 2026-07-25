@@ -46,4 +46,11 @@ feature -- Parse status (XML_Status enum)
 		Invalid document
 	]"
 
+
+feature -- Parsing sections
+
+	Prolog: INTEGER = 0
+
+	CDATA: INTEGER = 1
+
 end

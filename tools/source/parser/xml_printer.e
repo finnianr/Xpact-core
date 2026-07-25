@@ -82,10 +82,10 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_tag_start (name: STRING_8; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			put_tabs (element_depth - 1)
-			IO.put_string (name)
+			IO.put_string (context.name)
 			IO.put_character (':')
 			IO.put_new_line
 			if attributes.index_count > 0 then
