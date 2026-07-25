@@ -21,13 +21,12 @@ inherit
 create
 	make
 
-feature -- Status report
+feature -- Measurement
 
-	valid_utf_8 (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): BOOLEAN
-			-- True if character in `buf' from `start_index .. end_index' are already
-			-- valid as UTF-8
+	utf_8_bytes_count (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+			-- Number of bytes necessary to encode in UTF-8 `s.substring (start_index, end_index)'.
 		do
-			Result := True
+			Result := end_index - start_index + 1
 		end
 
 feature {NONE} -- Factory
@@ -47,7 +46,6 @@ feature {NONE} -- Implementation
 		do
 			l_count := (end_index - a_src_from + 1).min (dst.capacity)
 			dst.copy_data (src, a_src_from, 0, l_count)
-			written_to := dst.count
 		end
 
 	to_utf_16 (src: SPECIAL [CHARACTER]; dst: SPECIAL [NATURAL_16]; a_src_from, end_index: INTEGER)
@@ -96,7 +94,6 @@ feature {NONE} -- Implementation
 					end
 				end
 			end
-			written_to := dst.count
 		end
 
 end

@@ -27,8 +27,6 @@ feature {NONE} -- Initialization
 			parsing_state              := State_check_encoding
 
 			is_final_buffer            := False
-			in_prolog						:= True
-			in_cdata_section           := False
 			reparse_deferral_enabled   := True
 
 			element_depth       			:= 0
@@ -38,6 +36,9 @@ feature {NONE} -- Initialization
 			parse_end_byte_index       := 0
 
 			declaration := Empty_c_string
+			create section.make (2)
+			set_section (section.item, Prolog, True)
+			set_section (section.item, CDATA, False)
 
 			Precursor
 		ensure then
@@ -74,8 +75,6 @@ feature -- Status query
 
 	is_final_buffer: BOOLEAN
 			-- Was the current parse call marked as the last chunk?
-
-	in_prolog: BOOLEAN
 
 feature -- Basic operations
 
@@ -206,7 +205,7 @@ feature -- Handler depth tracking
 			is_nested: element_depth > 0
 		do
 			inspect element_depth when 1 then
-				in_prolog := True
+				set_section (section.item, Prolog, True)
 			else end
 			element_depth := element_depth - 1
 		ensure
@@ -320,7 +319,9 @@ feature {NONE} -- Processor dispatch
 			ptr_at_start: buffer_index = lower
 		local
 			err, have_now, had_before, available: INTEGER; enough, done: BOOLEAN
+			section_ptr: POINTER
 		do
+			section_ptr := section.item
 			have_now := upper - lower
 
 			-- Reparse-deferral heuristic (m_reparseDeferralEnabled in xmlparse.c):
@@ -345,7 +346,7 @@ feature {NONE} -- Processor dispatch
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				from done := False until done loop
-					err := process_content (buf, buffer_index, upper, attributes, s, s.byte_type_table, names)
+					err := process_content (buf, buffer_index, upper, attributes, s, s.byte_type_table, names, section_ptr)
 
 					-- Suspended state overrides the reenter request.
 					if parsing_state /= State_parsing then
@@ -401,6 +402,7 @@ feature {NONE} -- Processor dispatch
 	process_content (
 		buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 		s: like scanner; bt_table: SPECIAL [INTEGER]; names: like name_cache
+		section_ptr: POINTER
 	): INTEGER
 		-- Scan tokens from `buf' `lower .. upper` and triggers relevant XML events.  Advances `buffer_index'.
 		-- Execute one pass of the current processor over `buf [lower .. upper)'.
@@ -413,15 +415,16 @@ feature {NONE} -- Processor dispatch
 			buffer_index_at_start: buffer_index = lower
 		local
 			index, tok, tok_end, code, err, buffer_index_copy: INTEGER; done: BOOLEAN
+			r: XT_STRING_ROUTINES
 		do
 			index := lower
 			from until index >= upper or done loop
-				if in_prolog then
+				if is_section (section_ptr, Prolog) then
 					tok := s.scan_prolog (buf, bt_table, index, upper)
 					tok_end := s.next_token_index
 					inspect tok
 						when Tok_instance_start then
-							in_prolog := False
+							set_section (section_ptr, Prolog, False)
 							index := tok_end
 
 						when Tok_decl_open then
@@ -453,13 +456,13 @@ feature {NONE} -- Processor dispatch
 							index := tok_end  -- skip prolog token
 						end
 					end
-				elseif in_cdata_section then
+				elseif is_section (section_ptr, CDATA) then
 					tok := s.scan_cdata_section (buf, bt_table, index, upper)
 					tok_end := s.next_token_index
 					inspect tok
 						when Tok_cdata_sect_close then
 							on_cdata_section_close
-							in_cdata_section := False
+							set_section (section_ptr, CDATA, False)
 							index := tok_end
 
 						when Tok_data_chars then
@@ -482,7 +485,7 @@ feature {NONE} -- Processor dispatch
 					tok_end := s.next_token_index
 					inspect tok
 						when Tok_cdata_sect_open then
-							in_cdata_section := True
+							set_section (section_ptr, CDATA, True)
 
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
@@ -533,9 +536,9 @@ feature {NONE} -- Processor dispatch
 								then
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
-									err := process_content (entity_value.area, 0, entity_value.count, attributes, s, bt_table, names) -- Recurse
+									err := process_content (entity_value.area, 0, entity_value.count, attributes, s, bt_table, names, section_ptr) -- Recurse
 									buffer_index := buffer_index_copy -- restore field
-									in_cdata_section := False -- restore state
+									set_section (section_ptr, CDATA, False) -- restore state
 
 									if err /= Error_none then
 										done := True
@@ -576,6 +579,16 @@ feature {NONE} -- Processor dispatch
 
 feature {NONE} -- Implementation
 
+	in_prolog_section: BOOLEAN
+		do
+			Result := is_section (section.item, Prolog)
+		end
+
+	in_cdata_section: BOOLEAN
+		do
+			Result := is_section (section.item, CDATA)
+		end
+
 	select_declaration (buf: like buffer; offset: INTEGER): C_STRING_8
 		do
 			if Doctype.same_characters (buf, offset) then
@@ -594,6 +607,20 @@ feature {NONE} -- Implementation
 		-- Corresponds to `m_reenter' in xmlparse.c.
 		do
 			Result := False
+		end
+
+	set_section (section_ptr: POINTER; id: INTEGER; active: BOOLEAN)
+		require
+			valid_id: id = 0 or id = 1
+		do
+			c_set_byte (section_ptr, id, active)
+		end
+
+	is_section (section_ptr: POINTER; id: INTEGER): BOOLEAN
+		require
+			valid_id: id = 0 or id = 1
+		do
+			Result := c_byte_is_one (section_ptr, id)
 		end
 
 feature {NONE} -- Event handlers
@@ -661,9 +688,9 @@ feature {NONE} -- Deferred
 
 feature {NONE} -- Internal attributes
 
-	declaration: C_STRING_8
+	section: MANAGED_POINTER
 
-	in_cdata_section: BOOLEAN
+	declaration: C_STRING_8
 
 	last_buffer_request_size: INTEGER
 

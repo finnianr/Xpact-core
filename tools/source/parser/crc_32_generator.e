@@ -143,12 +143,18 @@ feature {NONE} -- Implementation
 		area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 		is_utf_8_encoded: BOOLEAN; crc_32: like checksum
 	)
+		local
+			utf_8_count: INTEGER
 		do
-			if is_utf_8_encoded or else attributes.valid_utf_8 (area, lower, upper) then
+			if is_utf_8_encoded then
 				crc_32.add_characters (area, lower, upper)
-
-			elseif attached attributes.utf_8_converted (area, lower, upper) as utf_8_area then
-				crc_32.add_characters (utf_8_area, 0, utf_8_area.count - 1)
+			else
+				utf_8_count := attributes.utf_8_bytes_count (area, lower, upper)
+				if utf_8_count = upper - lower + 1 then
+					crc_32.add_characters (area, lower, upper)
+				else
+					crc_32.add_characters (attributes.utf_8_converted (area, lower, upper, utf_8_count, Void), 0, utf_8_count - 1)
+				end
 			end
 		end
 

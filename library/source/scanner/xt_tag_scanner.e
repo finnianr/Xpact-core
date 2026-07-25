@@ -70,13 +70,13 @@ feature {NONE} -- Tag scanning
 						Result := scan_end_tag (buf, bt_table, advance (index), end_index)
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
-						Result := scan_start_tag_name (buf, byte_type_table, index, end_index)
+						Result := scan_start_tag_name (buf, byte_type_table, index, end_index, 1)
 					when BT_lead_2_byte then
 						if end_index - index >= 2 and then not is_invalid_char_2 (buf, index)
 							and then is_name_start_char_2 (buf, index)
 						then
 							index := index + 2
-							Result := scan_start_tag_name (buf, byte_type_table, index, end_index)
+							Result := scan_start_tag_name (buf, byte_type_table, index, end_index, 2)
 						else
 							next_token_index := index
 							Result := Tok_invalid
@@ -86,7 +86,7 @@ feature {NONE} -- Tag scanning
 							and then is_name_start_char_3 (buf, index)
 						then
 							index := index + 3
-							Result := scan_start_tag_name (buf, byte_type_table, index, end_index)
+							Result := scan_start_tag_name (buf, byte_type_table, index, end_index, 3)
 						else
 							next_token_index := index
 							Result := Tok_invalid
@@ -265,12 +265,12 @@ feature {NONE} -- Tag scanning
 
 feature {NONE} -- Tag sub-helpers
 
-	scan_start_tag_name (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+	scan_start_tag_name (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index, lead_count: INTEGER): INTEGER
 		-- After consuming name-start char(s); scan rest of start tag name.
 		local
 			index, name_lower, name_upper: INTEGER; done: BOOLEAN
 		do
-			index := start_index; name_lower := start_index - 1; name_upper := Unset
+			index := start_index; name_lower := start_index - lead_count; name_upper := Unset
 			from until index >= end_index or done loop
 				inspect bt_table [buf [index].code]
 					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon, BT_lead_2_byte,
@@ -455,6 +455,15 @@ feature {NONE} -- Contract support
 			if attached byte_type_table as bt_table then
 				from index := start_index until index >= buf.count or done loop
 					inspect bt_table [buf [index].code]
+						when Bt_lead_2_byte then
+							index := index + min_bytes_per_char * 2
+
+						when Bt_lead_3_byte then
+							index := index + min_bytes_per_char * 3
+
+						when Bt_lead_4_byte then
+							index := index + min_bytes_per_char * 4
+
 						when BT_name_start, BT_name_only, BT_hex_digit, BT_digit, BT_minus, BT_colon then
 							index := index + min_bytes_per_char
 					else

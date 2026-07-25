@@ -1,12 +1,4 @@
-ERROR (Undefined entity): /usr/share/doc/libxml-parser-perl/examples/REC-xml-19980210.xml
-
-VALUES DIFFER: /usr/share/glib-2.0/schemas/org.onboard.gschema.xml
-Checksum for text: Xpact=340615259 eXpat=3412223856
-
 ERROR (Undefined entity): /usr/share/gnome/help/synaptic/C/synaptic.xml
-
-VALUES DIFFER: /usr/share/metainfo/xreader.appdata.xml
-Checksum for tag: Xpact=3487145681 eXpat=4016243667
 
 VALUES DIFFER: /usr/share/mime/packages/freedesktop.org.xml
 Checksum for attribute: Xpact=2561865582 eXpat=147728157

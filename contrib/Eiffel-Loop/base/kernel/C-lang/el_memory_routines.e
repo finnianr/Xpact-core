@@ -14,14 +14,14 @@ class
 
 feature -- Status query
 
-	is_attached (a_pointer: POINTER): BOOLEAN
+	frozen is_attached (a_pointer: POINTER): BOOLEAN
 		do
 			Result := not a_pointer.is_default_pointer
 		end
 
 feature {NONE} -- Measurement
 
-	c_string_length (c_str: POINTER; character_width: INTEGER): INTEGER
+	frozen c_string_length (c_str: POINTER; character_width: INTEGER): INTEGER
 		local
 			n_8: NATURAL_8; n_16: NATURAL_16; n_32: NATURAL_32
 			found: BOOLEAN; i: INTEGER
@@ -46,5 +46,27 @@ feature {NONE} -- Measurement
 			end
 			Result := i // character_width - 1
 		end
+
+	frozen c_byte_is_one (a_bytes: POINTER; a_offset: INTEGER): BOOLEAN
+			-- Is the byte at `a_offset` in the byte array `a_bytes` equal to 1?
+		external
+			"C inline"
+		alias
+			"[
+				return (EIF_BOOLEAN) (((unsigned char *) $a_bytes) [$a_offset] == 1);
+			]"
+		end
+
+	frozen c_set_byte (a_bytes: POINTER; a_offset: INTEGER; a_value: BOOLEAN)
+			-- Set the byte at `a_offset` in the byte array `a_bytes` to 1 if `a_value` is True, else 0.
+		external
+			"C inline"
+		alias
+			"[
+				unsigned char *bytes = (unsigned char *) $a_bytes;
+				bytes [$a_offset] = $a_value ? 1 : 0;
+			]"
+		end
+
 
 end

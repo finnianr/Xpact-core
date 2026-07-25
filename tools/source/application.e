@@ -57,7 +57,7 @@ feature {NONE} -- Initialization
 				and then attached argument (1).to_string_8 as l_option
 				and then attached app_table [l_option] as run
 			then
-				IO.put_string ("Program: Xpact-core XML tools (Eiffel): " + l_option)
+				IO.put_string ("Program " + l_option + ": Xpact-core XML tools (Eiffel)")
 				IO.put_new_line
 				run (l_option.substring (2, l_option.count))
 			else

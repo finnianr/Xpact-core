@@ -33,7 +33,7 @@ feature -- Initialization
 	make (n: INTEGER)
 		do
 			Precursor (n)
-			create character_swap_area.make_empty (area.capacity // Group_size)
+			create character_swap_area.make_filled ('%U', area.capacity // Group_size)
 			create attribute_table.make (11)
 			create entity_cache.make
 			create entity_table.make (entity_cache)
@@ -56,9 +56,6 @@ feature -- Access
 
 	name_cache: XT_NAME_CACHE
 		-- efficient lookup of attribute/tag name
-
-	written_to: INTEGER
-		-- Updated by `to_utf_8' / `to_utf_16': index after last written destination unit.
 
 feature -- Constants
 

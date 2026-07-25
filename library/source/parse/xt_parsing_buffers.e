@@ -43,6 +43,8 @@ inherit
 			{NONE} all
 		end
 
+	EL_MEMORY_ROUTINES
+
 	XT_STRING_CONSTANTS
 
 	STRING_HANDLER
@@ -284,7 +286,10 @@ feature {NONE} -- Internal structures
 
 	scanner: XT_DOCUMENT_SCANNER
 
-feature {NONE} -- Element content tokens (positive)
+feature {NONE} -- Constants
+
+	Prolog: INTEGER = 0
+	CDATA: INTEGER = 1
 
 	Token_names: ARRAY [STRING]
 		once

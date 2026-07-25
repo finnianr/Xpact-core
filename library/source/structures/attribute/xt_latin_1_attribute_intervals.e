@@ -20,17 +20,33 @@ inherit
 create
 	make
 
-feature -- Status report
+feature -- Measurement
 
-	valid_utf_8 (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): BOOLEAN
-		-- True if character in `buf' from `start_index .. end_index' are already
-		-- valid as UTF-8
+	utf_8_bytes_count (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+			-- Number of bytes necessary to encode in UTF-8 `s.substring (start_index, end_index)'.
+			-- Note that this feature can be used for both escaped and non-escaped string.
+			-- In the case of escaped strings, the result will be possibly higher than really needed.
+			-- It does not include the terminating null character.
 		local
-			i: INTEGER
+			i, code: INTEGER
 		do
-			Result := True
-			from i := start_index until i > end_index or not Result loop
-				Result := buf [i].code < 128
+			Result := end_index - start_index + 1
+			from i := start_index until i > end_index loop
+				code := buf [i].code
+				if code > 0x7F then
+					if code <= 0x7FF then
+							-- 110xxxxx 10xxxxxx
+						Result := Result + 1
+
+					elseif code <= 0xFFFF then
+							-- 1110xxxx 10xxxxxx 10xxxxxx
+						Result := Result + 2
+					else
+						-- code <= 1FFFFF - there are no higher code points
+						-- 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+						Result := Result + 3
+					end
+				end
 				i := i + 1
 			end
 		end
@@ -62,7 +78,6 @@ feature {NONE} -- Implementation
 				end
 				i := i + 1
 			end
-			written_to := dst.count
 		end
 
 	to_utf_16 (src: SPECIAL [CHARACTER]; dst: SPECIAL [NATURAL_16]; start_index, end_index: INTEGER)
@@ -74,7 +89,6 @@ feature {NONE} -- Implementation
 				dst.extend (src [i].code.to_natural_16)
 				i := i + 1
 			end
-			written_to := dst.count
 		end
 
 end

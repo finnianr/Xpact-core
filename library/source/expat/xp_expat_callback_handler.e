@@ -1537,15 +1537,6 @@ feature {NONE} -- Native callback calls
 			valid_index: Result >= -1
 		end
 
-feature {NONE} -- Implementation
-
-	frozen is_attached (ptr: POINTER): BOOLEAN
-		local
-			null: POINTER
-		do
-			Result := ptr /= null
-		end
-
 feature {NONE} -- Internal attributes
 
 	attributes_c_string_array: SPECIAL [POINTER]

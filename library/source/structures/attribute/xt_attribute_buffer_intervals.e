@@ -35,13 +35,7 @@ feature -- Status query
 
 	swap_area_big_enough: BOOLEAN
 		do
-			Result := character_swap_area.capacity >= count
-		end
-
-	valid_utf_8 (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): BOOLEAN
-			-- True if character in `buf' from `start_index .. end_index' are already
-			-- valid as UTF-8
-		deferred
+			Result := character_swap_area.count >= count
 		end
 
 feature -- Access
@@ -64,18 +58,26 @@ feature -- Access
 			end
 		end
 
-	utf_8_converted (buf: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): SPECIAL [CHARACTER]
-		local
-			byte_count: INTEGER
+	utf_8_converted (
+		buf: SPECIAL [CHARACTER_8]; start_index, end_index, byte_count: INTEGER; a_pool: detachable like buffer_pool
+
+	): SPECIAL [CHARACTER]
+		require
+			correct_byte_count: utf_8_bytes_count (buf, start_index, end_index) = byte_count
 		do
-			Result := utf_8_buffer
+			if attached a_pool as pool then
+				Result := pool.borrow_item (byte_count)
+			else
+				Result := utf_8_buffer
+			end
 			Result.wipe_out
-			byte_count := utf_8_bytes_count (buf, start_index, end_index)
 			if byte_count > Result.capacity then
 				create Result.make_empty (byte_count)
 				utf_8_buffer := Result
 			end
 			to_utf_8 (buf, Result, start_index, end_index)
+		ensure
+			correct_byte_count: byte_count = Result.count
 		end
 
 feature -- Status change
@@ -87,19 +89,20 @@ feature -- Status change
 			buffer_not_null_terminated: not is_null_terminated
 			swap_area_big_enough: swap_area_big_enough
 		local
-			i, i_final, upper_plus_1: INTEGER
+			i, j, i_final, upper_plus_1: INTEGER
 		do
 			if attached character_swap_area as swap_area and attached area_v2 as a
 				and then attached overflow_buffer_area as overflow_area
 			then
-				swap_area.wipe_out
 				from i := 0; i_final := index_count until i = i_final loop
 					upper_plus_1 := a [i + 3] + 1
-					if attached i_th_value (i, a_buffer, overflow_area) as buffer then
-						swap_area.extend (buffer [upper_plus_1])
-						buffer [upper_plus_1] := '%U'
+					if attached overflow_area [i // 2 + 1] as overflow then
+						overflow [upper_plus_1] := '%U'
+					else
+						swap_area [j] := a_buffer [upper_plus_1] -- store current value in swap area
+						a_buffer [upper_plus_1] := '%U'
 					end
-					i := i + Group_size
+					i := i + Group_size; j := j + 1
 				end
 			end
 			is_null_terminated := True
@@ -110,19 +113,26 @@ feature -- Status change
 			buffer_null_terminated: is_null_terminated
 			swap_area_big_enough: swap_area_big_enough
 		local
-			i, j, i_final, upper_plus_1: INTEGER
+			i, j, i_final: INTEGER
 		do
 			if attached character_swap_area as swap_area and attached area_v2 as a
 				and then attached overflow_buffer_area as overflow_area
 			then
 				from i := 0; j := 0; i_final := index_count until i = i_final loop
-					upper_plus_1 := a [i + 3] + 1
-					i_th_value (i, buffer, overflow_area) [upper_plus_1] := swap_area [j]
+					inspect swap_area [j]
+						when '%U' then
+							do_nothing
+					else
+						buffer [a [i + 3] + 1] := swap_area [j] -- restore original value
+						swap_area [j] := '%U'
+					end
 					i := i + Group_size
 					j := j + 1
 				end
 			end
 			is_null_terminated := False
+		ensure
+			character_swap_area_in_default_state: character_swap_area.filled_with ('%U', 0, count - 1)
 		end
 
 feature -- Measurement
@@ -152,6 +162,18 @@ feature -- Measurement
 			Result := overflow_buffer_area.count
 		end
 
+	utf_8_bytes_count (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+			-- Number of bytes necessary to encode in UTF-8 `s.substring (start_index, end_index)'.
+			-- Note that this feature can be used for both escaped and non-escaped string.
+			-- In the case of escaped strings, the result will be possibly higher than really needed.
+			-- It does not include the terminating null character.
+		require
+			end_index_big_enough: start_index <= end_index + 1
+			valid_start_index: buf.valid_index (start_index)
+			valid_end_index: buf.valid_index (end_index)
+		deferred
+		end
+
 feature -- Basic operations
 
 	append_pointers_to (c_string_array: SPECIAL [POINTER]; a_buffer: SPECIAL [CHARACTER_8])
@@ -162,19 +184,31 @@ feature -- Basic operations
 			empty_c_string_array: c_string_array.count = 0
 			big_enough: c_string_array.capacity >= count * 2 + 1
 		local
-			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			i, j, i_final, lower_index, upper_index, utf_8_count: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
 			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
-				and then attached name_cache as names
+				and then attached name_cache as names and then attached buffer_pool as pool
 			then
-				from i := 0; i_final := index_count until i = i_final loop
+				from i := 0; j := 1; i_final := index_count until i = i_final loop
 					buffer := i_th_name (i, a_buffer, overflow_area)
 					if attached names.item (buffer, a [0], a [1]) as name then
 						c_string_array.extend (name.area.base_address) -- name
 					end
 					buffer := i_th_value (i, a_buffer, overflow_area)
-					c_string_array.extend (buffer.item_address (a [2])) -- value
-					i := i + Group_size
+					lower_index := a [2]; upper_index := a [3]
+
+					utf_8_count := utf_8_bytes_count (buffer, lower_index, upper_index)
+					if utf_8_count > upper_index - lower_index + 1 then
+						buffer := utf_8_converted (buffer, lower_index, upper_index, utf_8_count, pool)
+						if attached overflow_area [j] as old_buffer then
+							pool.return (old_buffer)
+						end
+						overflow_area [j] := buffer -- gets recycled during wipeout
+						lower_index := 0; upper_index := buffer.count - 1
+						buffer [buffer.count] := '%U'
+					end
+					c_string_array.extend (buffer.item_address (lower_index)) -- value
+					i := i + Group_size; j := j + 2
 				end
 				c_string_array.extend (default_pointer)
 			end
@@ -185,7 +219,7 @@ feature -- Basic operations
 
 	append_values_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
 		local
-			i, i_final, lower_index, upper_index: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			i, i_final, lower_index, upper_index, utf_8_count: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
 			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
 				and then attached entity_refs_area as entity_refs and then attached entity_table as table
@@ -193,8 +227,9 @@ feature -- Basic operations
 				from i := 0; i_final := index_count until i = i_final loop
 					buffer := i_th_value (i, a_buffer, overflow_area)
 					lower_index := a [i + 2]; upper_index := a [i + 3]
-					if not valid_utf_8 (buffer, lower_index, upper_index) then
-						buffer := utf_8_converted (buffer, lower_index, upper_index)
+					utf_8_count := utf_8_bytes_count (buffer, lower_index, upper_index)
+					if utf_8_count > upper_index - lower_index + 1 then
+						buffer := utf_8_converted (buffer, lower_index, upper_index, utf_8_count, Void)
 						lower_index := 0; upper_index := buffer.count - 1
 					end
 					if attached entity_refs [i // Group_size] as entity_list then
@@ -266,7 +301,7 @@ feature -- Basic operations
 				end
 				overflow_buffer_area := overflow_buffer_area.aliased_resized_area (new_capacity // 2)
 				entity_refs_area := entity_refs_area.aliased_resized_area (new_capacity // Group_size)
-				character_swap_area := character_swap_area.aliased_resized_area (new_capacity // Group_size)
+				character_swap_area := character_swap_area.aliased_resized_area_with_default ('%U', new_capacity // Group_size)
 			end
 			a.copy_data (additions, 0, index_count, additions.count)
 			if attached overflow_buffer_area as overflow then
@@ -456,38 +491,6 @@ feature {NONE} -- Implementation
 			Result := buffer
 			if attached overflow_area [i // 2 + 1] as overflow then
 				Result := overflow
-			end
-		end
-
-	utf_8_bytes_count (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
-			-- Number of bytes necessary to encode in UTF-8 `s.substring (start_index, end_index)'.
-			-- Note that this feature can be used for both escaped and non-escaped string.
-			-- In the case of escaped strings, the result will be possibly higher than really needed.
-			-- It does not include the terminating null character.
-		require
-			end_index_big_enough: start_index <= end_index + 1
-			valid_start_index: buf.valid_index (start_index)
-			valid_end_index: buf.valid_index (end_index)
-		local
-			i, code: INTEGER
-		do
-			from i := start_index until i > end_index loop
-				code := buf [i].code
-				if code <= 0x7F then
-						-- 0xxxxxxx.
-					Result := Result + 1
-				elseif code <= 0x7FF then
-						-- 110xxxxx 10xxxxxx
-					Result := Result + 2
-				elseif code <= 0xFFFF then
-						-- 1110xxxx 10xxxxxx 10xxxxxx
-					Result := Result + 3
-				else
-					-- code <= 1FFFFF - there are no higher code points
-					-- 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-					Result := Result + 4
-				end
-				i := i + 1
 			end
 		end
 
