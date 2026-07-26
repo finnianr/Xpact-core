@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: DTD-attlist-default-values.xml
+
+2026 26 JUL 12:32
+DTD-attlist-default-values.xml: eXpat passes = 212; Xpact-core passes = 300 (x1.42 to eXpat)

@@ -106,16 +106,16 @@ feature -- Basic operations
 			valid_source_range: a_count = 0 or else (a_offset >= 0 and then a_offset + a_count <= chunk.count)
 			not_in_handler: handler_call_depth = 0
 		local
-			write_start: INTEGER
+			write_start, offset: INTEGER
 		do
 			inspect parsing_state
 				when State_check_encoding then
-					check_encoding (chunk, a_count)
+					offset := check_encoding (chunk, a_count)
 					if error_code = Error_not_started then
 						status := Status_invalid_document
 					else
 						parsing_state := State_initialized
-						Result := parse (chunk, a_offset, a_count, a_is_final) -- Recurse
+						Result := parse (chunk, offset, a_count - offset, a_is_final) -- Recurse
 					end
 
 				when State_suspended then
@@ -643,7 +643,18 @@ feature {NONE} -- Event handlers
 				when 0 then
 					declaration_parts_list.extend (entity_cache.item (buf, start_index, end_index))
 				when 1 then
-					entity_table.put (s.new_substring (buf, start_index, end_index), declaration_parts_list.first)
+					if s.same_characters (buf, start_index, end_index, SYSTEM) then
+						declaration_parts_list.extend (SYSTEM)
+					else
+						entity_table.put (s.new_substring (buf, start_index, end_index), declaration_parts_list.first)
+					end
+				when 2 then
+					if declaration_parts_list [2] = SYSTEM then
+					-- &legal; referenced near end of document /usr/share/gnome/help/synaptic/C/synaptic.xml
+					-- Defined as external: <!ENTITY legal SYSTEM "gpl.xml">
+					-- Without putting into table there will be a %N missing in output compared to eXpat
+						entity_table.put (s.Empty_string, declaration_parts_list.first)
+					end
 			else
 			end
 		end

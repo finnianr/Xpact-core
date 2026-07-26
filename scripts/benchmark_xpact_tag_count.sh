@@ -11,7 +11,8 @@ echo
 
 for path in	$ISE_LIBRARY/library/vision2/vision2.ecf \
 	tools/data/Legislation.xml \
-	tools/data/recursive-entity-expansion.xml; do
+	tools/data/recursive-entity-expansion.xml \
+	tools/data/DTD-attlist-default-values.xml; do
 	name=${path##*/}
 	xml_reader -count_tags -duration $DURATION_MS -compare_to_expat $path
 done

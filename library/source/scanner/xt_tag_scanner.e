@@ -345,7 +345,7 @@ feature {NONE} -- Tag sub-helpers
 			-- close quote.  Sets next_token_ptr past the closing quote.
 			-- Returns 0 (caller should continue) or a non-zero error/end token code.
 		local
-			index, opening_quote: INTEGER; done, closed: BOOLEAN
+			index, opening_quote, CR_index, CR_count: INTEGER; done, closed: BOOLEAN
 		do
 			index := start_index
 			-- skip to opening quote
@@ -370,6 +370,12 @@ feature {NONE} -- Tag sub-helpers
 						when BT_quote then
 							inspect opening_quote
 								when BT_quote then
+									inspect CR_count when 0 then
+										do_nothing
+									else
+										prune_carriage_returns (buf, CR_index, index, CR_count)
+										index := index - CR_count * min_bytes_per_char
+									end
 									lower_upper.extend (index - 1)
 									next_token_index := advance (index); closed := True
 							else
@@ -378,6 +384,12 @@ feature {NONE} -- Tag sub-helpers
 						when BT_apostrophe then
 							inspect opening_quote
 								when BT_apostrophe then
+									inspect CR_count when 0 then
+										do_nothing
+									else
+										prune_carriage_returns (buf, CR_index, index, CR_count)
+										index := index - CR_count * min_bytes_per_char
+									end
 									lower_upper.extend (index - 1)
 									next_token_index := advance (index); closed := True
 							else
@@ -392,10 +404,20 @@ feature {NONE} -- Tag sub-helpers
 							end
 						when BT_lt then
 							next_token_index := index; Result := Tok_invalid; closed := True
-						when BT_LF, BT_CR then
-							-- XML §3.3.3 attribute-value normalisation: replace newlines with space
+
+						when BT_LF then
+							-- XML §3.3.3 attribute-value normalisation: replace tabs with space
 							buf [index] := ' '
 							index := advance (index)
+
+						when BT_CR then
+						-- count CR characters so we can do left shift with prune
+							inspect CR_count when 0 then
+								CR_index := index
+							else end
+							CR_count := CR_count + 1
+							index := advance (index)
+
 						when BT_whitespace then
 							inspect buf [index] when '%T' then
 								-- XML §3.3.3 attribute-value normalisation: replace tabs with space
@@ -414,34 +436,6 @@ feature {NONE} -- Tag sub-helpers
 			elseif not done then
 				Result := Tok_partial
 			end
-		end
-
-feature {NONE} -- Deferred
-
-	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
-		-- collected attribute name-value pair indices into `buffer'
-		deferred
-		end
-
-	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
-			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
-		require
-			valid_range: start_index <= end_index
-		deferred
-		end
-
-	scan_pi (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
-			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
-		require
-			valid_range: start_index <= end_index
-		deferred
-		end
-
-	scan_cdata_section_open (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
-			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
-		require
-			valid_range: start_index <= end_index
-		deferred
 		end
 
 feature {NONE} -- Contract support
@@ -472,6 +466,34 @@ feature {NONE} -- Contract support
 				end
 			end
 			Result := index - start_index
+		end
+
+feature {NONE} -- Deferred
+
+	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+		-- collected attribute name-value pair indices into `buffer'
+		deferred
+		end
+
+	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
+		require
+			valid_range: start_index <= end_index
+		deferred
+		end
+
+	scan_pi (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
+		require
+			valid_range: start_index <= end_index
+		deferred
+		end
+
+	scan_cdata_section_open (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
+		require
+			valid_range: start_index <= end_index
+		deferred
 		end
 
 feature {NONE} -- Internal attributes

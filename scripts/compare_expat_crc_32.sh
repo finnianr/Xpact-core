@@ -11,8 +11,8 @@ echo
 
 for type in text cdata comment tag attribute; do
 	echo Type: $type
-	xml_reader -crc_32 $type -duration 0 $file_path
-	xml_crc_32 -type $type -duration 0 $file_path
+	xml_reader -crc_32 $type -duration 0 "$file_path"
+	xml_crc_32 -type $type -duration 0 "$file_path"
 	echo
 done
 

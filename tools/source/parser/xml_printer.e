@@ -53,7 +53,7 @@ feature {NONE} -- Event handlers
 
 	on_comment (text: STRING_8)
 		do
-			put_tabs (element_depth)
+			put_tabs (element_context.depth)
 			IO.put_string ("COMMENT: ")
 			IO.put_string (text)
 			IO.put_new_line
@@ -64,7 +64,7 @@ feature {NONE} -- Event handlers
 			is_double: BOOLEAN
 		do
 			is_double := text.is_double
-			put_tabs (element_depth)
+			put_tabs (element_context.depth)
 			if in_cdata_section then
 				IO.put_string ("CDATA: ")
 			end
@@ -84,7 +84,7 @@ feature {NONE} -- Event handlers
 
 	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
 		do
-			put_tabs (element_depth - 1)
+			put_tabs (context.depth - 1)
 			IO.put_string (context.name)
 			IO.put_character (':')
 			IO.put_new_line
@@ -93,7 +93,7 @@ feature {NONE} -- Event handlers
 
 				across attributes.as_table (buf, False) as value loop
 					if @ value.is_first then
-						put_tabs (element_depth)
+						put_tabs (context.depth)
 						IO.put_string ("ATTRIBUTES: {")
 					else
 						IO.put_string (", ")

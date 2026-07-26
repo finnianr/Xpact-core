@@ -245,7 +245,7 @@ feature {NONE} -- Prolog sub-scanners
 			-- Returns Tok_literal or negative (partial) or Tok_invalid.
 		require start_index <= end_index
 		local
-			index, t: INTEGER; done: BOOLEAN
+			index, t, CR_index, CR_count: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			if attached byte_type_table as bt_table then
@@ -270,7 +270,24 @@ feature {NONE} -- Prolog sub-scanners
 							else
 								index := index + 3
 							end
+						when BT_CR then
+						-- count CR characters so we can do left shift with prune
+							inspect CR_count when 0 then
+								CR_index := index
+							else end
+							CR_count := CR_count + 1
+							index := advance (index)
+
+						when BT_LF then
+							index := advance (index)
+
 						when BT_quote, BT_apostrophe then
+							inspect CR_count when 0 then
+								do_nothing
+							else
+								prune_carriage_returns (buf, CR_index, index, CR_count)
+								index := index - CR_count * min_bytes_per_char
+							end
 							index := advance (index)
 							if t = a_open then
 								if index >= end_index then
@@ -289,7 +306,7 @@ feature {NONE} -- Prolog sub-scanners
 					else
 						index := advance (index)
 					end
-			end
+				end
 			end
 			if not done then
 				Result := Tok_partial
@@ -308,7 +325,8 @@ feature {NONE} -- Prolog sub-scanners
 						when BT_whitespace, BT_LF then
 							index := advance (index)
 						when BT_CR then
-							if advance (index) = end_index then index := end_index  -- exit; might be CRLF
+							if advance (index) = end_index then
+								index := end_index  -- exit; might be CRLF
 							else
 								index := advance (index)
 							end

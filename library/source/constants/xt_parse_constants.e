@@ -46,6 +46,15 @@ feature -- Parse status (XML_Status enum)
 		Invalid document
 	]"
 
+feature -- Declaration types
+
+	Attlist: INTEGER = 1
+
+	Doctype: INTEGER = 2
+
+	Element: INTEGER = 3
+
+	Entity: INTEGER = 4
 
 feature -- Parsing sections
 

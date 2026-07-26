@@ -212,5 +212,5 @@ feature {NONE} -- Constants
 			Result := Find_template + " -name '%S'"
 		end
 
-	Xml_crc_32: STRING = "xml_crc_32 -type %S -duration 0 %S"
+	Xml_crc_32: STRING = "xml_crc_32 -type %S -duration 0 '%S'"
 end

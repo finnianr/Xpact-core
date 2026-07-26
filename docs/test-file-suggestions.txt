@@ -1,0 +1,20 @@
+Direct XML dialects (easy wins — well-formed XML with different extensions)
+
+.svg — you've got this already
+.xml — the obvious one, everywhere (menus, configs, catalogs)
+.glade / .ui — GtkBuilder UI definitions (GNOME/GTK apps, Cinnamon applets)
+.rng — RELAX NG schemas (some are XML syntax, some are compact — check first)
+.xsd — XML Schema definitions
+.xsl / .xslt — stylesheets, found under things like /usr/share/sgml, docbook toolchains
+.dtd — technically not XML itself (it's DTD syntax) but often bundled alongside, worth excluding from an "is this valid XML" test
+.rdf — RDF/XML, common in package metadata and some desktop files
+.mo — no, that's binary gettext, skip
+.docbook / .dbk — DocBook XML, if any docbook-based docs are installed
+.opf — OPF package files if any ebook tooling/Calibre-related shared data is present
+.kml — unlikely under /usr/share unless mapping tools installed, but XML-based if present
+.gpx — same caveat, GPS exchange format
+.appdata.xml / .metainfo.xml — AppStream metadata, common under /usr/share/metainfo and /usr/share/appdata
+.desktop — not XML (INI-style), don't include
+.policy — PolicyKit action definitions, XML, under /usr/share/polkit-1/actions
+.xba — LibreOffice Basic macro XML, if LibreOffice installed
+.thm — some theme manifests, occasionally XML, worth checking case-by-case

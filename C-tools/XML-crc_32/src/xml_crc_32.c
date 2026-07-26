@@ -63,6 +63,27 @@ static void crc32_update(crc_ctx_t *ctx, const unsigned char *buf, size_t len) {
 	}
 }
 
+/* Stub handler for external parameter entities (e.g. %selectors; in XSL files).
+ * Without this, expat sets dtd->keepProcessing=false when it hits an external
+ * parameter entity ref and has no handler, which silently discards all entity
+ * declarations that follow it in the internal subset.
+ * Calling XML_Parse on the sub-parser (even with empty content) sets
+ * dtd->paramEntityRead=true, which keeps keepProcessing=true. */
+static int XMLCALL on_external_entity(XML_Parser parser,
+                                      const XML_Char *context,
+                                      const XML_Char *base,
+                                      const XML_Char *systemId,
+                                      const XML_Char *publicId)
+{
+	(void)base; (void)systemId; (void)publicId;
+	XML_Parser sub = XML_ExternalEntityParserCreate(parser, context, NULL);
+	if (sub) {
+		XML_Parse(sub, "", 0, 1);
+		XML_ParserFree(sub);
+	}
+	return 1;
+}
+
 static void XMLCALL on_start_cdata(void *userData) {
 	crc_ctx_t *ctx = (crc_ctx_t *) userData;
 	ctx->in_cdata = 1;
@@ -124,6 +145,8 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	}
 
 	XML_SetUserData(parser, ctx);
+	XML_SetParamEntityParsing(parser, XML_PARAM_ENTITY_PARSING_ALWAYS);
+	XML_SetExternalEntityRefHandler(parser, on_external_entity);
 	XML_SetElementHandler(parser, on_start_element, NULL);
 	XML_SetCharacterDataHandler(parser, on_character_data);
 	XML_SetCommentHandler(parser, on_comment);

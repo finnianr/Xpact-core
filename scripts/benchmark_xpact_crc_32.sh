@@ -11,7 +11,8 @@ echo
 
 for path in	$ISE_LIBRARY/library/vision2/vision2.ecf \
 	tools/data/Legislation.xml \
-	tools/data/recursive-entity-expansion.xml; do
+	tools/data/recursive-entity-expansion.xml \
+	tools/data/DTD-attlist-default-values.xml; do
 	name=${path##*/}
 	for type in text cdata comment tag attribute; do
 		echo Type: $type in $name

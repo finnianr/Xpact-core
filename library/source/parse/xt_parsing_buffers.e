@@ -19,6 +19,9 @@ inherit
 		end
 
 	XT_PARSE_CONSTANTS
+		rename
+			Element as Element_,
+			Entity as Entity_
 		export
 			{NONE} all
 		end
@@ -47,9 +50,7 @@ inherit
 
 	XT_STRING_CONSTANTS
 		rename
-			CDATA as CDATA_upper,
-			Element as Element_,
-			Entity as Entity_
+			CDATA as CDATA_upper
 		end
 
 	STRING_HANDLER
@@ -131,7 +132,7 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Implementation
 
-	check_encoding (chunk: SPECIAL [CHARACTER]; byte_count: INTEGER)
+	check_encoding (chunk: SPECIAL [CHARACTER]; byte_count: INTEGER): INTEGER
 		-- check encoding in XML header calling `set_scanner (Latin_1)' if required
 		-- also check if document is actually XML or something weird
 		local
@@ -142,6 +143,7 @@ feature {NONE} -- Implementation
 			if lt_index = 0 then
 				error_code := Error_not_started
 			else
+				Result := lt_index - 1
 				leading := str.substring (1, lt_index - 1)
 				if attached u.utf_8_bom_to_string_8 as bom then
 				-- check leading bytes before first '<'

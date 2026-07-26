@@ -131,7 +131,6 @@ feature {NONE} -- Implementation
 			Result := index + min_bytes_per_char
 		end
 
-
 	leading_10 (buf: SPECIAL [CHARACTER]; index: INTEGER): STRING_8
 		-- leading 10 characters in `buf' starting from `index'
 		local
@@ -145,6 +144,30 @@ feature {NONE} -- Implementation
 			-- end_index - index >= count * min_bytes_per_char  (HAS_CHARS macro)
 		do
 			Result := end_index - index >= count * min_bytes_per_char
+		end
+
+	prune_carriage_returns (buf: SPECIAL [CHARACTER]; CR_index, quote_index, CR_count: INTEGER)
+		-- prune %R in attribute value by doing a left shift and filling in with spaces at the end
+		require
+			valid_cr_index: buf [CR_index] = '%R'
+			valid_quote_index: buf [quote_index] = '"' or buf [quote_index] = '%''
+		local
+			i, j: INTEGER
+		do
+			from i := CR_index; j := CR_index until i > quote_index loop
+				inspect buf [i] when '%R' then
+					i := advance (i)
+				else
+					buf [j] := buf [i]
+					j := advance (j)
+					i := advance (i)
+				end
+			end
+		-- paint over remaining characters with spaces
+			from until j > quote_index loop
+				buf [j] := ' '
+				j := advance (j)
+			end
 		end
 
 feature {XT_XML_PARSER_BASE} -- Deferred

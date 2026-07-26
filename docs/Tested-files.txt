@@ -1,0 +1,20 @@
+Directory: /usr/share
+*.glade		Passed: 2 Failed: 0
+*.rng			Passed: 10 Failed: 0
+*.policy		Passed: 56 Failed: 0
+*.xsl			Passed: 78 Failed: 0
+*.ui			Passed: 220 Failed: 0
+*.docbook 	Passed: 343 Failed: 0
+*.xml			Passed: 2455 Failed: 0
+*.svg			Passed: 81697 Failed: 0
+
+Directory: $ISE_EIFFEL
+*.eant		Passed: 1131 Failed: 0
+*.ecf			Passed: 1603 Failed: 0
+
+Directory: $HOME/.steam
+*.xml			Passed: 4371 Failed: 0
+*.svg			Passed: 1244 Failed: 0
+
+Directory: $HOME/.es
+*.xml			Passed: 63 Failed: 0

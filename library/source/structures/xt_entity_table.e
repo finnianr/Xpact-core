@@ -32,8 +32,6 @@ inherit
 		end
 
 	XT_STRING_CONSTANTS
-		rename
-			Entity as Entity_uppercase
 		undefine
 			copy, is_equal
 		end

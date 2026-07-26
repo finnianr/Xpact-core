@@ -21,21 +21,15 @@ feature {NONE} -- CDATA constant
 			Result := CDATA + "["
 		end
 
-	Attlist: INTEGER = 1
-
-	Doctype: INTEGER = 2
-
-	Element: INTEGER = 3
-
-	Entity: INTEGER = 4
-
 	Document_definition_names: LIST [STRING]
 		once
 			Result := ("ATTLIST,DOCTYPE,ELEMENT,ENTITY").split (',')
 		ensure
-			valid_first: Result [Attlist] ~ "ATTLIST"
-			valid_last: Result [Entity] ~ "ENTITY"
+			valid_first: Result [{XT_PARSE_CONSTANTS}.Attlist] ~ "ATTLIST"
+			valid_last: Result [{XT_PARSE_CONSTANTS}.Entity] ~ "ENTITY"
 		end
+
+	SYSTEM: STRING = "SYSTEM"
 
 feature {NONE} -- Predefined entities
 
