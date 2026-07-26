@@ -191,9 +191,7 @@ feature -- Basic operations
 			then
 				from i := 0; j := 1; i_final := index_count until i = i_final loop
 					buffer := i_th_name (i, a_buffer, overflow_area)
-					if attached names.item (buffer, a [0], a [1]) as name then
-						c_string_array.extend (name.area.base_address) -- name
-					end
+					c_string_array.extend (names.item (buffer, a [0], a [1]).area.base_address) -- name
 					buffer := i_th_value (i, a_buffer, overflow_area)
 					lower_index := a [2]; upper_index := a [3]
 
@@ -217,14 +215,24 @@ feature -- Basic operations
 			same_character_count: sum_c_string_lengths (c_string_array) = character_count
 		end
 
-	append_values_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
+	append_values_to_crc_32 (
+		checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8]; default_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
+	)
+		require
+			all_default_values_unchecked: across default_values as value all not value.checked end
 		local
-			i, i_final, lower_index, upper_index, utf_8_count: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			i, j, i_final, lower_index, upper_index, utf_8_count: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			attribute_: XT_DEFAULT_ATTRIBUTE_VALUE
 		do
 			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
 				and then attached entity_refs_area as entity_refs and then attached entity_table as table
+				and then attached name_cache as names
 			then
 				from i := 0; i_final := index_count until i = i_final loop
+					if default_values.count > 0 then
+						buffer := i_th_name (i, a_buffer, overflow_area)
+						check_value (names.item (buffer, a [i], a [i + 1]), default_values)
+					end
 					buffer := i_th_value (i, a_buffer, overflow_area)
 					lower_index := a [i + 2]; upper_index := a [i + 3]
 					utf_8_count := utf_8_bytes_count (buffer, lower_index, upper_index)
@@ -238,6 +246,14 @@ feature -- Basic operations
 						checksum.add_characters (buffer, lower_index, upper_index)
 					end
 					i := i + Group_size
+				end
+			-- Add default values for unchecked
+				from j := 0 until j = default_values.count loop
+					attribute_ := default_values [j]
+					if not attribute_.checked then
+						checksum.add_string (attribute_.value)
+					end
+					j := j + 1
 				end
 			end
 		end
@@ -384,8 +400,9 @@ feature -- Debug helpers
 		local
 			name, value: STRING
 		do
-			if has_value (a_buffer, once "tb1:TSNLACTUALDEPTH", once "103123")
-				and then has_value (a_buffer, once "ROWID", once "AAAHcmAALAAAACnAAA")
+		-- <glob pattern="*.asc" weight="10"/>
+			if has_value (a_buffer, once "pattern", once "*.asc")
+				and then has_value (a_buffer, once "weight", once "10")
 			then
 				name := Empty_string; value := Empty_string
 			else
@@ -470,6 +487,22 @@ feature -- Conversion
 		end
 
 feature {NONE} -- Implementation
+
+	check_value (name: STRING; default_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE])
+		-- if `name' matches some name in `default_values' then check it off
+		local
+			i: INTEGER; value: XT_DEFAULT_ATTRIBUTE_VALUE
+		do
+			from i := 0 until i = default_values.count loop
+				value := default_values [i]
+				if name = value.name then
+					value.check_
+					i := default_values.count -- break
+				else
+					i := i + 1
+				end
+			end
+		end
 
 	i_th_name (i: INTEGER; buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]
 		-- override `buffer' with `overflow_area [i // 2]' if not Void (consequence of `shift_buffer_left' )

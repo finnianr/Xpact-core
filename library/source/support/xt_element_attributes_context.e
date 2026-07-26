@@ -17,7 +17,7 @@ inherit
 		rename
 			make as make_context
 		redefine
-			has_attributes
+			default_attribute_values, has_attributes
 		end
 
 create
@@ -28,9 +28,9 @@ feature {NONE} -- Initialization
 	make (a_section_ptr: POINTER; a_default_value_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING])
 		require
 			attached_section_ptr: is_attached (a_section_ptr)
-			list_of_name_value_pairs:
+			even_number_of_name_value_pairs:
 				across a_default_value_table as name_value_list all
-					name_value_list.count \\ 2 = 0
+					name_value_list.count.integer_remainder (2) = 0
 				end
 		local
 			attribute_array: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]; i: INTEGER
@@ -54,9 +54,29 @@ feature {NONE} -- Initialization
 			end
 		end
 
+feature -- Access
+
+	default_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
+		local
+			i: INTEGER
+		do
+			if attached default_value_table [name] as values then
+				Result := values
+				from i := 0 until i = Result.count loop
+					Result [i].uncheck
+					i := i + 1
+				end
+			else
+				Result := empty_attribute_values
+			end
+		end
+
 feature -- Status query
 
-	has_attributes: BOOLEAN = True
+	has_attributes: BOOLEAN
+		do
+			Result := default_value_table.has (name)
+		end
 
 feature {NONE} -- Internal attributes
 

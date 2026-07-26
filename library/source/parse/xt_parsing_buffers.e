@@ -68,9 +68,8 @@ feature {NONE} -- Initialisation
 			check attached Token_names end
 
 			buffer := new_buffer_area (Default_buffer_size)
-			create last_entity_ref.make_empty
 			create character_string.make_filled ('%U', 1)
-			create attribute_declaration_list.make (10)
+			create declaration_parts_list.make (10)
 			create attribute_value_defaults_table.make (37)
 			set_scanner (Utf_8)
 
@@ -298,7 +297,7 @@ feature {NONE} -- Internal attributes
 
 feature {NONE} -- Internal structures
 
-	attribute_declaration_list: ARRAYED_LIST [STRING]
+	declaration_parts_list: ARRAYED_LIST [STRING]
 		-- For example <!ATTLIST magic priority CDATA "50">
 		-- would be: << "magic", "priority", "CDATA", "50" >>
 
@@ -315,8 +314,6 @@ feature {NONE} -- Internal structures
 
 	entity_cache: XT_ENTITY_NAME_CACHE
 		-- efficient lookup of entity names from character buffer interval
-
-	last_entity_ref: STRING
 
 	name_cache: XT_NAME_CACHE
 		-- efficient lookup of attribute/tag name

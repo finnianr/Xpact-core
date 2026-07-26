@@ -372,15 +372,15 @@ feature {NONE} -- Processor dispatch
 			end_in_buffer: buf = buffer implies end_index <= buffer_end
 			buffer_index_at_start: buffer_index = start_index
 		local
-			index, tok, tok_end, code, err, buffer_index_copy: INTEGER; done: BOOLEAN
+			index, token, tok_end, code, err, buffer_index_copy: INTEGER; done: BOOLEAN
 			context: XT_ELEMENT_CONTEXT
 		do
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
 				if is_section (section_ptr, Prolog) then
-					tok := s.scan_prolog (buf, bt_table, index, end_index)
+					token := s.scan_prolog (buf, bt_table, index, end_index)
 					tok_end := s.next_token_index
-					inspect tok
+					inspect token
 						when Tok_instance_start then
 							set_section (section_ptr, Prolog, False)
 							if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
@@ -391,30 +391,30 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_decl_open then
 							declaration := select_declaration (buf, index + 2, s)
-							attribute_declaration_list.wipe_out
+							declaration_parts_list.wipe_out
 							index := tok_end
 
 						when Tok_literal then
 							inspect declaration
 								when Entity_ then
-									entity_table.put (s.new_substring (buf, index + 1, tok_end - 2), last_entity_ref)
+									on_entity_declaration_part (buf, index + 1, tok_end - 2, s)
 								when Attlist then
-									extend_attribute_declaration_list (buf, index + 1, tok_end - 2, tok, s, names)
+									on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, s, names)
 							else end
 							index := tok_end
 
 						when Tok_name then
 							inspect declaration
 								when Entity_ then
-									last_entity_ref := entity_cache.item (buf, index, tok_end - 3)
+									on_entity_declaration_part (buf, index, tok_end - 1, s)
 								when Attlist then
-									extend_attribute_declaration_list (buf, index, tok_end - 1, tok, s, names)
+									on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
 							else end
 							index := tok_end
 
 						when Tok_pound_name then
 							inspect declaration when Attlist then
-								extend_attribute_declaration_list (buf, index, tok_end - 1, tok, s, names)
+								on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
 							else end
 							index := tok_end
 
@@ -425,16 +425,16 @@ feature {NONE} -- Processor dispatch
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
 					else
-						if tok <= 0 then
+						if token <= 0 then
 							done := True  -- partial; wait for more data
 						else
 							index := tok_end  -- skip prolog token
 						end
 					end
 				elseif is_section (section_ptr, CDATA) then
-					tok := s.scan_cdata_section (buf, bt_table, index, end_index)
+					token := s.scan_cdata_section (buf, bt_table, index, end_index)
 					tok_end := s.next_token_index
-					inspect tok
+					inspect token
 						when Tok_cdata_sect_close then
 							on_cdata_section_close
 							set_section (section_ptr, CDATA, False)
@@ -449,16 +449,16 @@ feature {NONE} -- Processor dispatch
 							index := tok_end
 
 					else
-						if tok = Tok_invalid then
+						if token = Tok_invalid then
 							Result := Error_invalid_token; done := True
 						else
 							done := True  -- partial; wait for more data
 						end
 					end
 				else
-					tok := s.scan_content (buf, bt_table, index, end_index)
+					token := s.scan_content (buf, bt_table, index, end_index)
 					tok_end := s.next_token_index
-					inspect tok
+					inspect token
 						when Tok_cdata_sect_open then
 							set_section (section_ptr, CDATA, True)
 
@@ -477,18 +477,18 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_start_tag_no_attributes then
 							context.push (s.tag_name (names, buf, index + 1))
-							on_tag_start (context, attributes)
+							on_tag_start (buf, context, attributes, token)
 
 						when Tok_start_tag_with_attributes then
 							context.push (s.tag_name (names, buf, index + 1))
-							on_tag_start (context, attributes)
+							on_tag_start (buf, context, attributes, token)
 							attributes.wipe_out
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
 							if attached s.tag_name (names, buf, index + 1) as tag_name then
-								context.push (s.tag_name (names, buf, index + 1))
-								on_tag_start (context, attributes)
-								inspect tok when Tok_empty_element_with_attributes then
+								context.push (tag_name)
+								on_tag_start (buf, context, attributes, token)
+								inspect token when Tok_empty_element_with_attributes then
 									attributes.wipe_out
 								else
 								end
@@ -540,7 +540,7 @@ feature {NONE} -- Processor dispatch
 							end
 
 					else
-						if tok < 0 then
+						if token < 0 then
 							done := True  -- partial; wait for more data
 						end
 					end
@@ -556,40 +556,6 @@ feature {NONE} -- Processor dispatch
 
 feature {NONE} -- Implementation
 
-	extend_attribute_declaration_list (
-		buf: like buffer; start_index, end_index, token: INTEGER; s: like scanner; names: like name_cache
-	)
-		local
-			default_values_list: ARRAYED_LIST [STRING]
-		do
-			inspect attribute_declaration_list.count
-				when 0, 1 then
-					attribute_declaration_list.extend (names.item (buf, start_index, end_index))
-				when 2 then
-					if s.same_characters (buf, start_index, end_index, CDATA_upper) then
-						attribute_declaration_list.extend (CDATA_upper)
-					end
-			else
-				inspect token
-					when Tok_literal then
-						if attribute_declaration_list.last = CDATA_upper then
-							if attached attribute_value_defaults_table [attribute_declaration_list.first] as list then
-								default_values_list := list
-							else
-								create default_values_list.make (5)
-								attribute_value_defaults_table.extend (default_values_list, attribute_declaration_list.first)
-							end
-							default_values_list.extend (attribute_declaration_list [2])
-							default_values_list.extend (s.new_substring (buf, start_index, end_index))
-						end
-					when Tok_pound_name then
-						attribute_declaration_list.extend (names.item (buf, start_index, end_index))
-
-				else
-				end
-			end
-		end
-
 	in_prolog_section: BOOLEAN
 		do
 			Result := is_section (section.item, Prolog)
@@ -598,53 +564,6 @@ feature {NONE} -- Implementation
 	in_cdata_section: BOOLEAN
 		do
 			Result := is_section (section.item, CDATA)
-		end
-
-	processor_wants_reenter: BOOLEAN
-		-- True when the processor has set its reenter flag, requesting
-		-- another pass through `process_content' to avoid stack overflow.
-		-- Corresponds to `m_reenter' in xmlparse.c.
-		do
-			Result := False
-		end
-
-feature {NONE} -- Event handlers
-
-	on_finish (a_status: INTEGER)
-		do
-		end
-
-	on_set_error_processor
-		-- Switch the active processor to the error sink so that any
-		-- further parse calls immediately fail.
-		-- Corresponds to `m_processor = errorProcessor' in xmlparse.c.
-		do
-		end
-
-	on_clear_reenter
-			-- Clear the reenter flag after each loop iteration.
-		do
-		ensure
-			cleared: not processor_wants_reenter
-		end
-
-	on_start_parsing: BOOLEAN
-			-- Called once when a root parser leaves State_initialized.
-			-- Initialise hash salt and any implicit namespace context here.
-			-- Return True on success; False causes the parse to abort with
-			-- Error_no_memory (matching startParsing() in xmlparse.c).
-		do
-			Result := True
-		end
-
-	on_update_position (start_index, end_index: INTEGER)
-			-- Update line/column counters by scanning
-			-- `buffer [start_index .. end_index)'.
-			-- Corresponds to XmlUpdatePosition() calls in xmlparse.c.
-		require
-			valid_range: start_index >= 0 and then start_index <= end_index
-			to_in_buf: end_index <= buffer_end
-		do
 		end
 
 	increment_handler_depth
@@ -667,6 +586,98 @@ feature {NONE} -- Event handlers
 			depth_decreased: handler_call_depth = old handler_call_depth - 1
 		end
 
+	processor_wants_reenter: BOOLEAN
+		-- True when the processor has set its reenter flag, requesting
+		-- another pass through `process_content' to avoid stack overflow.
+		-- Corresponds to `m_reenter' in xmlparse.c.
+		do
+			Result := False
+		end
+
+feature {NONE} -- Event handlers
+
+	on_attribute_declaration_part (
+		buf: like buffer; start_index, end_index, token: INTEGER; s: like scanner; names: like name_cache
+	)
+		local
+			default_values_list: ARRAYED_LIST [STRING]
+		do
+			inspect declaration_parts_list.count
+				when 0, 1 then
+					declaration_parts_list.extend (names.item (buf, start_index, end_index))
+				when 2 then
+					if s.same_characters (buf, start_index, end_index, CDATA_upper) then
+						declaration_parts_list.extend (CDATA_upper)
+					end
+			else
+				inspect token
+					when Tok_literal then
+						if declaration_parts_list.last = CDATA_upper then
+							if attached attribute_value_defaults_table [declaration_parts_list.first] as list then
+								default_values_list := list
+							else
+								create default_values_list.make (5)
+								attribute_value_defaults_table.extend (default_values_list, declaration_parts_list.first)
+							end
+							default_values_list.extend (declaration_parts_list [2])
+							default_values_list.extend (s.new_substring (buf, start_index, end_index))
+						end
+					when Tok_pound_name then
+						declaration_parts_list.extend (names.item (buf, start_index, end_index))
+
+				else
+				end
+			end
+		end
+
+	on_clear_reenter
+			-- Clear the reenter flag after each loop iteration.
+		do
+		ensure
+			cleared: not processor_wants_reenter
+		end
+
+	on_entity_declaration_part (buf: like buffer; start_index, end_index: INTEGER; s: like scanner)
+		do
+			inspect declaration_parts_list.count
+				when 0 then
+					declaration_parts_list.extend (entity_cache.item (buf, start_index, end_index))
+				when 1 then
+					entity_table.put (s.new_substring (buf, start_index, end_index), declaration_parts_list.first)
+			else
+			end
+		end
+
+	on_finish (a_status: INTEGER)
+		do
+		end
+
+	on_set_error_processor
+		-- Switch the active processor to the error sink so that any
+		-- further parse calls immediately fail.
+		-- Corresponds to `m_processor = errorProcessor' in xmlparse.c.
+		do
+		end
+
+	on_start_parsing: BOOLEAN
+			-- Called once when a root parser leaves State_initialized.
+			-- Initialise hash salt and any implicit namespace context here.
+			-- Return True on success; False causes the parse to abort with
+			-- Error_no_memory (matching startParsing() in xmlparse.c).
+		do
+			Result := True
+		end
+
+	on_update_position (start_index, end_index: INTEGER)
+			-- Update line/column counters by scanning
+			-- `buffer [start_index .. end_index)'.
+			-- Corresponds to XmlUpdatePosition() calls in xmlparse.c.
+		require
+			valid_range: start_index >= 0 and then start_index <= end_index
+			to_in_buf: end_index <= buffer_end
+		do
+		end
+
 feature {NONE} -- Deferred
 
 	on_cdata_section_close
@@ -685,7 +696,7 @@ feature {NONE} -- Deferred
 		deferred
 		end
 
-	on_tag_start (context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
 		require
 			valid_attribute_indices_count: attributes.is_valid_count
 		deferred

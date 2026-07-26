@@ -82,16 +82,16 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_tag_start (context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
 		do
 			put_tabs (element_depth - 1)
 			IO.put_string (context.name)
 			IO.put_character (':')
 			IO.put_new_line
 			if attributes.index_count > 0 then
-				attributes.null_terminate_values (buffer) -- purely to test null termination
+				attributes.null_terminate_values (buf) -- purely to test null termination
 
-				across attributes.as_table (buffer, False) as value loop
+				across attributes.as_table (buf, False) as value loop
 					if @ value.is_first then
 						put_tabs (element_depth)
 						IO.put_string ("ATTRIBUTES: {")
@@ -105,12 +105,12 @@ feature {NONE} -- Event handlers
 				end
 				IO.put_character ('}')
 				IO.put_new_line
-				attributes.undo_null_terminated_values (buffer) -- purely to test restoring value
+				attributes.undo_null_terminated_values (buf) -- purely to test restoring value
 			end
 		ensure then
 			buffer_unchanged:
-				attributes.upper_plus_1_characters (buffer).is_equal (
-					old attributes.upper_plus_1_characters (buffer) -- purely to test upper_plus_1_characters
+				attributes.upper_plus_1_characters (buf).is_equal (
+					old attributes.upper_plus_1_characters (buf) -- purely to test upper_plus_1_characters
 				)
 		end
 

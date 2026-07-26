@@ -26,6 +26,7 @@ feature {NONE} -- Initialization
 		do
 			section_ptr := a_section_ptr
 			name := s.Empty_string
+			create empty_attribute_values.make_empty (0)
 		end
 
 feature -- Access
@@ -33,6 +34,13 @@ feature -- Access
 	depth: INTEGER
 
 	name: STRING
+
+	default_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
+		do
+			Result := empty_attribute_values
+		ensure
+			all_attributes_unchecked: across Result as value all not value.checked end
+		end
 
 feature -- Status query
 
@@ -66,6 +74,8 @@ feature -- Element change
 		end
 
 feature {NONE} -- Internal attributes
+
+	empty_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
 
 	section_ptr: POINTER
 

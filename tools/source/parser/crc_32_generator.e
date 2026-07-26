@@ -117,14 +117,22 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_tag_start (context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
 		do
 			inspect data_type
 				when Tok_tag then
 					checksum.add_string (context.name)
 
 				when Tok_attribute then
-					attributes.append_values_to_crc_32 (checksum, buffer)
+					inspect token
+						when Tok_start_tag_with_attributes, Tok_empty_element_with_attributes then
+							attributes.append_values_to_crc_32 (checksum, buf, context.default_attribute_values)
+					else
+					-- perhaps there are some default values defined in DTD prolog
+						if context.has_attributes and attributes.count = 0 then
+							attributes.append_values_to_crc_32 (checksum, buf, context.default_attribute_values)
+						end
+					end
 			else
 			end
 		end

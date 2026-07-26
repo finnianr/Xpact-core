@@ -14,7 +14,7 @@ class
 
 create
 	make
-	
+
 feature {NONE} -- Initialization
 
 	make (a_name, a_value: STRING)
@@ -28,4 +28,19 @@ feature -- Access
 
 	value: STRING
 
+feature -- Status query
+
+	checked: BOOLEAN
+
+feature -- Status query	
+
+	check_
+		do
+			checked := True
+		end
+
+	uncheck
+		do
+			checked := False
+		end
 end
