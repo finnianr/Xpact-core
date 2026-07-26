@@ -18,7 +18,7 @@ inherit
 create
 	make
 
-feature {NONE} -- Initialisation
+feature {NONE} -- Initialization
 
 	make (a_section_ptr: POINTER)
 		local
@@ -33,6 +33,13 @@ feature -- Access
 	depth: INTEGER
 
 	name: STRING
+
+feature -- Status query
+
+	has_attributes: BOOLEAN
+		do
+			Result := False
+		end
 
 feature -- Element change
 
@@ -61,4 +68,7 @@ feature -- Element change
 feature {NONE} -- Internal attributes
 
 	section_ptr: POINTER
+
+invariant
+	section_ptr_attached: is_attached (section_ptr)
 end

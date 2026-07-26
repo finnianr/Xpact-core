@@ -23,10 +23,13 @@ inherit
 
 feature -- Literal content tokenization
 
-	attribute_value_tok (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
+	attribute_value_tok (
+		buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER
+	): INTEGER
 			-- Tokenize inside an already-identified attribute value literal.
 			-- Corresponds to attributeValueTok() in xmltok_impl.c.
-		require start_index <= end_index and end_index <= buf.count
+		require
+			valid_range: start_index <= end_index and end_index <= buf.count
 		local
 			index, start: INTEGER; done: BOOLEAN
 		do

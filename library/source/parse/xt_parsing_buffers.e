@@ -70,7 +70,8 @@ feature {NONE} -- Initialisation
 			buffer := new_buffer_area (Default_buffer_size)
 			create last_entity_ref.make_empty
 			create character_string.make_filled ('%U', 1)
-			create attlist_path.make (10)
+			create attribute_declaration_list.make (10)
+			create attribute_value_defaults_table.make (37)
 			set_scanner (Utf_8)
 
 		ensure then
@@ -297,12 +298,14 @@ feature {NONE} -- Internal attributes
 
 feature {NONE} -- Internal structures
 
-	attlist_path: ARRAYED_LIST [STRING]
+	attribute_declaration_list: ARRAYED_LIST [STRING]
 		-- For example <!ATTLIST magic priority CDATA "50">
 		-- would be: << "magic", "priority", "CDATA", "50" >>
 
 	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
 		-- collected attribute name-value pair indices into `buffer'
+
+	attribute_value_defaults_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING]
 
 	buffer: SPECIAL [CHARACTER_8]
 		-- Raw byte buffer; do not modify indices outside this class.

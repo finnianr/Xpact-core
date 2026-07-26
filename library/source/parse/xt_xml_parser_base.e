@@ -264,22 +264,22 @@ feature {NONE} -- Buffer implementation
 
 feature {NONE} -- Processor dispatch
 
-	call_processor (lower, upper: INTEGER): INTEGER
-			-- Drive the current processor over `buffer [lower .. upper]'.
+	call_processor (start_index, end_index: INTEGER): INTEGER
+			-- Drive the current processor over `buffer [start_index .. end_index]'.
 			-- Implements the reparse-deferral heuristic and the re-enter loop
 			-- from callProcessor() in xmlparse.c.
 			-- Updates `buffer_index' to the furthest position reached.
 			-- Returns Error_none on success or an Error_* code on failure.
 		require
-			valid_range:  lower >= 0 and then lower <= upper
-			end_in_buf:   upper <= buffer_end
-			ptr_at_start: buffer_index = lower
+			valid_range:  start_index >= 0 and then start_index <= end_index
+			end_in_buf:   end_index <= buffer_end
+			ptr_at_start: buffer_index = start_index
 		local
 			err, have_now, had_before, available: INTEGER; enough, done: BOOLEAN
 			section_ptr: POINTER
 		do
 			section_ptr := section.item
-			have_now := upper - lower
+			have_now := end_index - start_index
 
 			-- Reparse-deferral heuristic (m_reparseDeferralEnabled in xmlparse.c):
 			-- avoid re-scanning a partial token until we have significantly more data
@@ -290,7 +290,7 @@ feature {NONE} -- Processor dispatch
 				enough := have_now >= 2 * had_before
 					or else last_buffer_request_size > available
 				if not enough then
-					-- Leave buffer_ptr at lower; nothing consumed this call.
+					-- Leave buffer_ptr at start_index; nothing consumed this call.
 					Result := Error_none
 				end
 			else
@@ -304,7 +304,7 @@ feature {NONE} -- Processor dispatch
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				from done := False until done loop
-					err := process_content (buf, buffer_index, upper, attributes, s, s.byte_type_table, names, context, section_ptr)
+					err := process_content (buf, buffer_index, end_index, attributes, s, s.byte_type_table, names, context, section_ptr)
 
 					-- Suspended state overrides the reenter request.
 					if parsing_state /= State_parsing then
@@ -327,14 +327,14 @@ feature {NONE} -- Processor dispatch
 			-- Track how many bytes were available but not consumed,
 			-- so the deferral heuristic can judge the next call.
 			if Result = Error_none then
-				if buffer_index = lower then
+				if buffer_index = start_index then
 					partial_token_bytes_before := have_now
 				else
 					partial_token_bytes_before := 0
 				end
 			end
 		ensure
-			buffer_ptr_in_range: buffer_index >= lower and buffer_index <= upper
+			buffer_ptr_in_range: buffer_index >= start_index and buffer_index <= end_index
 			error_code_unchanged_on_success: Result = Error_none
 				implies error_code = old error_code
 		end
@@ -358,35 +358,40 @@ feature {NONE} -- Processor dispatch
 		end
 
 	process_content (
-		buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 		s: like scanner; bt_table: SPECIAL [INTEGER]; names: like name_cache
-		context: XT_ELEMENT_CONTEXT; section_ptr: POINTER
+		a_context: XT_ELEMENT_CONTEXT; section_ptr: POINTER
 	): INTEGER
-		-- Scan tokens from `buf' `lower .. upper` and triggers relevant XML events.  Advances `buffer_index'.
-		-- Execute one pass of the current processor over `buf [lower .. upper)'.
+		-- Scan tokens from `buf' `start_index .. end_index` and triggers relevant XML events.  Advances `buffer_index'.
+		-- Execute one pass of the current processor over `buf [start_index .. end_index)'.
 		-- Must update `buffer_index' to the first unconsumed byte.
 		-- Returns Error_none on success or an Error_* code on failure.
 		-- Corresponds to a single call of `m_processor' in xmlparse.c.
 		require
-			valid_range:lower >= 0 and then lower <= upper
-			end_in_buffer: buf = buffer implies upper <= buffer_end
-			buffer_index_at_start: buffer_index = lower
+			valid_range: start_index >= 0 and then start_index <= end_index
+			end_in_buffer: buf = buffer implies end_index <= buffer_end
+			buffer_index_at_start: buffer_index = start_index
 		local
 			index, tok, tok_end, code, err, buffer_index_copy: INTEGER; done: BOOLEAN
+			context: XT_ELEMENT_CONTEXT
 		do
-			index := lower
-			from until index >= upper or done loop
+			index := start_index; context := a_context
+			from until index >= end_index or done loop
 				if is_section (section_ptr, Prolog) then
-					tok := s.scan_prolog (buf, bt_table, index, upper)
+					tok := s.scan_prolog (buf, bt_table, index, end_index)
 					tok_end := s.next_token_index
 					inspect tok
 						when Tok_instance_start then
 							set_section (section_ptr, Prolog, False)
+							if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
+								create {XT_ELEMENT_ATTRIBUTES_CONTEXT} context.make (section_ptr, attribute_value_defaults_table)
+								element_context := context
+							end
 							index := tok_end
 
 						when Tok_decl_open then
 							declaration := select_declaration (buf, index + 2, s)
-							attlist_path.wipe_out
+							attribute_declaration_list.wipe_out
 							index := tok_end
 
 						when Tok_literal then
@@ -394,18 +399,22 @@ feature {NONE} -- Processor dispatch
 								when Entity_ then
 									entity_table.put (s.new_substring (buf, index + 1, tok_end - 2), last_entity_ref)
 								when Attlist then
-									attlist_path.extend (names.item (buf, index + 1, tok_end - 2))
-									do_nothing
+									extend_attribute_declaration_list (buf, index + 1, tok_end - 2, tok, s, names)
 							else end
 							index := tok_end
 
 						when Tok_name then
 							inspect declaration
 								when Entity_ then
-									last_entity_ref := entity_cache.item (buf, index, tok_end - 1)
+									last_entity_ref := entity_cache.item (buf, index, tok_end - 3)
 								when Attlist then
-									attlist_path.extend (names.item (buf, index, tok_end))
-									do_nothing
+									extend_attribute_declaration_list (buf, index, tok_end - 1, tok, s, names)
+							else end
+							index := tok_end
+
+						when Tok_pound_name then
+							inspect declaration when Attlist then
+								extend_attribute_declaration_list (buf, index, tok_end - 1, tok, s, names)
 							else end
 							index := tok_end
 
@@ -423,7 +432,7 @@ feature {NONE} -- Processor dispatch
 						end
 					end
 				elseif is_section (section_ptr, CDATA) then
-					tok := s.scan_cdata_section (buf, bt_table, index, upper)
+					tok := s.scan_cdata_section (buf, bt_table, index, end_index)
 					tok_end := s.next_token_index
 					inspect tok
 						when Tok_cdata_sect_close then
@@ -447,7 +456,7 @@ feature {NONE} -- Processor dispatch
 						end
 					end
 				else
-					tok := s.scan_content (buf, bt_table, index, upper)
+					tok := s.scan_content (buf, bt_table, index, end_index)
 					tok_end := s.next_token_index
 					inspect tok
 						when Tok_cdata_sect_open then
@@ -542,10 +551,44 @@ feature {NONE} -- Processor dispatch
 			end
 			buffer_index := index
 		ensure
-			buffer_ptr_advanced: buffer_index >= lower and buffer_index <= upper
+			buffer_ptr_advanced: buffer_index >= start_index and buffer_index <= end_index
 		end
 
 feature {NONE} -- Implementation
+
+	extend_attribute_declaration_list (
+		buf: like buffer; start_index, end_index, token: INTEGER; s: like scanner; names: like name_cache
+	)
+		local
+			default_values_list: ARRAYED_LIST [STRING]
+		do
+			inspect attribute_declaration_list.count
+				when 0, 1 then
+					attribute_declaration_list.extend (names.item (buf, start_index, end_index))
+				when 2 then
+					if s.same_characters (buf, start_index, end_index, CDATA_upper) then
+						attribute_declaration_list.extend (CDATA_upper)
+					end
+			else
+				inspect token
+					when Tok_literal then
+						if attribute_declaration_list.last = CDATA_upper then
+							if attached attribute_value_defaults_table [attribute_declaration_list.first] as list then
+								default_values_list := list
+							else
+								create default_values_list.make (5)
+								attribute_value_defaults_table.extend (default_values_list, attribute_declaration_list.first)
+							end
+							default_values_list.extend (attribute_declaration_list [2])
+							default_values_list.extend (s.new_substring (buf, start_index, end_index))
+						end
+					when Tok_pound_name then
+						attribute_declaration_list.extend (names.item (buf, start_index, end_index))
+
+				else
+				end
+			end
+		end
 
 	in_prolog_section: BOOLEAN
 		do
@@ -630,11 +673,11 @@ feature {NONE} -- Deferred
 		deferred
 		end
 
-	on_comment (buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_comment (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		deferred
 		end
 
-	on_content (buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
+	on_content (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
 		deferred
 		end
 

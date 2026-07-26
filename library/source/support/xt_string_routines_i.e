@@ -66,6 +66,7 @@ feature {NONE} -- Access
 				Result := Result.twin
 			end
 		ensure
+			null_terminated: Result.area [Result.count] = '%U'
 			not_keeping_definition: not keep_ref implies Result = Output_buffer
 		end
 
@@ -227,9 +228,10 @@ feature {NONE} -- Basic operations
 		local
 			count, new_count, i, j: INTEGER
 		do
-			count := str.count; new_count := count + upper - lower + 1
+			count := upper - lower + 1; new_count := str.count + count
 			str.grow (new_count)
-			str.area.copy_data (area, lower, count, upper - lower + 1)
+			str.area.copy_data (area, lower, str.count, count)
+			str.area [new_count] := '%U'
 			str.set_count (new_count)
 		end
 
