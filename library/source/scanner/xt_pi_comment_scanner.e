@@ -1,10 +1,9 @@
 note
 	description: "[
-					Scanners for processing instructions, comments, CDATA section openers,
-					and declaration keywords (<!foo).
-			
-					Corresponds to scanComment, scanDecl, scanPi, checkPiTarget,
-					scanCdataSection in xmltok_impl.c.
+		Scanners for processing instructions, comments, CDATA section openers,
+		and declaration keywords (<!foo).
+
+		Corresponds to scanComment, scanDecl, scanPi, checkPiTarget, scanCdataSection in xmltok_impl.c.
 	]"
 
 	author: "Finnian Reilly"
@@ -20,11 +19,14 @@ deferred class XT_PI_COMMENT_SCANNER
 inherit
 	XT_SCANNER_HELPERS
 
+	XT_STRING_CONSTANTS
+
 feature {NONE} -- PI and comment scanning
 
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Scan comment after '<!-'.  Returns Tok_comment or error.
-		require start_index <= end_index
+		require
+			valid_range: start_index <= end_index
 		local
 			index: INTEGER; done: BOOLEAN
 		do
@@ -96,9 +98,10 @@ feature {NONE} -- PI and comment scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, tok: INTEGER; target_start: INTEGER; done: BOOLEAN
+			index, token: INTEGER; target_start: INTEGER; done: BOOLEAN
+			lower_upper: SPECIAL [INTEGER]
 		do
-			index := start_index
+			index := start_index; lower_upper := index_x4_buffer
 			target_start := index
 			if index >= end_index then
 				Result := Tok_partial
@@ -130,23 +133,33 @@ feature {NONE} -- PI and comment scanning
 							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 								index := advance (index)
 							when BT_whitespace, BT_CR, BT_LF then
-								tok := check_pi_target (buf, target_start, index)
-								if tok = 0 then
+								token := check_pi_target (buf, target_start, index)
+								if token = 0 then
 									next_token_index := index; Result := Tok_invalid; done := True
 								else
 									index := advance (index)
-									Result := scan_pi_content (buf, index, end_index, tok); done := True
+									inspect token when Tok_pi then
+										lower_upper.extend (start_index)
+										lower_upper.extend (index - 2)
+										Result := scan_pi_content (buf, bt_table, lower_upper, index, end_index, token); done := True
+										inspect lower_upper.count when 4 then
+											attribute_intervals.transfer (lower_upper, scanned_entity_buffer)
+										else end
+									else
+										Result := scan_pi_content (buf, bt_table, lower_upper, index, end_index, token); done := True
+									end
 								end
 							when BT_question then
-								tok := check_pi_target (buf, target_start, index)
-								if tok = 0 then
+								token := check_pi_target (buf, target_start, index)
+								if token = 0 then
 									next_token_index := index; Result := Tok_invalid; done := True
 								else
 									index := advance (index)
-									if index >= end_index then Result := Tok_partial; done := True
+									if index >= end_index then
+										Result := Tok_partial; done := True
 									elseif buf [index] = '>' then
 										next_token_index := advance (index)
-										Result := tok; done := True
+										Result := token; done := True
 									else
 										next_token_index := index; Result := Tok_invalid; done := True
 									end
@@ -156,10 +169,13 @@ feature {NONE} -- PI and comment scanning
 						end
 					end
 					if not done then
-					Result := Tok_partial
-				end
+						Result := Tok_partial
+					end
 				end
 			end
+			inspect Result when Tok_partial then
+				attribute_intervals.wipe_out
+			else end
 		end
 
 	scan_decl (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
@@ -228,20 +244,14 @@ feature {NONE} -- PI helpers
 			-- Return Tok_xml_decl if target is exactly "xml" (case-sensitive),
 			-- Tok_pi otherwise, or 0 if target is a case variation of "xml"
 			-- (forbidden by XML spec: "<?XML" etc. are reserved).
-		local
-			count: INTEGER
 		do
-			count := end_index - start_index
-			if count = 3 * min_bytes_per_char then
+			if end_index - start_index = character_count (3) then
 				if buf [start_index] = 'x'
-					and buf [start_index + min_bytes_per_char] = 'm'
-					and buf [start_index + 2 * min_bytes_per_char] = 'l'
+					and then buf [offset_by (start_index, 1)] = 'm' and then buf [offset_by (start_index, 2)] = 'l'
 				then
 					Result := Tok_xml_decl
-				elseif (buf [start_index] = 'x' or buf [start_index] = 'X')
-					and (buf [start_index + min_bytes_per_char] = 'm' or buf [start_index + min_bytes_per_char] = 'M')
-					and (buf [start_index + 2 * min_bytes_per_char] = 'l' or buf [start_index + 2 * min_bytes_per_char] = 'L')
-				then
+
+				elseif same_caseless_characters (buf, start_index, offset_by (start_index, 2), Xml_lower) then
 					Result := 0 -- reserved; caller treats as invalid
 				else
 					Result := Tok_pi
@@ -251,53 +261,65 @@ feature {NONE} -- PI helpers
 			end
 		end
 
-	scan_pi_content (buf: SPECIAL [CHARACTER]; start_index, end_index, tok: INTEGER): INTEGER
-			-- Scan PI content until '?>'.  Returns tok (Tok_pi or Tok_xml_decl).
+	scan_pi_content (
+		buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; lower_upper: SPECIAL [INTEGER]
+		start_index, end_index, token: INTEGER
+	): INTEGER
+			-- Scan PI content until '?>'.  Returns token (Tok_pi or Tok_xml_decl).
 		local
 			index: INTEGER; done: BOOLEAN
 		do
 			index := start_index
-			if attached byte_type_table as bt_table then
-				from until index >= end_index or done loop
-					inspect bt_table [buf [index].code]
-						when BT_non_xml, BT_malform, BT_continuation_byte then
+			from until index >= end_index or done loop
+				inspect bt_table [buf [index].code]
+					when BT_non_xml, BT_malform, BT_continuation_byte then
+						next_token_index := index; Result := Tok_invalid; done := True
+					when BT_lead_2_byte then
+						if end_index - index < 2 then
+							Result := Tok_partial_char; done := True
+						elseif is_invalid_char_2 (buf, index) then
 							next_token_index := index; Result := Tok_invalid; done := True
-						when BT_lead_2_byte then
-							if end_index - index < 2 then Result := Tok_partial_char; done := True
-							elseif is_invalid_char_2 (buf, index) then
-								next_token_index := index; Result := Tok_invalid; done := True
-							else
-								index := index + 2
-							end
-						when BT_lead_3_byte then
-							if end_index - index < 3 then Result := Tok_partial_char; done := True
-							elseif is_invalid_char_3 (buf, index) then
-								next_token_index := index; Result := Tok_invalid; done := True
-							else
-								index := index + 3
-							end
-						when BT_lead_4_byte then
-							if end_index - index < 4 then Result := Tok_partial_char; done := True
-							elseif is_invalid_char_4 (buf, index) then
-								next_token_index := index; Result := Tok_invalid; done := True
-							else
-								index := index + 4
-							end
-						when BT_question then
-							index := advance (index)
-							if index >= end_index then Result := Tok_partial; done := True
-							elseif buf [index] = '>' then
-								next_token_index := advance (index)
-								Result := tok; done := True
-							end
-					else
+						else
+							index := index + 2
+						end
+					when BT_lead_3_byte then
+						if end_index - index < 3 then
+							Result := Tok_partial_char; done := True
+						elseif is_invalid_char_3 (buf, index) then
+							next_token_index := index; Result := Tok_invalid; done := True
+						else
+							index := index + 3
+						end
+					when BT_lead_4_byte then
+						if end_index - index < 4 then
+							Result := Tok_partial_char; done := True
+						elseif is_invalid_char_4 (buf, index) then
+							next_token_index := index; Result := Tok_invalid; done := True
+						else
+							index := index + 4
+						end
+					when BT_question then
 						index := advance (index)
-					end
+						if index >= end_index then
+							Result := Tok_partial; done := True
+						elseif buf [index] = '>' then
+							inspect token when Tok_pi then
+								lower_upper.extend (start_index)
+								lower_upper.extend (index - 2)
+							else end
+							next_token_index := advance (index)
+							Result := token; done := True
+						end
+				else
+					index := advance (index)
 				end
 			end
 			if not done then
 				Result := Tok_partial
 			end
+			inspect Result when Tok_partial then
+				lower_upper.wipe_out
+			else end
 		end
 
 end

@@ -11,6 +11,7 @@ Directory: /usr/share
 Directory: $ISE_EIFFEL
 *.eant		Passed: 1131 Failed: 0
 *.ecf			Passed: 1603 Failed: 0
+*.xml			Passed: 212 Failed: 0
 
 Directory: $HOME/.steam
 *.xml			Passed: 4371 Failed: 0

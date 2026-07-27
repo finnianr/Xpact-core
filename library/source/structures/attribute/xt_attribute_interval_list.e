@@ -41,7 +41,6 @@ feature -- Initialization
 			create entity_refs_area.make_empty (area.capacity // Group_size)
 			create overflow_buffer_area.make_empty (area.capacity // 2)
 			create buffer_pool.make (10)
-			create substring.make_empty
 			create name_cache.make
 			create utf_8_buffer.make_empty (100)
 		end
@@ -103,8 +102,6 @@ feature {NONE} -- Internal attributes
 	buffer_pool: XT_CHARACTER_BUFFER_POOL
 
 	entity_refs_pool: ARRAYED_STACK [ARRAYED_LIST [STRING]]
-
-	substring: C_STRING_8
 
 	utf_8_buffer: SPECIAL [CHARACTER_8]
 

@@ -31,6 +31,8 @@ feature {NONE} -- CDATA constant
 
 	SYSTEM: STRING = "SYSTEM"
 
+	Xml_lower: STRING = "xml"
+
 feature {NONE} -- Predefined entities
 
 	Predefined_apos: STRING_8 = "apos"

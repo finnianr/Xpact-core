@@ -34,8 +34,9 @@ inherit
 feature -- Prolog tokenization
 
 	prolog_tok (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
-			-- Return the next prolog/DTD token.  Sets next_token_ptr.
-		require start_index <= end_index and end_index <= buf.count
+		-- Return the next prolog/DTD token.  Sets next_token_ptr.
+		require
+			valid_range: start_index <= end_index and end_index <= buf.count
 		local
 			index, tok: INTEGER
 		do
@@ -59,7 +60,7 @@ feature -- Prolog tokenization
 								when BT_question then
 									Result := scan_pi (buf, bt_table, advance (index), end_index)
 								when BT_name_start, BT_hex_digit, BT_non_ascii, BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
-									next_token_index := index - min_bytes_per_char
+									next_token_index := index - char_width
 									Result := Tok_instance_start
 							else
 								next_token_index := index; Result := Tok_invalid
@@ -87,10 +88,10 @@ feature -- Prolog tokenization
 						if index >= end_index then
 							next_token_index := index; Result := -Tok_close_bracket
 						elseif buf [index] = ']' then
-							if end_index - index < 2 * min_bytes_per_char then
+							if end_index - index < 2 * char_width then
 								next_token_index := index; Result := Tok_partial
-							elseif buf [index + min_bytes_per_char] = '>' then
-								next_token_index := index + 2 * min_bytes_per_char
+							elseif buf [index + char_width] = '>' then
+								next_token_index := offset_by (index, 2)
 								Result := Tok_cond_sect_close
 							else
 								next_token_index := index; Result := Tok_close_bracket
@@ -286,7 +287,7 @@ feature {NONE} -- Prolog sub-scanners
 								do_nothing
 							else
 								prune_carriage_returns (buf, CR_index, index, CR_count)
-								index := index - CR_count * min_bytes_per_char
+								index := index - CR_count * char_width
 							end
 							index := advance (index)
 							if t = a_open then

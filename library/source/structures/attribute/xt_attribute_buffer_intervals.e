@@ -40,6 +40,28 @@ feature -- Status query
 
 feature -- Access
 
+	first_name (buffer: SPECIAL [CHARACTER_8]): STRING
+		require
+			not_empty: count > 0
+		do
+			if attached area_v2 as a and then a.count >= Group_size then
+				Result := name_cache.item (buffer, a [0], a [1])
+			else
+				Result := Empty_string
+			end
+		end
+
+	first_value (buffer: SPECIAL [CHARACTER_8]): STRING
+		require
+			not_empty: count > 0
+		do
+			if attached area_v2 as a and then a.count >= Group_size then
+				Result := new_substring (buffer, a [2], a [3])
+			else
+				Result := Empty_string
+			end
+		end
+
 	upper_plus_1_characters (buffer: SPECIAL [CHARACTER_8]): STRING
 		require
 			swap_area_big_enough: swap_area_big_enough
@@ -175,6 +197,24 @@ feature -- Measurement
 		end
 
 feature -- Basic operations
+
+	append_first_value_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
+		require
+			not_empty: count > 0
+		local
+			lower_index, upper_index, utf_8_count: INTEGER; buffer: SPECIAL [CHARACTER_8]
+		do
+			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area then
+				buffer := i_th_value (0, a_buffer, overflow_area)
+				lower_index := a [2]; upper_index := a [3]
+				utf_8_count := utf_8_bytes_count (buffer, lower_index, upper_index)
+				if utf_8_count > upper_index - lower_index + 1 then
+					buffer := utf_8_converted (buffer, lower_index, upper_index, utf_8_count, Void)
+					lower_index := 0; upper_index := buffer.count - 1
+				end
+				checksum.add_characters (buffer, lower_index, upper_index)
+			end
+		end
 
 	append_pointers_to (c_string_array: SPECIAL [POINTER]; a_buffer: SPECIAL [CHARACTER_8])
 		-- append alternating name and value strings to `c_string_array' as pointers to null terminated C strings

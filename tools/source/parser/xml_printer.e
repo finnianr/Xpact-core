@@ -54,8 +54,9 @@ feature {NONE} -- Event handlers
 	on_comment (text: STRING_8)
 		do
 			put_tabs (element_context.depth)
-			IO.put_string ("COMMENT: ")
+			IO.put_string ("COMMENT: %"")
 			IO.put_string (text)
+			IO.put_character ('"')
 			IO.put_new_line
 		end
 
@@ -114,6 +115,25 @@ feature {NONE} -- Event handlers
 				)
 		end
 
+	on_processing_instruction (name, value: STRING)
+		local
+			s: XT_STRING_ROUTINES; template: STRING; index: INTEGER
+		do
+			put_tabs (element_context.depth)
+			template := Processing_template.twin
+			if value.has ('"') then
+				from index := 1 until not template.has ('"') loop
+					index := template.index_of ('"', 1)
+					if index > 0 then
+						template [index] := '%''
+						index := index + 1
+					end
+				end
+			end
+			IO.put_string (s.substitute (template, << name, value >>))
+			IO.put_new_line
+		end
+
 feature {NONE} -- Implementation
 
 	put_tabs (n: INTEGER)
@@ -133,4 +153,5 @@ feature {NONE} -- Constants
 			create Result.make_filled (' ', 3)
 		end
 
+	Processing_template: STRING = "PROCESS: %S (%"%S%")"
 end

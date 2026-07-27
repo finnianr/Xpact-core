@@ -180,7 +180,29 @@ feature {NONE} -- Status report
 				end
 			end
 		ensure
-			definition: Result implies area [lower] = string [1] and area [upper] = string [string.count]
+			definition: Result implies new_substring (area, lower, upper) ~ string
+		end
+
+	frozen same_caseless_characters (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; string: STRING): BOOLEAN
+		-- `True' if characters in `area' from `lower' to `upper' match those in `string' regardless of case
+		local
+			i, j, string_count: INTEGER; c_i, c_j: CHARACTER
+		do
+			if upper - lower + 1 = string.count and then attached string.area as string_area then
+				Result := True
+				from i := lower until i > upper loop
+					c_i := area [i]; c_j := string_area [j]
+					if c_i = c_j or else c_i.as_lower =  c_j.as_lower then
+						i := i + 1
+						j := j + 1
+					else
+						Result := False
+						i := upper + 1 -- break
+					end
+				end
+			end
+		ensure
+			definition: Result implies new_substring (area, lower, upper).same_caseless_characters (string, 1, string.count, 1)
 		end
 
 feature {NONE} -- Measurement

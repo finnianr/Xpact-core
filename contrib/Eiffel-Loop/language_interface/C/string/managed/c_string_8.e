@@ -223,6 +223,21 @@ feature -- Status report
 			end
 		end
 
+	has_upper: BOOLEAN
+		-- `True' if string has uppercase character
+		local
+			i, l_count: INTEGER; l_area: POINTER
+		do
+			l_area := area; l_count := count
+			from i := 0 until i = l_count or Result loop
+				if c_read_character_8 (l_area, i).is_upper then
+					Result := True
+				else
+					i := i + 1
+				end
+			end
+		end
+
 	same_characters (other: SPECIAL [CHARACTER_8]; offset: INTEGER): BOOLEAN
 		-- `True' if characters in `other' from `offset' match those in `Current'
 		local

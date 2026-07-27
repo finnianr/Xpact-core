@@ -144,7 +144,7 @@ feature -- Content tokenization
 								-- scan_cdata_data_chars stops immediately on BT_right_square_bracket,
 								-- so next_token_index lands on the second ']' and the next call
 								-- will correctly see ']]>' and return Tok_cdata_sect_close.
-								Result := scan_cdata_data_chars (buf, index - min_bytes_per_char, end_index)
+								Result := scan_cdata_data_chars (buf, index - char_width, end_index)
 							end
 						end
 					when BT_CR then

@@ -25,10 +25,12 @@ inherit
 	XT_XML_PARSER_BASE
 		rename
 			make as make_parser,
+			Tok_attribute_value_s as Tok_attribute,
 			Tok_data_chars as Tok_text,
 			Tok_cdata_sect_open as Tok_cdata,
 			Tok_end_tag as Tok_tag,
-			Tok_attribute_value_s as Tok_attribute
+			Tok_pi as Tok_pi_value,
+			Tok_name as Tok_pi_name
 		redefine
 			make_parser
 		end
@@ -94,24 +96,24 @@ feature -- Status report
 
 feature {NONE} -- Event handlers
 
-	on_comment (area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			inspect data_type when Tok_comment then
-				add_to_crc_32 (area, lower, upper, attributes, False, checksum)
+				add_to_crc_32 (area, start_index, end_index, attributes, False, checksum)
 			else
 			end
 		end
 
-	on_content (area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
+	on_content (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
 		do
 			inspect data_type
 				when Tok_cdata then
 					if in_cdata_section then
-						add_to_crc_32 (area, lower, upper, attributes, is_utf_8_encoded, checksum)
+						add_to_crc_32 (area, start_index, end_index, attributes, is_utf_8_encoded, checksum)
 					end
 				when Tok_text then
 					if not in_cdata_section then
-						add_to_crc_32 (area, lower, upper, attributes, is_utf_8_encoded, checksum)
+						add_to_crc_32 (area, start_index, end_index, attributes, is_utf_8_encoded, checksum)
 					end
 			else
 			end
@@ -137,6 +139,17 @@ feature {NONE} -- Event handlers
 			end
 		end
 
+	on_processing_instruction (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		do
+			inspect data_type
+				when Tok_pi_name then
+					checksum.add_string (attributes.first_name (buf))
+				when Tok_pi_value then
+					attributes.append_first_value_to_crc_32 (checksum, buf)
+			else
+			end
+		end
+
 feature -- Factory
 
 	new_benchmark (a_file_path: PATH; a_time_start: TIME; a_duration_ms, a_chunk_size: INTEGER): CRC_32_BENCHMARK
@@ -148,20 +161,20 @@ feature -- Factory
 feature {NONE} -- Implementation
 
 	add_to_crc_32 (
-		area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 		is_utf_8_encoded: BOOLEAN; crc_32: like checksum
 	)
 		local
 			utf_8_count: INTEGER
 		do
 			if is_utf_8_encoded then
-				crc_32.add_characters (area, lower, upper)
+				crc_32.add_characters (area, start_index, end_index)
 			else
-				utf_8_count := attributes.utf_8_bytes_count (area, lower, upper)
-				if utf_8_count = upper - lower + 1 then
-					crc_32.add_characters (area, lower, upper)
+				utf_8_count := attributes.utf_8_bytes_count (area, start_index, end_index)
+				if utf_8_count = end_index - start_index + 1 then
+					crc_32.add_characters (area, start_index, end_index)
 				else
-					crc_32.add_characters (attributes.utf_8_converted (area, lower, upper, utf_8_count, Void), 0, utf_8_count - 1)
+					crc_32.add_characters (attributes.utf_8_converted (area, start_index, end_index, utf_8_count, Void), 0, utf_8_count - 1)
 				end
 			end
 		end

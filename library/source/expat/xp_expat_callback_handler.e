@@ -14,13 +14,13 @@ inherit
 
 	XP_EVENT_HANDLER
 		rename
-			on_comment as on_comment_x
-
+			on_comment as on_comment_x,
+			on_processing_instruction as on_processing_instruction_x
 		redefine
 			wants_start_element_events,
 			wants_end_element_events,
 			wants_character_data_events,
-			on_processing_instruction,
+			on_processing_instruction_x,
 			on_xml_declaration,
 			on_comment_x,
 			on_start_cdata_section,
@@ -47,6 +47,8 @@ inherit
 		end
 
 	XP_EXPAT_CALLBACK_C_API
+
+	EL_MEMORY_ROUTINES
 
 	PLATFORM
 		export
@@ -781,7 +783,7 @@ feature -- Event handling
 			end
 		end
 
-	on_processing_instruction (a_target, a_data: READABLE_STRING_8)
+	on_processing_instruction_x (a_target, a_data: READABLE_STRING_8)
 		local
 			l_event: STRING_8
 			l_target: C_STRING
@@ -1183,6 +1185,10 @@ feature -- Event handling
 					record_callback_stop_if_requested
 				end
 			end
+		end
+
+	on_processing_instruction (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		do
 		end
 
 	on_default (a_text: READABLE_STRING_8)

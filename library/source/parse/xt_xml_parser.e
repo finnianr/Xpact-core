@@ -17,7 +17,8 @@ inherit
 		rename
 			on_content as on_base_content,
 			on_comment as on_base_commment,
-			on_tag_end as on_base_tag_end
+			on_tag_end as on_base_tag_end,
+			on_processing_instruction as on_base_processing_instruction
 		redefine
 			make
 		end
@@ -39,29 +40,37 @@ feature {NONE} -- Event handlers
 			do_with_content (text_buffer)
 		end
 
-	on_base_commment (area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_base_commment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
-			on_comment (new_substring (area, lower, upper))
+			on_comment (new_substring (area, start_index, end_index))
 		end
 
-	on_base_content (area: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
-		-- handle content section in `area' from index `lower' to `upper'
+	on_base_content (
+		area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		is_utf_8_encoded: BOOLEAN
+	)
+		-- handle content section in `area' from index `start_index' to `end_index'
 		local
 			count, white_count: INTEGER
 		do
 			if attached text_buffer as text then
 				if is_white_space_skipped then
-					append_area (text, area, lower, upper)
+					append_area (text, area, start_index, end_index)
 				else
-					count := upper - lower + 1
-					white_count := leading_white_space (area, lower, upper)
+					count := end_index - start_index + 1
+					white_count := leading_white_space (area, start_index, end_index)
 					if white_count < count then
-						append_area (text, area, lower + white_count, upper)
+						append_area (text, area, start_index + white_count, end_index)
 						is_white_space_skipped := True
 					end
 				end
 				content_call_count := content_call_count + 1
 			end
+		end
+
+	on_base_processing_instruction (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		do
+			on_processing_instruction (attributes.first_name (buf), attributes.first_value (buf))
 		end
 
 	on_base_tag_end (name: STRING_8)
@@ -79,6 +88,10 @@ feature {NONE} -- Event handlers
 		end
 
 	on_tag_end (name: STRING_8)
+		deferred
+		end
+
+	on_processing_instruction (name, value: STRING)
 		deferred
 		end
 

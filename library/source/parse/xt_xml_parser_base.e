@@ -34,11 +34,11 @@ feature {NONE} -- Initialization
 			parse_end_byte_index       := 0
 
 			declaration						:= 0
-			create section.make (2)
-			set_section (section.item, Prolog, True)
-			set_section (section.item, CDATA, False)
+			create section_flags.make_filled (False, CDATA + 1)
+			section_flags [Prolog] := True
+			section_flags [CDATA] := False
 
-			create element_context.make (section.item)
+			create element_context.make (section_flags)
 
 			Precursor
 		ensure then
@@ -135,9 +135,9 @@ feature -- Basic operations
 				else
 					write_start := buffer_end
 					if a_count > 0 then
-						-- Copy caller's bytes into the internal buffer.
-						-- Destination index < source index is impossible here
-						-- (write_start is past all existing data), so copy_data is safe.
+					-- Copy caller's bytes into the internal buffer.
+					-- Destination index < source index is impossible here
+					-- (write_start is past all existing data), so copy_data is safe.
 						buffer.copy_data (chunk, a_offset, write_start, a_count)
 					end
 					Result := parse_buffer (a_count, a_is_final)
@@ -175,7 +175,6 @@ feature {NONE} -- Buffer implementation
 		-- Parse `a_count' bytes that the caller has already written into
 		-- `buffer' starting at the old `buffer_end'.
 		-- Returns Status_ok, Status_suspended, or Status_error.
-		--
 		-- Corresponds to XML_ParseBuffer() in xmlparse.c.
 		require
 			non_negative_count: a_count >= 0
@@ -276,9 +275,7 @@ feature {NONE} -- Processor dispatch
 			ptr_at_start: buffer_index = start_index
 		local
 			err, have_now, had_before, available: INTEGER; enough, done: BOOLEAN
-			section_ptr: POINTER
 		do
-			section_ptr := section.item
 			have_now := end_index - start_index
 
 			-- Reparse-deferral heuristic (m_reparseDeferralEnabled in xmlparse.c):
@@ -299,12 +296,12 @@ feature {NONE} -- Processor dispatch
 
 			if enough and then attached buffer as buf and then attached attribute_intervals as attributes
 				and then attached scanner as s and then attached name_cache as names
-				and then attached element_context as context
+				and then attached element_context as context and then attached section_flags as section
 			then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				from done := False until done loop
-					err := process_content (buf, buffer_index, end_index, attributes, s, s.byte_type_table, names, context, section_ptr)
+					err := process_content (buf, buffer_index, end_index, attributes, s, s.byte_type_table, names, context, section)
 
 					-- Suspended state overrides the reenter request.
 					if parsing_state /= State_parsing then
@@ -360,7 +357,7 @@ feature {NONE} -- Processor dispatch
 	process_content (
 		buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 		s: like scanner; bt_table: SPECIAL [INTEGER]; names: like name_cache
-		a_context: XT_ELEMENT_CONTEXT; section_ptr: POINTER
+		a_context: XT_ELEMENT_CONTEXT; section: SPECIAL [BOOLEAN]
 	): INTEGER
 		-- Scan tokens from `buf' `start_index .. end_index` and triggers relevant XML events.  Advances `buffer_index'.
 		-- Execute one pass of the current processor over `buf [start_index .. end_index)'.
@@ -377,15 +374,19 @@ feature {NONE} -- Processor dispatch
 		do
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
-				if is_section (section_ptr, Prolog) then
+				if section [Prolog] then
 					token := s.scan_prolog (buf, bt_table, index, end_index)
 					tok_end := s.next_token_index
 					inspect token
 						when Tok_instance_start then
-							set_section (section_ptr, Prolog, False)
-							if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
-								create {XT_ELEMENT_ATTRIBUTES_CONTEXT} context.make (section_ptr, attribute_value_defaults_table)
-								element_context := context
+							if element_context.reached_depth_zero then
+								Result := Error_junk_after_doc_element; done := True
+							else
+								section [Prolog] := False
+								if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
+									create {XT_ELEMENT_ATTRIBUTES_CONTEXT} context.make (section, attribute_value_defaults_table)
+									element_context := context
+								end
 							end
 							index := tok_end
 
@@ -422,6 +423,11 @@ feature {NONE} -- Processor dispatch
 							on_comment (buf, index + 4, tok_end - 4, attributes)
 							index := tok_end
 
+						when Tok_pi then
+							on_processing_instruction (buf, attributes)
+							attributes.wipe_out
+							index := tok_end
+
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
 					else
@@ -431,13 +437,13 @@ feature {NONE} -- Processor dispatch
 							index := tok_end  -- skip prolog token
 						end
 					end
-				elseif is_section (section_ptr, CDATA) then
+				elseif section [CDATA] then
 					token := s.scan_cdata_section (buf, bt_table, index, end_index)
 					tok_end := s.next_token_index
 					inspect token
 						when Tok_cdata_sect_close then
 							on_cdata_section_close
-							set_section (section_ptr, CDATA, False)
+							section [CDATA] := False
 							index := tok_end
 
 						when Tok_data_chars then
@@ -460,7 +466,7 @@ feature {NONE} -- Processor dispatch
 					tok_end := s.next_token_index
 					inspect token
 						when Tok_cdata_sect_open then
-							set_section (section_ptr, CDATA, True)
+							section [CDATA] := True
 
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
@@ -503,6 +509,11 @@ feature {NONE} -- Processor dispatch
 						when Tok_comment then
 							on_comment (buf, index + 4, tok_end - 4, attributes)
 
+						when Tok_pi then
+							on_processing_instruction (buf, attributes)
+							attributes.wipe_out
+							index := tok_end
+
 						when Tok_entity_ref then
 							code := s.predefined_entity_code (buf, index + 1, tok_end - 2)
 							inspect code when -1 then
@@ -512,10 +523,10 @@ feature {NONE} -- Processor dispatch
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
 									err := process_content (
-										entity_value.area, 0, entity_value.count, attributes, s, bt_table, names, context, section_ptr
+										entity_value.area, 0, entity_value.count, attributes, s, bt_table, names, context, section
 									) -- Recurse
 									buffer_index := buffer_index_copy -- restore field
-									set_section (section_ptr, CDATA, False) -- restore state
+									section [CDATA] := False -- restore state
 
 									if err /= Error_none then
 										done := True
@@ -538,7 +549,6 @@ feature {NONE} -- Processor dispatch
 									on_content (l_utf_8, 0, l_utf_8.count - 1, attributes, True)
 								end
 							end
-
 					else
 						if token < 0 then
 							done := True  -- partial; wait for more data
@@ -558,12 +568,12 @@ feature {NONE} -- Implementation
 
 	in_prolog_section: BOOLEAN
 		do
-			Result := is_section (section.item, Prolog)
+			Result := section_flags [Prolog]
 		end
 
 	in_cdata_section: BOOLEAN
 		do
-			Result := is_section (section.item, CDATA)
+			Result := section_flags [CDATA]
 		end
 
 	increment_handler_depth
@@ -713,11 +723,15 @@ feature {NONE} -- Deferred
 		deferred
 		end
 
+	on_processing_instruction (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		deferred
+		end
+
 feature {NONE} -- Internal attributes
 
 	element_context: XT_ELEMENT_CONTEXT
 
-	section: MANAGED_POINTER
+	section_flags: SPECIAL [BOOLEAN]
 
 	declaration: INTEGER
 

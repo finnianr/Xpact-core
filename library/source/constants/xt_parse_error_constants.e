@@ -60,6 +60,8 @@ feature -- Error codes (XML_Error enum)
 	Error_amplification_limit_breach:        INTEGER = 43
 	Error_not_started:                       INTEGER = 44
 
+feature -- Error text
+
 	Error_descriptions: STRING = "[
 		No memory
 		Syntax

@@ -25,9 +25,8 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_section_ptr: POINTER; a_default_value_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING])
+	make (a_section_flags: SPECIAL [BOOLEAN]; a_default_value_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING])
 		require
-			attached_section_ptr: is_attached (a_section_ptr)
 			even_number_of_name_value_pairs:
 				across a_default_value_table as name_value_list all
 					name_value_list.count.integer_remainder (2) = 0
@@ -35,7 +34,7 @@ feature {NONE} -- Initialization
 		local
 			attribute_array: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]; i: INTEGER
 		do
-			make_context (a_section_ptr)
+			make_context (a_section_flags)
 			create default_value_table.make (a_default_value_table.count)
 			if attached a_default_value_table as table then
 				from table.start until table.after loop

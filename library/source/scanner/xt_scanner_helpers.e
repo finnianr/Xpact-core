@@ -29,25 +29,11 @@ note
 deferred class XT_SCANNER_HELPERS
 
 inherit
-	XT_BYTE_TYPE_CONSTANTS
-	XT_TOKEN_CONSTANTS
-
-	XT_STRING_CONSTANTS
+	XT_BYTE_TYPE_CONSTANTS; XT_TOKEN_CONSTANTS; XT_STRING_CONSTANTS
 
 	XT_STRING_ROUTINES_I
 		export
 			{XT_XML_PARSER_BASE} all
-		end
-
-feature -- Output of the last scan (shared with XT_ENCODING via join)
-
-	next_token_index: INTEGER
-
-feature -- Primitive queries (deferred; provided by XT_NORMAL_ENCODING)
-
-	min_bytes_per_char: INTEGER
-		deferred
-		ensure positive: Result >= 1
 		end
 
 feature -- Multi-byte name-character checks
@@ -128,7 +114,13 @@ feature {NONE} -- Implementation
 	advance (index: INTEGER): INTEGER
 			-- index + min_bytes_per_char  (replaces index += MINBPC)
 		do
-			Result := index + min_bytes_per_char
+			Result := index + char_width
+		end
+
+	character_count (count: INTEGER): INTEGER
+		-- left shift by 1 in UTF-16 descendant
+		do
+			Result := count
 		end
 
 	leading_10 (buf: SPECIAL [CHARACTER]; index: INTEGER): STRING_8
@@ -143,7 +135,13 @@ feature {NONE} -- Implementation
 	has_chars (end_index, index, count: INTEGER): BOOLEAN
 			-- end_index - index >= count * min_bytes_per_char  (HAS_CHARS macro)
 		do
-			Result := end_index - index >= count * min_bytes_per_char
+			Result := end_index - index >= character_count (count)
+		end
+
+
+	offset_by (index, offset: INTEGER): INTEGER
+		do
+			Result := index + offset
 		end
 
 	prune_carriage_returns (buf: SPECIAL [CHARACTER]; CR_index, quote_index, CR_count: INTEGER)
@@ -170,10 +168,29 @@ feature {NONE} -- Implementation
 			end
 		end
 
+feature {NONE} -- Internal attributes
+
+	next_token_index: INTEGER
+
+	index_x4_buffer: SPECIAL [INTEGER]
+
+	scanned_entity_buffer: ARRAYED_LIST [STRING]
+
 feature {XT_XML_PARSER_BASE} -- Deferred
+
+	char_width: INTEGER
+		deferred
+		ensure positive: Result >= 1
+		end
 
 	byte_type_table: SPECIAL [INTEGER]
 		-- 256-entry table mapping each byte value to its BT_* type.
 		deferred
 		end
+
+	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+		-- collected attribute name-value pair indices into `buffer'
+		deferred
+		end
+
 end

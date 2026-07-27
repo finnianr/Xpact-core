@@ -23,7 +23,8 @@ inherit
 			on_cdata_section_close_ as on_cdata_section_close,
 			on_comment_ as on_comment,
 			on_content_ as on_content,
-			on_tag_end_ as on_tag_end
+			on_tag_end_ as on_tag_end,
+			on_processing_instruction_ as on_processing_instruction
 		end
 
 	XT_EXPAT_COMPARABLE

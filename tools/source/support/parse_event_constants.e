@@ -15,10 +15,12 @@ class
 inherit
 	XT_TOKEN_CONSTANTS
 		rename
+			Tok_attribute_value_s as Tok_attribute,
 			Tok_data_chars as Tok_text,
 			Tok_cdata_sect_open as Tok_cdata,
 			Tok_end_tag as Tok_tag,
-			Tok_attribute_value_s as Tok_attribute
+			Tok_pi as Tok_pi_value,
+			Tok_name as Tok_pi_name
 		export
 			{NONE} all
 		end
@@ -47,7 +49,9 @@ feature {NONE} -- Constants
 				[Tok_cdata, 		"cdata"],		-- CDATA text content
 				[Tok_comment,		"comment"],		-- comment
 				[Tok_tag,			"tag"],			-- tag name (open element)
-				[Tok_attribute,	"attribute"]	-- attribute value
+				[Tok_attribute,	"attribute"],	-- attribute value
+				[Tok_pi_name,		"pi-name"],		-- processing instruction name
+				[Tok_pi_value,		"pi-data"]		-- processing instruction data
 			>>)
 		end
 

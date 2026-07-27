@@ -19,11 +19,13 @@ typedef enum {
 	TYPE_CDATA,
 	TYPE_COMMENT,
 	TYPE_TAG,
-	TYPE_ATTRIBUTE
+	TYPE_ATTRIBUTE,
+	TYPE_PI_NAME,
+	TYPE_PI_DATA
 } data_type_t;
 
 static const char *data_type_name[] = {
-	"text", "cdata", "comment", "tag", "attribute"
+	"text", "cdata", "comment", "tag", "attribute", "pi-name", "pi-data"
 };
 
 typedef struct {
@@ -103,6 +105,18 @@ static void XMLCALL on_character_data(void *userData, const XML_Char *s, int len
 	}
 }
 
+static void XMLCALL on_processing_instruction(void *userData,
+                                               const XML_Char *target,
+                                               const XML_Char *data) {
+	crc_ctx_t *ctx = (crc_ctx_t *) userData;
+	if (ctx->type == TYPE_PI_NAME) {
+		crc32_update(ctx, (const unsigned char *) target, strlen(target));
+	} else if (ctx->type == TYPE_PI_DATA) {
+		if (data && *data)
+			crc32_update(ctx, (const unsigned char *) data, strlen(data));
+	}
+}
+
 static void XMLCALL on_comment(void *userData, const XML_Char *data) {
 	crc_ctx_t *ctx = (crc_ctx_t *) userData;
 	if (ctx->type == TYPE_COMMENT) {
@@ -151,6 +165,7 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	XML_SetCharacterDataHandler(parser, on_character_data);
 	XML_SetCommentHandler(parser, on_comment);
 	XML_SetCdataSectionHandler(parser, on_start_cdata, on_end_cdata);
+	XML_SetProcessingInstructionHandler(parser, on_processing_instruction);
 
 	char buf[CHUNK_SIZE];
 	int done = 0;
@@ -181,7 +196,7 @@ static long now_ms(void) {
 
 static void usage(const char *prog) {
 	fprintf(stderr,
-			"Usage: %s -type <text|cdata|comment|tag|attribute> "
+			"Usage: %s -type <text|cdata|comment|tag|attribute|pi-name|pi-data> "
 			"[-duration <time-window-ms>] [-trace] <xml-file-path>\n",
 			prog);
 }
@@ -248,6 +263,8 @@ int main(int argc, char **argv) {
 	else if (strcmp(type_arg, "comment") == 0) type = TYPE_COMMENT;
 	else if (strcmp(type_arg, "tag") == 0) type = TYPE_TAG;
 	else if (strcmp(type_arg, "attribute") == 0) type = TYPE_ATTRIBUTE;
+	else if (strcmp(type_arg, "pi-name") == 0) type = TYPE_PI_NAME;
+	else if (strcmp(type_arg, "pi-data") == 0) type = TYPE_PI_DATA;
 	else {
 		fprintf(stderr, "Error: invalid -type '%s'\n", type_arg);
 		usage(argv[0]);

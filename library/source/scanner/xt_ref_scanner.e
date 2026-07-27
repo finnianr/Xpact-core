@@ -211,6 +211,4 @@ feature {NONE} -- Internal attributes
 	entity_cache: XT_ENTITY_NAME_CACHE
 		-- efficient lookup of entity names from character buffer interval
 
-	scanned_entity_buffer: ARRAYED_LIST [STRING]
-
 end

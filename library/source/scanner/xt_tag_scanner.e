@@ -374,7 +374,7 @@ feature {NONE} -- Tag sub-helpers
 										do_nothing
 									else
 										prune_carriage_returns (buf, CR_index, index, CR_count)
-										index := index - CR_count * min_bytes_per_char
+										index := offset_by (index, CR_count.opposite)
 									end
 									lower_upper.extend (index - 1)
 									next_token_index := advance (index); closed := True
@@ -388,7 +388,7 @@ feature {NONE} -- Tag sub-helpers
 										do_nothing
 									else
 										prune_carriage_returns (buf, CR_index, index, CR_count)
-										index := index - CR_count * min_bytes_per_char
+										index := offset_by (index, CR_count.opposite)
 									end
 									lower_upper.extend (index - 1)
 									next_token_index := advance (index); closed := True
@@ -450,16 +450,16 @@ feature {NONE} -- Contract support
 				from index := start_index until index >= buf.count or done loop
 					inspect bt_table [buf [index].code]
 						when Bt_lead_2_byte then
-							index := index + min_bytes_per_char * 2
+							index := offset_by (index, 2)
 
 						when Bt_lead_3_byte then
-							index := index + min_bytes_per_char * 3
+							index := offset_by (index, 3)
 
 						when Bt_lead_4_byte then
-							index := index + min_bytes_per_char * 4
+							index := offset_by (index, 4)
 
 						when BT_name_start, BT_name_only, BT_hex_digit, BT_digit, BT_minus, BT_colon then
-							index := index + min_bytes_per_char
+							index := advance (index)
 					else
 						done := True
 					end
@@ -469,11 +469,6 @@ feature {NONE} -- Contract support
 		end
 
 feature {NONE} -- Deferred
-
-	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
-		-- collected attribute name-value pair indices into `buffer'
-		deferred
-		end
 
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
@@ -495,10 +490,6 @@ feature {NONE} -- Deferred
 			valid_range: start_index <= end_index
 		deferred
 		end
-
-feature {NONE} -- Internal attributes
-
-	index_x4_buffer: SPECIAL [INTEGER]
 
 feature {NONE} -- Constants
 

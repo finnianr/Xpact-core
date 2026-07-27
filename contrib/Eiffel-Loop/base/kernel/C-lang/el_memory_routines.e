@@ -6,8 +6,8 @@ note
 	contact: "finnian at eiffel hyphen loop dot com"
 
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
-	date: "2024-01-11 10:09:20 GMT (Thursday 11th January 2024)"
-	revision: "14"
+	date: "2026-07-27 10:09:20 GMT (Monday 27th July 2026)"
+	revision: "15"
 
 class
 	EL_MEMORY_ROUTINES
@@ -59,18 +59,14 @@ feature {NONE} -- Measurement
 			]"
 		end
 
-	frozen c_set_byte (a_bytes: POINTER; a_offset: INTEGER; a_value: BOOLEAN)
-			-- Set the byte at `a_offset` in the byte array `a_bytes` to 1 if `a_value` is True, else 0.
+	frozen c_set_boolean_item (bool_array: POINTER; a_offset: INTEGER; a_value: BOOLEAN)
+			-- Set the item at `a_offset` in the boolean array `bool_array` to `a_value`
 		require
-			pointer_attached: is_attached (a_bytes)
+			pointer_attached: is_attached (bool_array)
 		external
 			"C inline"
 		alias
-			"[
-				unsigned char *bytes = (unsigned char *) $a_bytes;
-				bytes [$a_offset] = $a_value ? 1 : 0;
-			]"
+			"((EIF_BOOLEAN *) $bool_array) [$a_offset] = $a_value;"
 		end
-
 
 end

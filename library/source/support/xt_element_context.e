@@ -12,19 +12,16 @@ note
 class
 	XT_ELEMENT_CONTEXT
 
-inherit
-	EL_MEMORY_ROUTINES
-
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (a_section_ptr: POINTER)
+	make (a_section_flags: SPECIAL [BOOLEAN])
 		local
 			s: XT_STRING_ROUTINES
 		do
-			section_ptr := a_section_ptr
+			section_flags := a_section_flags
 			name := s.Empty_string
 			create empty_attribute_values.make_empty (0)
 		end
@@ -49,6 +46,8 @@ feature -- Status query
 			Result := False
 		end
 
+	reached_depth_zero: BOOLEAN
+
 feature -- Element change
 
 	push (a_name: STRING)
@@ -63,12 +62,11 @@ feature -- Element change
 		require
 			is_nested: depth > 0
 		do
-			inspect depth when 1 then
-				if is_attached (section_ptr) then
-					c_set_byte (section_ptr, {XT_PARSE_CONSTANTS}.Prolog, True)
-				end
-			else end
 			depth := depth - 1
+			inspect depth when 0 then
+				section_flags [{XT_PARSE_CONSTANTS}.Prolog] := True
+				reached_depth_zero := true
+			else end
 		ensure
 			depth_decreased: depth = old depth - 1
 		end
@@ -77,8 +75,6 @@ feature {NONE} -- Internal attributes
 
 	empty_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
 
-	section_ptr: POINTER
+	section_flags: SPECIAL [BOOLEAN]
 
-invariant
-	section_ptr_attached: is_attached (section_ptr)
 end

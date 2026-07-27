@@ -81,7 +81,7 @@ feature -- Output of the last scan call
 
 feature -- Encoding properties
 
-	min_bytes_per_char: INTEGER
+	char_width: INTEGER
 			-- Minimum number of bytes used to represent one character.
 			-- 1 for UTF-8, Latin-1, ASCII; 2 for UTF-16.
 		deferred

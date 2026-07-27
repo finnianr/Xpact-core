@@ -47,4 +47,9 @@ feature {NONE} -- Event handlers
 	on_tag_start_ (buf: SPECIAL [CHARACTER]; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
 		do
 		end
+
+	on_processing_instruction_ (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		do
+		end
+
 end

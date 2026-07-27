@@ -34,7 +34,7 @@ create
 
 feature -- Encoding identity
 
-	min_bytes_per_char: INTEGER = 1
+	char_width: INTEGER = 1
 	is_utf_8: BOOLEAN = True
 	is_utf_16: BOOLEAN = False
 

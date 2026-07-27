@@ -31,15 +31,13 @@ inherit
 	XT_ENCODING
 		rename
 			predefined_entity_name as predefined_entity_code
-		export
-			{XT_PARSING_BUFFERS} attribute_intervals
 		redefine
 			make
 		end
 
 	XT_CONTENT_SCANNER
 		export
-			{XT_PARSING_BUFFERS} same_characters
+			{XT_PARSING_BUFFERS} same_characters, attribute_intervals
 		end
 
 	XT_PROLOG_SCANNER
@@ -91,7 +89,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 				from Result := start_index until Result >= buf.count or done loop
 					inspect bt_table [buf [Result].code]
 						when BT_whitespace, BT_CR, BT_LF then
-							Result := Result + min_bytes_per_char
+							Result := advance (Result)
 					else
 						done := True
 					end
@@ -110,7 +108,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 				if index >= end_index or buf [index] /= match [i] then
 					ok := False
 				else
-					index := index + min_bytes_per_char; i := i + 1
+					index := index + char_width; i := i + 1
 				end
 			end
 			Result := ok and index = end_index
@@ -168,7 +166,7 @@ feature -- Public ID validation
 								BT_exclamation, BT_asterisk, BT_percent, BT_hash, BT_colon, BT_whitespace,
 								BT_name_start, BT_name_only
 						then
-							index := index + min_bytes_per_char
+							index := index + char_width
 					else
 						bad_char_index := index; ok := False
 					end
@@ -189,17 +187,17 @@ feature -- Position tracking
 					inspect bt_table [buf [index].code]
 						when BT_CR then
 							pos.advance_line
-							if index + min_bytes_per_char < end_index
-								and bt_table [buf [index + min_bytes_per_char].code] = BT_LF
+							if index + char_width < end_index
+								and bt_table [buf [index + char_width].code] = BT_LF
 							then
-								index := index + min_bytes_per_char
+								index := index + char_width
 							end
 						when BT_LF then
 							pos.advance_line
 					else
 						pos.advance_column
 					end
-					index := index + min_bytes_per_char
+					index := index + char_width
 				end
 			end
 		end

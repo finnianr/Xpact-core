@@ -46,8 +46,6 @@ inherit
 			{NONE} all
 		end
 
-	EL_MEMORY_ROUTINES
-
 	XT_STRING_CONSTANTS
 		rename
 			CDATA as CDATA_upper
@@ -172,13 +170,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	is_section (section_ptr: POINTER; id: INTEGER): BOOLEAN
-		require
-			valid_id: id = 0 or id = 1
-		do
-			Result := c_byte_is_one (section_ptr, id)
-		end
-
 	prepare_buffer (a_count: INTEGER): BOOLEAN
 			-- Ensure `buffer' has room for `a_count' more bytes
 			-- after `buffer_end'.  Compacts or reallocates as needed,
@@ -242,13 +233,6 @@ feature {NONE} -- Implementation
 			ptr_non_negative:    buffer_index >= 0
 		end
 
-	set_section (section_ptr: POINTER; id: INTEGER; active: BOOLEAN)
-		require
-			valid_id: id = 0 or id = 1
-		do
-			c_set_byte (section_ptr, id, active)
-		end
-
 	select_declaration (buf: like buffer; offset: INTEGER; s: like scanner): INTEGER
 		do
 			across Document_definition_names as name until Result > 0 loop
@@ -279,7 +263,6 @@ feature {NONE} -- Implementation
 			ptr_non_negative:    buffer_index >= 0
 			end_non_negative:    buffer_end >= 0
 		end
-
 
 feature {NONE} -- Internal attributes
 
