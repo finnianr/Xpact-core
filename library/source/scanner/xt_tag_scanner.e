@@ -27,11 +27,14 @@ feature -- Measurement
 
 	tag_name_count: INTEGER
 
-	tag_name (name_cache: XT_NAME_CACHE; buffer: SPECIAL [CHARACTER_8]; lower: INTEGER): STRING_8
+	tag_name (name_cache: XT_NAME_CACHE; buffer: SPECIAL [CHARACTER_8]; lt_index: INTEGER): STRING_8
+		local
+			start_index: INTEGER
 		do
-			Result := name_cache.item (buffer, lower, lower + tag_name_count - 1)
+			start_index := lt_index + char_width
+			Result := name_cache.item (buffer, start_index, start_index + tag_name_count - 1)
 		ensure
-			same_tag_length: Result.count = name_count (buffer, lower)
+			same_tag_length: Result.count = name_count (buffer, lt_index + char_width)
 		end
 
 feature {NONE} -- Tag scanning
@@ -70,13 +73,13 @@ feature {NONE} -- Tag scanning
 						Result := scan_end_tag (buf, bt_table, advance (index), end_index)
 					when BT_name_start, BT_hex_digit then
 						index := advance (index)
-						Result := scan_start_tag_name (buf, byte_type_table, index, end_index, 1)
+						Result := scan_start_tag_name (buf, bt_table, index, end_index, 1)
 					when BT_lead_2_byte then
 						if end_index - index >= 2 and then not is_invalid_char_2 (buf, index)
 							and then is_name_start_char_2 (buf, index)
 						then
 							index := index + 2
-							Result := scan_start_tag_name (buf, byte_type_table, index, end_index, 2)
+							Result := scan_start_tag_name (buf, bt_table, index, end_index, 2)
 						else
 							next_token_index := index
 							Result := Tok_invalid
@@ -86,7 +89,7 @@ feature {NONE} -- Tag scanning
 							and then is_name_start_char_3 (buf, index)
 						then
 							index := index + 3
-							Result := scan_start_tag_name (buf, byte_type_table, index, end_index, 3)
+							Result := scan_start_tag_name (buf, bt_table, index, end_index, 3)
 						else
 							next_token_index := index
 							Result := Tok_invalid
@@ -181,7 +184,10 @@ feature {NONE} -- Tag scanning
 			end
 		end
 
-	scan_attributes (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; start_index, end_index: INTEGER): INTEGER
+	scan_attributes (
+		buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		start_index, end_index: INTEGER
+	): INTEGER
 		-- Scan attribute list starting at the first attribute name character.
 		-- Returns Tok_start_tag_with_atts, Tok_empty_element_with_atts, or error.
 		require
@@ -190,9 +196,7 @@ feature {NONE} -- Tag scanning
 			index, open, byte: INTEGER; done: BOOLEAN
 		do
 			index := start_index
-			if attached byte_type_table as bt_table and then attached index_x4_buffer as index_buffer
-				and then attached scanned_entity_buffer as entity_buffer
-			then
+			if attached index_x4_buffer as index_buffer and then attached scanned_entity_buffer as entity_buffer then
 				index_buffer.extend (index + buf [index].is_space.to_integer) -- name lower
 				from until index >= end_index or done loop
 					byte := bt_table [buf [index].code]
@@ -270,7 +274,7 @@ feature {NONE} -- Tag sub-helpers
 		local
 			index, name_lower, name_upper: INTEGER; done: BOOLEAN
 		do
-			index := start_index; name_lower := start_index - lead_count; name_upper := Unset
+			index := start_index; name_lower := offset_by (start_index, lead_count.opposite); name_upper := Unset
 			from until index >= end_index or done loop
 				inspect bt_table [buf [index].code]
 					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon, BT_lead_2_byte,
@@ -284,7 +288,7 @@ feature {NONE} -- Tag sub-helpers
 						from until index >= end_index or done loop
 							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit then
-									Result := scan_attributes (buf, attribute_intervals, index, end_index); done := True
+									Result := scan_attributes (buf, bt_table, attribute_intervals, index, end_index); done := True
 								when BT_gt then
 									next_token_index := advance (index)
 									Result := tok_start_tag_no_attributes; done := True

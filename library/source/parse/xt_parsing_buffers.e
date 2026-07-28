@@ -120,6 +120,9 @@ feature {NONE} -- Factory
 					create {XT_ASCII_SCANNER} Result.make
 				when Latin_1 then
 					create {XT_LATIN_1_SCANNER} Result.make
+
+				when Utf_16 then
+					create {XT_UTF_16_SCANNER} Result.make
 			else
 				check
 					type_utf_8: type = Utf_8
@@ -135,6 +138,7 @@ feature {NONE} -- Implementation
 		-- also check if document is actually XML or something weird
 		local
 			str, leading: C_STRING_8; lt_index, gt_index: INTEGER; u: UTF_CONVERTER
+			encoding: NATURAL_8; found: BOOLEAN; s16: XT_STRING_16_ROUTINES
 		do
 			create str.make_shared (chunk.base_address, byte_count)
 			lt_index := str.index_of ('<', 1)
@@ -143,29 +147,45 @@ feature {NONE} -- Implementation
 			else
 				Result := lt_index - 1
 				leading := str.substring (1, lt_index - 1)
-				if attached u.utf_8_bom_to_string_8 as bom then
-				-- check leading bytes before first '<'
+			-- check leading bytes before first '<'
+				across << u.utf_8_bom_to_string_8, u.utf_16le_bom_to_string_8 >> as bom until found loop
 					if leading.starts_with (bom) then
 						leading := leading.substring (bom.count + 1, leading.count)
+						inspect @ bom.cursor_index
+							when 1 then
+								encoding := Utf_8
+						else
+							encoding := Utf_16
+						end
+						found := True
 					end
-				-- Must exlude /usr/share/app-install/icons/gnome-oregano.svg (Linux Mint 22.2)
-				-- The leading bytes are \x89PNG\r\n, which is the PNG magic header, so it's not XML.
-					if leading.is_whitespace then
+				end
+			-- Must exlude /usr/share/app-install/icons/gnome-oregano.svg (Linux Mint 22.2)
+			-- The leading bytes are \x89PNG\r\n, which is the PNG magic header, so it's not XML.
+				if leading.is_whitespace then
+					inspect encoding when Utf_16 then
+						set_scanner (Utf_16)
+					else
 						gt_index := str.index_of ('>', lt_index + 1)
 						if gt_index > 0 and then attached str.substring (lt_index, gt_index).to_string as element then
 							element.to_upper
-							if element.starts_with ("<?XML") then
-								if element.has_substring ("ISO-8859-1") then
-									set_scanner (Latin_1)
+							if s16.starts_with (element.area, 0, Xml_declaration_upper) then
+								set_scanner (Utf_16)
 
-								elseif element.has_substring ("US-ASCII") then
-									set_scanner (Ascii)
+							elseif element.starts_with (Xml_declaration_upper) then
+								from encoding := Ascii until encoding > Utf_16 loop
+									if encoding /= Utf_8 and then element.has_substring (Encoding_names_upper [encoding.to_integer_32]) then
+										set_scanner (encoding)
+										encoding := Utf_16 + 1 -- break
+									else
+										encoding := encoding + 1
+									end
 								end
 							end
 						end
-					else
-						error_code := Error_not_started
 					end
+				else
+					error_code := Error_not_started
 				end
 			end
 		end

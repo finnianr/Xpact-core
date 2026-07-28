@@ -12,7 +12,7 @@ note
 class
 	XT_STRING_CONSTANTS
 
-feature {NONE} -- CDATA constant
+feature {NONE} -- Standard strings
 
 	CDATA: STRING = "CDATA"
 
@@ -32,6 +32,8 @@ feature {NONE} -- CDATA constant
 	SYSTEM: STRING = "SYSTEM"
 
 	Xml_lower: STRING = "xml"
+
+	Xml_declaration_upper: STRING = "<?XML"
 
 feature {NONE} -- Predefined entities
 

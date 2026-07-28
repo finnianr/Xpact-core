@@ -41,7 +41,7 @@ feature -- Initialization
 			create entity_refs_area.make_empty (area.capacity // Group_size)
 			create overflow_buffer_area.make_empty (area.capacity // 2)
 			create buffer_pool.make (10)
-			create name_cache.make
+			name_cache := new_name_cache
 			create utf_8_buffer.make_empty (100)
 		end
 
@@ -86,6 +86,13 @@ feature -- Basic operations
 				entity_refs.wipe_out; overflow.wipe_out
 			end
 			area.wipe_out
+		end
+
+feature {NONE} -- Implementation
+
+	new_name_cache: XT_NAME_CACHE
+		do
+			create Result.make
 		end
 
 feature {NONE} -- Internal attributes

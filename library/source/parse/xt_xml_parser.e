@@ -55,12 +55,12 @@ feature {NONE} -- Event handlers
 		do
 			if attached text_buffer as text then
 				if is_white_space_skipped then
-					append_area (text, area, start_index, end_index)
+					attributes.append_area (text, area, start_index, end_index)
 				else
 					count := end_index - start_index + 1
-					white_count := leading_white_space (area, start_index, end_index)
+					white_count := attributes.leading_white_space (area, start_index, end_index)
 					if white_count < count then
-						append_area (text, area, start_index + white_count, end_index)
+						attributes.append_area (text, area, start_index + white_count, end_index)
 						is_white_space_skipped := True
 					end
 				end

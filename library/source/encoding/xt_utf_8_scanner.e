@@ -38,6 +38,14 @@ feature -- Encoding identity
 	is_utf_8: BOOLEAN = True
 	is_utf_16: BOOLEAN = False
 
+feature -- Character-count and offset scaling
+
+	advance (index: INTEGER): INTEGER
+			-- index + char_width  (replaces index += MINBPC)
+		do
+			Result := index + 1
+		end
+
 feature -- Byte-type table
 
 	byte_type_table: SPECIAL [INTEGER]

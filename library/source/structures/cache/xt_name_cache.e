@@ -124,12 +124,23 @@ feature {NONE} -- Implementation
 	bucket_hash (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- very fast well distributed hash with only 3 components
 		local
-			first, last, count: INTEGER
+			first, last, count: NATURAL
 		do
-			first := buffer [start_index].code
-			last := buffer [end_index].code
-			count := end_index - start_index + 1
-			Result := (first |<< 4).bit_xor ((last |<< 1).bit_xor (count)) \\ Size
+			first := buffer [start_index].natural_32_code
+			count := (end_index - start_index + 1).to_natural_32
+			inspect count when 1 then
+				Result := bucket_index (first * Golden_ratio, first * Golden_ratio |>> 8)
+			else
+				last := buffer [end_index].natural_32_code
+				Result := bucket_index (first |<< 4, (last |<< 1).bit_xor (count))
+			end
+		end
+
+	bucket_index (a, b: NATURAL): INTEGER
+		do
+			Result := a.bit_xor (b).integer_remainder (Size.to_natural_32).to_integer_32
+		ensure
+			positive: Result >= 0
 		end
 
 	same_string (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; name: STRING_8): BOOLEAN
@@ -150,6 +161,8 @@ feature {NONE} -- Implementation
 		end
 
 feature {NONE} -- Constants
+
+	Golden_ratio: NATURAL = 2654435769
 
 	Size: INTEGER = 512
 

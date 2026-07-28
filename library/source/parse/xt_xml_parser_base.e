@@ -451,7 +451,11 @@ feature {NONE} -- Processor dispatch
 							index := tok_end
 
 						when Tok_data_newline then
-							on_content (buf, index, tok_end - 1, attributes, True)
+							inspect buf [index] when '%R' then
+								on_content (buf, s.advance (index), s.offset_by (tok_end, -1), attributes, True)
+							else
+								on_content (buf, index, tok_end - 1, attributes, True)
+							end
 							index := tok_end
 
 					else
@@ -476,22 +480,22 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_data_newline then
 							inspect buf [index] when '%R' then
-								on_content (buf, index + 1, tok_end - 1, attributes, True)
+								on_content (buf, s.advance (index), s.offset_by (tok_end, -1), attributes, True)
 							else
 								on_content (buf, index, tok_end - 1, attributes, True)
 							end
 
 						when Tok_start_tag_no_attributes then
-							context.push (s.tag_name (names, buf, index + 1))
+							context.push (s.tag_name (names, buf, index))
 							on_tag_start (buf, context, attributes, token)
 
 						when Tok_start_tag_with_attributes then
-							context.push (s.tag_name (names, buf, index + 1))
+							context.push (s.tag_name (names, buf, index))
 							on_tag_start (buf, context, attributes, token)
 							attributes.wipe_out
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
-							if attached s.tag_name (names, buf, index + 1) as tag_name then
+							if attached s.tag_name (names, buf, index) as tag_name then
 								context.push (tag_name)
 								on_tag_start (buf, context, attributes, token)
 								inspect token when Tok_empty_element_with_attributes then
@@ -503,7 +507,7 @@ feature {NONE} -- Processor dispatch
 							end
 
 						when Tok_end_tag then
-							on_tag_end (s.tag_name (names, buf, index + 2))  -- skip '</'
+							on_tag_end (s.tag_name (names, buf, index + s.char_width))  -- skip '</'
 							context.pop
 
 						when Tok_comment then

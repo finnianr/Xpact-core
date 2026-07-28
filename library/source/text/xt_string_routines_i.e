@@ -183,6 +183,27 @@ feature {NONE} -- Status report
 			definition: Result implies new_substring (area, lower, upper) ~ string
 		end
 
+	frozen starts_with (area: SPECIAL [CHARACTER_8]; start_index: INTEGER; latin_1: STRING): BOOLEAN
+		-- `True' if characters in `area' from `start_index' match those in `latin_1'
+		local
+			i, j, i_final, byte_count: INTEGER
+		do
+			byte_count := area_count (latin_1.count)
+			if area.valid_index (start_index + byte_count - 1) and then attached latin_1.area as string_area then
+				Result := True
+				i_final := start_index + byte_count - char_width
+				from i := start_index until i > i_final loop
+					if area [i] = string_area [j] then
+						i := advance (i)
+						j := j + 1
+					else
+						Result := False
+						i := i_final + 1 -- break
+					end
+				end
+			end
+		end
+
 	frozen same_caseless_characters (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; string: STRING): BOOLEAN
 		-- `True' if characters in `area' from `lower' to `upper' match those in `string' regardless of case
 		local
@@ -216,9 +237,9 @@ feature {NONE} -- Measurement
 		do
 			from i := lower until i > upper loop
 				if area [i].is_space then
-					Result := Result + 1; i := i + 1
+					Result := Result + char_width; i := advance (i)
 				else
-					i := upper + 1 -- break
+					i := advance (upper) -- break
 				end
 			end
 		end
@@ -250,9 +271,9 @@ feature {NONE} -- Basic operations
 		local
 			count, new_count: INTEGER
 		do
-			count := upper - lower + 1; new_count := str.count + count
+			count := latin_1_count (upper - lower + 1); new_count := str.count + count
 			str.grow (new_count)
-			str.area.copy_data (area, lower, str.count, count)
+			copy_characters (str.area, area, lower, str.count, count)
 			str.area [new_count] := '%U'
 			str.set_count (new_count)
 		end
@@ -276,6 +297,33 @@ feature {NONE} -- Basic operations
 				Result.replace_substring (insertions [index_stack.count], index_stack.item, index_stack.item)
 				index_stack.remove
 			end
+		end
+
+feature {NONE} -- Implementation
+
+	advance (index: INTEGER): INTEGER
+		do
+			Result := index + 1
+		end
+
+	area_count (a_latin_1_count: INTEGER): INTEGER
+		do
+			Result := a_latin_1_count
+		end
+
+	copy_characters (dest, source: SPECIAL [CHARACTER]; source_index, destination_index, count: INTEGER)
+		do
+			dest.copy_data (source, source_index, destination_index, count)
+		end
+
+	latin_1_count (a_area_count: INTEGER): INTEGER
+		do
+			Result := a_area_count
+		end
+
+	char_width: INTEGER
+		do
+			Result := 1
 		end
 
 feature {NONE} -- Constants

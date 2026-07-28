@@ -120,10 +120,18 @@ feature {NONE} -- Event handlers
 		end
 
 	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
+		local
+			name: STRING
 		do
 			inspect data_type
 				when Tok_tag then
-					checksum.add_string (context.name)
+					inspect attributes.char_width when 2 then
+					-- UTF-16
+						name := context.name
+						attributes.append_utf_8_to_crc_32 (checksum, name.area, 0, name.count - 1, True)
+					else
+						checksum.add_string (context.name)
+					end
 
 				when Tok_attribute then
 					inspect token
@@ -164,17 +172,14 @@ feature {NONE} -- Implementation
 		area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 		is_utf_8_encoded: BOOLEAN; crc_32: like checksum
 	)
-		local
-			utf_8_count: INTEGER
 		do
 			if is_utf_8_encoded then
 				crc_32.add_characters (area, start_index, end_index)
 			else
-				utf_8_count := attributes.utf_8_bytes_count (area, start_index, end_index)
-				if utf_8_count = end_index - start_index + 1 then
-					crc_32.add_characters (area, start_index, end_index)
+				inspect attributes.char_width when 2 then
+					attributes.append_utf_8_to_crc_32 (checksum, area, start_index, end_index, True)
 				else
-					crc_32.add_characters (attributes.utf_8_converted (area, start_index, end_index, utf_8_count, Void), 0, utf_8_count - 1)
+					attributes.append_utf_8_to_crc_32 (checksum, area, start_index, end_index, False)
 				end
 			end
 		end

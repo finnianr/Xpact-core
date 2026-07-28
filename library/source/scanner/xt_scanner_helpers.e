@@ -10,9 +10,9 @@ note
 		  BYTE_TYPE(enc, p)         -> byte_type (buf, index)
 		  BYTE_TO_ASCII(enc, p)     -> char_at (buf, index)
 		  CHAR_MATCHES(enc, p, c)   -> char_at (buf, index) = c
-		  MINBPC(enc)               -> min_bytes_per_char
+		  MINBPC(enc)               -> char_width
 		  HAS_CHAR(enc, p, end)     -> index < end_index   (written inline)
-		  HAS_CHARS(enc, p, end, n) -> end_index - index >= n * min_bytes_per_char
+		  HAS_CHARS(enc, p, end, n) -> end_index - index >= n * char_width
 		  IS_NAME_CHAR(enc, p, n)   -> is_name_char_n (buf, index)
 		  IS_NMSTRT_CHAR(enc, p, n) -> is_name_start_char_n (buf, index)
 		  IS_INVALID_CHAR(enc, p, n)-> is_invalid_char_n (buf, index)
@@ -34,6 +34,8 @@ inherit
 	XT_STRING_ROUTINES_I
 		export
 			{XT_XML_PARSER_BASE} all
+		undefine
+			advance, char_width
 		end
 
 feature -- Multi-byte name-character checks
@@ -109,13 +111,14 @@ feature -- Multi-byte name-character checks
 			Result := False
 		end
 
-feature {NONE} -- Implementation
+feature -- Measurement
 
-	advance (index: INTEGER): INTEGER
-			-- index + min_bytes_per_char  (replaces index += MINBPC)
+	offset_by (index, offset: INTEGER): INTEGER
 		do
-			Result := index + char_width
+			Result := index + offset
 		end
+
+feature {NONE} -- Implementation
 
 	character_count (count: INTEGER): INTEGER
 		-- left shift by 1 in UTF-16 descendant
@@ -133,15 +136,9 @@ feature {NONE} -- Implementation
 		end
 
 	has_chars (end_index, index, count: INTEGER): BOOLEAN
-			-- end_index - index >= count * min_bytes_per_char  (HAS_CHARS macro)
+			-- end_index - index >= count * char_width  (HAS_CHARS macro)
 		do
 			Result := end_index - index >= character_count (count)
-		end
-
-
-	offset_by (index, offset: INTEGER): INTEGER
-		do
-			Result := index + offset
 		end
 
 	prune_carriage_returns (buf: SPECIAL [CHARACTER]; CR_index, quote_index, CR_count: INTEGER)
@@ -178,9 +175,13 @@ feature {NONE} -- Internal attributes
 
 feature {XT_XML_PARSER_BASE} -- Deferred
 
+	advance (index: INTEGER): INTEGER
+			-- index + char_width  (replaces index += MINBPC)
+		deferred
+		end
+
 	char_width: INTEGER
 		deferred
-		ensure positive: Result >= 1
 		end
 
 	byte_type_table: SPECIAL [INTEGER]

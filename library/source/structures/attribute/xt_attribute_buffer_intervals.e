@@ -18,6 +18,8 @@ inherit
 	XT_ATTRIBUTE_INTERVAL_LIST
 
 	XT_STRING_ROUTINES_I
+		export
+			{XT_XML_PARSER_BASE} all
 		undefine
 			copy, is_equal
 		end
@@ -80,10 +82,13 @@ feature -- Access
 			end
 		end
 
+feature -- UTF-8 Conversion
+
 	utf_8_converted (
 		buf: SPECIAL [CHARACTER_8]; start_index, end_index, byte_count: INTEGER; a_pool: detachable like buffer_pool
 
 	): SPECIAL [CHARACTER]
+		-- UTF-8 conversion using recylable character buffer arrays
 		require
 			correct_byte_count: utf_8_bytes_count (buf, start_index, end_index) = byte_count
 		do
@@ -100,6 +105,23 @@ feature -- Access
 			to_utf_8 (buf, Result, start_index, end_index)
 		ensure
 			correct_byte_count: byte_count = Result.count
+		end
+
+	as_utf_8 (source: STRING; keep_ref: BOOLEAN): STRING
+		local
+			utf_8_count: INTEGER
+		do
+			Result := Output_buffer
+			Result.wipe_out
+			utf_8_count := utf_8_bytes_count (source.area, 0, source.count - 1)
+			Result.grow (utf_8_count)
+			Result.area.wipe_out
+			to_utf_8 (source.area, Result.area, 0, source.count - 1)
+			Result.area.extend ('%U')
+			Result.set_count (utf_8_count)
+			if keep_ref then
+				Result := Result.twin
+			end
 		end
 
 feature -- Status change
@@ -198,6 +220,16 @@ feature -- Measurement
 
 feature -- Basic operations
 
+	append_utf_8_to_crc_32 (checksum: EL_CRC_32_DIGEST; buf: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; a_force: BOOLEAN)
+		local
+			utf_8_count: INTEGER
+		do
+			utf_8_count := utf_8_bytes_count (buf, start_index, end_index)
+			if not a_force implies utf_8_count = end_index - start_index + 1  then
+				checksum.add_characters (utf_8_converted (buf, start_index, end_index, utf_8_count, Void), 0, utf_8_count - 1)
+			end
+		end
+
 	append_first_value_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
 		require
 			not_empty: count > 0
@@ -276,7 +308,7 @@ feature -- Basic operations
 					buffer := i_th_value (i, a_buffer, overflow_area)
 					lower_index := a [i + 2]; upper_index := a [i + 3]
 					utf_8_count := utf_8_bytes_count (buffer, lower_index, upper_index)
-					if utf_8_count > upper_index - lower_index + 1 then
+					if char_width = 2 or else utf_8_count > upper_index - lower_index + 1 then
 						buffer := utf_8_converted (buffer, lower_index, upper_index, utf_8_count, Void)
 						lower_index := 0; upper_index := buffer.count - 1
 					end
@@ -569,14 +601,14 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Deferred
 
-	to_utf_8 (src, dst: SPECIAL [CHARACTER]; a_from_index, a_from_end: INTEGER)
-			-- Convert src[a_from_index..a_from_end) to UTF-8 in dst [a_to_index .. a_to_end).
+	to_utf_8 (source, dest: SPECIAL [CHARACTER]; a_from_index, a_from_end: INTEGER)
+			-- Convert source[a_from_index..a_from_end) to UTF-8 in dest [a_to_index .. a_to_end).
 			-- Sets consumed_from and written_to.
 		deferred
 		end
 
-	to_utf_16 (src: SPECIAL [CHARACTER]; dst: SPECIAL [NATURAL_16]; a_from_index, a_from_end: INTEGER)
-			-- Convert src[a_from_index..a_from_end) to UTF-16 in dst.
+	to_utf_16 (source: SPECIAL [CHARACTER]; dest: SPECIAL [NATURAL_16]; a_from_index, a_from_end: INTEGER)
+			-- Convert source[a_from_index..a_from_end) to UTF-16 in dest.
 			-- Sets consumed_from and written_to.
 		deferred
 		end
