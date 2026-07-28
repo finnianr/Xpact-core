@@ -165,7 +165,7 @@ feature {NONE} -- Status report
 	frozen same_characters (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; string: STRING): BOOLEAN
 		-- `True' if characters in `area' from `lower' to `upper' match those in `string'
 		local
-			i, j, string_count: INTEGER
+			i, j: INTEGER
 		do
 			if upper - lower + 1 = string.count and then attached string.area as string_area then
 				Result := True
@@ -186,7 +186,7 @@ feature {NONE} -- Status report
 	frozen same_caseless_characters (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; string: STRING): BOOLEAN
 		-- `True' if characters in `area' from `lower' to `upper' match those in `string' regardless of case
 		local
-			i, j, string_count: INTEGER; c_i, c_j: CHARACTER
+			i, j: INTEGER; c_i, c_j: CHARACTER
 		do
 			if upper - lower + 1 = string.count and then attached string.area as string_area then
 				Result := True
@@ -248,7 +248,7 @@ feature {NONE} -- Basic operations
 		require
 			valid_range: upper + 1 >= lower and then upper >= lower implies area.valid_index (lower) and area.valid_index (upper)
 		local
-			count, new_count, i, j: INTEGER
+			count, new_count: INTEGER
 		do
 			count := upper - lower + 1; new_count := str.count + count
 			str.grow (new_count)
@@ -261,14 +261,20 @@ feature {NONE} -- Basic operations
 		require
 			enough_place_holders: template.occurrences ('%S') = insertions.count
 		local
-			index: INTEGER
+			index, last_index: INTEGER; index_stack: ARRAYED_STACK [INTEGER]
 		do
 			Result := template.twin
-			across insertions as str loop
-				index := Result.index_of ('%S', 1)
+			create index_stack.make (template.occurrences ('%S'))
+			last_index := template.last_index_of ('%S', template.count)
+			from until index = last_index loop
+				index := Result.index_of ('%S', index + 1)
 				if index > 0 then
-					Result.replace_substring (str, index, index)
+					index_stack.put (index)
 				end
+			end
+			from until index_stack.is_empty loop
+				Result.replace_substring (insertions [index_stack.count], index_stack.item, index_stack.item)
+				index_stack.remove
 			end
 		end
 

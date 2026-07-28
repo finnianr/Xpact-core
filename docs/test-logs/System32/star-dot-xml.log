@@ -1,0 +1,22 @@
+VALUES DIFFER: /media/finnian/Windows/Windows/System32/DDFs/NGCProDDF_v1.2_final.xml
+Checksum for cdata: Xpact=2468871282 eXpat=1160925457
+
+VALUES DIFFER: /media/finnian/Windows/Windows/System32/DDFs/Win32CompatibilityAppraiser_DDF.xml
+Checksum for comment: Xpact=4063970415 eXpat=3184259960
+
+VALUES DIFFER: /media/finnian/Windows/Windows/System32/drivers/lenovo/UDC/Data/LenovoUDCLazyDeploy.xml
+Checksum for text: Xpact=2889861466 eXpat=0
+
+VALUES DIFFER: /media/finnian/Windows/Windows/System32/drivers/lenovo/UDC/Data/LenovoUDCMaintainanceTask.xml
+Checksum for text: Xpact=278119674 eXpat=0
+
+ERROR (Not started): /media/finnian/Windows/Windows/System32/drivers/lenovo/UDC/Data/UDCDiagnosticScanTask.xml
+
+ERROR (Not started): /media/finnian/Windows/Windows/System32/drivers/lenovo/UDC/Data/udcMonitorTask.xml
+
+VALUES DIFFER: /media/finnian/Windows/Windows/System32/DriverStore/FileRepository/prnms006.inf_amd64_c3bdcb6fc975b614/SendToOneNote-pipelineconfig.xml
+Checksum for comment: Xpact=4201647373 eXpat=1869859622
+
+VALUES DIFFER: /media/finnian/Windows/Windows/System32/DriverStore/FileRepository/tsprint.inf_amd64_d2b2706946552c0e/tsprint-PipelineConfig.xml
+Checksum for comment: Xpact=3988408845 eXpat=3957461979
+

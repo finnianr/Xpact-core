@@ -40,6 +40,7 @@ feature {NONE} -- Initialization
 				wild_card := last_step
 				dir_path := a_dir_path.parent
 			else
+				wild_card := "*.xml"
 				dir_path := a_dir_path
 			end
 		end
@@ -50,7 +51,7 @@ feature -- Basic operations
 		local
 			find_results: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN; i, count: INTEGER
 		do
-			create find_results.make_with_output (find_command)
+			create find_results.make_with_output (substitute (Find_template, << dir_path.out, wild_card >>))
 			if find_results.has_output then
 				log.open_write
 				pass_count := 0; fail_count := 0
@@ -140,15 +141,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	find_command: STRING
-		do
-			if wild_card.is_empty then
-				Result := substitute (Find_template, << dir_path.out >>)
-			else
-				Result := substitute (Find_template_name, << dir_path.out, wild_card >>)
-			end
-		end
-
 	call_expat_xml_crc_32 (type: STRING; file_path: PATH)
 		-- call C program xml_crc_32 setting `expat_return_code' and `expat_checksum'
 		local
@@ -205,11 +197,9 @@ feature {NONE} -- Constants
 
 	Error_template: STRING = "ERROR (%S): %S"
 
-	Find_template: STRING = "find %S -type f"
-
-	Find_template_name: STRING
+	Find_template: STRING
 		once
-			Result := Find_template + " -name '%S'"
+			Result := "find %S -type f -name '%S'"
 		end
 
 	Xml_crc_32: STRING = "xml_crc_32 -type %S -duration 0 '%S'"

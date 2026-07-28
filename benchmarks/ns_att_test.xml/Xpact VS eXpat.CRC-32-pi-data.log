@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: ns_att_test.xml
+
+2026 27 JUL 19:58
+ns_att_test.xml: eXpat passes = 15; Xpact-core passes = 26 (x1.73 to eXpat)

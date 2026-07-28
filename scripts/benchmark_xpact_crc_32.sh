@@ -14,7 +14,7 @@ for path in	$ISE_LIBRARY/library/vision2/vision2.ecf \
 	tools/data/recursive-entity-expansion.xml \
 	tools/data/DTD-attlist-default-values.xml; do
 	name=${path##*/}
-	for type in text cdata comment tag attribute; do
+	for type in attribute cdata comment pi-name pi-data tag text; do
 		echo Type: $type in $name
 		xml_reader -crc_32 $type -duration $DURATION_MS -compare_to_expat $path
 		echo
@@ -26,7 +26,7 @@ pushd .
 cd $HOME/Dev/C/libexpat
 
 for name in nes96.xml ns_att_test.xml recset.xml wordnet_glossary-20010201.rdf; do
-	for type in text cdata comment tag attribute; do
+	for type in attribute cdata comment pi-name pi-data tag text; do
 		echo Type: $type in $name
 		xml_reader -crc_32 $type -duration $DURATION_MS -compare_to_expat testdata/largefiles/$name
 		echo

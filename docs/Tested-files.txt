@@ -16,6 +16,7 @@ Directory: $ISE_EIFFEL
 Directory: $HOME/.steam
 *.xml			Passed: 4371 Failed: 0
 *.svg			Passed: 1244 Failed: 0
+*.manifest	Passed: 207 Failed: 0
 
 Directory: $HOME/.es
 *.xml			Passed: 63 Failed: 0

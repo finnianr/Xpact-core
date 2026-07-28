@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: nes96.xml
+
+2026 27 JUL 19:57
+nes96.xml: eXpat passes = 247; Xpact-core passes = 308 (x1.25 to eXpat)
