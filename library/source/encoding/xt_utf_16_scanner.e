@@ -54,9 +54,10 @@ inherit
 			character_count, copy_characters, latin_1_count,
 			is_name_char_2, is_name_char_3, is_name_char_4,
 			is_name_start_char_2, is_name_start_char_3, is_name_start_char_4,
-			is_invalid_char_2, is_invalid_char_3, is_invalid_char_4
-		redefine
+			is_invalid_char_2, is_invalid_char_3, is_invalid_char_4,
 			offset_by
+		redefine
+			entity_start_index, entity_end_index
 		end
 
 	XT_UTF_16_NAME_CHECKER
@@ -75,7 +76,7 @@ feature -- Encoding identity
 
 	is_utf_16: BOOLEAN = True
 
-feature -- Byte-type dispatch
+feature {NONE} -- Implementation
 
 	byte_type (buf: SPECIAL [CHARACTER]; index: INTEGER): INTEGER
 			-- Two-byte byte type for the UTF-16 LE code unit at `index'.
@@ -98,26 +99,16 @@ feature -- Byte-type dispatch
 			end
 		end
 
-feature -- Byte-type table
-
-	byte_type_table: SPECIAL [INTEGER]
-			-- 256-entry fallback table: ASCII half (0x00..0x7F) filled with
-			-- standard BT_* values via `fill_ascii_half'; bytes 0x80..0xFF
-			-- mapped to BT_non_ascii so the scanner advances by char_width = 2
-			-- for every non-ASCII code unit without triggering an error.
-		once
-			create Result.make_filled (0, 256)
-			fill_ascii_half (Result)
-			Result.fill_with (BT_non_ascii, 128, 255)
+	entity_start_index (index: INTEGER): INTEGER
+		-- calculate start index of buffer	
+		do
+			Result := advance (index)
 		end
 
-feature -- Character-count and offset scaling (redefined for char_width = 2)
-
-	offset_by (index, offset: INTEGER): INTEGER
-			-- Byte index `offset' characters after `index' (index + offset * 2).
-			-- Overrides the default `index + offset' in XT_SCANNER_HELPERS.
+	entity_end_index (index: INTEGER): INTEGER
+		-- calculate end index of buffer	
 		do
-			Result := index + offset * 2
+			Result := offset_by (index, - 2) + 1
 		end
 
 feature {NONE} -- Factory
@@ -148,6 +139,19 @@ feature {NONE} -- Unicode code-unit classification (port of xmltok.c unicode_byt
 			else
 				Result := BT_non_ascii
 			end
+		end
+
+feature {NONE} -- Constants
+
+	Byte_type_table: SPECIAL [INTEGER]
+			-- 256-entry fallback table: ASCII half (0x00..0x7F) filled with
+			-- standard BT_* values via `fill_ascii_half'; bytes 0x80..0xFF
+			-- mapped to BT_non_ascii so the scanner advances by char_width = 2
+			-- for every non-ASCII code unit without triggering an error.
+		once
+			create Result.make_filled (0, 256)
+			fill_ascii_half (Result)
+			Result.fill_with (BT_non_ascii, 128, 255)
 		end
 
 end

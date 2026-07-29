@@ -286,7 +286,7 @@ feature {NONE} -- Prolog sub-scanners
 							inspect CR_count when 0 then
 								do_nothing
 							else
-								prune_carriage_returns (buf, CR_index, index, CR_count)
+								prune_carriage_returns (buf, CR_index, index, CR_count, '"')
 								index := index - CR_count * char_width
 							end
 							index := advance (index)

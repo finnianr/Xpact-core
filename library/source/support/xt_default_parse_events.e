@@ -36,7 +36,10 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_content_ (buf: SPECIAL [CHARACTER]; a_start, a_end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
+	on_content_ (
+		buf: SPECIAL [CHARACTER]; a_start, a_end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		is_utf_8_encoded: BOOLEAN
+	)
 		do
 		end
 

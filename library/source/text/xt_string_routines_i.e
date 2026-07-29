@@ -167,11 +167,11 @@ feature {NONE} -- Status report
 		local
 			i, j: INTEGER
 		do
-			if upper - lower + 1 = string.count and then attached string.area as string_area then
+			if latin_1_count (upper - lower + 1) = string.count and then attached string.area as string_area then
 				Result := True
 				from i := lower until i > upper loop
 					if area [i] = string_area [j] then
-						i := i + 1
+						i := advance (i)
 						j := j + 1
 					else
 						Result := False
@@ -244,22 +244,27 @@ feature {NONE} -- Measurement
 			end
 		end
 
-	frozen match_count (area, string_area: SPECIAL [CHARACTER_8]; offset: INTEGER): INTEGER
-		-- count of characters in `area' from `offset' matching those in `string_area' from 0 to `string_area.count - 2'
+	frozen match_count (area: SPECIAL [CHARACTER_8]; offset: INTEGER; string: STRING): INTEGER
+		-- count of characters in `area' from `offset' matching those from start of `string'
 		require
-			null_terminated: string_area [string_area.count - 1] = '%U'
-			inside_area: area.valid_index (offset + string_area.count - 2)
+			inside_area: area.valid_index (offset + area_count (string.count) - 1)
 		local
-			i, string_count: INTEGER
+			i, string_count: INTEGER; string_area: SPECIAL [CHARACTER_8]
 		do
-			from i := 0; string_count := string_area.count - 1 until i = string_count loop
-				if area [offset + i] = string_area [i] then
+			string_area := string.area; string_count := string_area.count
+			from i := 0; until i = string_count loop
+				if area [offset_by (offset, i)] = string_area [i] then
 					Result := Result + 1
 					i := i + 1
 				else
 					i := string_count -- break
 				end
 			end
+		end
+
+	offset_by (index, offset: INTEGER): INTEGER
+		do
+			Result := index + offset
 		end
 
 feature {NONE} -- Basic operations

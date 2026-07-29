@@ -54,7 +54,9 @@ feature {NONE} -- Event handlers
 			count, white_count: INTEGER
 		do
 			if attached text_buffer as text then
-				if is_white_space_skipped then
+				if is_utf_8_encoded then
+					append_area (text, area, start_index, end_index)
+				elseif is_white_space_skipped then
 					attributes.append_area (text, area, start_index, end_index)
 				else
 					count := end_index - start_index + 1
@@ -73,7 +75,7 @@ feature {NONE} -- Event handlers
 			on_processing_instruction (attributes.first_name (buf), attributes.first_value (buf))
 		end
 
-	on_base_tag_end (name: STRING_8)
+	on_base_tag_end (name: STRING)
 		do
 			do_with_content (text_buffer)
 			on_tag_end (name)

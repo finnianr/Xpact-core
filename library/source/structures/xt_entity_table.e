@@ -15,13 +15,12 @@ class
 inherit
 	HASH_TABLE [STRING, STRING]
 		rename
-			item as table_item,
-			make as make_sized
+			item as table_item
 		export
 			{NONE} all
 			{ANY} put, inserted
 		redefine
-			make_sized, same_keys
+			make, same_keys
 		end
 
 	XT_STRING_ROUTINES_I
@@ -37,22 +36,11 @@ inherit
 		end
 
 create
-	make_sized, make
+	make
 
-feature -- Initialization
+feature {NONE} -- Initialization
 
-	make (entity_cache: XT_ENTITY_NAME_CACHE)
-		do
-			make_sized (109)
-			across new_predefined_table as character loop
-				if attached @ character.key as key and then attached key.area as l_area then
-					extend (character.out, entity_cache.item (l_area, 0, key.count - 1))
-				end
-			end
-			set_no_status
-		end
-
-	make_sized (n: INTEGER)
+	make (n: INTEGER)
 		do
 			Precursor (n)
 			create substring.make_empty
@@ -157,7 +145,23 @@ feature -- Basic operations
 			end
 		end
 
+feature -- Element change
+
+	set_predefined (entity_cache: XT_ENTITY_NAME_CACHE)
+		do
+			across new_predefined_table as character loop
+				if attached encoded_key (@ character.key) as key and then attached key.area as l_area then
+					extend (character.out, entity_cache.item (l_area, 0, key.count - 1))
+				end
+			end
+		end
+
 feature {NONE} -- Implementation
+
+	encoded_key (key: STRING): STRING
+		do
+			Result := key
+		end
 
 	new_predefined_table: HASH_TABLE [CHARACTER, STRING]
 		do

@@ -120,18 +120,10 @@ feature {NONE} -- Event handlers
 		end
 
 	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
-		local
-			name: STRING
 		do
 			inspect data_type
 				when Tok_tag then
-					inspect attributes.char_width when 2 then
-					-- UTF-16
-						name := context.name
-						attributes.append_utf_8_to_crc_32 (checksum, name.area, 0, name.count - 1, True)
-					else
-						checksum.add_string (context.name)
-					end
+					checksum.add_string (context.name)
 
 				when Tok_attribute then
 					inspect token
@@ -176,11 +168,7 @@ feature {NONE} -- Implementation
 			if is_utf_8_encoded then
 				crc_32.add_characters (area, start_index, end_index)
 			else
-				inspect attributes.char_width when 2 then
-					attributes.append_utf_8_to_crc_32 (checksum, area, start_index, end_index, True)
-				else
-					attributes.append_utf_8_to_crc_32 (checksum, area, start_index, end_index, False)
-				end
+				attributes.append_utf_8_to_crc_32 (checksum, area, start_index, end_index)
 			end
 		end
 

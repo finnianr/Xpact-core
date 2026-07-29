@@ -119,7 +119,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 		-- (lt=0x3C, gt=0x3E, amp=0x26, quot=0x22, apos=0x27), or -1 if not a predefined entity.
 		do
 			Result := -1
-			inspect end_index - start_index + 1
+			inspect latin_1_count (end_index - start_index + 1)
 				when 2 then
 					inspect buf [start_index]
 						when 'g' then

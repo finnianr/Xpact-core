@@ -9,14 +9,20 @@ Directory: /usr/share
 *.svg			Passed: 81697 Failed: 0
 
 Directory: $ISE_EIFFEL
+*.xml			Passed: 212 Failed: 0
 *.eant		Passed: 1131 Failed: 0
 *.ecf			Passed: 1603 Failed: 0
-*.xml			Passed: 212 Failed: 0
 
 Directory: $HOME/.steam
-*.xml			Passed: 4371 Failed: 0
-*.svg			Passed: 1244 Failed: 0
 *.manifest	Passed: 207 Failed: 0
+*.svg			Passed: 1244 Failed: 0
+*.xml			Passed: 4371 Failed: 0
 
 Directory: $HOME/.es
 *.xml			Passed: 63 Failed: 0
+
+Directory: /media/finnian/Windows/Windows/System32
+*.xml			Passed: 872 Failed: 0
+
+Directory: /media/finnian/Windows/Windows/WinSxS
+*.manifest 	Passed: 37741 Failed: 0

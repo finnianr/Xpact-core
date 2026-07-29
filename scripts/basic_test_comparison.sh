@@ -6,8 +6,12 @@
 echo Testing against tools/data/*
 
 xml_reader -test_files tools/data
-echo
 
-echo Testing against libexpat/testdata/largefiles/*.xml
-xml_reader -test_files "$HOME/Dev/C/libexpat/testdata/largefiles/*.xml"
+if [ "$1" == "large" ]; then
+	echo
+	echo Testing against libexpat/testdata/largefiles/*.xml
+	xml_reader -test_files "$HOME/Dev/C/libexpat/testdata/largefiles/*.xml"
+else
+	echo Skipped larg files
+fi
 

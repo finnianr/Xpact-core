@@ -1,0 +1,9 @@
+VALUES DIFFER: /usr/share/yelp-xsl/xslt/mallard/html/mal2html.xsl
+Checksum for pi-name: Xpact=0 eXpat=1284725762
+
+VALUES DIFFER: /usr/share/yelp-xsl/xslt/docbook/html/db2html.xsl
+Checksum for pi-name: Xpact=0 eXpat=1284725762
+
+VALUES DIFFER: /usr/share/yelp-xsl/xslt/docbook/html/db2html-index.xsl
+Checksum for attribute: Xpact=3570914564 eXpat=2844051775
+

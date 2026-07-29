@@ -28,21 +28,26 @@ inherit
 			make, wipe_out
 		end
 
-feature -- Initialization
+	XT_UTF_8_CONVERTER
+		undefine
+			copy, is_equal
+		end
+
+feature {NONE} -- Initialization
 
 	make (n: INTEGER)
 		do
 			Precursor (n)
 			create character_swap_area.make_filled ('%U', area.capacity // Group_size)
 			create attribute_table.make (11)
-			create entity_cache.make
-			create entity_table.make (entity_cache)
 			create entity_refs_pool.make (10)
 			create entity_refs_area.make_empty (area.capacity // Group_size)
 			create overflow_buffer_area.make_empty (area.capacity // 2)
 			create buffer_pool.make (10)
+
+			entity_cache := new_entity_cache
+			entity_table := new_entity_table (37)
 			name_cache := new_name_cache
-			create utf_8_buffer.make_empty (100)
 		end
 
 feature -- Access
@@ -62,6 +67,13 @@ feature -- Constants
 		-- number of array items needed to hold intervals of one name-value pair
 
 feature -- Basic operations
+
+	initialize
+		do
+			name_cache.set_utf_8_converter (Current)
+			entity_cache.set_utf_8_converter (Current)
+			entity_table.set_predefined (entity_cache)
+		end
 
 	wipe_out
 		local
@@ -88,7 +100,17 @@ feature -- Basic operations
 			area.wipe_out
 		end
 
-feature {NONE} -- Implementation
+feature {NONE} -- Factory
+
+	new_entity_cache: XT_ENTITY_NAME_CACHE
+		do
+			create Result.make
+		end
+
+	new_entity_table (n: INTEGER): XT_ENTITY_TABLE
+		do
+			create Result.make (n)
+		end
 
 	new_name_cache: XT_NAME_CACHE
 		do
@@ -109,8 +131,6 @@ feature {NONE} -- Internal attributes
 	buffer_pool: XT_CHARACTER_BUFFER_POOL
 
 	entity_refs_pool: ARRAYED_STACK [ARRAYED_LIST [STRING]]
-
-	utf_8_buffer: SPECIAL [CHARACTER_8]
 
 invariant
 	lower_upper_pairs: index_count.integer_remainder (Group_size) = 0

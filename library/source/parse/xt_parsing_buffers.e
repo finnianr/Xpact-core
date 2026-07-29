@@ -70,6 +70,7 @@ feature {NONE} -- Initialisation
 			create character_string.make_filled ('%U', 1)
 			create declaration_parts_list.make (10)
 			create attribute_value_defaults_table.make (37)
+			create new_line.make_filled ('%N', 1)
 			set_scanner (Utf_8)
 
 		ensure then
@@ -322,6 +323,8 @@ feature {NONE} -- Internal structures
 
 	name_cache: XT_NAME_CACHE
 		-- efficient lookup of attribute/tag name
+
+	new_line: SPECIAL [CHARACTER_8]
 
 	scanner: XT_DOCUMENT_SCANNER
 

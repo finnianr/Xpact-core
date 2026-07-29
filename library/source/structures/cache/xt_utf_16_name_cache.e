@@ -15,7 +15,7 @@ class
 inherit
 	XT_NAME_CACHE
 		redefine
-			bucket_hash
+			hash_index
 		end
 
 create
@@ -23,19 +23,19 @@ create
 
 feature {NONE} -- Implementation
 
-	bucket_hash (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	hash_index (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- very fast well distributed hash with only 3 components
 		local
-			first, last, code, count: NATURAL_32
+			first, last, count: NATURAL_32
 		do
 			count := (end_index - start_index + 1).to_natural_32
 			first := buffer [start_index].natural_32_code.bit_or (buffer [start_index + 1].natural_32_code |<< 8)
 			inspect count
 				when 2 then
-					Result := bucket_index (first * Golden_ratio, first * Golden_ratio |>> 16)
+					Result := size_remainder (first * Golden_ratio, first * Golden_ratio |>> 16)
 			else
 				last := buffer [end_index - 1].natural_32_code.bit_or (buffer [end_index].natural_32_code |<< 8)
-				Result := bucket_index (first |<< 8, (last |<< 2).bit_xor (count))
+				Result := size_remainder (first |<< 8, (last |<< 2).bit_xor (count))
 			end
 		end
 end

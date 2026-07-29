@@ -369,7 +369,7 @@ feature {NONE} -- Processor dispatch
 			end_in_buffer: buf = buffer implies end_index <= buffer_end
 			buffer_index_at_start: buffer_index = start_index
 		local
-			index, token, tok_end, code, err, buffer_index_copy: INTEGER; done: BOOLEAN
+			index, token, tok_end, code, err, buffer_index_copy, lower, upper: INTEGER; done: BOOLEAN
 			context: XT_ELEMENT_CONTEXT
 		do
 			index := start_index; context := a_context
@@ -388,12 +388,10 @@ feature {NONE} -- Processor dispatch
 									element_context := context
 								end
 							end
-							index := tok_end
 
 						when Tok_decl_open then
 							declaration := select_declaration (buf, index + 2, s)
 							declaration_parts_list.wipe_out
-							index := tok_end
 
 						when Tok_literal then
 							inspect declaration
@@ -402,7 +400,6 @@ feature {NONE} -- Processor dispatch
 								when Attlist then
 									on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, s, names)
 							else end
-							index := tok_end
 
 						when Tok_name then
 							inspect declaration
@@ -411,22 +408,18 @@ feature {NONE} -- Processor dispatch
 								when Attlist then
 									on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
 							else end
-							index := tok_end
 
 						when Tok_pound_name then
 							inspect declaration when Attlist then
 								on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
 							else end
-							index := tok_end
 
 						when Tok_comment then
-							on_comment (buf, index + 4, tok_end - 4, attributes)
-							index := tok_end
+							on_comment (buf, s.offset_by (index, 4), s.offset_by (tok_end, -4), attributes)
 
 						when Tok_pi then
 							on_processing_instruction (buf, attributes)
 							attributes.wipe_out
-							index := tok_end
 
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
@@ -436,6 +429,9 @@ feature {NONE} -- Processor dispatch
 						else
 							index := tok_end  -- skip prolog token
 						end
+					end
+					if not done then
+						index := tok_end
 					end
 				elseif section [CDATA] then
 					token := s.scan_cdata_section (buf, bt_table, index, end_index)
@@ -451,11 +447,7 @@ feature {NONE} -- Processor dispatch
 							index := tok_end
 
 						when Tok_data_newline then
-							inspect buf [index] when '%R' then
-								on_content (buf, s.advance (index), s.offset_by (tok_end, -1), attributes, True)
-							else
-								on_content (buf, index, tok_end - 1, attributes, True)
-							end
+							on_content (new_line, 0, 0, attributes, True)
 							index := tok_end
 
 					else
@@ -479,11 +471,7 @@ feature {NONE} -- Processor dispatch
 							on_content (buf, index, tok_end - 1, attributes, False)
 
 						when Tok_data_newline then
-							inspect buf [index] when '%R' then
-								on_content (buf, s.advance (index), s.offset_by (tok_end, -1), attributes, True)
-							else
-								on_content (buf, index, tok_end - 1, attributes, True)
-							end
+							on_content (new_line, 0, 0, attributes, True)
 
 						when Tok_start_tag_no_attributes then
 							context.push (s.tag_name (names, buf, index))
@@ -511,17 +499,17 @@ feature {NONE} -- Processor dispatch
 							context.pop
 
 						when Tok_comment then
-							on_comment (buf, index + 4, tok_end - 4, attributes)
+							on_comment (buf, s.offset_by (index, 4), s.offset_by (tok_end, -4), attributes)
 
 						when Tok_pi then
 							on_processing_instruction (buf, attributes)
 							attributes.wipe_out
-							index := tok_end
 
 						when Tok_entity_ref then
-							code := s.predefined_entity_code (buf, index + 1, tok_end - 2)
+							lower := s.entity_start_index (index); upper := s.entity_end_index (tok_end)
+							code := s.predefined_entity_code (buf, lower, upper)
 							inspect code when -1 then
-								if attached entity_cache.item (buf, index + 1, tok_end - 2) as entity_name
+								if attached entity_cache.item (buf, lower, upper) as entity_name
 									and then attached entity_table.item (entity_name) as entity_value
 								then
 									buffer_index_copy := buffer_index -- save field

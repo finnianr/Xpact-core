@@ -32,9 +32,9 @@ class
 inherit
 	XT_ATTRIBUTE_BUFFER_INTERVALS
 		undefine
-			advance, area_count, char_width, copy_characters, latin_1_count
+			advance, area_count, char_width, copy_characters, latin_1_count, offset_by
 		redefine
-			new_name_cache
+			new_name_cache, not_utf_8_encoded, new_entity_cache, new_entity_table
 		end
 
 	XT_STRING_16_ROUTINES_I
@@ -73,6 +73,16 @@ feature -- Measurement
 		end
 
 feature {NONE} -- Factory
+
+	new_entity_cache: XT_UTF_16_ENTITY_NAME_CACHE
+		do
+			create Result.make
+		end
+
+	new_entity_table (n: INTEGER): XT_UTF_16_ENTITY_TABLE
+		do
+			create Result.make (n)
+		end
 
 	new_filled_list (n: INTEGER): like Current
 		do
@@ -144,4 +154,8 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	not_utf_8_encoded (lower_index, upper_index, utf_8_count: INTEGER): BOOLEAN
+		do
+			Result := True
+		end
 end

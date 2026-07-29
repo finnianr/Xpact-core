@@ -16,7 +16,7 @@ feature {NONE} -- Standard strings
 
 	CDATA: STRING = "CDATA"
 
-	Cdata_lsqb: C_STRING_8
+	Cdata_lsqb: STRING
 		once
 			Result := CDATA + "["
 		end

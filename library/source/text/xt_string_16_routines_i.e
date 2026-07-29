@@ -15,7 +15,7 @@ class
 inherit
 	XT_STRING_ROUTINES_I
 		redefine
-			advance, area_count, char_width, copy_characters, latin_1_count
+			advance, area_count, char_width, copy_characters, latin_1_count, offset_by
 		end
 
 feature {NONE} -- Implementation
@@ -51,6 +51,11 @@ feature {NONE} -- Implementation
 			even_count: a_area_count.integer_remainder (2) = 0
 		do
 			Result := a_area_count // 2
+		end
+
+	offset_by (index, offset: INTEGER): INTEGER
+		do
+			Result := index + offset * 2
 		end
 
 	Char_width: INTEGER = 2

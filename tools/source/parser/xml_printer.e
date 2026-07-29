@@ -62,19 +62,30 @@ feature {NONE} -- Event handlers
 
 	on_content (text: STRING)
 		local
-			is_double: BOOLEAN
+			is_double: BOOLEAN; left, right: CHARACTER
 		do
 			is_double := text.is_double
 			put_tabs (element_context.depth)
 			if in_cdata_section then
 				IO.put_string ("CDATA: ")
+				if text.count > 1 then
+					if text [1] = '"' and text [text.count] = '"' then
+						do_nothing
+						
+					elseif text [1] = '"' or text [text.count] = '"' then
+						left := '['; right := ']'
+					end
+				end
+
+			elseif not text.is_double then
+				left := '"'; right := '"'
 			end
-			if not is_double then
-				IO.put_character ('"')
+			if left /= '%U' then
+				IO.put_character (left)
 			end
 			IO.put_string (text)
-			if not is_double then
-				IO.put_character ('"')
+			if right /= '%U' then
+				IO.put_character (right)
 			end
 			IO.put_new_line
 		end

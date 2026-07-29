@@ -38,6 +38,20 @@ inherit
 			advance, char_width
 		end
 
+feature -- Access
+
+	entity_start_index (index: INTEGER): INTEGER
+		-- over-ride in UTF-16 implementation to calculate start index of buffer	
+		do
+			Result := index + 1
+		end
+
+	entity_end_index (index: INTEGER): INTEGER
+		-- over-ride in UTF-16 implementation to calculate end index of buffer	
+		do
+			Result := index - 2
+		end
+
 feature -- Multi-byte name-character checks
 
 -- UTF-8; deferred for UTF-16/etc.
@@ -111,13 +125,6 @@ feature -- Multi-byte name-character checks
 			Result := False
 		end
 
-feature -- Measurement
-
-	offset_by (index, offset: INTEGER): INTEGER
-		do
-			Result := index + offset
-		end
-
 feature {NONE} -- Implementation
 
 	character_count (count: INTEGER): INTEGER
@@ -141,15 +148,15 @@ feature {NONE} -- Implementation
 			Result := end_index - index >= character_count (count)
 		end
 
-	prune_carriage_returns (buf: SPECIAL [CHARACTER]; CR_index, quote_index, CR_count: INTEGER)
-		-- prune %R in attribute value by doing a left shift and filling in with spaces at the end
+	prune_carriage_returns (buf: SPECIAL [CHARACTER]; CR_index, end_index, CR_count: INTEGER; terminator: CHARACTER)
+		-- prune %R in section of `buf' by doing a left shift and filling in with spaces at the end
 		require
 			valid_cr_index: buf [CR_index] = '%R'
-			valid_quote_index: buf [quote_index] = '"' or buf [quote_index] = '%''
+			valid_quote_index: buf [end_index] = terminator or else buf [end_index] = '%''
 		local
 			i, j: INTEGER
 		do
-			from i := CR_index; j := CR_index until i > quote_index loop
+			from i := CR_index; j := CR_index until i > end_index loop
 				inspect buf [i] when '%R' then
 					i := advance (i)
 				else
@@ -159,7 +166,7 @@ feature {NONE} -- Implementation
 				end
 			end
 		-- paint over remaining characters with spaces
-			from until j > quote_index loop
+			from until j > end_index loop
 				buf [j] := ' '
 				j := advance (j)
 			end

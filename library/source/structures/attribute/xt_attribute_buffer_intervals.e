@@ -16,12 +16,16 @@ deferred class
 
 inherit
 	XT_ATTRIBUTE_INTERVAL_LIST
+		redefine
+			make
+		end
 
-	XT_STRING_ROUTINES_I
-		export
-			{XT_XML_PARSER_BASE} all
-		undefine
-			copy, is_equal
+feature -- Initialization
+
+	make (n: INTEGER)
+		do
+			Precursor (n)
+			create utf_8_buffer.make_empty (100)
 		end
 
 feature -- Status query
@@ -79,48 +83,6 @@ feature -- Access
 					str_area [j] := i_th_value (i, buffer, overflow_area) [upper_plus_1]
 					i := i + Group_size; j := j + 1
 				end
-			end
-		end
-
-feature -- UTF-8 Conversion
-
-	utf_8_converted (
-		buf: SPECIAL [CHARACTER_8]; start_index, end_index, byte_count: INTEGER; a_pool: detachable like buffer_pool
-
-	): SPECIAL [CHARACTER]
-		-- UTF-8 conversion using recylable character buffer arrays
-		require
-			correct_byte_count: utf_8_bytes_count (buf, start_index, end_index) = byte_count
-		do
-			if attached a_pool as pool then
-				Result := pool.borrow_item (byte_count)
-			else
-				Result := utf_8_buffer
-			end
-			Result.wipe_out
-			if byte_count > Result.capacity then
-				create Result.make_empty (byte_count)
-				utf_8_buffer := Result
-			end
-			to_utf_8 (buf, Result, start_index, end_index)
-		ensure
-			correct_byte_count: byte_count = Result.count
-		end
-
-	as_utf_8 (source: STRING; keep_ref: BOOLEAN): STRING
-		local
-			utf_8_count: INTEGER
-		do
-			Result := Output_buffer
-			Result.wipe_out
-			utf_8_count := utf_8_bytes_count (source.area, 0, source.count - 1)
-			Result.grow (utf_8_count)
-			Result.area.wipe_out
-			to_utf_8 (source.area, Result.area, 0, source.count - 1)
-			Result.area.extend ('%U')
-			Result.set_count (utf_8_count)
-			if keep_ref then
-				Result := Result.twin
 			end
 		end
 
@@ -206,27 +168,17 @@ feature -- Measurement
 			Result := overflow_buffer_area.count
 		end
 
-	utf_8_bytes_count (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
-			-- Number of bytes necessary to encode in UTF-8 `s.substring (start_index, end_index)'.
-			-- Note that this feature can be used for both escaped and non-escaped string.
-			-- In the case of escaped strings, the result will be possibly higher than really needed.
-			-- It does not include the terminating null character.
-		require
-			end_index_big_enough: start_index <= end_index + 1
-			valid_start_index: buf.valid_index (start_index)
-			valid_end_index: buf.valid_index (end_index)
-		deferred
-		end
-
 feature -- Basic operations
 
-	append_utf_8_to_crc_32 (checksum: EL_CRC_32_DIGEST; buf: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; a_force: BOOLEAN)
+	append_utf_8_to_crc_32 (checksum: EL_CRC_32_DIGEST; buf: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER)
 		local
 			utf_8_count: INTEGER
 		do
 			utf_8_count := utf_8_bytes_count (buf, start_index, end_index)
-			if not a_force implies utf_8_count = end_index - start_index + 1  then
+			if not_utf_8_encoded (start_index, end_index, utf_8_count)  then
 				checksum.add_characters (utf_8_converted (buf, start_index, end_index, utf_8_count, Void), 0, utf_8_count - 1)
+			else
+				checksum.add_characters (buf, start_index, end_index)
 			end
 		end
 
@@ -306,9 +258,10 @@ feature -- Basic operations
 						check_value (names.item (buffer, a [i], a [i + 1]), default_values)
 					end
 					buffer := i_th_value (i, a_buffer, overflow_area)
+
 					lower_index := a [i + 2]; upper_index := a [i + 3]
 					utf_8_count := utf_8_bytes_count (buffer, lower_index, upper_index)
-					if char_width = 2 or else utf_8_count > upper_index - lower_index + 1 then
+					if not_utf_8_encoded (lower_index, upper_index, utf_8_count) then
 						buffer := utf_8_converted (buffer, lower_index, upper_index, utf_8_count, Void)
 						lower_index := 0; upper_index := buffer.count - 1
 					end
@@ -599,19 +552,11 @@ feature {NONE} -- Implementation
 			end
 		end
 
-feature {NONE} -- Deferred
-
-	to_utf_8 (source, dest: SPECIAL [CHARACTER]; a_from_index, a_from_end: INTEGER)
-			-- Convert source[a_from_index..a_from_end) to UTF-8 in dest [a_to_index .. a_to_end).
-			-- Sets consumed_from and written_to.
-		deferred
+	not_utf_8_encoded (lower_index, upper_index, utf_8_count: INTEGER): BOOLEAN
+		-- 'True' if `utf_8_count' implies that buffer from `lower_index' to `upper_index'
+		-- is not already valid as UTF-8
+		do
+			Result := utf_8_count > upper_index - lower_index + 1
 		end
-
-	to_utf_16 (source: SPECIAL [CHARACTER]; dest: SPECIAL [NATURAL_16]; a_from_index, a_from_end: INTEGER)
-			-- Convert source[a_from_index..a_from_end) to UTF-16 in dest.
-			-- Sets consumed_from and written_to.
-		deferred
-		end
-
 
 end

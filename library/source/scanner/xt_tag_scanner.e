@@ -31,10 +31,10 @@ feature -- Measurement
 		local
 			start_index: INTEGER
 		do
-			start_index := lt_index + char_width
+			start_index := advance (lt_index)
 			Result := name_cache.item (buffer, start_index, start_index + tag_name_count - 1)
 		ensure
-			same_tag_length: Result.count = name_count (buffer, lt_index + char_width)
+			same_tag_length: area_count (Result.count) = name_count (buffer, advance (lt_index))
 		end
 
 feature {NONE} -- Tag scanning
@@ -377,7 +377,7 @@ feature {NONE} -- Tag sub-helpers
 									inspect CR_count when 0 then
 										do_nothing
 									else
-										prune_carriage_returns (buf, CR_index, index, CR_count)
+										prune_carriage_returns (buf, CR_index, index, CR_count, '"')
 										index := offset_by (index, CR_count.opposite)
 									end
 									lower_upper.extend (index - 1)
@@ -391,7 +391,7 @@ feature {NONE} -- Tag sub-helpers
 									inspect CR_count when 0 then
 										do_nothing
 									else
-										prune_carriage_returns (buf, CR_index, index, CR_count)
+										prune_carriage_returns (buf, CR_index, index, CR_count, '%'')
 										index := offset_by (index, CR_count.opposite)
 									end
 									lower_upper.extend (index - 1)

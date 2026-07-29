@@ -28,7 +28,7 @@ feature {NONE} -- PI and comment scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index: INTEGER; done: BOOLEAN
+			index, CR_count, CR_index: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			if index >= end_index then
@@ -50,6 +50,12 @@ feature {NONE} -- PI and comment scanning
 								if index >= end_index then
 									Result := Tok_partial; done := True
 								elseif buf [index] = '>' then
+									inspect CR_count when 0 then
+										do_nothing
+									else
+										prune_carriage_returns (buf, CR_index, offset_by (index, - 2), CR_count, '-')
+										index := index - CR_count * char_width
+									end
 									next_token_index := advance (index)
 									Result := Tok_comment; done := True
 								else
@@ -58,6 +64,7 @@ feature {NONE} -- PI and comment scanning
 							end
 						when BT_non_xml, BT_malform, BT_continuation_byte then
 							next_token_index := index; Result := Tok_invalid; done := True
+
 						when BT_lead_2_byte then
 							if end_index - index < 2 then
 								Result := Tok_partial_char; done := True
@@ -82,6 +89,14 @@ feature {NONE} -- PI and comment scanning
 							else
 								index := index + 4
 							end
+						when BT_CR then
+						-- count CR characters so we can do left shift with prune
+							inspect CR_count when 0 then
+								CR_index := index
+							else end
+							CR_count := CR_count + 1
+							index := advance (index)
+
 					else
 						index := advance (index)
 					end
@@ -225,15 +240,15 @@ feature {NONE} -- PI and comment scanning
 		require
 			start_index <= end_index
 		do
-			if end_index - start_index < Cdata_lsqb.count then
+			if end_index - start_index < area_count (Cdata_lsqb.count) then
 				Result := Tok_partial
 			else
-				if Cdata_lsqb.same_characters (buf, start_index) then
+				if starts_with (buf, start_index, Cdata_lsqb) then
 					Result := Tok_cdata_sect_open
-					next_token_index := start_index + Cdata_lsqb.count
+					next_token_index := offset_by (start_index, Cdata_lsqb.count)
 				else
 					Result := Tok_invalid
-					next_token_index := start_index + Cdata_lsqb.match_count (buf, start_index) + 1
+					next_token_index := start_index + match_count (buf, start_index, Cdata_lsqb) + char_width
 				end
 			end
 		end

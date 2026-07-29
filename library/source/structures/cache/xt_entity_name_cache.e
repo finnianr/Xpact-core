@@ -17,11 +17,11 @@ class
 inherit
 	XT_NAME_CACHE
 		redefine
-			buffer_string_8, bucket_hash, item, same_string
+			buffer_string_8, bucket_index, item, same_string
 		end
 
 create
-	make, make_empty
+	make
 
 feature -- Access
 
@@ -57,30 +57,26 @@ feature {XT_PARSING_BUFFERS} -- Implementation
 
 feature {NONE} -- Implementation
 
-	bucket_hash (buffer: SPECIAL [CHARACTER]; a_start_index, end_index: INTEGER): INTEGER
+	bucket_index (buffer: SPECIAL [CHARACTER]; a_start_index, a_end_index: INTEGER): INTEGER
 		-- very fast well distributed hash with only 3 components
 		local
-			first, last, count, start_index: INTEGER
+			start_index, end_index: INTEGER
 		do
-			start_index := a_start_index
-			count := end_index - start_index + 1
+			start_index := a_start_index; end_index := a_end_index
 			if buffer [start_index] = '#' then
-				start_index := start_index + 1
-				count := count - 1
-				if count > 1 and then buffer [start_index] = 'x' then
+				start_index := start_index + 1 -- omit '#'
+				if end_index - start_index + 1 > 1 and then buffer [start_index] = 'x' then
 				-- hexadecimal number
-					start_index := start_index + 1
-					count := count - 1
+					start_index := start_index + 1 -- omit 'x'
+					end_index := end_index - 1 -- omit ';'
 				end
 			end
-			first := buffer [start_index].code
-			last := buffer [end_index].code
-			Result := (first |<< 4).bit_xor ((last |<< 1).bit_xor (count)) \\ Size
+			Result := hash_index (buffer, start_index, end_index)
 		end
 
 	same_string (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; name: STRING_8): BOOLEAN
 		local
-			i, count: INTEGER
+			i: INTEGER
 		do
 			if end_index - start_index + 1 = name.count - 2 and then attached name.area as l_area then
 				Result := True
