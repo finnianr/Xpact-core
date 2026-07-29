@@ -20,15 +20,9 @@ feature {NONE} -- Implementation
 
 	encoded_key (key: STRING): STRING
 		local
-			i: INTEGER
+			s: XT_STRING_ROUTINES
 		do
-			create Result.make_filled ('%U', key.count * 2)
-			from i := 1 until i > key.count loop
-				Result [(i - 1) * 2 + 1] := key [i]
-				i := i + 1
-			end
-		ensure then
-			valid_last: Result [Result.count - 1] = key [key.count]
+			Result := s.ascii_to_utf_16 (key)
 		end
 
 end

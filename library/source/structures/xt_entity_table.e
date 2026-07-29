@@ -149,9 +149,11 @@ feature -- Element change
 
 	set_predefined (entity_cache: XT_ENTITY_NAME_CACHE)
 		do
-			across new_predefined_table as character loop
-				if attached encoded_key (@ character.key) as key and then attached key.area as l_area then
-					extend (character.out, entity_cache.item (l_area, 0, key.count - 1))
+			if attached new_predefined_table as table then
+				across table.current_keys as l_key loop
+					if attached encoded_key (l_key) as key and then attached key.area as l_area then
+						extend (table [key].out, entity_cache.item (l_area, 0, key.count - 1))
+					end
 				end
 			end
 		end

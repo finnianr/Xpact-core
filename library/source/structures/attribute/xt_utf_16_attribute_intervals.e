@@ -100,41 +100,52 @@ feature {NONE} -- Implementation
 			-- Transcode UTF-16 LE bytes source [start_index .. end_index] to UTF-8
 			-- in dest.  Surrogate pairs are decoded into a 4-byte UTF-8 sequence.
 		local
-			i, hi, lo, cp, high_s, low_s: INTEGER
+			i, hi, lo, cp, high_s, low_s: INTEGER; c_i, c_i_plus_1: CHARACTER
 		do
 			from i := start_index until i + 1 > end_index or dest.count = dest.capacity loop
-				lo := source [i].code
-				hi := source [i + 1].code
-				cp := (hi |<< 8) | lo
-				if cp < 0x80 then
-					dest.extend (cp.to_character_8)
-
-				elseif cp < 0x800 then
-					if dest.count + 2 <= dest.capacity then
-						dest.extend ((0xC0 | (cp |>> 6)).to_character_8)
-						dest.extend ((0x80 | (cp & 0x3F)).to_character_8)
+				c_i_plus_1 := source [i + 1]
+				inspect c_i_plus_1 when '%U' then
+					c_i := source [i]
+					if c_i.code < 128 then
+						dest.extend (c_i)
+						lo := 0
+					else
+						lo := c_i.code
 					end
-
-				elseif cp >= 0xD800 and cp <= 0xDBFF and i + 3 <= end_index then
-					-- decode surrogate pair -> code point -> 4-byte UTF-8
-					high_s := cp
-					lo := source [i + 2].code
-					hi := source [i + 3].code
-					low_s := (hi |<< 8) | lo
-					cp := 0x10000 + ((high_s - 0xD800) |<< 10) + (low_s - 0xDC00)
-					if dest.count + 4 <= dest.capacity then
-						dest.extend ((0xF0 | (cp |>> 18)).to_character_8)
-						dest.extend ((0x80 | ((cp |>> 12) & 0x3F)).to_character_8)
-						dest.extend ((0x80 | ((cp |>> 6) & 0x3F)).to_character_8)
-						dest.extend ((0x80 | (cp & 0x3F)).to_character_8)
-						i := i + 2  -- extra advance past the low-surrogate code unit
-					end
-
 				else
-					if dest.count + 3 <= dest.capacity then
-						dest.extend ((0xE0 | (cp |>> 12)).to_character_8)
-						dest.extend ((0x80 | ((cp |>> 6) & 0x3F)).to_character_8)
-						dest.extend ((0x80 | (cp & 0x3F)).to_character_8)
+					lo := source [i].code
+				end
+				inspect lo when 0 then
+					do_nothing
+				else
+					cp := (c_i_plus_1.code |<< 8) | lo
+					if cp < 0x800 then
+						if dest.count + 2 <= dest.capacity then
+							dest.extend ((0xC0 | (cp |>> 6)).to_character_8)
+							dest.extend ((0x80 | (cp & 0x3F)).to_character_8)
+						end
+
+					elseif cp >= 0xD800 and cp <= 0xDBFF and i + 3 <= end_index then
+						-- decode surrogate pair -> code point -> 4-byte UTF-8
+						high_s := cp
+						lo := source [i + 2].code
+						hi := source [i + 3].code
+						low_s := (hi |<< 8) | lo
+						cp := 0x10000 + ((high_s - 0xD800) |<< 10) + (low_s - 0xDC00)
+						if dest.count + 4 <= dest.capacity then
+							dest.extend ((0xF0 | (cp |>> 18)).to_character_8)
+							dest.extend ((0x80 | ((cp |>> 12) & 0x3F)).to_character_8)
+							dest.extend ((0x80 | ((cp |>> 6) & 0x3F)).to_character_8)
+							dest.extend ((0x80 | (cp & 0x3F)).to_character_8)
+							i := i + 2  -- extra advance past the low-surrogate code unit
+						end
+
+					else
+						if dest.count + 3 <= dest.capacity then
+							dest.extend ((0xE0 | (cp |>> 12)).to_character_8)
+							dest.extend ((0x80 | ((cp |>> 6) & 0x3F)).to_character_8)
+							dest.extend ((0x80 | (cp & 0x3F)).to_character_8)
+						end
 					end
 				end
 				i := i + 2

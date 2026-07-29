@@ -2,3 +2,6 @@ Log of benchmarks for parsing file: Legislation.xml
 
 2026 27 JUL 19:56
 Legislation.xml: eXpat passes = 1329; Xpact-core passes = 1812 (x1.36 to eXpat)
+
+2026 29 JUL 13:59
+Legislation.xml: eXpat passes = 1329; Xpact-core passes = 1778 (x1.34 to eXpat)

@@ -18,6 +18,19 @@ inherit
 
 feature {NONE} -- Access
 
+	ascii_to_utf_16 (str: STRING): STRING
+		local
+			i: INTEGER
+		do
+			create Result.make_filled ('%U', str.count * 2)
+			from i := 1 until i > str.count loop
+				Result [(i - 1) * 2 + 1] := str [i]
+				i := i + 1
+			end
+		ensure then
+			valid_last: Result [Result.count - 1] = str [str.count]
+		end
+
 	frozen char_ref_number (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Parse &#N; or &#xH; starting at '&'.  Returns the code point or -1.
 		local

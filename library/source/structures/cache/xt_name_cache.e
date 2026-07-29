@@ -36,7 +36,10 @@ class
 	XT_NAME_CACHE
 
 inherit
-	STRING_HANDLER
+	XT_STRING_ROUTINES_I
+		export
+			{NONE} all
+		end
 
 create
 	make
@@ -50,7 +53,6 @@ feature {NONE} -- Initialization
 			create area.make_filled (Default_list, Size)
 			create utf_8_area.make_filled (Default_list, Size)
 			create {XT_DEFAULT_UTF_8_CONVERTER} utf_8_converter.make
-			empty_string := s.Empty_string
 		end
 
 feature -- Access
@@ -122,13 +124,9 @@ feature {XT_PARSING_BUFFERS} -- Implementation
 			-- Buffer bytes [start_index .. end_index) as a STRING_8.
 			-- UTF-8 bytes are copied as-is; correct on UTF-8 terminals.
 		local
-			count: INTEGER
+			s: XT_STRING_ROUTINES
 		do
-			count := end_index - start_index + 1
-			create Result.make (count)
-			Result.area.copy_data (buffer, start_index, 0, count)
-			Result.set_count (count)
-			Result.area [count] := '%U'
+			Result := s.new_substring (buffer, start_index, end_index)
 		end
 
 feature {NONE} -- Implementation
@@ -152,17 +150,11 @@ feature {NONE} -- Implementation
 		local
 			utf_8_count: INTEGER
 		do
-			inspect utf_8_converter.char_width
-				when 2 then
-				-- From UTF-16
-					Result := utf_8_converter.as_utf_8 (name, True)
+			utf_8_count := utf_8_converter.utf_8_bytes_count (name.area, 0, name.count - 1)
+			if utf_8_count = name.count then
+				Result := name
 			else
-				utf_8_count := utf_8_converter.utf_8_bytes_count (name.area, 0, name.count - 1)
-				if utf_8_count = name.count then
-					Result := name
-				else
-					Result := utf_8_converter.as_utf_8 (name, True)
-				end
+				Result := utf_8_converter.as_utf_8 (name, True)
 			end
 		end
 
@@ -193,8 +185,6 @@ feature {NONE} -- Implementation
 feature {NONE} -- Internal attributes
 
 	area: SPECIAL [ARRAYED_LIST [STRING]]
-
-	empty_string: STRING_8
 
 	utf_8_area: SPECIAL [ARRAYED_LIST [STRING]]
 		-- encoded version of name strings especially UTF-16

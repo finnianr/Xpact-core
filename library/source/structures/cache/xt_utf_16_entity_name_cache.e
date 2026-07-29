@@ -15,14 +15,25 @@ class
 inherit
 	XT_ENTITY_NAME_CACHE
 		undefine
-			hash_index
+			advance, area_count, char_width, copy_characters, hash_index, latin_1_count, offset_by
+		redefine
+			new_utf_8
 		end
 
 	XT_UTF_16_NAME_CACHE
 		undefine
 			buffer_string_8, bucket_index, item, same_string
+		redefine
+			new_utf_8
 		end
 
 create
 	make
+
+feature {NONE} -- Implementation
+
+	new_utf_8 (name: STRING): STRING
+		do
+			Result := name
+		end
 end

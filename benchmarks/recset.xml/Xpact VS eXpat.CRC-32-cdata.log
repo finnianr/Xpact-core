@@ -26,3 +26,6 @@ recset.xml: eXpat passes = 19; Xpact-core passes = 32 (x1.68 to eXpat)
 
 2026 27 JUL 19:58
 recset.xml: eXpat passes = 18; Xpact-core passes = 32 (x1.78 to eXpat)
+
+2026 29 JUL 14:02
+recset.xml: eXpat passes = 18; Xpact-core passes = 31 (x1.72 to eXpat)

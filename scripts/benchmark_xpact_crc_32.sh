@@ -12,7 +12,8 @@ echo
 for path in	$ISE_LIBRARY/library/vision2/vision2.ecf \
 	tools/data/Legislation.xml \
 	tools/data/recursive-entity-expansion.xml \
-	tools/data/DTD-attlist-default-values.xml; do
+	tools/data/DTD-attlist-default-values.xml \
+	tools/data/UTF-16-encoded-StartupData.xml ; do
 	name=${path##*/}
 	for type in attribute cdata comment pi-name pi-data tag text; do
 		echo Type: $type in $name

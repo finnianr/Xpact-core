@@ -43,15 +43,13 @@ feature {XT_PARSING_BUFFERS} -- Implementation
 			count, full_count: INTEGER
 		do
 			count := end_index - start_index + 1
-			full_count := count + 2
-			create Result.make (full_count)
+			full_count := count + 2 * char_width
+			create Result.make_filled ('%U', full_count)
 
 			if attached Result.area as l_area then
 				l_area [0] := '&'
-				l_area.copy_data (buffer, start_index, 1, count)
-				l_area [full_count - 1] := ';'
-				l_area [full_count] := '%U'
-				Result.set_count (full_count)
+				l_area.copy_data (buffer, start_index, char_width, count)
+				l_area [full_count - char_width] := ';'
 			end
 		end
 

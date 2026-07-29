@@ -54,15 +54,21 @@ feature {NONE} -- Event handlers
 			count, white_count: INTEGER
 		do
 			if attached text_buffer as text then
-				if is_utf_8_encoded then
-					append_area (text, area, start_index, end_index)
-				elseif is_white_space_skipped then
-					attributes.append_area (text, area, start_index, end_index)
+				if is_white_space_skipped then
+					if is_utf_8_encoded then
+						append_area (text, area, start_index, end_index)
+					else
+						attributes.append_area (text, area, start_index, end_index)
+					end
 				else
 					count := end_index - start_index + 1
 					white_count := attributes.leading_white_space (area, start_index, end_index)
 					if white_count < count then
-						attributes.append_area (text, area, start_index + white_count, end_index)
+						if is_utf_8_encoded then
+							attributes.append_area (text, area, start_index, end_index)
+						else
+							attributes.append_area (text, area, start_index + white_count, end_index)
+						end
 						is_white_space_skipped := True
 					end
 				end

@@ -14,9 +14,13 @@ class
 
 inherit
 	XT_NAME_CACHE
+		undefine
+			advance, area_count, char_width, copy_characters, latin_1_count, offset_by
 		redefine
-			hash_index
+			hash_index, new_utf_8
 		end
+
+	XT_STRING_16_ROUTINES_I
 
 create
 	make
@@ -38,4 +42,10 @@ feature {NONE} -- Implementation
 				Result := size_remainder (first |<< 8, (last |<< 2).bit_xor (count))
 			end
 		end
+
+	new_utf_8 (name: STRING): STRING
+		do
+			Result := utf_8_converter.as_utf_8 (name, True)
+		end
+
 end
