@@ -55,7 +55,7 @@ feature -- Access
 			if attached area_v2 as l_area then
 				i_final := l_area.count
 				from i := 0 until i = i_final or found loop
-					if l_area [i].capacity >= size then
+					if l_area [i].capacity >= size_plus then
 						Result := l_area [i]
 						found := True
 					else
@@ -73,6 +73,7 @@ feature -- Access
 			end
 		ensure
 			not_default: Result /= Default_buffer
+			room_for_null_terminator: Result.capacity >= size + 1
 			ascending_order: is_sorted_ascending
 		end
 

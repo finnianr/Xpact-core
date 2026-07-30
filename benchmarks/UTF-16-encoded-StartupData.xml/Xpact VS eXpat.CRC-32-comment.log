@@ -14,3 +14,18 @@ UTF-16-encoded-StartupData.xml: eXpat passes = 114454; Xpact-core passes = 81282
 
 2026 30 JUL 19:38
 UTF-16-encoded-StartupData.xml: eXpat passes = 113914; Xpact-core passes = 78394 (x0.69 to eXpat)
+
+2026 30 JUL 19:58
+UTF-16-encoded-StartupData.xml: eXpat passes = 114594; Xpact-core passes = 78487 (x0.68 to eXpat)
+
+2026 30 JUL 22:43
+UTF-16-encoded-StartupData.xml: eXpat passes = 114440; Xpact-core passes = 84162 (x0.74 to eXpat)
+
+2026 30 JUL 23:08
+UTF-16-encoded-StartupData.xml: eXpat passes = 116000; Xpact-core passes = 82652 (x0.71 to eXpat)
+
+2026 30 JUL 23:18
+UTF-16-encoded-StartupData.xml: eXpat passes = 115474; Xpact-core passes = 143945 (x1.25 to eXpat)
+
+2026 30 JUL 23:36
+UTF-16-encoded-StartupData.xml: eXpat passes = 115462; Xpact-core passes = 148007 (x1.28 to eXpat)

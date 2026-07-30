@@ -41,8 +41,8 @@ feature -- Initialization
 			parser := a_parser
 			create file.make_open_read (file_path.name)
 			if file.count > 4 then
-				file.read_natural
-				is_utf_16 := file.last_natural = 0xFFFE
+				file.read_natural_16
+				is_utf_16 := file.last_natural_16 = 0xFEFF
 			end
 			file.close
 			if is_utf_16 then

@@ -15,13 +15,26 @@ deferred class XT_XML_PARSER_BASE
 inherit
 	XT_PARSING_BUFFERS
 		redefine
-			make
+			make, set_defaults
 		end
 
 feature {NONE} -- Initialization
 
 	make
 		do
+			create section_flags.make_filled (False, CDATA + 1)
+			create element_context.make (section_flags)
+
+			Precursor
+		ensure then
+			set_to_check_encoding: parsing_state = State_check_encoding
+			no_error: error_code = Error_none
+			handler_clean: handler_call_depth = 0
+		end
+
+	set_defaults
+		do
+			Precursor
 			parsing_state              := State_check_encoding
 
 			is_final_buffer            := False
@@ -34,17 +47,9 @@ feature {NONE} -- Initialization
 			parse_end_byte_index       := 0
 
 			declaration						:= 0
-			create section_flags.make_filled (False, CDATA + 1)
+
 			section_flags [Prolog] := True
 			section_flags [CDATA] := False
-
-			create element_context.make (section_flags)
-
-			Precursor
-		ensure then
-			set_to_check_encoding: parsing_state = State_check_encoding
-			no_error: error_code = Error_none
-			handler_clean: handler_call_depth = 0
 		end
 
 feature -- Access
@@ -177,11 +182,6 @@ feature -- Basic operations
 					output.put_new_line
 			else
 			end
-		end
-
-	reset
-		do
-			make
 		end
 
 feature {NONE} -- Buffer implementation

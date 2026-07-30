@@ -63,4 +63,46 @@ feature {NONE} -- C Externals
 		alias
 			"return ((EIF_NATURAL_16 *)$a_area)[$i];"
 		end
+
+	frozen c_utf_16_to_ascii (src: POINTER; unit_count: INTEGER; dest: POINTER): INTEGER
+			-- convert leading run of ASCII code units in UTF-16 buffer `src' to single bytes in `dest',
+			-- stopping at the first unit >= 0x80 or after `unit_count' units.
+			-- Returns count of units converted.
+			-- Note: the 64-bit mask test assumes a little-endian host (x86, x64, ARM64 Linux/Windows).
+		external
+			"C inline use <string.h>"
+		alias
+			"[
+				const EIF_NATURAL_16 *u = (const EIF_NATURAL_16 *) $src;
+				EIF_CHARACTER_8 *out = (EIF_CHARACTER_8 *) $dest;
+				EIF_INTEGER_32 i = 0, n = $unit_count;
+				while (i + 4 <= n) {
+					EIF_NATURAL_64 four;
+					memcpy (&four, u + i, 8);
+					if (four & 0xFF80FF80FF80FF80ULL) break;
+					out [i] = (EIF_CHARACTER_8) u [i];
+					out [i + 1] = (EIF_CHARACTER_8) u [i + 1];
+					out [i + 2] = (EIF_CHARACTER_8) u [i + 2];
+					out [i + 3] = (EIF_CHARACTER_8) u [i + 3];
+					i += 4;
+				}
+				while (i < n && u [i] < 0x80) {
+					out [i] = (EIF_CHARACTER_8) u [i];
+					i += 1;
+				}
+				return i;
+			]"
+		end
+
+	frozen c_read_natural_64 (a_area: POINTER; i: INTEGER): NATURAL_64
+			-- 64 bit unsigned integer at byte offset `i' in buffer `a_area'.
+		external
+			"C inline use <string.h>"
+		alias
+			"[
+				EIF_NATURAL_64 result;
+				memcpy (&result, (const char *) $a_area + $i, 8);
+				return result;
+			]"
+		end
 end

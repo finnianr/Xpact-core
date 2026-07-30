@@ -102,6 +102,13 @@ feature -- Status report
 			Result := area.count = 0
 		end
 
+feature -- Basic operations
+
+	wipe_out
+		do
+			area.fill_with (Default_list, 0, Size - 1)
+		end
+
 feature {XT_PARSING_BUFFERS} -- Implementation
 
 	buffer_string_8 (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING_8

@@ -57,14 +57,6 @@ feature {NONE} -- Initialisation
 
 	make
 		do
-			parse_end_index := 0
-			position_index := 0
-			buffer_end := 0
-			buffer_index := 0
-			error_code := Error_none
-			buffer_lim := Default_buffer_size
-			utf_16_dectected := False
-
 			check attached Token_names end
 
 			buffer := new_buffer_area (Default_buffer_size)
@@ -80,8 +72,19 @@ feature {NONE} -- Initialisation
 			name_cache := attribute_intervals.name_cache
 			entity_table := attribute_intervals.entity_table
 
+			set_defaults
 		ensure then
 			empty_buffer: buffer_end = 0 and buffer_index = 0
+		end
+
+	set_defaults
+		do
+			parse_end_index := 0
+			position_index := 0
+			buffer_end := 0
+			buffer_index := 0
+			error_code := Error_none
+			buffer_lim := Default_buffer_size
 		end
 
 feature -- Access
@@ -101,9 +104,16 @@ feature -- Access
 			end
 		end
 
-feature -- Status query
+feature -- Element change
 
-	utf_16_dectected: BOOLEAN
+	reset
+		do
+			set_defaults
+			attribute_intervals.wipe_out
+			entity_table.wipe_out
+			entity_cache.wipe_out
+			name_cache.wipe_out
+		end
 
 feature {NONE} -- Factory
 
