@@ -1,5 +1,5 @@
 note
-	description: "C externals for ${C_STRING_8}"
+	description: "C routines from C header `<string.h>'"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -11,7 +11,10 @@ note
 	revision: "1"
 
 class
-	C_STRING_8_API
+	EL_STRING_H_C_API
+
+inherit
+	EL_C_API
 
 feature {NONE} -- C Externals
 
@@ -53,4 +56,11 @@ feature {NONE} -- C Externals
 			"return ((EIF_CHARACTER_8 *)$a_area)[$i];"
 		end
 
+	frozen c_read_natural_16 (a_area: POINTER; i: INTEGER): NATURAL_16
+			-- 16 bit unsigned integer at offset `i' in buffer `a_area'.
+		external
+			"C inline"
+		alias
+			"return ((EIF_NATURAL_16 *)$a_area)[$i];"
+		end
 end

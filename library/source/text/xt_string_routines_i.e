@@ -180,11 +180,11 @@ feature {NONE} -- Status report
 		local
 			i, j: INTEGER
 		do
-			if latin_1_count (upper - lower + 1) = string.count and then attached string.area as string_area then
+			if upper - lower + 1 = string.count and then attached string.area as string_area then
 				Result := True
 				from i := lower until i > upper loop
 					if area [i] = string_area [j] then
-						i := advance (i)
+						i := i + 1
 						j := j + 1
 					else
 						Result := False
@@ -201,13 +201,13 @@ feature {NONE} -- Status report
 		local
 			i, j, i_final, byte_count: INTEGER
 		do
-			byte_count := area_count (latin_1.count)
+			byte_count := latin_1.count
 			if area.valid_index (start_index + byte_count - 1) and then attached latin_1.area as string_area then
 				Result := True
-				i_final := start_index + byte_count - char_width
+				i_final := start_index + byte_count - 1
 				from i := start_index until i > i_final loop
 					if area [i] = string_area [j] then
-						i := advance (i)
+						i := i + 1
 						j := j + 1
 					else
 						Result := False
@@ -241,6 +241,26 @@ feature {NONE} -- Status report
 
 feature {NONE} -- Measurement
 
+	frozen index_of (area: SPECIAL [CHARACTER_8]; c: CHARACTER_8; start_index, end_index: INTEGER): INTEGER
+		-- Position of first occurrence of `c' at or after `start_index';
+		-- -1 if none.
+		require
+			valid_range: start_index <= end_index + 1
+			valid_start_index: area.valid_index (start_index)
+			valid_end_index: end_index >= start_index implies area.valid_index (end_index)
+		local
+			i: INTEGER
+		do
+			from i := start_index until i > end_index or else area [i] = c loop
+				i := i + 1
+			end
+			if i > end_index then
+				Result := -1
+			else
+				Result := i
+			end
+		end
+
 	frozen leading_white_space (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): INTEGER
 		-- count of leading whitespace in `area' from `lower' to `upper'
 		require
@@ -250,9 +270,9 @@ feature {NONE} -- Measurement
 		do
 			from i := lower until i > upper loop
 				if area [i].is_space then
-					Result := Result + char_width; i := advance (i)
+					Result := Result + 1; i := i + 1
 				else
-					i := advance (upper) -- break
+					i := upper + 1 -- break
 				end
 			end
 		end
@@ -260,24 +280,19 @@ feature {NONE} -- Measurement
 	frozen match_count (area: SPECIAL [CHARACTER_8]; offset: INTEGER; string: STRING): INTEGER
 		-- count of characters in `area' from `offset' matching those from start of `string'
 		require
-			inside_area: area.valid_index (offset + area_count (string.count) - 1)
+			inside_area: area.valid_index (offset + string.count - 1)
 		local
 			i, string_count: INTEGER; string_area: SPECIAL [CHARACTER_8]
 		do
 			string_area := string.area; string_count := string_area.count
 			from i := 0; until i = string_count loop
-				if area [offset_by (offset, i)] = string_area [i] then
+				if area [offset + i] = string_area [i] then
 					Result := Result + 1
 					i := i + 1
 				else
 					i := string_count -- break
 				end
 			end
-		end
-
-	offset_by (index, offset: INTEGER): INTEGER
-		do
-			Result := index + offset
 		end
 
 feature {NONE} -- Basic operations
@@ -289,9 +304,9 @@ feature {NONE} -- Basic operations
 		local
 			count, new_count: INTEGER
 		do
-			count := latin_1_count (upper - lower + 1); new_count := str.count + count
+			count := upper - lower + 1; new_count := str.count + count
 			str.grow (new_count)
-			copy_characters (str.area, area, lower, str.count, count)
+			str.area.copy_data (area, lower, str.count, count)
 			str.area [new_count] := '%U'
 			str.set_count (new_count)
 		end
@@ -315,33 +330,6 @@ feature {NONE} -- Basic operations
 				Result.replace_substring (insertions [index_stack.count], index_stack.item, index_stack.item)
 				index_stack.remove
 			end
-		end
-
-feature {NONE} -- Implementation
-
-	advance (index: INTEGER): INTEGER
-		do
-			Result := index + 1
-		end
-
-	area_count (a_latin_1_count: INTEGER): INTEGER
-		do
-			Result := a_latin_1_count
-		end
-
-	copy_characters (dest, source: SPECIAL [CHARACTER]; source_index, destination_index, count: INTEGER)
-		do
-			dest.copy_data (source, source_index, destination_index, count)
-		end
-
-	latin_1_count (a_area_count: INTEGER): INTEGER
-		do
-			Result := a_area_count
-		end
-
-	char_width: INTEGER
-		do
-			Result := 1
 		end
 
 feature {NONE} -- Constants

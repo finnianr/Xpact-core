@@ -11,22 +11,14 @@ note
 	date: "2026-06-22 18:20:41 GMT (Monday 22th June 2026)"
 	revision: "1"
 
-deferred class
+class
 	XT_ATTRIBUTE_BUFFER_INTERVALS
 
 inherit
 	XT_ATTRIBUTE_INTERVAL_LIST
-		redefine
-			make
-		end
 
-feature -- Initialization
-
-	make (n: INTEGER)
-		do
-			Precursor (n)
-			create utf_8_buffer.make_empty (100)
-		end
+create
+	make
 
 feature -- Status query
 
@@ -170,33 +162,15 @@ feature -- Measurement
 
 feature -- Basic operations
 
-	append_utf_8_to_crc_32 (checksum: EL_CRC_32_DIGEST; buf: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER)
-		local
-			utf_8_count: INTEGER
-		do
-			utf_8_count := utf_8_bytes_count (buf, start_index, end_index)
-			if not_utf_8_encoded (start_index, end_index, utf_8_count)  then
-				checksum.add_characters (utf_8_converted (buf, start_index, end_index, utf_8_count, Void), 0, utf_8_count - 1)
-			else
-				checksum.add_characters (buf, start_index, end_index)
-			end
-		end
-
 	append_first_value_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
 		require
 			not_empty: count > 0
 		local
-			lower_index, upper_index, utf_8_count: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			buffer: SPECIAL [CHARACTER_8]
 		do
 			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area then
 				buffer := i_th_value (0, a_buffer, overflow_area)
-				lower_index := a [2]; upper_index := a [3]
-				utf_8_count := utf_8_bytes_count (buffer, lower_index, upper_index)
-				if utf_8_count > upper_index - lower_index + 1 then
-					buffer := utf_8_converted (buffer, lower_index, upper_index, utf_8_count, Void)
-					lower_index := 0; upper_index := buffer.count - 1
-				end
-				checksum.add_characters (buffer, lower_index, upper_index)
+				checksum.add_characters (buffer, a [2], a [3])
 			end
 		end
 
@@ -208,7 +182,7 @@ feature -- Basic operations
 			empty_c_string_array: c_string_array.count = 0
 			big_enough: c_string_array.capacity >= count * 2 + 1
 		local
-			i, j, i_final, lower_index, upper_index, utf_8_count: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			i, j, i_final, lower_index, upper_index: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
 			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
 				and then attached name_cache as names and then attached buffer_pool as pool
@@ -218,17 +192,6 @@ feature -- Basic operations
 					c_string_array.extend (names.item (buffer, a [0], a [1]).area.base_address) -- name
 					buffer := i_th_value (i, a_buffer, overflow_area)
 					lower_index := a [2]; upper_index := a [3]
-
-					utf_8_count := utf_8_bytes_count (buffer, lower_index, upper_index)
-					if utf_8_count > upper_index - lower_index + 1 then
-						buffer := utf_8_converted (buffer, lower_index, upper_index, utf_8_count, pool)
-						if attached overflow_area [j] as old_buffer then
-							pool.return (old_buffer)
-						end
-						overflow_area [j] := buffer -- gets recycled during wipeout
-						lower_index := 0; upper_index := buffer.count - 1
-						buffer [buffer.count] := '%U'
-					end
 					c_string_array.extend (buffer.item_address (lower_index)) -- value
 					i := i + Group_size; j := j + 2
 				end
@@ -245,7 +208,7 @@ feature -- Basic operations
 		require
 			all_default_values_unchecked: across default_values as value all not value.checked end
 		local
-			i, j, i_final, lower_index, upper_index, utf_8_count: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			i, j, i_final, lower_index, upper_index: INTEGER; buffer: SPECIAL [CHARACTER_8]
 			attribute_: XT_DEFAULT_ATTRIBUTE_VALUE
 		do
 			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
@@ -260,11 +223,6 @@ feature -- Basic operations
 					buffer := i_th_value (i, a_buffer, overflow_area)
 
 					lower_index := a [i + 2]; upper_index := a [i + 3]
-					utf_8_count := utf_8_bytes_count (buffer, lower_index, upper_index)
-					if not_utf_8_encoded (lower_index, upper_index, utf_8_count) then
-						buffer := utf_8_converted (buffer, lower_index, upper_index, utf_8_count, Void)
-						lower_index := 0; upper_index := buffer.count - 1
-					end
 					if attached entity_refs [i // Group_size] as entity_list then
 						table.mix_in_values_to_crc_32 (checksum, buffer, entity_list, lower_index, upper_index)
 					else
@@ -550,6 +508,11 @@ feature {NONE} -- Implementation
 			if attached overflow_area [i // 2 + 1] as overflow then
 				Result := overflow
 			end
+		end
+
+	new_filled_list (n: INTEGER): like Current
+		do
+			create Result.make (n)
 		end
 
 	not_utf_8_encoded (lower_index, upper_index, utf_8_count: INTEGER): BOOLEAN

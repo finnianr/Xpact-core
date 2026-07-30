@@ -97,7 +97,7 @@ feature -- Basic operations
 			end
 		end
 
-	parse (chunk: SPECIAL [CHARACTER]; a_offset, a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
+	parse (chunk: EL_UTF_8_POINTER_CODEC; a_offset, a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
 			-- Accept `a_count' bytes from `chunk[a_offset]' as the next chunk.
 			-- Returns Status_ok, Status_suspended, or Status_error.
 			-- Corresponds to XML_Parse() in xmlparse.c.
@@ -106,16 +106,16 @@ feature -- Basic operations
 			valid_source_range: a_count = 0 or else (a_offset >= 0 and then a_offset + a_count <= chunk.count)
 			not_in_handler: handler_call_depth = 0
 		local
-			write_start, offset: INTEGER
+			write_start, remaining_count, utf_8_copied_count: INTEGER
 		do
 			inspect parsing_state
 				when State_check_encoding then
-					offset := check_encoding (chunk, a_count)
+					set_encoded_chunk (chunk, a_count)
 					if error_code = Error_not_started then
 						status := Status_invalid_document
 					else
 						parsing_state := State_initialized
-						Result := parse (chunk, offset, a_count - offset, a_is_final) -- Recurse
+						Result := parse (encoded_chunk, 0, encoded_chunk.count, a_is_final) -- Recurse
 					end
 
 				when State_suspended then
@@ -127,10 +127,13 @@ feature -- Basic operations
 					Result := Status_error
 			else
 			-- State_initialized or State_parsing
+				if encoded_chunk /= chunk then
+					encoded_chunk.make_shared (chunk.area, a_count)
+				end
 				parsing_state := State_parsing
 				if not call_on_start_parsing then
 					Result := Status_error
-				elseif not prepare_buffer (a_count) then
+				elseif not prepare_buffer (encoded_chunk.character_count) then
 					Result := Status_error
 				else
 					write_start := buffer_end
@@ -138,9 +141,21 @@ feature -- Basic operations
 					-- Copy caller's bytes into the internal buffer.
 					-- Destination index < source index is impossible here
 					-- (write_start is past all existing data), so copy_data is safe.
-						buffer.copy_data (chunk, a_offset, write_start, a_count)
+						encoded_chunk.copy_as_utf_8 (buffer, write_start, encoded_chunk.character_count)
 					end
-					Result := parse_buffer (a_count, a_is_final)
+					utf_8_copied_count := encoded_chunk.utf_8_copied_count
+					remaining_count := encoded_chunk.count - encoded_chunk.last_index
+					if remaining_count > 0 then
+						encoded_chunk.remove_head (encoded_chunk.last_index)
+						if prepare_buffer (utf_8_copied_count + encoded_chunk.character_count) then
+							encoded_chunk.copy_as_utf_8 (buffer, write_start + utf_8_copied_count, remaining_count)
+							Result := parse_buffer (utf_8_copied_count + encoded_chunk.utf_8_copied_count, a_is_final)
+						else
+							Result := Status_error
+						end
+					else
+						Result := parse_buffer (encoded_chunk.utf_8_copied_count, a_is_final)
+					end
 				end
 			end
 		ensure
@@ -415,7 +430,7 @@ feature {NONE} -- Processor dispatch
 							else end
 
 						when Tok_comment then
-							on_comment (buf, s.offset_by (index, 4), s.offset_by (tok_end, -4), attributes)
+							on_comment (buf, index + 4, tok_end - 4, attributes)
 
 						when Tok_pi then
 							on_processing_instruction (buf, attributes)
@@ -443,11 +458,11 @@ feature {NONE} -- Processor dispatch
 							index := tok_end
 
 						when Tok_data_chars then
-							on_content (buf, index, tok_end - 1, attributes, False)
+							on_content (buf, index, tok_end - 1, attributes)
 							index := tok_end
 
 						when Tok_data_newline then
-							on_content (new_line, 0, 0, attributes, True)
+							on_content (new_line, 0, 0, attributes)
 							index := tok_end
 
 					else
@@ -468,10 +483,10 @@ feature {NONE} -- Processor dispatch
 							Result := Error_invalid_token; done := True
 
 						when Tok_data_chars then
-							on_content (buf, index, tok_end - 1, attributes, False)
+							on_content (buf, index, tok_end - 1, attributes)
 
 						when Tok_data_newline then
-							on_content (new_line, 0, 0, attributes, True)
+							on_content (new_line, 0, 0, attributes)
 
 						when Tok_start_tag_no_attributes then
 							context.push (s.tag_name (names, buf, index))
@@ -495,18 +510,18 @@ feature {NONE} -- Processor dispatch
 							end
 
 						when Tok_end_tag then
-							on_tag_end (s.tag_name (names, buf, index + s.char_width))  -- skip '</'
+							on_tag_end (s.tag_name (names, buf, index + 1))  -- skip '</'
 							context.pop
 
 						when Tok_comment then
-							on_comment (buf, s.offset_by (index, 4), s.offset_by (tok_end, -4), attributes)
+							on_comment (buf, index + 4, tok_end - 4, attributes)
 
 						when Tok_pi then
 							on_processing_instruction (buf, attributes)
 							attributes.wipe_out
 
 						when Tok_entity_ref then
-							lower := s.entity_start_index (index); upper := s.entity_end_index (tok_end)
+							lower := index + 1; upper := tok_end - 2
 							code := s.predefined_entity_code (buf, lower, upper)
 							inspect code when -1 then
 								if attached entity_cache.item (buf, lower, upper) as entity_name
@@ -528,7 +543,7 @@ feature {NONE} -- Processor dispatch
 									Result := Error_undefined_entity; done := True
 								end
 							else
-								on_content (s.unescaped (code), 0, 0, attributes, True)
+								on_content (s.unescaped (code), 0, 0, attributes)
 							end
 
 						when Tok_char_ref then
@@ -538,7 +553,7 @@ feature {NONE} -- Processor dispatch
 								Result := Error_bad_char_ref; done := True
 							else
 								if attached s.utf_8_encoded (code) as l_utf_8 then
-									on_content (l_utf_8, 0, l_utf_8.count - 1, attributes, True)
+									on_content (l_utf_8, 0, l_utf_8.count - 1, attributes)
 								end
 							end
 					else
@@ -701,7 +716,7 @@ feature {NONE} -- Deferred
 		deferred
 		end
 
-	on_content (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
+	on_content (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		deferred
 		end
 

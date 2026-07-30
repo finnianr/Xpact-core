@@ -208,7 +208,9 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	compile: TUPLE [XT_ASCII_SCANNER, XT_LATIN_1_SCANNER, XP_EXPAT_CALLBACK_HANDLER] --
+	compile: TUPLE [
+		XP_EXPAT_CALLBACK_HANDLER, EL_UTF_16_C_STRING, EL_UTF_8_C_STRING
+	] --
 		do
 			create Result
 		end

@@ -2,3 +2,15 @@ Log of benchmarks for parsing file: UTF-16-encoded-StartupData.xml
 
 2026 29 JUL 14:00
 UTF-16-encoded-StartupData.xml: eXpat passes = 110933; Xpact-core passes = 56205 (x0.51 to eXpat)
+
+2026 29 JUL 21:11
+UTF-16-encoded-StartupData.xml: eXpat passes = 108944; Xpact-core passes = 55481 (x0.51 to eXpat)
+
+2026 30 JUL 19:07
+UTF-16-encoded-StartupData.xml: eXpat passes = 109741; Xpact-core passes = 77677 (x0.71 to eXpat)
+
+2026 30 JUL 19:11
+UTF-16-encoded-StartupData.xml: eXpat passes = 109409; Xpact-core passes = 76805 (x0.70 to eXpat)
+
+2026 30 JUL 19:38
+UTF-16-encoded-StartupData.xml: eXpat passes = 109244; Xpact-core passes = 73158 (x0.67 to eXpat)

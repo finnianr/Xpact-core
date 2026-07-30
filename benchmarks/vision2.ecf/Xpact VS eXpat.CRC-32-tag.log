@@ -29,3 +29,6 @@ vision2.ecf: eXpat passes = 29288; Xpact-core passes = 39024 (x1.33 to eXpat)
 
 2026 29 JUL 13:58
 vision2.ecf: eXpat passes = 29358; Xpact-core passes = 35909 (x1.22 to eXpat)
+
+2026 30 JUL 19:09
+vision2.ecf: eXpat passes = 29382; Xpact-core passes = 40168 (x1.37 to eXpat)

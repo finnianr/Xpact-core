@@ -39,32 +39,32 @@ feature -- Content tokenization
 			else
 				inspect bt_table [buf [index].code]
 					when BT_lt then
-						Result := scan_lt (buf, bt_table, advance (index), a_end_adj)
+						Result := scan_lt (buf, bt_table, index + 1, a_end_adj)
 					when BT_ampersand then
-						Result := scan_ref (buf, entity_buffer, Tok_data_chars, advance (index), a_end_adj)
+						Result := scan_ref (buf, entity_buffer, Tok_data_chars, index + 1, a_end_adj)
 					when BT_CR then
-						index := advance (index)
+						index := index + 1
 						if index >= a_end_adj then
 							Result := Tok_trailing_cr
 						else
 							if bt_table [buf [index].code] = BT_LF then
-								index := advance (index)
+								index := index + 1
 							end
 							next_token_index := index
 							Result := Tok_data_newline
 						end
 					when BT_LF then
-						next_token_index := advance (index)
+						next_token_index := index + 1
 						Result := Tok_data_newline
 					when BT_right_square_bracket then
-						index := advance (index)
+						index := index + 1
 						if index >= a_end_adj then
 							Result := Tok_trailing_rsqb
 						elseif buf [index] /= ']' then
 							-- lone ']', fall through to data chars
 							Result := scan_data_chars (buf, bt_table, index, a_end_adj)
 						else
-							index := advance (index)
+							index := index + 1
 							if index >= a_end_adj then
 								Result := Tok_trailing_rsqb
 							elseif buf [index] = '>' then
@@ -106,7 +106,7 @@ feature -- Content tokenization
 							Result := scan_data_chars (buf, bt_table, index, a_end_adj)
 						end
 				else
-					index := advance (index)
+					index := index + 1
 					Result := scan_data_chars (buf, bt_table, index, a_end_adj)
 				end
 			end
@@ -126,40 +126,40 @@ feature -- Content tokenization
 			else
 				inspect bt_table [buf [index].code]
 					when BT_right_square_bracket then
-						index := advance (index)
+						index := index + 1
 						if index >= end_index then
 							Result := Tok_partial
 						elseif buf [index] /= ']' then
 							-- lone ']'
 							Result := scan_cdata_data_chars (buf, bt_table, index, end_index)
 						else
-							index := advance (index)
+							index := index + 1
 							if index >= end_index then
 								Result := Tok_partial
 							elseif buf [index] = '>' then
-								next_token_index := advance (index)
+								next_token_index := index + 1
 								Result := Tok_cdata_sect_close
 							else
 								-- ']]' not followed by '>': back up to the second ']' (mirrors C eXpat's ptr -= MINBPC).
 								-- scan_cdata_data_chars stops immediately on BT_right_square_bracket,
 								-- so next_token_index lands on the second ']' and the next call
 								-- will correctly see ']]>' and return Tok_cdata_sect_close.
-								Result := scan_cdata_data_chars (buf, bt_table, index - char_width, end_index)
+								Result := scan_cdata_data_chars (buf, bt_table, index - 1, end_index)
 							end
 						end
 					when BT_CR then
-						index := advance (index)
+						index := index + 1
 						if index >= end_index then
 							Result := Tok_partial
 						else
 							if bt_table [buf [index].code] = BT_LF then
-								index := advance (index)
+								index := index + 1
 							end
 							next_token_index := index
 							Result := Tok_data_newline
 						end
 					when BT_LF then
-						next_token_index := advance (index)
+						next_token_index := index + 1
 						Result := Tok_data_newline
 					when BT_non_xml, BT_malform, BT_continuation_byte then
 						next_token_index := index; Result := Tok_invalid
@@ -191,7 +191,7 @@ feature -- Content tokenization
 							Result := scan_cdata_data_chars (buf, bt_table, index, end_index)
 						end
 				else
-					index := advance (index)
+					index := index + 1
 					Result := scan_cdata_data_chars (buf, bt_table, index, end_index)
 				end
 			end
@@ -230,7 +230,7 @@ feature {NONE} -- Data character accumulation
 						BT_malform, BT_continuation_byte, BT_CR, BT_LF then
 						next_token_index := index; Result := Tok_data_chars; done := True
 				else
-					index := advance (index)
+					index := index + 1
 				end
 			end
 			if not done then
@@ -261,7 +261,7 @@ feature {NONE} -- Data character accumulation
 					when BT_non_xml, BT_malform, BT_continuation_byte, BT_CR, BT_LF, BT_right_square_bracket then
 						next_token_index := index; Result := Tok_data_chars; done := True
 				else
-					index := advance (index)
+					index := index + 1
 				end
 			end
 			if not done then

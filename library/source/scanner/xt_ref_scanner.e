@@ -43,15 +43,15 @@ feature {NONE} -- Reference scanning
 			elseif attached byte_type_table as bt_table then
 				inspect bt_table [buf [index].code]
 					when BT_hash then
-						Result := scan_char_ref (buf, entity_buffer, token, advance (index), end_index)
+						Result := scan_char_ref (buf, entity_buffer, token, index + 1, end_index)
 					when BT_name_start, BT_hex_digit then
-						index := advance (index)
+						index := index + 1
 						from until index >= end_index loop
 							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
-									index := advance (index)
+									index := index + 1
 								when BT_semicolon then
-									next_token_index := advance (index)
+									next_token_index := index + 1
 									inspect token when Tok_attribute_value_s then
 										entity_buffer.extend (entity_cache.item (buf, start_index, index - 1))
 									else end
@@ -103,18 +103,18 @@ feature {NONE} -- Reference scanning
 			if index >= end_index then
 				Result := Tok_partial
 			elseif buf [index] = 'x' then
-				Result := scan_hex_char_ref (buf, entity_buffer, token, advance (index), end_index)
+				Result := scan_hex_char_ref (buf, entity_buffer, token, index + 1, end_index)
 
 			elseif attached byte_type_table as bt_table then
 				inspect bt_table [buf [index].code]
 					when BT_digit then
-						index := advance (index)
+						index := index + 1
 						from until index >= end_index loop
 							inspect bt_table [buf [index].code]
 								when BT_digit then
-									index := advance (index)
+									index := index + 1
 								when BT_semicolon then
-									next_token_index := advance (index)
+									next_token_index := index + 1
 									inspect token when Tok_attribute_value_s then
 										entity_buffer.extend (entity_cache.item (buf, start_index - 1, index - 1))
 									else end
@@ -149,13 +149,13 @@ feature {NONE} -- Reference scanning
 			elseif attached byte_type_table as bt_table then
 				bt := bt_table [buf [index].code]
 				if bt = BT_digit or bt = BT_hex_digit then
-					index := advance (index)
+					index := index + 1
 					from until index >= end_index loop
 						bt := bt_table [buf [index].code]
 						if bt = BT_digit or bt = BT_hex_digit then
-							index := advance (index)
+							index := index + 1
 						elseif bt = BT_semicolon then
-							next_token_index := advance (index)
+							next_token_index := index + 1
 							inspect token when Tok_attribute_value_s then
 								entity_buffer.extend (entity_cache.item (buf, start_index - 2, index - 1))
 							else end
@@ -189,9 +189,9 @@ feature {NONE} -- Reference sub-helper
 				from until index >= end_index loop
 					inspect bt_table [buf [index].code]
 						when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
-							index := advance (index)
+							index := index + 1
 						when BT_semicolon then
-							next_token_index := advance (index)
+							next_token_index := index + 1
 							Result := Tok_entity_ref
 							index := end_index
 					else

@@ -48,7 +48,7 @@ feature -- Literal content tokenization
 							index := index + 4
 						when BT_ampersand then
 							if index = start then
-								Result := scan_ref (buf, entity_buffer, Tok_literal, advance (index), end_index)
+								Result := scan_ref (buf, entity_buffer, Tok_literal, index + 1, end_index)
 							else
 								next_token_index := index; Result := Tok_data_chars
 							end
@@ -57,19 +57,19 @@ feature -- Literal content tokenization
 							next_token_index := index; Result := Tok_invalid; done := True
 						when BT_LF then
 							if index = start then
-								next_token_index := advance (index); Result := Tok_data_newline
+								next_token_index := index + 1; Result := Tok_data_newline
 							else
 								next_token_index := index; Result := Tok_data_chars
 							end
 							done := True
 						when BT_CR then
 							if index = start then
-								index := advance (index)
+								index := index + 1
 								if index >= end_index then
 									Result := Tok_trailing_cr
 								else
 									inspect bt_table [buf [index].code] when BT_LF then
-										index := advance (index)
+										index := index + 1
 									end
 									next_token_index := index; Result := Tok_data_newline
 								end
@@ -79,13 +79,13 @@ feature -- Literal content tokenization
 							done := True
 						when BT_whitespace then
 							if index = start then
-								next_token_index := advance (index); Result := Tok_attribute_value_s
+								next_token_index := index + 1; Result := Tok_attribute_value_s
 							else
 								next_token_index := index; Result := Tok_data_chars
 							end
 							done := True
 					else
-						index := advance (index)
+						index := index + 1
 					end
 				end
 				if not done then
@@ -116,7 +116,7 @@ feature -- Literal content tokenization
 							index := index + 4
 						when BT_ampersand then
 							if index = start then
-								Result := scan_ref (buf, entity_buffer, Tok_literal, advance (index), end_index)
+								Result := scan_ref (buf, entity_buffer, Tok_literal, index + 1, end_index)
 							else
 								next_token_index := index; Result := Tok_data_chars
 							end
@@ -133,19 +133,19 @@ feature -- Literal content tokenization
 							done := True
 						when BT_LF then
 							if index = start then
-								next_token_index := advance (index); Result := Tok_data_newline
+								next_token_index := index + 1; Result := Tok_data_newline
 							else
 								next_token_index := index; Result := Tok_data_chars
 							end
 							done := True
 						when BT_CR then
 							if index = start then
-								index := advance (index)
+								index := index + 1
 								if index >= end_index then
 									Result := Tok_trailing_cr
 								else
 									inspect bt_table [buf [index].code] when BT_LF then
-										index := advance (index)
+										index := index + 1
 									end
 									next_token_index := index; Result := Tok_data_newline
 								end
@@ -154,7 +154,7 @@ feature -- Literal content tokenization
 							end
 							done := True
 					else
-						index := advance (index)
+						index := index + 1
 					end
 				end
 				if not done then

@@ -63,6 +63,7 @@ feature {NONE} -- Initialisation
 			buffer_index := 0
 			error_code := Error_none
 			buffer_lim := Default_buffer_size
+			utf_16_dectected := False
 
 			check attached Token_names end
 
@@ -71,7 +72,13 @@ feature {NONE} -- Initialisation
 			create declaration_parts_list.make (10)
 			create attribute_value_defaults_table.make (37)
 			create new_line.make_filled ('%N', 1)
-			set_scanner (Utf_8)
+			create {EL_UTF_8_C_STRING} encoded_chunk.make_empty
+
+			create scanner.make
+			attribute_intervals := scanner.attribute_intervals
+			entity_cache := attribute_intervals.entity_cache
+			name_cache := attribute_intervals.name_cache
+			entity_table := attribute_intervals.entity_table
 
 		ensure then
 			empty_buffer: buffer_end = 0 and buffer_index = 0
@@ -94,16 +101,9 @@ feature -- Access
 			end
 		end
 
-feature -- Element change
+feature -- Status query
 
-	set_scanner (type: NATURAL_8)
-		do
-			scanner := new_scanner (type)
-			attribute_intervals := scanner.attribute_intervals
-			entity_cache := attribute_intervals.entity_cache
-			name_cache := attribute_intervals.name_cache
-			entity_table := attribute_intervals.entity_table
-		end
+	utf_16_dectected: BOOLEAN
 
 feature {NONE} -- Factory
 
@@ -114,44 +114,31 @@ feature {NONE} -- Factory
 			room_for_null_terminator: Result.count = n + 1
 		end
 
-	new_scanner (type: NATURAL_8): XT_DOCUMENT_SCANNER
-		do
-			inspect type
-				when Ascii then
-					create {XT_ASCII_SCANNER} Result.make
-				when Latin_1 then
-					create {XT_LATIN_1_SCANNER} Result.make
-
-				when Utf_16 then
-					create {XT_UTF_16_SCANNER} Result.make
-			else
-				check
-					type_utf_8: type = Utf_8
-				end
-				create {XT_UTF_8_SCANNER} Result.make
-			end
-		end
-
 feature {NONE} -- Implementation
 
-	check_encoding (chunk: SPECIAL [CHARACTER]; byte_count: INTEGER): INTEGER
+	set_encoded_chunk (chunk: EL_UTF_8_POINTER_CODEC; byte_count: INTEGER)
 		-- check encoding in XML header calling `set_scanner (Latin_1)' if required
 		-- also check if document is actually XML or something weird
 		local
-			str, leading: C_STRING_8; lt_index, gt_index: INTEGER; u: UTF_CONVERTER
-			encoding: NATURAL_8; found: BOOLEAN; s16: XT_STRING_16_ROUTINES
+			leading, l_chunk: EL_UTF_8_C_STRING; lt_index, gt_index: INTEGER; u: UTF_CONVERTER
+			encoding: NATURAL_8; found: BOOLEAN; s: XT_STRING_ROUTINES
 		do
-			create str.make_shared (chunk.base_address, byte_count)
-			lt_index := str.index_of ('<', 1)
+			if attached {EL_UTF_8_C_STRING} encoded_chunk as str then
+				l_chunk := str
+			else
+				create l_chunk.make_empty
+			end
+			l_chunk.make_shared (chunk.area, byte_count)
+
+			lt_index := l_chunk.index_of ('<', 1)
 			if lt_index = 0 then
 				error_code := Error_not_started
 			else
-				Result := lt_index - 1
-				leading := str.substring (1, lt_index - 1)
+				leading := l_chunk.substring (1, lt_index - 1)
 			-- check leading bytes before first '<'
 				across << u.utf_8_bom_to_string_8, u.utf_16le_bom_to_string_8 >> as bom until found loop
 					if leading.starts_with (bom) then
-						leading := leading.substring (bom.count + 1, leading.count)
+						leading.remove_head (bom.count)
 						inspect @ bom.cursor_index
 							when 1 then
 								encoding := Utf_8
@@ -164,29 +151,48 @@ feature {NONE} -- Implementation
 			-- Must exlude /usr/share/app-install/icons/gnome-oregano.svg (Linux Mint 22.2)
 			-- The leading bytes are \x89PNG\r\n, which is the PNG magic header, so it's not XML.
 				if leading.is_whitespace then
+					l_chunk.remove_head (lt_index - 1)
 					inspect encoding when Utf_16 then
-						set_scanner (Utf_16)
+						do_nothing
 					else
-						gt_index := str.index_of ('>', lt_index + 1)
-						if gt_index > 0 and then attached str.substring (lt_index, gt_index).to_string as element then
-							element.to_upper
-							if s16.starts_with (element.area, 0, Xml_declaration_upper) then
-								set_scanner (Utf_16)
+						gt_index := l_chunk.index_of ('>', 1)
+						if gt_index > 0 and then attached l_chunk.substring (1, gt_index).to_string as declaration then
+							declaration.to_upper
+							if declaration [2] = '%U' and then declaration.starts_with (s.ascii_to_utf_16 (Xml_declaration_upper)) then
+								encoding := Utf_16
 
-							elseif element.starts_with (Xml_declaration_upper) then
-								from encoding := Ascii until encoding > Utf_16 loop
-									if encoding /= Utf_8 and then element.has_substring (Encoding_names_upper [encoding.to_integer_32]) then
-										set_scanner (encoding)
-										encoding := Utf_16 + 1 -- break
-									else
-										encoding := encoding + 1
-									end
-								end
+							elseif declaration.starts_with (Xml_declaration_upper) then
+								encoding :=  encoding_id (declaration)
 							end
 						end
 					end
+					inspect encoding
+						when Utf_8 then
+							do_nothing
+
+						when Utf_16 then
+							create {EL_UTF_16_C_STRING} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
+
+						when Latin_1, Ascii then
+							create {EL_LATIN_1_C_STRING} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
+					else
+					end
 				else
 					error_code := Error_not_started
+				end
+			end
+		end
+
+	encoding_id (declaration: STRING): NATURAL_8
+		local
+			encoding: NATURAL_8
+		do
+			from encoding := Ascii until encoding > Utf_16 loop
+				if declaration.has_substring (Encoding_names_upper [encoding.to_integer_32]) then
+					Result := encoding
+					encoding := Utf_16 + 1 -- break
+				else
+					encoding := encoding + 1
 				end
 			end
 		end
@@ -314,6 +320,8 @@ feature {NONE} -- Internal structures
 
 	buffer: SPECIAL [CHARACTER_8]
 		-- Raw byte buffer; do not modify indices outside this class.
+
+	encoded_chunk: EL_UTF_8_POINTER_CODEC
 
 	entity_table: XT_ENTITY_TABLE
 		-- table of expanded entities defined in DOCTYPE by ENTITY

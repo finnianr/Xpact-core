@@ -99,21 +99,21 @@ feature {NONE} -- Event handlers
 	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			inspect data_type when Tok_comment then
-				add_to_crc_32 (area, start_index, end_index, attributes, False, checksum)
+				checksum.add_characters (area, start_index, end_index)
 			else
 			end
 		end
 
-	on_content (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
+	on_content (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			inspect data_type
 				when Tok_cdata then
 					if in_cdata_section then
-						add_to_crc_32 (area, start_index, end_index, attributes, is_utf_8_encoded, checksum)
+						checksum.add_characters (area, start_index, end_index)
 					end
 				when Tok_text then
 					if not in_cdata_section then
-						add_to_crc_32 (area, start_index, end_index, attributes, is_utf_8_encoded, checksum)
+						checksum.add_characters (area, start_index, end_index)
 					end
 			else
 			end
@@ -156,20 +156,6 @@ feature -- Factory
 		do
 			create Result.make (Current, a_file_path, a_time_start, a_duration_ms, a_chunk_size)
 			Result.set_data_type (data_type)
-		end
-
-feature {NONE} -- Implementation
-
-	add_to_crc_32 (
-		area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
-		is_utf_8_encoded: BOOLEAN; crc_32: like checksum
-	)
-		do
-			if is_utf_8_encoded then
-				crc_32.add_characters (area, start_index, end_index)
-			else
-				attributes.append_utf_8_to_crc_32 (checksum, area, start_index, end_index)
-			end
 		end
 
 feature {NONE} -- Internal attributes

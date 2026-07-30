@@ -34,22 +34,6 @@ inherit
 	XT_STRING_ROUTINES_I
 		export
 			{XT_XML_PARSER_BASE} all
-		undefine
-			advance, char_width
-		end
-
-feature -- Access
-
-	entity_start_index (index: INTEGER): INTEGER
-		-- over-ride in UTF-16 implementation to calculate start index of buffer	
-		do
-			Result := index + 1
-		end
-
-	entity_end_index (index: INTEGER): INTEGER
-		-- over-ride in UTF-16 implementation to calculate end index of buffer	
-		do
-			Result := index - 2
 		end
 
 feature -- Multi-byte name-character checks
@@ -61,68 +45,59 @@ feature -- Multi-byte name-character checks
 			-- True when the 2-byte UTF-8 sequence at index is an XML name character.
 		require
 			valid_index: index + 1 < buf.count
-		do
-			Result := False
+		deferred
 		end
 
 	is_name_char_3 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
 			-- True when the 3-byte UTF-8 sequence at index is an XML name character.
 		require
 			valid_index: index + 2 < buf.count
-		do
-			Result := False
+		deferred
 		end
 
 	is_name_char_4 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
 			-- True when the 4-byte UTF-8 sequence at index is an XML name character.
 		require
 			valid_index: index + 3 < buf.count
-		do
-			Result := False
+		deferred
 		end
 
 	is_name_start_char_2 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
 			-- True when the 2-byte UTF-8 sequence at index can start an XML name.
 		require
 			valid_index: index + 1 < buf.count
-		do
-			Result := False
+		deferred
 		end
 
 	is_name_start_char_3 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
 		require
 			valid_index: index + 2 < buf.count
-		do
-			Result := False
+		deferred
 		end
 
 	is_name_start_char_4 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
 		require
 			valid_index: index + 3 < buf.count
-		do
-			Result := False
+		deferred
 		end
 
 	is_invalid_char_2 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
 			-- True when the 2-byte sequence at index is not a valid Unicode scalar.
 		require
 			valid_index: index + 1 < buf.count
-		do
-			Result := False
+		deferred
 		end
 
 	is_invalid_char_3 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
 		require
 			valid_index: index + 2 < buf.count
-		do
-			Result := False
+		deferred
 		end
 
 	is_invalid_char_4 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
 		require
 			valid_index: index + 3 < buf.count
-		do
-			Result := False
+		deferred
 		end
 
 feature {NONE} -- Implementation
@@ -158,17 +133,17 @@ feature {NONE} -- Implementation
 		do
 			from i := CR_index; j := CR_index until i > end_index loop
 				inspect buf [i] when '%R' then
-					i := advance (i)
+					i := i + 1
 				else
 					buf [j] := buf [i]
-					j := advance (j)
-					i := advance (i)
+					j := j + 1
+					i := i + 1
 				end
 			end
 		-- paint over remaining characters with spaces
 			from until j > end_index loop
 				buf [j] := ' '
-				j := advance (j)
+				j := j + 1
 			end
 		end
 
@@ -181,15 +156,6 @@ feature {NONE} -- Internal attributes
 	scanned_entity_buffer: ARRAYED_LIST [STRING]
 
 feature {XT_XML_PARSER_BASE} -- Deferred
-
-	advance (index: INTEGER): INTEGER
-			-- index + char_width  (replaces index += MINBPC)
-		deferred
-		end
-
-	char_width: INTEGER
-		deferred
-		end
 
 	byte_type_table: SPECIAL [INTEGER]
 		-- 256-entry table mapping each byte value to its BT_* type.

@@ -47,12 +47,8 @@ create
 feature {NONE} -- Initialization
 
 	make
-		local
-			s: XT_STRING_ROUTINES
 		do
 			create area.make_filled (Default_list, Size)
-			create utf_8_area.make_filled (Default_list, Size)
-			create {XT_DEFAULT_UTF_8_CONVERTER} utf_8_converter.make
 		end
 
 feature -- Access
@@ -63,37 +59,32 @@ feature -- Access
 			valid_range: start_index <= end_index
 			not_empty: not is_empty
 		local
-			i, j, bucket_count: INTEGER; bucket_list, utf_8_bucket_list: like area.item
+			i, bucket_count: INTEGER; bucket_list: like area.item
 			found: BOOLEAN;
 		do
 			Result := empty_string
 			i := bucket_index (buffer, start_index, end_index)
 			bucket_list := area [i]
-			utf_8_bucket_list := utf_8_area [i]
 			if bucket_list.is_empty then
 				create bucket_list.make (2)
-				create utf_8_bucket_list.make (2)
 
 				area [i] := bucket_list
-				utf_8_area [i] := utf_8_bucket_list
 
 			elseif attached bucket_list.area as l_area then
 			-- search for match
 				bucket_count := bucket_list.count
-				from j := 0 until j = bucket_count or found loop
-					if same_string (buffer, start_index, end_index, l_area [j]) then
-						Result := utf_8_area [i][j + 1]
+				from i := 0 until i = bucket_count or found loop
+					if same_string (buffer, start_index, end_index, l_area [i]) then
+						Result := l_area [i]
 						found := True
 					else
-						j := j + 1
+						i := i + 1
 					end
 				end
 			end
 			if not found then
 				Result := buffer_string_8 (buffer, start_index, end_index)
 				bucket_list.extend (Result)
-				Result := new_utf_8 (Result)
-				utf_8_bucket_list.extend (Result)
 				check
 					well_distributed_hash_indices: across area as list all list.count <= 3 end
 				end
@@ -101,13 +92,6 @@ feature -- Access
 		ensure
 			found_or_created: Result /= empty_string
 			null_terminated: Result.area [Result.count] = '%U'
-		end
-
-feature -- Element change
-
-	set_utf_8_converter (a_utf_8_converter: XT_UTF_8_CONVERTER)
-		do
-			utf_8_converter := a_utf_8_converter
 		end
 
 feature -- Status report
@@ -146,18 +130,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	new_utf_8 (name: STRING): STRING
-		local
-			utf_8_count: INTEGER
-		do
-			utf_8_count := utf_8_converter.utf_8_bytes_count (name.area, 0, name.count - 1)
-			if utf_8_count = name.count then
-				Result := name
-			else
-				Result := utf_8_converter.as_utf_8 (name, True)
-			end
-		end
-
 	same_string (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; name: STRING_8): BOOLEAN
 		local
 			i, count: INTEGER
@@ -185,11 +157,6 @@ feature {NONE} -- Implementation
 feature {NONE} -- Internal attributes
 
 	area: SPECIAL [ARRAYED_LIST [STRING]]
-
-	utf_8_area: SPECIAL [ARRAYED_LIST [STRING]]
-		-- encoded version of name strings especially UTF-16
-
-	utf_8_converter: XT_UTF_8_CONVERTER
 
 feature {NONE} -- Constants
 

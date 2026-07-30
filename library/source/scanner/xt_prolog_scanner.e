@@ -46,28 +46,28 @@ feature -- Prolog tokenization
 			else
 				inspect bt_table [buf [index].code]
 					when BT_quote then
-						Result := scan_lit (BT_quote, buf, advance (index), end_index)
+						Result := scan_lit (BT_quote, buf, index + 1, end_index)
 					when BT_apostrophe then
-						Result := scan_lit (BT_apostrophe, buf, advance (index), end_index)
+						Result := scan_lit (BT_apostrophe, buf, index + 1, end_index)
 					when BT_lt then
-						index := advance (index)
+						index := index + 1
 						if index >= end_index then
 							Result := Tok_partial
 						else
 							inspect bt_table [buf [index].code]
 								when BT_exclamation then
-									Result := scan_decl (buf, advance (index), end_index)
+									Result := scan_decl (buf, index + 1, end_index)
 								when BT_question then
-									Result := scan_pi (buf, bt_table, advance (index), end_index)
+									Result := scan_pi (buf, bt_table, index + 1, end_index)
 								when BT_name_start, BT_hex_digit, BT_non_ascii, BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
-									next_token_index := index - char_width
+									next_token_index := index - 1
 									Result := Tok_instance_start
 							else
 								next_token_index := index; Result := Tok_invalid
 							end
 						end
 					when BT_CR then
-						if advance (index) = end_index then
+						if index + 1 = end_index then
 							next_token_index := end_index
 							Result := -Tok_prolog_s
 						else
@@ -76,22 +76,22 @@ feature -- Prolog tokenization
 					when BT_whitespace, BT_LF then
 						Result := scan_prolog_s (buf, index, end_index)
 					when BT_percent then
-						Result := scan_percent (buf, advance (index), end_index)
+						Result := scan_percent (buf, index + 1, end_index)
 					when BT_comma then
-						next_token_index := advance (index); Result := Tok_comma
+						next_token_index := index + 1; Result := Tok_comma
 
 					when BT_left_square_bracket then
-						next_token_index := advance (index); Result := Tok_open_bracket
+						next_token_index := index + 1; Result := Tok_open_bracket
 
 					when BT_right_square_bracket then
-						index := advance (index)
+						index := index + 1
 						if index >= end_index then
 							next_token_index := index; Result := -Tok_close_bracket
 						elseif buf [index] = ']' then
-							if end_index - index < 2 * char_width then
+							if end_index - index < 2 * 1 then
 								next_token_index := index; Result := Tok_partial
-							elseif buf [index + char_width] = '>' then
-								next_token_index := offset_by (index, 2)
+							elseif buf [index + 1] = '>' then
+								next_token_index := index + 2
 								Result := Tok_cond_sect_close
 							else
 								next_token_index := index; Result := Tok_close_bracket
@@ -100,19 +100,19 @@ feature -- Prolog tokenization
 							next_token_index := index; Result := Tok_close_bracket
 						end
 					when BT_left_parenthesis then
-						next_token_index := advance (index); Result := Tok_open_paren
+						next_token_index := index + 1; Result := Tok_open_paren
 					when BT_right_parenthesis then
-						index := advance (index)
+						index := index + 1
 						if index >= end_index then
 							next_token_index := index; Result := -Tok_close_paren
 						else
 							inspect bt_table [buf [index].code]
 								when BT_asterisk then
-									next_token_index := advance (index); Result := Tok_close_paren_asterisk
+									next_token_index := index + 1; Result := Tok_close_paren_asterisk
 								when BT_question then
-									next_token_index := advance (index); Result := Tok_close_paren_question
+									next_token_index := index + 1; Result := Tok_close_paren_question
 								when BT_plus then
-									next_token_index := advance (index); Result := Tok_close_paren_plus
+									next_token_index := index + 1; Result := Tok_close_paren_plus
 								when BT_CR, BT_LF, BT_whitespace, BT_gt, BT_comma, BT_pipe_symbol, BT_right_parenthesis then
 									next_token_index := index; Result := Tok_close_paren
 							else
@@ -120,18 +120,18 @@ feature -- Prolog tokenization
 							end
 						end
 					when BT_pipe_symbol then
-						next_token_index := advance (index); Result := Tok_or
+						next_token_index := index + 1; Result := Tok_or
 					when BT_gt then
-						next_token_index := advance (index); Result := Tok_decl_close
+						next_token_index := index + 1; Result := Tok_decl_close
 					when BT_hash then
-						Result := scan_pound_name (buf, advance (index), end_index)
+						Result := scan_pound_name (buf, index + 1, end_index)
 					when BT_name_start, BT_hex_digit then
 						tok := Tok_name
-						index := advance (index)
+						index := index + 1
 						Result := scan_name_or_name_token (buf, index, end_index, tok)
 					when BT_digit, BT_name_only, BT_minus then
 						tok := tok_name_token
-						index := advance (index)
+						index := index + 1
 						Result := scan_name_or_name_token (buf, index, end_index, tok)
 
 					when BT_lead_2_byte then
@@ -183,13 +183,13 @@ feature {NONE} -- Prolog sub-scanners
 			elseif attached byte_type_table as bt_table then
 				inspect bt_table [buf [index].code]
 					when BT_name_start, BT_hex_digit then
-						index := advance (index)
+						index := index + 1
 						from until index >= end_index or done loop
 							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
-									index := advance (index)
+									index := index + 1
 								when BT_semicolon then
-									next_token_index := advance (index)
+									next_token_index := index + 1
 									Result := Tok_param_entity_ref; done := True
 							else
 								next_token_index := index; Result := Tok_invalid; done := True
@@ -219,11 +219,11 @@ feature {NONE} -- Prolog sub-scanners
 			elseif attached byte_type_table as bt_table then
 				inspect bt_table [buf [index].code]
 					when BT_name_start, BT_hex_digit then
-						index := advance (index)
+						index := index + 1
 						from until index >= end_index or done loop
 							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
-									index := advance (index)
+									index := index + 1
 								when BT_CR, BT_LF, BT_whitespace, BT_right_parenthesis, BT_gt, BT_percent, BT_pipe_symbol then
 									next_token_index := index; Result := Tok_pound_name; done := True
 							else
@@ -277,19 +277,19 @@ feature {NONE} -- Prolog sub-scanners
 								CR_index := index
 							else end
 							CR_count := CR_count + 1
-							index := advance (index)
+							index := index + 1
 
 						when BT_LF then
-							index := advance (index)
+							index := index + 1
 
 						when BT_quote, BT_apostrophe then
 							inspect CR_count when 0 then
 								do_nothing
 							else
 								prune_carriage_returns (buf, CR_index, index, CR_count, '"')
-								index := index - CR_count * char_width
+								index := index - CR_count * 1
 							end
-							index := advance (index)
+							index := index + 1
 							if t = a_open then
 								if index >= end_index then
 									Result := -Tok_literal; done := True
@@ -305,7 +305,7 @@ feature {NONE} -- Prolog sub-scanners
 								end
 							end
 					else
-						index := advance (index)
+						index := index + 1
 					end
 				end
 			end
@@ -321,15 +321,15 @@ feature {NONE} -- Prolog sub-scanners
 		do
 			index := start_index
 			if attached byte_type_table as bt_table then
-				from index := advance (index) until index >= end_index loop
+				from index := index + 1 until index >= end_index loop
 					inspect bt_table [buf [index].code]
 						when BT_whitespace, BT_LF then
-							index := advance (index)
+							index := index + 1
 						when BT_CR then
-							if advance (index) = end_index then
+							if index + 1 = end_index then
 								index := end_index  -- exit; might be CRLF
 							else
-								index := advance (index)
+								index := index + 1
 							end
 					else
 						next_token_index := index; Result := Tok_prolog_s; index := end_index
@@ -353,7 +353,7 @@ feature {NONE} -- Prolog sub-scanners
 				from until index >= end_index or done loop
 					inspect bt_table [buf [index].code]
 						when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon then
-							index := advance (index)
+							index := index + 1
 						when BT_gt, BT_right_parenthesis, BT_comma, BT_pipe_symbol, BT_left_square_bracket,
 						     BT_percent, BT_whitespace, BT_CR, BT_LF then
 							next_token_index := index; Result := tok; done := True
@@ -361,21 +361,21 @@ feature {NONE} -- Prolog sub-scanners
 							if tok = tok_name_token then
 								next_token_index := index; Result := Tok_invalid
 							else
-								next_token_index := advance (index); Result := Tok_name_plus
+								next_token_index := index + 1; Result := Tok_name_plus
 							end
 							done := True
 						when BT_asterisk then
 							if tok = tok_name_token then
 								next_token_index := index; Result := Tok_invalid
 							else
-								next_token_index := advance (index); Result := Tok_name_asterisk
+								next_token_index := index + 1; Result := Tok_name_asterisk
 							end
 							done := True
 						when BT_question then
 							if tok = tok_name_token then
 								next_token_index := index; Result := Tok_invalid
 							else
-								next_token_index := advance (index); Result := Tok_name_question
+								next_token_index := index + 1; Result := Tok_name_question
 							end
 							done := True
 					else

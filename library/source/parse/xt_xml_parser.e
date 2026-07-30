@@ -47,7 +47,6 @@ feature {NONE} -- Event handlers
 
 	on_base_content (
 		area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
-		is_utf_8_encoded: BOOLEAN
 	)
 		-- handle content section in `area' from index `start_index' to `end_index'
 		local
@@ -55,20 +54,12 @@ feature {NONE} -- Event handlers
 		do
 			if attached text_buffer as text then
 				if is_white_space_skipped then
-					if is_utf_8_encoded then
-						append_area (text, area, start_index, end_index)
-					else
-						attributes.append_area (text, area, start_index, end_index)
-					end
+					append_area (text, area, start_index, end_index)
 				else
 					count := end_index - start_index + 1
-					white_count := attributes.leading_white_space (area, start_index, end_index)
+					white_count := leading_white_space (area, start_index, end_index)
 					if white_count < count then
-						if is_utf_8_encoded then
-							attributes.append_area (text, area, start_index, end_index)
-						else
-							attributes.append_area (text, area, start_index + white_count, end_index)
-						end
+						append_area (text, area, start_index + white_count, end_index)
 						is_white_space_skipped := True
 					end
 				end

@@ -1296,7 +1296,7 @@ feature {NONE} -- Xpact core event handlers
 			end
 		end
 
-	on_content (buf: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; is_utf_8_encoded: BOOLEAN)
+	on_content (buf: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		local
 			call_back_ptr: POINTER
 		do

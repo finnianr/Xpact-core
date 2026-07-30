@@ -25,7 +25,7 @@ note
 	date: "2026-06-20 20:42:32 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XT_DOCUMENT_SCANNER
+class XT_DOCUMENT_SCANNER
 
 inherit
 	XT_ENCODING
@@ -45,6 +45,11 @@ inherit
 	XT_LITERAL_SCANNER
 
 	XT_STRING_CONSTANTS
+
+	XT_UTF_8_NAME_CHECKER
+
+create
+	make
 
 feature {NONE} -- Initialisation
 
@@ -89,7 +94,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 				from Result := start_index until Result >= buf.count or done loop
 					inspect bt_table [buf [Result].code]
 						when BT_whitespace, BT_CR, BT_LF then
-							Result := advance (Result)
+							Result := Result + 1
 					else
 						done := True
 					end
@@ -108,7 +113,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 				if index >= end_index or buf [index] /= match [i] then
 					ok := False
 				else
-					index := index + char_width; i := i + 1
+					index := index + 1; i := i + 1
 				end
 			end
 			Result := ok and index = end_index
@@ -119,7 +124,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 		-- (lt=0x3C, gt=0x3E, amp=0x26, quot=0x22, apos=0x27), or -1 if not a predefined entity.
 		do
 			Result := -1
-			inspect latin_1_count (end_index - start_index + 1)
+			inspect end_index - start_index + 1
 				when 2 then
 					inspect buf [start_index]
 						when 'g' then
@@ -166,7 +171,7 @@ feature -- Public ID validation
 								BT_exclamation, BT_asterisk, BT_percent, BT_hash, BT_colon, BT_whitespace,
 								BT_name_start, BT_name_only
 						then
-							index := index + char_width
+							index := index + 1
 					else
 						bad_char_index := index; ok := False
 					end
@@ -187,17 +192,17 @@ feature -- Position tracking
 					inspect bt_table [buf [index].code]
 						when BT_CR then
 							pos.advance_line
-							if index + char_width < end_index
-								and bt_table [buf [index + char_width].code] = BT_LF
+							if index + 1 < end_index
+								and bt_table [buf [index + 1].code] = BT_LF
 							then
-								index := index + char_width
+								index := index + 1
 							end
 						when BT_LF then
 							pos.advance_line
 					else
 						pos.advance_column
 					end
-					index := index + char_width
+					index := index + 1
 				end
 			end
 		end
@@ -224,6 +229,27 @@ feature {NONE} -- ASCII half table builder (shared by all single-byte encodings)
 			t.fill_with (22, 103, 122)   -- BT_name_start 'g'..'z'
 			t [123] := 28; t [124] := 36; t [125] := 28
 			t [126] := 28; t [127] := 28
+		end
+
+feature -- Constants
+
+	Byte_type_table: SPECIAL [INTEGER]
+			-- Combined ASCII + UTF-8 upper byte classification table.
+		once
+			create Result.make_filled (0, 256)
+			fill_ascii_half (Result)
+			-- 0x80-0xBF: continuation bytes
+			Result.fill_with (8, 128, 191)   -- BT_continuation_byte = 8
+			-- 0xC0-0xDF: 2-byte lead bytes (is_invalid_char_2 catches 0xC0, 0xC1)
+			Result.fill_with (5, 192, 223)   -- BT_lead_2_byte = 5
+			-- 0xE0-0xEF: 3-byte lead bytes
+			Result.fill_with (6, 224, 239)   -- BT_lead_3_byte = 6
+			-- 0xF0-0xF4: 4-byte lead bytes
+			Result.fill_with (7, 240, 244)   -- BT_lead_4_byte = 7
+			-- 0xF5-0xFD: not valid UTF-8 lead bytes
+			Result.fill_with (0, 245, 253)   -- BT_non_xml = 0
+			-- 0xFE-0xFF: malformed
+			Result [254] := 1; Result [255] := 1   -- BT_malform = 1
 		end
 
 end

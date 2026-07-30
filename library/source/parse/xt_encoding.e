@@ -33,7 +33,7 @@ feature {NONE} -- Initialisation
 
 	make
 		do
-			attribute_intervals := new_attribute_intervals
+			create attribute_intervals.make (11)
 			attribute_intervals.initialize
 		end
 
@@ -77,23 +77,6 @@ feature -- Output of the last scan call
 	next_token_index: INTEGER
 			-- Index of the first byte after the token just scanned.
 			-- Invalid if the last call returned Tok_none or Tok_partial.
-		deferred
-		end
-
-feature -- Encoding properties
-
-	char_width: INTEGER
-			-- Minimum number of bytes used to represent one character.
-			-- 1 for UTF-8, Latin-1, ASCII; 2 for UTF-16.
-		deferred
-		ensure positive: Result >= 1
-		end
-
-	is_utf_8: BOOLEAN
-		deferred
-		end
-
-	is_utf_16: BOOLEAN
 		deferred
 		end
 
@@ -149,16 +132,9 @@ feature -- Position tracking
 		deferred
 		end
 
-feature {NONE} -- Factory
-
-	new_attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
-		-- collected attribute name-value pair indices into `buffer'
-		deferred
-		end
-
 feature {NONE} -- Internal attributes
 
-	attribute_intervals: like new_attribute_intervals
+	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
 		-- collected attribute name-value pair indices into `buffer'
 
 	bad_char_index: INTEGER

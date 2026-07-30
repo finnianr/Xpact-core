@@ -38,25 +38,25 @@ feature {NONE} -- PI and comment scanning
 				Result := Tok_invalid
 
 			elseif attached byte_type_table as bt_table then
-				index := advance (index)
+				index := index + 1
 				from until index >= end_index or done loop
 					inspect bt_table [buf [index].code]
 						when BT_minus then
-							index := advance (index)
+							index := index + 1
 							if index >= end_index then
 								Result := Tok_partial; done := True
 							elseif buf [index] = '-' then
-								index := advance (index)
+								index := index + 1
 								if index >= end_index then
 									Result := Tok_partial; done := True
 								elseif buf [index] = '>' then
 									inspect CR_count when 0 then
 										do_nothing
 									else
-										prune_carriage_returns (buf, CR_index, offset_by (index, - 2), CR_count, '-')
-										index := index - CR_count * char_width
+										prune_carriage_returns (buf, CR_index, index - 2, CR_count, '-')
+										index := index - CR_count * 1
 									end
-									next_token_index := advance (index)
+									next_token_index := index + 1
 									Result := Tok_comment; done := True
 								else
 									next_token_index := index; Result := Tok_invalid; done := True
@@ -95,10 +95,10 @@ feature {NONE} -- PI and comment scanning
 								CR_index := index
 							else end
 							CR_count := CR_count + 1
-							index := advance (index)
+							index := index + 1
 
 					else
-						index := advance (index)
+						index := index + 1
 					end
 				end
 				if not done then
@@ -123,7 +123,7 @@ feature {NONE} -- PI and comment scanning
 			else
 				inspect bt_table [buf [index].code]
 					when BT_name_start, BT_hex_digit then
-						index := advance (index)
+						index := index + 1
 					when BT_lead_2_byte then
 						if end_index - index >= 2 and then not is_invalid_char_2 (buf, index)
 							and then is_name_start_char_2 (buf, index)
@@ -146,13 +146,13 @@ feature {NONE} -- PI and comment scanning
 					from until index >= end_index or done loop
 						inspect bt_table [buf [index].code]
 							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
-								index := advance (index)
+								index := index + 1
 							when BT_whitespace, BT_CR, BT_LF then
 								token := check_pi_target (buf, target_start, index)
 								if token = 0 then
 									next_token_index := index; Result := Tok_invalid; done := True
 								else
-									index := advance (index)
+									index := index + 1
 									inspect token when Tok_pi then
 										lower_upper.extend (start_index)
 										lower_upper.extend (index - 2)
@@ -169,11 +169,11 @@ feature {NONE} -- PI and comment scanning
 								if token = 0 then
 									next_token_index := index; Result := Tok_invalid; done := True
 								else
-									index := advance (index)
+									index := index + 1
 									if index >= end_index then
 										Result := Tok_partial; done := True
 									elseif buf [index] = '>' then
-										next_token_index := advance (index)
+										next_token_index := index + 1
 										Result := token; done := True
 									else
 										next_token_index := index; Result := Tok_invalid; done := True
@@ -206,18 +206,18 @@ feature {NONE} -- PI and comment scanning
 			elseif attached byte_type_table as bt_table then
 				inspect bt_table [buf [index].code]
 					when BT_minus then
-						Result := scan_comment (buf, advance (index), end_index)
+						Result := scan_comment (buf, index + 1, end_index)
 
 					when BT_left_square_bracket then
-						next_token_index := advance (index)
+						next_token_index := index + 1
 						Result := Tok_cond_sect_open
 
 					when BT_name_start, BT_hex_digit then
-						index := advance (index)
+						index := index + 1
 						from until index >= end_index or done loop
 							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit then
-									index := advance (index)
+									index := index + 1
 								when BT_whitespace, BT_CR, BT_LF, BT_percent then
 									next_token_index := index
 									Result := Tok_decl_open; done := True
@@ -240,15 +240,15 @@ feature {NONE} -- PI and comment scanning
 		require
 			start_index <= end_index
 		do
-			if end_index - start_index < area_count (Cdata_lsqb.count) then
+			if end_index - start_index < Cdata_lsqb.count then
 				Result := Tok_partial
 			else
 				if starts_with (buf, start_index, Cdata_lsqb) then
 					Result := Tok_cdata_sect_open
-					next_token_index := offset_by (start_index, Cdata_lsqb.count)
+					next_token_index := start_index + Cdata_lsqb.count
 				else
 					Result := Tok_invalid
-					next_token_index := start_index + match_count (buf, start_index, Cdata_lsqb) + char_width
+					next_token_index := start_index + match_count (buf, start_index, Cdata_lsqb) + 1
 				end
 			end
 		end
@@ -262,11 +262,11 @@ feature {NONE} -- PI helpers
 		do
 			if end_index - start_index = character_count (3) then
 				if buf [start_index] = 'x'
-					and then buf [offset_by (start_index, 1)] = 'm' and then buf [offset_by (start_index, 2)] = 'l'
+					and then buf [start_index + 1] = 'm' and then buf [start_index + 2] = 'l'
 				then
 					Result := Tok_xml_decl
 
-				elseif same_caseless_characters (buf, start_index, offset_by (start_index, 2), Xml_lower) then
+				elseif same_caseless_characters (buf, start_index, start_index + 2, Xml_lower) then
 					Result := 0 -- reserved; caller treats as invalid
 				else
 					Result := Tok_pi
@@ -314,7 +314,7 @@ feature {NONE} -- PI helpers
 							index := index + 4
 						end
 					when BT_question then
-						index := advance (index)
+						index := index + 1
 						if index >= end_index then
 							Result := Tok_partial; done := True
 						elseif buf [index] = '>' then
@@ -322,11 +322,11 @@ feature {NONE} -- PI helpers
 								lower_upper.extend (start_index)
 								lower_upper.extend (index - 2)
 							else end
-							next_token_index := advance (index)
+							next_token_index := index + 1
 							Result := token; done := True
 						end
 				else
-					index := advance (index)
+					index := index + 1
 				end
 			end
 			if not done then

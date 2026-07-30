@@ -34,15 +34,27 @@ create
 feature -- Initialization	
 
 	make (file_path: PATH; a_parser: like parser)
+		local
+			file: RAW_FILE
 		do
 			make_with_path (file_path)
 			parser := a_parser
-			set_chunk_size (Default_chunk_size)
+			create file.make_open_read (file_path.name)
+			if file.count > 4 then
+				file.read_natural
+				is_utf_16 := file.last_natural = 0xFFFE
+			end
+			file.close
+			if is_utf_16 then
+				set_chunk_size (Default_chunk_size * 2)
+			else
+				set_chunk_size (Default_chunk_size)
+			end
 		end
 
 feature -- Access
 
-	chunk: SPECIAL [CHARACTER]
+	chunk: EL_UTF_8_POINTER_CODEC
 		-- incremental chunk
 
 	parse_status: INTEGER
@@ -54,8 +66,12 @@ feature -- Eleement change
 
 	set_chunk_size (chunk_size: INTEGER)
 		do
-			create chunk.make_filled ('%U', chunk_size)
+			create {EL_UTF_8_C_STRING} chunk.make_filled ('%U', chunk_size)
 		end
+
+feature -- Status report
+
+	is_utf_16: BOOLEAN
 
 feature -- Status setting
 
@@ -85,7 +101,7 @@ feature -- Basic operations
 					Memory.collection_off
 				end
 				from open_read; parse_status := Status_ok until final_chunk or parse_status /= Status_OK loop
-					read_chunk; byte_count := bytes_read
+					read_to_managed_pointer (chunk, 0, chunk.count); byte_count := bytes_read
 					if off or else (byte_count = chunk.count and then position = count) then
 						final_chunk := True
 					end
@@ -101,17 +117,6 @@ feature -- Basic operations
 				end
 			end
 			close
-		end
-
-feature {NONE} -- Implementation
-
-	read_chunk
-		require
-			is_readable: file_readable
-		do
-			if attached chunk as area then
-				bytes_read := file_gss (file_pointer, area.base_address, area.count)
-			end
 		end
 
 feature {NONE} -- Internal attributes

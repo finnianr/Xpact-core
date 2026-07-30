@@ -17,6 +17,7 @@ deferred class
 inherit
 	ARRAYED_LIST [INTEGER]
 		rename
+			index_of as index_of_item,
 			forth as index_forth,
 			extend as extend_index,
 			count as index_count
@@ -28,7 +29,9 @@ inherit
 			make, wipe_out
 		end
 
-	XT_UTF_8_CONVERTER
+	XT_STRING_ROUTINES_I
+		export
+			{NONE} all
 		undefine
 			copy, is_equal
 		end
@@ -70,8 +73,6 @@ feature -- Basic operations
 
 	initialize
 		do
-			name_cache.set_utf_8_converter (Current)
-			entity_cache.set_utf_8_converter (Current)
 			entity_table.set_predefined (entity_cache)
 		end
 

@@ -4,7 +4,8 @@ DEST=$PWD/contrib/Eiffel-Loop
 
 EIFFEL_LOOP=$EIFFEL/library/Eiffel-Loop
 
-names=(c_string_8_api el_c_api el_crc_32_digest c_string_8 el_crc_32_constants \
+names=(el_string_h_c_api el_c_api el_crc_32_digest el_latin_1_c_string el_utf_16_c_string \ 
+	el_utf_8_pointer_codec el_utf_8_c_string	el_crc_32_constants \
 	el_expanded_routines el_traceable_crc_32_digest el_routines \
 	el_integer_math_i el_integer_math el_memory_routines el_zlib_crc_32_api)
 	

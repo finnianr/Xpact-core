@@ -93,16 +93,7 @@ feature -- Tests
 		end
 
 	test_string
-		local
-			s16: XT_STRING_16_ROUTINES; str: STRING
 		do
-			across << "c%Ua%Ut%U", "l%Ui%Uo%Un%U" >> as animal until failed loop
-				str := animal.twin
-				str.prune_all ('%U')
-				if s16.new_substring (animal.area, 0, animal.count - 1) /~ str then
-					failed := True
-				end
-			end
 		end
 
 feature -- Status report

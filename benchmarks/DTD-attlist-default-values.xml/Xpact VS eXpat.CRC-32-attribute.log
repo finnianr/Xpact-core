@@ -8,3 +8,6 @@ DTD-attlist-default-values.xml: eXpat passes = 211; Xpact-core passes = 245 (x1.
 
 2026 29 JUL 14:00
 DTD-attlist-default-values.xml: eXpat passes = 211; Xpact-core passes = 243 (x1.15 to eXpat)
+
+2026 30 JUL 19:10
+DTD-attlist-default-values.xml: eXpat passes = 208; Xpact-core passes = 270 (x1.30 to eXpat)
