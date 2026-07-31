@@ -60,7 +60,6 @@ feature {NONE} -- Initialisation
 			check attached Token_names end
 
 			buffer := new_buffer_area (Default_buffer_size)
-			create character_string.make_filled ('%U', 1)
 			create declaration_parts_list.make (10)
 			create attribute_value_defaults_table.make (37)
 			create new_line.make_filled ('%N', 1)
@@ -84,12 +83,16 @@ feature {NONE} -- Initialisation
 			buffer_end := 0
 			buffer_index := 0
 			error_code := Error_none
-			buffer_lim := Default_buffer_size
+			inspect buffer_limit when 0 then
+				buffer_limit := Default_buffer_size
+			else
+				buffer_limit := buffer.capacity - 1
+			end
 		end
 
 feature -- Access
 
-	buffer_lim: INTEGER
+	buffer_limit: INTEGER
 		-- Total usable capacity of `buffer'.
 
 	error_code: INTEGER
@@ -110,9 +113,16 @@ feature -- Element change
 		do
 			set_defaults
 			attribute_intervals.wipe_out
+			attribute_value_defaults_table.wipe_out
+			if not encoded_chunk.is_utf_8 then
+				create {EL_UTF_8_C_STRING} encoded_chunk.make_empty
+			end
+			declaration_parts_list.wipe_out
+			entity_cache.reset
+			name_cache.reset
+
 			entity_table.wipe_out
-			entity_cache.wipe_out
-			name_cache.wipe_out
+			entity_table.set_predefined (entity_cache)
 		end
 
 feature {NONE} -- Factory
@@ -218,7 +228,7 @@ feature {NONE} -- Implementation
 		local
 			needed, parsed, keep, offset, new_size: INTEGER
 		do
-			if a_count <= buffer_lim - buffer_end then
+			if a_count <= buffer_limit - buffer_end then
 				-- Enough free space after buffer_end already.
 				Result := True
 			else
@@ -230,7 +240,7 @@ feature {NONE} -- Implementation
 					-- Integer overflow: the request is impossibly large.
 					error_code := Error_no_memory
 
-				elseif needed <= buffer_lim then
+				elseif needed <= buffer_limit then
 					-- Existing allocation fits once we compact.
 					offset := parsed - keep
 					if offset > 0 then
@@ -240,7 +250,7 @@ feature {NONE} -- Implementation
 
 				else
 					-- Must grow. Double from current capacity until large enough.
-					new_size := buffer_lim.max (Default_buffer_size)
+					new_size := buffer_limit.max (Default_buffer_size)
 					from until new_size >= needed or new_size <= 0 loop
 						if new_size > {INTEGER}.max_value // 2 then
 							new_size := -1   -- overflow sentinel
@@ -251,9 +261,9 @@ feature {NONE} -- Implementation
 					if new_size <= 0 then
 						error_code := Error_no_memory
 					elseif attached new_buffer_area (new_size) as new_buffer then
-						new_buffer.copy_data (buffer, 0, 0, buffer_lim)
+						new_buffer.copy_data (buffer, 0, 0, buffer_limit)
 						buffer := new_buffer
-						buffer_lim := new_size
+						buffer_limit := new_size
 						offset := parsed - keep
 						if offset > 0 then
 							shift_buffer_left (offset)
@@ -263,10 +273,10 @@ feature {NONE} -- Implementation
 				end
 			end
 		ensure
-			space_when_ok:       Result implies buffer_end + a_count <= buffer_lim
+			space_when_ok:       Result implies buffer_end + a_count <= buffer_limit
 			error_when_not_ok:   not Result implies error_code /= Error_none
 			ptr_within_end:      buffer_index <= buffer_end
-			end_within_lim:      buffer_end <= buffer_lim
+			end_within_lim:      buffer_end <= buffer_limit
 			ptr_non_negative:    buffer_index >= 0
 		end
 
@@ -302,8 +312,6 @@ feature {NONE} -- Implementation
 		end
 
 feature {NONE} -- Internal attributes
-
-	character_string: STRING
 
 	buffer_end: INTEGER
 		-- Index one past the last valid data byte in `buffer'
@@ -369,5 +377,8 @@ feature {NONE} -- Constants
 		end
 
 invariant
-	is_one_character: character_string.count = 1
+	room_for_null_terminator: buffer.capacity = buffer_limit + 1
+	buffer_indices_consistent:
+		buffer_index >= 0 and then buffer_index <= buffer_end and then buffer_end <= buffer_limit
+
 end

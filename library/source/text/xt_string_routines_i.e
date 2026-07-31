@@ -101,9 +101,9 @@ feature {NONE} -- Access
 			end
 		end
 
-	frozen to_list (str: STRING): LIST [STRING]
+	frozen to_list (str: STRING; c: CHARACTER): LIST [STRING]
 		do
-			Result := str.split (',')
+			Result := str.split (c)
 			Result.do_all (agent {STRING}.left_adjust)
 		end
 

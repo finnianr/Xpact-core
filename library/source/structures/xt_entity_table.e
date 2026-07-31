@@ -147,28 +147,7 @@ feature -- Element change
 
 	set_predefined (entity_cache: XT_ENTITY_NAME_CACHE)
 		do
-			if attached new_predefined_table as table then
-				across table.current_keys as l_key loop
-					if attached encoded_key (l_key) as key and then attached key.area as l_area then
-						extend (table [key].out, entity_cache.item (l_area, 0, key.count - 1))
-					end
-				end
-			end
-		end
-
-feature {NONE} -- Implementation
-
-	encoded_key (key: STRING): STRING
-		do
-			Result := key
-		end
-
-	new_predefined_table: HASH_TABLE [CHARACTER, STRING]
-		do
-			create Result.make_from_iterable_tuples (<<
-				['&', Predefined_amp], ['<', Predefined_lt], ['>', Predefined_gt],
-				['%'', Predefined_apos], ['"', Predefined_quot]
-			>>)
+			merge (entity_cache.predefined_table)
 		end
 
 feature {NONE} -- Internal attributes

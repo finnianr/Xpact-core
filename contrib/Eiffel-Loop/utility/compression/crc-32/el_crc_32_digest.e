@@ -93,4 +93,9 @@ feature -- Element change
 		do
 			add_characters (str.area, 0, str.count - 1)
 		end
+
+	reset
+		do
+			set_item (Crc_initial)
+		end
 end

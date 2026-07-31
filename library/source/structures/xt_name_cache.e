@@ -65,7 +65,7 @@ feature -- Access
 			Result := empty_string
 			i := bucket_index (buffer, start_index, end_index)
 			bucket_list := area [i]
-			if bucket_list.is_empty then
+			if bucket_list = Default_list then
 				create bucket_list.make (2)
 
 				area [i] := bucket_list
@@ -104,9 +104,16 @@ feature -- Status report
 
 feature -- Basic operations
 
-	wipe_out
+	reset
+		local
+			i: INTEGER
 		do
-			area.fill_with (Default_list, 0, Size - 1)
+			if attached area as a then
+				from i := 0 until i = Size loop
+					a [i].wipe_out
+					i := i + 1
+				end
+			end
 		end
 
 feature {XT_PARSING_BUFFERS} -- Implementation

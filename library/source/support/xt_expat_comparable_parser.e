@@ -14,7 +14,14 @@ note
 	revision: "1"
 
 deferred class
-	XT_EXPAT_COMPARABLE
+	XT_EXPAT_COMPARABLE_PARSER
+
+feature -- Access
+
+	checksum: NATURAL
+		-- CRC-32/ISO-HDLC checksum
+		do
+		end
 
 feature -- Factory
 
@@ -24,7 +31,15 @@ feature -- Factory
 
 feature -- Basic operations
 
+	parse_file (file_path: PATH; chunk_size: INTEGER; collection_off: BOOLEAN)
+		deferred
+		end
+
 	print_stats
+		deferred
+		end
+
+	reset
 		deferred
 		end
 

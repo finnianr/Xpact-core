@@ -17,7 +17,7 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make (a_parser: XT_XML_PARSER_BASE; a_file_path: PATH; a_time_start: TIME; a_duration_ms, a_chunk_size: INTEGER)
+	make (a_parser: XT_EXPAT_COMPARABLE_PARSER; a_file_path: PATH; a_time_start: TIME; a_duration_ms, a_chunk_size: INTEGER)
 		do
 			parser := a_parser; file_path := a_file_path
 			time_start := a_time_start; duration_ms := a_duration_ms; chunk_size := a_chunk_size
@@ -45,14 +45,26 @@ feature -- Access
 
 feature -- Basic operations
 
-	execute
+	execute (first_checksum: NATURAL)
+		local
+			exception: DEVELOPER_EXCEPTION
 		do
 			if duration_ms > 0 then
 			-- Do benchmarking
 				from pass_count := 1 until elapsed_milliseconds (time_start) > duration_ms loop
-					pass_count := pass_count + 1
 					parser.reset
 					parser.parse_file (file_path, chunk_size, True)
+					inspect pass_count when 1 then
+						if parser.checksum /= first_checksum then
+							IO.put_string ("2nd pass"); IO.put_new_line
+							parser.print_stats
+							create exception
+							exception.set_description ("Checksum on 2nd run does not agree with first")
+							exception.raise
+						end
+					else
+					end
+					pass_count := pass_count + 1
 				end
 				IO.put_string ("Number of passes in ")
 				IO.put_string (duration_ms.out + " ms: " + pass_count.out)
@@ -207,7 +219,7 @@ feature {NONE} -- Internal attributes
 
 	chunk_size: INTEGER
 
-	parser: XT_XML_PARSER_BASE
+	parser: XT_EXPAT_COMPARABLE_PARSER
 
 	xml_file_name: STRING
 

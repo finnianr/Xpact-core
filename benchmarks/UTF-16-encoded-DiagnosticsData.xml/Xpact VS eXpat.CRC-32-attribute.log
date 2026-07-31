@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: UTF-16-encoded-DiagnosticsData.xml
+
+2026 31 JUL 14:30
+UTF-16-encoded-DiagnosticsData.xml: eXpat passes = 75080; Xpact-core passes = 72076 (x0.96 to eXpat)

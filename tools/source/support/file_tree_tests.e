@@ -53,39 +53,7 @@ feature -- Basic operations
 		do
 			create find_results.make_with_output (substitute (Find_template, << dir_path.out, wild_card >>))
 			if find_results.has_output then
-				log.open_write
-				pass_count := 0; fail_count := 0
-				from until done loop
-					find_results.read_line
-					if find_results.end_of_file then
-						done := True
-					else
-						i := i + 1
-						IO.put_integer (i); IO.put_string (". ")
-						if attached find_results.last_string as path then
-							IO.put_string (path)
-							count := data_type_pass_count (path)
-							if count = -1 or count = Parse_data_types.count then
-								IO.put_string (" OK")
-								if count = -1 then
-									IO.put_string (" (Both failed)")
-									IO.put_new_line
-									IO.put_string ("   "); IO.put_string (expat_error)
-								end
-								pass_count := pass_count + 1
-							else
-								IO.put_string (" FAILED")
-								fail_count := fail_count + 1
-							end
-							IO.put_new_line
-						end
-					end
-				end
-				find_results.close
-				log.close
-				if log.count = 0 then
-					log.delete
-				end
+				do_tests (find_results)
 			end
 			IO.put_new_line
 			IO.put_string ("Tested against eXpat"); IO.put_new_line
@@ -99,6 +67,36 @@ feature -- Basic operations
 		end
 
 feature {NONE} -- Implementation
+
+	call_expat_xml_crc_32 (type: STRING; file_path: PATH)
+		-- call C program xml_crc_32 setting `expat_return_code' and `expat_checksum'
+		local
+			output_file: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN
+			index: INTEGER
+		do
+			expat_checksum := 0
+			create output_file.make_with_output (substitute (Xml_crc_32, << type, file_path.out >>))
+			expat_return_code := output_file.return_code
+			if expat_return_code > 0 then
+				expat_error := output_file.error_lines.first
+				if output_file.has_output then
+					output_file.delete
+				end
+
+			elseif output_file.has_output then
+				from until done loop
+					output_file.read_line
+					if output_file.end_of_file then
+						done := True
+					elseif attached output_file.last_string as line and then line.starts_with (once "Checksum") then
+						index := line.index_of (':', 1)
+						expat_checksum := line.substring (index + 2, line.count).to_natural
+						done := True
+					end
+				end
+				output_file.close
+			end
+		end
 
 	data_type_pass_count (path: STRING): INTEGER
 		-- count of data types that pass checksum comparison with eXpat
@@ -141,33 +139,51 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	call_expat_xml_crc_32 (type: STRING; file_path: PATH)
-		-- call C program xml_crc_32 setting `expat_return_code' and `expat_checksum'
+	do_tests (find_results: XT_COMMAND_OUTPUT_FILE)
 		local
-			output_file: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN
-			index: INTEGER
+			done: BOOLEAN; i, count: INTEGER
 		do
-			expat_checksum := 0
-			create output_file.make_with_output (substitute (Xml_crc_32, << type, file_path.out >>))
-			expat_return_code := output_file.return_code
-			if expat_return_code > 0 then
-				expat_error := output_file.error_lines.first
-				if output_file.has_output then
-					output_file.delete
-				end
-
-			elseif output_file.has_output then
-				from until done loop
-					output_file.read_line
-					if output_file.end_of_file then
-						done := True
-					elseif attached output_file.last_string as line and then line.starts_with (once "Checksum") then
-						index := line.index_of (':', 1)
-						expat_checksum := line.substring (index + 2, line.count).to_natural
-						done := True
+			log.open_write
+			pass_count := 0; fail_count := 0
+			from until done loop
+				find_results.read_line
+				if find_results.end_of_file then
+					done := True
+				else
+					i := i + 1
+					IO.put_integer (i); IO.put_string (". ")
+					if attached find_results.last_string as path then
+						IO.put_string (path)
+						count := data_type_pass_count (path)
+						if count = -1 or count = Parse_data_types.count then
+							IO.put_string (" OK")
+							if count = -1 then
+								IO.put_string (" (Both failed)")
+								IO.put_new_line
+								IO.put_string ("   "); IO.put_string (expat_error)
+							end
+							pass_count := pass_count + 1
+						else
+							IO.put_string (" FAILED")
+							fail_count := fail_count + 1
+						end
+						IO.put_new_line
 					end
 				end
-				output_file.close
+			end
+			find_results.close
+			log.close
+			if log.count = 0 then
+				log.delete
+			end
+		end
+
+	is_zipped_format: BOOLEAN
+		local
+			s: XT_STRING_ROUTINES
+		do
+			across s.to_list (Compressed_files, ';') as l_wild_card until True loop
+				Result := l_wild_card ~ wild_card
 			end
 		end
 
@@ -194,6 +210,8 @@ feature {NONE} -- Internal attributes
 feature {NONE} -- Constants
 
 	Checksum_comparison: STRING = "Checksum for %S: Xpact=%S eXpat=%S"
+
+	Compressed_files: STRING = "*.ods; *.odt; *.docx"
 
 	Error_template: STRING = "ERROR (%S): %S"
 

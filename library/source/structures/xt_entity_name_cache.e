@@ -17,11 +17,33 @@ class
 inherit
 	XT_NAME_CACHE
 		redefine
-			buffer_string_8, bucket_index, item, same_string
+			buffer_string_8, bucket_index, item, make, same_string, reset
 		end
+
+	XT_STRING_CONSTANTS
 
 create
 	make
+
+feature {NONE} -- Initialization
+
+	make
+		do
+			Precursor
+			if attached new_predefined_table as table then
+				create predefined_table.make (table.count)
+				from table.start until table.after loop
+					if attached table.key_for_iteration as name
+						and then attached item (name.area, 0, name.count - 1) as entity
+					then
+						predefined_table.extend (table.item_for_iteration.out, entity)
+					end
+					table.forth
+				end
+			else
+				create predefined_table.make (3)
+			end
+		end
 
 feature -- Access
 
@@ -33,6 +55,25 @@ feature -- Access
 				buffer [start_index] /= '&' and buffer [end_index] /= ';'
 		do
 			Result := Precursor (buffer, start_index, end_index)
+		end
+
+	predefined_table: HASH_TABLE [STRING, STRING]
+
+feature -- Element change
+
+	reset
+		local
+			table: like predefined_table; index: INTEGER
+		do
+			Precursor
+			table := predefined_table
+			from table.start until table.after loop
+				if attached table.key_for_iteration as name then
+					index := bucket_index (name.area, 1, name.count - 2)
+					area [index].extend (name)
+				end
+				table.forth
+			end
 		end
 
 feature {XT_PARSING_BUFFERS} -- Implementation
@@ -86,6 +127,14 @@ feature {NONE} -- Implementation
 					end
 				end
 			end
+		end
+
+	new_predefined_table: HASH_TABLE [CHARACTER, STRING]
+		do
+			create Result.make_from_iterable_tuples (<<
+				['&', Predefined_amp], ['<', Predefined_lt], ['>', Predefined_gt],
+				['%'', Predefined_apos], ['"', Predefined_quot]
+			>>)
 		end
 
 end

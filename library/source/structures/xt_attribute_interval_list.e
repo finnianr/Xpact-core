@@ -50,6 +50,7 @@ feature {NONE} -- Initialization
 
 			entity_cache := new_entity_cache
 			entity_table := new_entity_table (37)
+			entity_table.set_predefined (entity_cache)
 			name_cache := new_name_cache
 		end
 
@@ -70,11 +71,6 @@ feature -- Constants
 		-- number of array items needed to hold intervals of one name-value pair
 
 feature -- Basic operations
-
-	initialize
-		do
-			entity_table.set_predefined (entity_cache)
-		end
 
 	wipe_out
 		local

@@ -55,26 +55,4 @@ for extension in xml; do
 done
 echo
 
-source_dir=/media/finnian/Windows/Windows/System32
-log_dir=docs/test-logs/$(basename $source_dir)
-echo Logging to\: $log_dir
-mkdir -p $log_dir
-echo Scanning\: $source_dir
-for extension in xml; do
-	echo Testing against \*.$extension
-	xml_reader -test_files -log $log_dir/star-dot-$extension.log \
-		"$source_dir/*.$extension"
-done
-echo
-
-source_dir=/media/finnian/Windows/Windows/WinSxS
-log_dir=docs/test-logs/$(basename $source_dir)
-echo Logging to\: $log_dir
-mkdir -p $log_dir
-echo Scanning\: $source_dir
-for extension in manifest; do
-	echo Testing against \*.$extension
-	xml_reader -test_files -log $log_dir/star-dot-$extension.log \
-		"$source_dir/*.$extension"
-done
-echo
+. scripts/test_Windows_files.sh

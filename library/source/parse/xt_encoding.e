@@ -34,7 +34,6 @@ feature {NONE} -- Initialisation
 	make
 		do
 			create attribute_intervals.make (11)
-			attribute_intervals.initialize
 		end
 
 feature -- Token scanner dispatch (XML_Parsing state selects which scanner)

@@ -71,6 +71,11 @@ feature -- Element change
 			depth_decreased: depth = old depth - 1
 		end
 
+	reset
+		do
+			reached_depth_zero := False
+		end
+
 feature {NONE} -- Internal attributes
 
 	empty_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]

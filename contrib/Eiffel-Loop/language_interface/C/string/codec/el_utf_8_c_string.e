@@ -15,7 +15,7 @@ class
 inherit
 	EL_LATIN_1_C_STRING
 		redefine
-			copy_as_utf_8
+			copy_as_utf_8, is_utf_8
 		end
 
 create
@@ -23,6 +23,12 @@ create
 
 convert
 	make_from_string ({STRING_8})
+
+feature -- Status query
+
+	is_utf_8: BOOLEAN = True
+
+
 
 feature -- Basic operations
 

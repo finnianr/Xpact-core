@@ -45,6 +45,19 @@ feature -- Access
 
 	last_index: INTEGER
 
+feature -- Status query
+
+	is_utf_8: BOOLEAN
+		do
+
+		end
+
+feature -- Element change
+
+	reset
+		do
+		end
+
 feature -- Basic operations
 
 	copy_as_utf_8 (dest: SPECIAL [CHARACTER]; dest_index, n: INTEGER)
@@ -52,7 +65,6 @@ feature -- Basic operations
 			big_enough: dest.valid_index (dest_index + n - 1)
 		deferred
 		end
-
 
 	remove_head (n: INTEGER)
 		require

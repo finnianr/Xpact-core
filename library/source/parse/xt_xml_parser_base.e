@@ -15,7 +15,7 @@ deferred class XT_XML_PARSER_BASE
 inherit
 	XT_PARSING_BUFFERS
 		redefine
-			make, set_defaults
+			make, reset, set_defaults
 		end
 
 feature {NONE} -- Initialization
@@ -36,6 +36,7 @@ feature {NONE} -- Initialization
 		do
 			Precursor
 			parsing_state              := State_check_encoding
+			status 							:= 0
 
 			is_final_buffer            := False
 			reparse_deferral_enabled   := True
@@ -194,8 +195,8 @@ feature {NONE} -- Buffer implementation
 		require
 			non_negative_count: a_count >= 0
 			not_in_handler:     handler_call_depth = 0
-			buffer_allocated:   buffer_lim > 0
-			data_fits:          buffer_end + a_count <= buffer_lim
+			buffer_allocated:   buffer_limit > 0
+			data_fits:          buffer_end + a_count <= buffer_limit
 		local
 			start: INTEGER
 		do
@@ -270,11 +271,20 @@ feature {NONE} -- Buffer implementation
 			last_buffer_request_size := a_count
 			Result := prepare_buffer (a_count)
 		ensure
-			space_when_ok:        Result implies buffer_end + a_count <= buffer_lim
+			space_when_ok:        Result implies buffer_end + a_count <= buffer_limit
 			error_set_on_failure: not Result implies error_code /= Error_none
 			request_size_saved:   last_buffer_request_size = a_count
 		end
 
+	reset
+		do
+			Precursor
+			if element_context.has_attributes then
+				create element_context.make (section_flags)
+			else
+				element_context.reset
+			end
+		end
 
 feature {NONE} -- Processor dispatch
 
@@ -298,7 +308,7 @@ feature {NONE} -- Processor dispatch
 			-- or the buffer is nearly full.
 			if reparse_deferral_enabled and then not is_final_buffer then
 				had_before := partial_token_bytes_before
-				available  := (buffer_index - buffer_index.min (Context_bytes)) + (buffer_lim - buffer_end)
+				available  := (buffer_index - buffer_index.min (Context_bytes)) + (buffer_limit - buffer_end)
 				enough := have_now >= 2 * had_before
 					or else last_buffer_request_size > available
 				if not enough then
@@ -749,13 +759,8 @@ feature {NONE} -- Internal attributes
 	reparse_deferral_enabled: BOOLEAN
 
 invariant
-	room_for_null_terminator: buffer.capacity = buffer_lim + 1
 	valid_state: Parsing_states.has (parsing_state)
-
-	buffer_indices_consistent:
-		buffer_index >= 0 and then buffer_index <= buffer_end and then buffer_end <= buffer_lim
-
-	position_ptr_non_negative: position_index >= 0
+	position_index_non_negative: position_index >= 0
 	non_negative_handler_depth: handler_call_depth >= 0
 	non_negative_byte_index: parse_end_byte_index >= 0
 	partial_token_non_negative: partial_token_bytes_before >= 0

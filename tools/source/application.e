@@ -175,7 +175,7 @@ feature {NONE} -- Implementation
 	do_parsing (parser: XT_XML_PARSER_BASE)
 		local
 			file: PLAIN_TEXT_FILE; time_start: TIME; duration: INTEGER
-			file_path: PATH; chunk_size: INTEGER
+			file_path: PATH; chunk_size: INTEGER; checksum: NATURAL
 		do
 			if attached argument (argument_count) as path_arg then
 				create file_path.make_from_string (path_arg)
@@ -189,11 +189,12 @@ feature {NONE} -- Implementation
 					parser.parse_file (file_path, chunk_size, True)
 					inspect parser.status
 						when Status_ok then
-							if attached {XT_EXPAT_COMPARABLE} parser as ec then
+							if attached {XT_EXPAT_COMPARABLE_PARSER} parser as comparable then
 								duration := new_integer_argument (Option.duration, 0)
-								ec.print_stats
-								if attached ec.new_benchmark (file_path, time_start, duration, chunk_size) as benchmark then
-									benchmark.execute
+								comparable.print_stats
+								checksum := comparable.checksum
+								if attached comparable.new_benchmark (file_path, time_start, duration, chunk_size) as benchmark then
+									benchmark.execute (checksum)
 									if index_of_word_option (Option.compare_to_expat) > 0 then
 										benchmark.try_compare_to_expat
 									end
@@ -253,7 +254,7 @@ feature {NONE} -- Constants
 			s: XT_STRING_ROUTINES
 		once
 			create Result
-			across s.to_list ("compare_to_expat, chunk_size, duration, log, trace") as word loop
+			across s.to_list ("compare_to_expat, chunk_size, duration, log, trace", ',') as word loop
 				Result.put_reference (word, @ word.cursor_index)
 			end
 		end

@@ -32,7 +32,7 @@ inherit
 			Tok_pi as Tok_pi_value,
 			Tok_name as Tok_pi_name
 		redefine
-			make_parser
+			make_parser, reset
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
@@ -46,7 +46,12 @@ inherit
 			{NONE} all
 		end
 
-	XT_EXPAT_COMPARABLE
+	XT_EXPAT_COMPARABLE_PARSER
+		rename
+			checksum as checksum_value
+		redefine
+			checksum_value
+		end
 
 	EL_CRC_32_CONSTANTS
 		export
@@ -75,6 +80,12 @@ feature -- Access
 	checksum: EL_CRC_32_DIGEST
 		-- CRC-32/ISO-HDLC checksum
 
+	checksum_value: NATURAL
+		-- CRC-32/ISO-HDLC checksum
+		do
+			Result := checksum.value
+		end
+
 feature -- Basic operations
 
 	print_stats
@@ -88,6 +99,12 @@ feature -- Status change
 	enable_trace
 		do
 			create {EL_TRACEABLE_CRC_32_DIGEST} checksum
+		end
+
+	reset
+		do
+			Precursor
+			checksum.reset
 		end
 
 feature -- Status report

@@ -33,3 +33,12 @@ wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 49 (x1.44 
 
 2026 30 JUL 19:14
 wordnet_glossary-20010201.rdf: eXpat passes = 33; Xpact-core passes = 49 (x1.48 to eXpat)
+
+2026 31 JUL 10:25
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 125952 (x3.70447 to eXpat)
+
+2026 31 JUL 12:04
+wordnet_glossary-20010201.rdf: eXpat passes = 33; Xpact-core passes = 50 (x1.52 to eXpat)
+
+2026 31 JUL 14:39
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 50 (x1.47 to eXpat)

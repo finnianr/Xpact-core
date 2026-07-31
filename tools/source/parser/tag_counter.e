@@ -27,7 +27,7 @@ inherit
 			on_processing_instruction_ as on_processing_instruction
 		end
 
-	XT_EXPAT_COMPARABLE
+	XT_EXPAT_COMPARABLE_PARSER
 
 create
 	make

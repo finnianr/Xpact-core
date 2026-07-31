@@ -17,7 +17,7 @@ class
 inherit
 	EL_CRC_32_DIGEST
 		redefine
-			add_bytes, add_characters, default_create
+			add_bytes, add_characters, default_create, reset
 		end
 
 create
@@ -90,6 +90,12 @@ feature {NONE} -- Implementation
 			IO.put_string (once " (")
 			IO.put_natural_64 (item)
 			IO.put_string (once "): %"")
+		end
+
+	reset
+		do
+			set_item (Crc_initial)
+			index := 0
 		end
 
 feature {NONE} -- Internal attributes
