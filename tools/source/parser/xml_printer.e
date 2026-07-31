@@ -71,7 +71,7 @@ feature {NONE} -- Event handlers
 				if text.count > 1 then
 					if text [1] = '"' and text [text.count] = '"' then
 						do_nothing
-						
+
 					elseif text [1] = '"' or text [text.count] = '"' then
 						left := '['; right := ']'
 					end
@@ -131,17 +131,22 @@ feature {NONE} -- Event handlers
 			s: XT_STRING_ROUTINES; template: STRING; index: INTEGER
 		do
 			put_tabs (element_context.depth)
-			template := Processing_template.twin
-			if value.has ('"') then
-				from index := 1 until not template.has ('"') loop
-					index := template.index_of ('"', 1)
-					if index > 0 then
-						template [index] := '%''
-						index := index + 1
+			if value.is_empty then
+				index := Processing_template.index_of ('%S', 1) - 1
+				IO.put_string (Processing_template.substring (1, index) + name)
+			else
+				template := Processing_template.twin
+				if value.has ('"') then
+					from index := 1 until not template.has ('"') loop
+						index := template.index_of ('"', 1)
+						if index > 0 then
+							template [index] := '%''
+							index := index + 1
+						end
 					end
 				end
+				IO.put_string (s.substitute (template, << name, value >>))
 			end
-			IO.put_string (s.substitute (template, << name, value >>))
 			IO.put_new_line
 		end
 

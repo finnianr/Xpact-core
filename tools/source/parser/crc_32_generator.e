@@ -156,13 +156,19 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_processing_instruction (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
 			inspect data_type
 				when Tok_pi_name then
-					checksum.add_string (attributes.first_name (buf))
+					if attributes.is_empty then
+						checksum.add_characters (buf, start_index, end_index)
+					else
+						checksum.add_string (attributes.first_name (buf))
+					end
 				when Tok_pi_value then
-					attributes.append_first_value_to_crc_32 (checksum, buf)
+					if attributes.count > 0 then
+						attributes.append_first_value_to_crc_32 (checksum, buf)
+					end
 			else
 			end
 		end

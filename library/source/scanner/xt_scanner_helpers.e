@@ -102,12 +102,6 @@ feature -- Multi-byte name-character checks
 
 feature {NONE} -- Implementation
 
-	character_count (count: INTEGER): INTEGER
-		-- left shift by 1 in UTF-16 descendant
-		do
-			Result := count
-		end
-
 	leading_10 (buf: SPECIAL [CHARACTER]; index: INTEGER): STRING_8
 		-- leading 10 characters in `buf' starting from `index'
 		local
@@ -120,7 +114,7 @@ feature {NONE} -- Implementation
 	has_chars (end_index, index, count: INTEGER): BOOLEAN
 			-- end_index - index >= count * char_width  (HAS_CHARS macro)
 		do
-			Result := end_index - index >= character_count (count)
+			Result := end_index - index >= count
 		end
 
 	prune_carriage_returns (buf: SPECIAL [CHARACTER]; CR_index, end_index, CR_count: INTEGER; terminator: CHARACTER)

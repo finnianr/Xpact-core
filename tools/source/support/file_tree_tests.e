@@ -49,7 +49,7 @@ feature -- Basic operations
 
 	execute
 		local
-			find_results: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN; i, count: INTEGER
+			find_results: XT_COMMAND_OUTPUT_FILE
 		do
 			create find_results.make_with_output (substitute (Find_template, << dir_path.out, wild_card >>))
 			if find_results.has_output then

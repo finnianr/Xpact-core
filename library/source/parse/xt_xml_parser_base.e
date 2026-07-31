@@ -443,7 +443,7 @@ feature {NONE} -- Processor dispatch
 							on_comment (buf, index + 4, tok_end - 4, attributes)
 
 						when Tok_pi then
-							on_processing_instruction (buf, attributes)
+							on_processing_instruction (buf, index + 2, tok_end - 4, attributes)
 							attributes.wipe_out
 
 						when Tok_invalid then
@@ -527,7 +527,7 @@ feature {NONE} -- Processor dispatch
 							on_comment (buf, index + 4, tok_end - 4, attributes)
 
 						when Tok_pi then
-							on_processing_instruction (buf, attributes)
+							on_processing_instruction (buf, index + 2, tok_end - 3, attributes)
 							attributes.wipe_out
 
 						when Tok_entity_ref then
@@ -740,7 +740,7 @@ feature {NONE} -- Deferred
 		deferred
 		end
 
-	on_processing_instruction (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		deferred
 		end
 

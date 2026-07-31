@@ -67,9 +67,13 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_base_processing_instruction (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_base_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
 		do
-			on_processing_instruction (attributes.first_name (buf), attributes.first_value (buf))
+			if attributes.is_empty then
+				on_processing_instruction (new_substring (buf, start_index, end_index), Empty_string)
+			else
+				on_processing_instruction (attributes.first_name (buf), attributes.first_value (buf))
+			end
 		end
 
 	on_base_tag_end (name: STRING)

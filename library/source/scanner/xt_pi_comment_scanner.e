@@ -260,14 +260,15 @@ feature {NONE} -- PI helpers
 			-- Tok_pi otherwise, or 0 if target is a case variation of "xml"
 			-- (forbidden by XML spec: "<?XML" etc. are reserved).
 		do
-			if end_index - start_index = character_count (3) then
-				if buf [start_index] = 'x'
-					and then buf [start_index + 1] = 'm' and then buf [start_index + 2] = 'l'
-				then
-					Result := Tok_xml_decl
-
-				elseif same_caseless_characters (buf, start_index, start_index + 2, Xml_lower) then
-					Result := 0 -- reserved; caller treats as invalid
+			if end_index - start_index = 3 then
+				inspect buf [start_index] when 'x' then
+					if same_characters (buf, start_index, start_index + 2, Xml_lower) then
+						Result := Tok_xml_decl
+					elseif same_caseless_characters (buf, start_index, start_index + 2, Xml_lower) then
+						Result := 0 -- reserved; caller treats as invalid
+					else
+						Result := Tok_pi
+					end
 				else
 					Result := Tok_pi
 				end
