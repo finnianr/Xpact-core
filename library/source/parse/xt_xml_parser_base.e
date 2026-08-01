@@ -300,6 +300,8 @@ feature {NONE} -- Processor dispatch
 			ptr_at_start: buffer_index = start_index
 		local
 			err, have_now, had_before, available: INTEGER; enough, done: BOOLEAN
+			section: like section_flags; context: like element_context; s: like scanner
+			names: like name_cache; attributes: like attribute_intervals; buf: like buffer
 		do
 			have_now := end_index - start_index
 
@@ -319,12 +321,12 @@ feature {NONE} -- Processor dispatch
 				enough := True
 			end
 
-			if enough and then attached buffer as buf and then attached attribute_intervals as attributes
-				and then attached scanner as s and then attached name_cache as names
-				and then attached element_context as context and then attached section_flags as section
-			then
+			if enough then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
+				section := section_flags; context := element_context; s := scanner; names := name_cache
+				attributes := attribute_intervals; buf := buffer
+
 				from done := False until done loop
 					err := process_content (buf, buffer_index, end_index, attributes, s, s.byte_type_table, names, context, section)
 
@@ -535,7 +537,7 @@ feature {NONE} -- Processor dispatch
 							code := s.predefined_entity_code (buf, lower, upper)
 							inspect code when -1 then
 								if attached entity_cache.item (buf, lower, upper) as entity_name
-									and then attached entity_table.item (entity_name) as entity_value
+									and then attached entity_table.item (entity_name, False) as entity_value
 								then
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
@@ -647,7 +649,7 @@ feature {NONE} -- Event handlers
 								attribute_value_defaults_table.extend (default_values_list, declaration_parts_list.first)
 							end
 							default_values_list.extend (declaration_parts_list [2])
-							default_values_list.extend (s.new_substring (buf, start_index, end_index))
+							default_values_list.extend (s.new_attribute_value (buf, start_index, end_index, s.cr_lf_tab_found))
 						end
 					when Tok_pound_name then
 						declaration_parts_list.extend (names.item (buf, start_index, end_index))
@@ -665,6 +667,8 @@ feature {NONE} -- Event handlers
 		end
 
 	on_entity_declaration_part (buf: like buffer; start_index, end_index: INTEGER; s: like scanner)
+		local
+			abnormal_string: XT_ABNORMAL_STRING
 		do
 			inspect declaration_parts_list.count
 				when 0 then
@@ -673,7 +677,12 @@ feature {NONE} -- Event handlers
 					if s.same_characters (buf, start_index, end_index, SYSTEM) then
 						declaration_parts_list.extend (SYSTEM)
 					else
-						entity_table.put (s.new_substring (buf, start_index, end_index), declaration_parts_list.first)
+						if s.cr_found or s.cr_lf_tab_found then
+							create abnormal_string.make (buf, start_index, end_index, s)
+							entity_table.put (abnormal_string, declaration_parts_list.first)
+						else
+							entity_table.put (s.new_substring (buf, start_index, end_index), declaration_parts_list.first)
+						end
 					end
 				when 2 then
 					if declaration_parts_list [2] = SYSTEM then

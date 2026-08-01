@@ -18,7 +18,7 @@ note
 deferred class XT_LITERAL_SCANNER
 
 inherit
-	XT_SCANNER_HELPERS
+	XT_SCANNER_BASE
 	XT_REF_SCANNER
 
 feature -- Literal content tokenization
@@ -142,7 +142,7 @@ feature -- Literal content tokenization
 							if index = start then
 								index := index + 1
 								if index >= end_index then
-									Result := Tok_trailing_cr
+									Result := Tok_trailing_CR
 								else
 									inspect bt_table [buf [index].code] when BT_LF then
 										index := index + 1

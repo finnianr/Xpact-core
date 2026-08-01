@@ -36,6 +36,8 @@ feature -- Status query
 			Result := character_swap_area.count >= count
 		end
 
+	cr_lf_tab_found: BOOLEAN
+
 feature -- Access
 
 	first_name (buffer: SPECIAL [CHARACTER_8]): STRING
@@ -131,6 +133,13 @@ feature -- Status change
 			is_null_terminated := False
 		ensure
 			character_swap_area_in_default_state: character_swap_area.filled_with ('%U', 0, count - 1)
+		end
+
+	report_cr_lf_tab
+		-- report the presence of CR LF OR tab characters in next attribute name/value pair
+		-- to be transfered (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
+		do
+			cr_lf_tab_found := True
 		end
 
 feature -- Measurement
@@ -277,14 +286,14 @@ feature -- Basic operations
 			all_valid: all_valid
 		end
 
-	transfer (additions: like area; entity_list: ARRAYED_LIST [STRING])
+	transfer (buffer: SPECIAL [CHARACTER_8]; additions: like area; entity_list: ARRAYED_LIST [STRING])
 		-- transfer contents of `additions' into `area' and contents of `entity_list'
 		-- into `entity_refs_area'
 		require
 			full_buffer: additions.count = Group_size
 			valid_intervals: valid_intervals (additions)
 		local
-			i, new_capacity: INTEGER; a: like area_v2
+			i, new_capacity, start_index, end_index, CR_count: INTEGER; a: like area_v2
 		do
 			a := area_v2
 			i := a.count + additions.count
@@ -301,6 +310,12 @@ feature -- Basic operations
 				overflow_buffer_area := overflow_buffer_area.aliased_resized_area (new_capacity // 2)
 				entity_refs_area := entity_refs_area.aliased_resized_area (new_capacity // Group_size)
 				character_swap_area := character_swap_area.aliased_resized_area_with_default ('%U', new_capacity // Group_size)
+			end
+			if cr_lf_tab_found then
+			-- XML §3.3.3 attribute-value normalisation: replace %N %T with space, remove %R
+				start_index := additions [2]; end_index := additions [3] + 1
+				CR_count := left_shift_normalization (buffer, start_index, end_index, '"', True)
+				cr_lf_tab_found := False
 			end
 			a.copy_data (additions, 0, index_count, additions.count)
 			if attached overflow_buffer_area as overflow then
@@ -322,9 +337,10 @@ feature -- Basic operations
 			end
 			additions.wipe_out; entity_list.wipe_out
 		ensure
+			all_valid: all_valid
 			empty_additions_buffer: additions.count = 0
 			empty_entity_list_buffer: entity_list.count = 0
-			all_valid: all_valid
+			cr_lf_tab_reset: not cr_lf_tab_found
 		end
 
 feature -- Debug helpers

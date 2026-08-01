@@ -17,18 +17,18 @@ note
 deferred class XT_PI_COMMENT_SCANNER
 
 inherit
-	XT_SCANNER_HELPERS
+	XT_SCANNER_BASE
 
 	XT_STRING_CONSTANTS
 
 feature {NONE} -- PI and comment scanning
 
-	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 			-- Scan comment after '<!-'.  Returns Tok_comment or error.
 		require
 			valid_range: start_index <= end_index
 		local
-			index, CR_count, CR_index: INTEGER; done: BOOLEAN
+			index, CR_count: INTEGER; done, has_CR: BOOLEAN
 		do
 			index := start_index
 			if index >= end_index then
@@ -37,7 +37,7 @@ feature {NONE} -- PI and comment scanning
 				next_token_index := index
 				Result := Tok_invalid
 
-			elseif attached byte_type_table as bt_table then
+			else
 				index := index + 1
 				from until index >= end_index or done loop
 					inspect bt_table [buf [index].code]
@@ -49,17 +49,19 @@ feature {NONE} -- PI and comment scanning
 								index := index + 1
 								if index >= end_index then
 									Result := Tok_partial; done := True
-								elseif buf [index] = '>' then
-									inspect CR_count when 0 then
-										do_nothing
-									else
-										prune_carriage_returns (buf, CR_index, index - 2, CR_count, '-')
-										index := index - CR_count * 1
-									end
-									next_token_index := index + 1
-									Result := Tok_comment; done := True
+
 								else
-									next_token_index := index; Result := Tok_invalid; done := True
+									inspect buf [index] when '>' then
+										if has_CR then
+											CR_count := left_shift_normalization (buf, start_index + 1, index, '>', False)
+											next_token_index := index + 1 - CR_count
+										else
+											next_token_index := index + 1
+										end
+										Result := Tok_comment; done := True
+									else
+										next_token_index := index; Result := Tok_invalid; done := True
+									end
 								end
 							end
 						when BT_non_xml, BT_malform, BT_continuation_byte then
@@ -90,11 +92,7 @@ feature {NONE} -- PI and comment scanning
 								index := index + 4
 							end
 						when BT_CR then
-						-- count CR characters so we can do left shift with prune
-							inspect CR_count when 0 then
-								CR_index := index
-							else end
-							CR_count := CR_count + 1
+							has_CR := True
 							index := index + 1
 
 					else
@@ -152,16 +150,15 @@ feature {NONE} -- PI and comment scanning
 								if token = 0 then
 									next_token_index := index; Result := Tok_invalid; done := True
 								else
-									index := index + 1
 									inspect token when Tok_pi then
 										lower_upper.extend (start_index)
-										lower_upper.extend (index - 2)
-										Result := scan_pi_content (buf, bt_table, lower_upper, index, end_index, token); done := True
+										lower_upper.extend (index - 1)
+										Result := scan_pi_content (buf, index + 1, end_index, token, bt_table, lower_upper); done := True
 										inspect lower_upper.count when 4 then
-											attribute_intervals.transfer (lower_upper, scanned_entity_buffer)
+											attribute_intervals.transfer (buf, lower_upper, scanned_entity_buffer)
 										else end
 									else
-										Result := scan_pi_content (buf, bt_table, lower_upper, index, end_index, token); done := True
+										Result := scan_pi_content (buf, index + 1, end_index, token, bt_table, lower_upper); done := True
 									end
 								end
 							when BT_question then
@@ -193,7 +190,7 @@ feature {NONE} -- PI and comment scanning
 			else end
 		end
 
-	scan_decl (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_decl (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 			-- Scan declaration keyword after '<!'.  Returns Tok_decl_open or error.
 		require start_index <= end_index
 		local
@@ -203,10 +200,10 @@ feature {NONE} -- PI and comment scanning
 			if index >= end_index then
 				Result := Tok_partial
 
-			elseif attached byte_type_table as bt_table then
+			else
 				inspect bt_table [buf [index].code]
 					when BT_minus then
-						Result := scan_comment (buf, index + 1, end_index)
+						Result := scan_comment (buf, index + 1, end_index, bt_table)
 
 					when BT_left_square_bracket then
 						next_token_index := index + 1
@@ -278,14 +275,22 @@ feature {NONE} -- PI helpers
 		end
 
 	scan_pi_content (
-		buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; lower_upper: SPECIAL [INTEGER]
-		start_index, end_index, token: INTEGER
+		buf: SPECIAL [CHARACTER]; a_start_index, end_index, token: INTEGER
+		bt_table: SPECIAL [INTEGER]; lower_upper: SPECIAL [INTEGER]
 	): INTEGER
 			-- Scan PI content until '?>'.  Returns token (Tok_pi or Tok_xml_decl).
 		local
-			index: INTEGER; done: BOOLEAN
+			index, start_index: INTEGER; done, passed_leading: BOOLEAN
 		do
-			index := start_index
+			from index := a_start_index until index > end_index or passed_leading loop
+				inspect buf [index]
+					when '%T', '%N', '%/32/' then
+						index := index + 1
+				else
+					passed_leading := True
+				end
+			end
+			start_index := index
 			from until index >= end_index or done loop
 				inspect bt_table [buf [index].code]
 					when BT_non_xml, BT_malform, BT_continuation_byte then

@@ -25,7 +25,7 @@ note
 deferred class XT_REF_SCANNER
 
 inherit
-	XT_SCANNER_HELPERS
+	XT_SCANNER_BASE
 
 feature {NONE} -- Reference scanning
 

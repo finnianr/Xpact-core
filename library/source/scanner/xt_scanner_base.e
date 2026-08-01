@@ -26,7 +26,7 @@ note
 	date: "2026-06-20 20:20:51 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XT_SCANNER_HELPERS
+deferred class XT_SCANNER_BASE
 
 inherit
 	XT_BYTE_TYPE_CONSTANTS; XT_TOKEN_CONSTANTS; XT_STRING_CONSTANTS
@@ -35,6 +35,12 @@ inherit
 		export
 			{XT_XML_PARSER_BASE} all
 		end
+
+feature -- Status report
+
+	cr_lf_tab_found: BOOLEAN
+
+	cr_found: BOOLEAN
 
 feature -- Multi-byte name-character checks
 
@@ -115,30 +121,6 @@ feature {NONE} -- Implementation
 			-- end_index - index >= count * char_width  (HAS_CHARS macro)
 		do
 			Result := end_index - index >= count
-		end
-
-	prune_carriage_returns (buf: SPECIAL [CHARACTER]; CR_index, end_index, CR_count: INTEGER; terminator: CHARACTER)
-		-- prune %R in section of `buf' by doing a left shift and filling in with spaces at the end
-		require
-			valid_cr_index: buf [CR_index] = '%R'
-			valid_quote_index: buf [end_index] = terminator or else buf [end_index] = '%''
-		local
-			i, j: INTEGER
-		do
-			from i := CR_index; j := CR_index until i > end_index loop
-				inspect buf [i] when '%R' then
-					i := i + 1
-				else
-					buf [j] := buf [i]
-					j := j + 1
-					i := i + 1
-				end
-			end
-		-- paint over remaining characters with spaces
-			from until j > end_index loop
-				buf [j] := ' '
-				j := j + 1
-			end
 		end
 
 feature {NONE} -- Internal attributes

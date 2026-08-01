@@ -48,7 +48,9 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	item (key: STRING): detachable STRING
+	item (key: STRING; as_attribute_value: BOOLEAN): detachable STRING
+		-- if `as_attribute_value' is `True' normalize Result for attribute values
+		--  (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
 		require
 			valid_length: key.count >= 3
 		local
@@ -67,7 +69,14 @@ feature -- Access
 					end
 			else
 				if attached table_item (key) as value then
-					Result := value
+					if value.same_type (Empty_string) then
+						Result := value
+
+					elseif as_attribute_value and then attached {XT_ABNORMAL_STRING} value as abnormal then
+						Result := abnormal.to_attribute
+					else
+						Result := value
+					end
 				end
 			end
 		end
@@ -82,7 +91,7 @@ feature -- Access
 				entity_index := value.substring_index (entity, start_index)
 				if entity_index > 0 then
 					Result.append_substring (value, start_index, entity_index - 1)
-					if attached item (entity) as entity_value then
+					if attached item (entity, True) as entity_value then
 						Result.append (entity_value)
 					else
 						Result.append (entity)
@@ -128,7 +137,7 @@ feature -- Basic operations
 					elseif attached entity_list.item as str
 						and then same_characters (buffer, amp_index, amp_index + str.count - 1, str)
 					then
-						if attached item (entity_list.item) as entity_value then
+						if attached item (entity_list.item, True) as entity_value then
 							checksum.add_string (entity_value)
 						end
 						start_index := amp_index + entity_list.item.count

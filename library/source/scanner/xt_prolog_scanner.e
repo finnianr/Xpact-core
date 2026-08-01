@@ -27,7 +27,7 @@ note
 deferred class XT_PROLOG_SCANNER
 
 inherit
-	XT_SCANNER_HELPERS
+	XT_SCANNER_BASE
 	XT_REF_SCANNER
 	XT_PI_COMMENT_SCANNER
 
@@ -46,9 +46,11 @@ feature -- Prolog tokenization
 			else
 				inspect bt_table [buf [index].code]
 					when BT_quote then
-						Result := scan_lit (BT_quote, buf, index + 1, end_index)
+						Result := scan_lit (buf, index + 1, end_index, BT_quote)
+
 					when BT_apostrophe then
-						Result := scan_lit (BT_apostrophe, buf, index + 1, end_index)
+						Result := scan_lit (buf, index + 1, end_index, BT_apostrophe)
+
 					when BT_lt then
 						index := index + 1
 						if index >= end_index then
@@ -56,7 +58,7 @@ feature -- Prolog tokenization
 						else
 							inspect bt_table [buf [index].code]
 								when BT_exclamation then
-									Result := scan_decl (buf, index + 1, end_index)
+									Result := scan_decl (buf, index + 1, end_index, bt_table)
 								when BT_question then
 									Result := scan_pi (buf, bt_table, index + 1, end_index)
 								when BT_name_start, BT_hex_digit, BT_non_ascii, BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
@@ -239,16 +241,16 @@ feature {NONE} -- Prolog sub-scanners
 			end
 		end
 
-	scan_lit (a_open: INTEGER; buf: SPECIAL [CHARACTER];
-	           start_index, end_index: INTEGER): INTEGER
-			-- Scan quoted literal (attribute or entity value delimited by
-			-- a_open quote type BT_quote or BT_apostrophe).
-			-- Returns Tok_literal or negative (partial) or Tok_invalid.
-		require start_index <= end_index
+	scan_lit (buf: SPECIAL [CHARACTER]; start_index, end_index, a_open: INTEGER): INTEGER
+		-- Scan quoted literal (attribute or entity value delimited by
+		-- a_open quote type BT_quote or BT_apostrophe).
+		-- Returns Tok_literal or negative (partial) or Tok_invalid.
+		require
+			valid_range: start_index <= end_index
 		local
-			index, t, CR_index, CR_count: INTEGER; done: BOOLEAN
+			index, t: INTEGER; done: BOOLEAN
 		do
-			index := start_index
+			index := start_index; cr_lf_tab_found := False
 			if attached byte_type_table as bt_table then
 				from until index >= end_index or done loop
 					t := bt_table [buf [index].code]
@@ -271,28 +273,15 @@ feature {NONE} -- Prolog sub-scanners
 							else
 								index := index + 3
 							end
-						when BT_CR then
-						-- count CR characters so we can do left shift with prune
-							inspect CR_count when 0 then
-								CR_index := index
-							else end
-							CR_count := CR_count + 1
-							index := index + 1
-
-						when BT_LF then
+						when BT_LF, BT_CR then
+							cr_lf_tab_found := True
 							index := index + 1
 
 						when BT_quote, BT_apostrophe then
-							inspect CR_count when 0 then
-								do_nothing
-							else
-								prune_carriage_returns (buf, CR_index, index, CR_count, '"')
-								index := index - CR_count * 1
-							end
 							index := index + 1
 							if t = a_open then
 								if index >= end_index then
-									Result := -Tok_literal; done := True
+									Result := Tok_literal.opposite; done := True
 								else
 									next_token_index := index
 									inspect bt_table [buf [index].code]

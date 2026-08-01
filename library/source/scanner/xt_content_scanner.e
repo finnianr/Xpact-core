@@ -39,7 +39,7 @@ feature -- Content tokenization
 			else
 				inspect bt_table [buf [index].code]
 					when BT_lt then
-						Result := scan_lt (buf, bt_table, index + 1, a_end_adj)
+						Result := scan_lt (buf, index + 1, a_end_adj, bt_table)
 					when BT_ampersand then
 						Result := scan_ref (buf, entity_buffer, Tok_data_chars, index + 1, a_end_adj)
 					when BT_CR then

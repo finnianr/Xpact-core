@@ -63,6 +63,19 @@ feature {NONE} -- Access
 			end
 		end
 
+	frozen new_attribute_value (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; has_cr_lf_tab: BOOLEAN): STRING_8
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		require
+			has_quote_at_upper_plus_one: area.valid_index (upper + 1) and then area [upper + 1] = '"'
+		do
+			if has_cr_lf_tab then
+				Result := area_substring (area, lower, upper + 1, True) -- include quote
+				Result.remove_tail (left_shift_normalization (Result.area, 0, Result.count - 1, '"', True) + 1)
+			else
+				Result := area_substring (area, lower, upper, True)
+			end
+		end
+
 	frozen new_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_8
 		-- `lower .. upper' substring of `area' placed in `output_area'
 		do
@@ -329,6 +342,44 @@ feature {NONE} -- Basic operations
 			from until index_stack.is_empty loop
 				Result.replace_substring (insertions [index_stack.count], index_stack.item, index_stack.item)
 				index_stack.remove
+			end
+		end
+
+	left_shift_normalization (
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; terminator: CHARACTER
+		replace_T_or_N: BOOLEAN
+	): INTEGER
+		-- prune %R in section of `buf' by doing a left shift and filling in with spaces at the end
+		-- if `replace_T_or_N' is True then %T and %N are replaced with a space
+		-- `Result' is number of %R found (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
+		require
+			valid_end_index:  buf.valid_index (end_index)
+			valid_quote_index: buf [end_index] = terminator or else buf [end_index] = '%''
+		local
+			i, j: INTEGER
+		do
+			from i := start_index; j := start_index until i > end_index loop
+				inspect buf [i]
+					when '%R' then
+						Result := Result + 1
+						i := i + 1
+					when '%T', '%N' then
+						if replace_T_or_N then
+							buf [j] := ' '
+						else
+							buf [j] := buf [i]
+						end
+						j := j + 1; i := i + 1
+
+				else
+					buf [j] := buf [i]
+					j := j + 1; i := i + 1
+				end
+			end
+		-- paint over remaining characters with spaces
+			from until j > end_index loop
+				buf [j] := ' '
+				j := j + 1
 			end
 		end
 
