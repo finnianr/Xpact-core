@@ -351,10 +351,11 @@ feature {NONE} -- Basic operations
 		require
 			enough_place_holders: template.occurrences ('%S') = insertions.count
 		local
-			index, last_index: INTEGER; index_stack: ARRAYED_STACK [INTEGER]
+			index, last_index: INTEGER; index_stack: like Shared_index_stack
 		do
 			Result := template.twin
-			create index_stack.make (template.occurrences ('%S'))
+			index_stack := Shared_index_stack
+
 			last_index := template.last_index_of ('%S', template.count)
 			from until index = last_index loop
 				index := Result.index_of ('%S', index + 1)
@@ -366,6 +367,8 @@ feature {NONE} -- Basic operations
 				Result.replace_substring (insertions [index_stack.count], index_stack.item, index_stack.item)
 				index_stack.remove
 			end
+		ensure
+			empty_stack: Shared_index_stack.is_empty
 		end
 
 	left_shift_normalization (
@@ -418,6 +421,11 @@ feature {NONE} -- Constants
 		-- used to accumulate text for output
 		once
 			create Result.make_empty
+		end
+
+	Shared_index_stack: ARRAYED_STACK [INTEGER]
+		once
+			create Result.make (10)
 		end
 
 	Output_buffer: STRING_8

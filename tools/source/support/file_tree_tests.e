@@ -67,8 +67,8 @@ feature -- Basic operations
 				do_tests (find_results)
 				put_results (False, pass_count, fail_count)
 			end
-			if not logs_retained and then attached log.path.parent as parent then
-				Environment.remove_directory (parent, False)
+			if not logs_retained and then attached Environment as env then
+				env.remove_directory (env.temporary_path (env.command_name), True)
 			end
 		end
 
@@ -214,7 +214,7 @@ feature {NONE} -- Implementation
 	make_log_directory
 		do
 			if attached log.path.parent as parent then
-				Environment.make_directory (parent, False)
+				Environment.make_directory (parent, True)
 			end
 		end
 
@@ -267,9 +267,9 @@ feature {NONE} -- Factory
 
 	new_base_log_path: PATH
 		do
-			Result := Environment.temporary_path (Environment.command_name.to_string_8 + "-logs")
+			Result := Environment.temporary_path (Environment.command_name)
 			if attached dir_path.entry as entry then
-				Result := Result.extended (entry.name)
+				Result := Result.extended (entry.name + "-logs")
 			end
 		end
 

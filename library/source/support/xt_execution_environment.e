@@ -20,14 +20,16 @@ feature -- Access
 	command_name: IMMUTABLE_STRING_32
 		local
 			index_separator, count: INTEGER; separator: CHARACTER_32
+			name: IMMUTABLE_STRING_32
 		do
 			separator := Operating_environment.Directory_separator
-			count := Arguments.Command_name.count
-			index_separator := Arguments.Command_name.last_index_of (separator, count)
+			name := Arguments.Command_name
+			count := name.count
+			index_separator := name.last_index_of (separator, count)
 			if index_separator > 0 then
-				Result := Arguments.Command_name.shared_substring (index_separator + 1, count)
+				Result := name.shared_substring (index_separator + 1, count)
 			else
-				create Result.make_empty
+				Result := name
 			end
 		end
 
