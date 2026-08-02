@@ -654,7 +654,7 @@ feature {NONE} -- Event handlers
 								attribute_value_defaults_table.extend (default_values_list, declaration_parts_list.first)
 							end
 							default_values_list.extend (declaration_parts_list [2])
-							default_values_list.extend (s.new_attribute_value (buf, start_index, end_index, s.cr_lf_tab_found))
+							default_values_list.extend (s.new_attribute_value (buf, start_index, end_index, s.newline_or_tab_found))
 						end
 					when Tok_pound_name then
 						declaration_parts_list.extend (names.item (buf, start_index, end_index))
@@ -682,7 +682,7 @@ feature {NONE} -- Event handlers
 					if s.same_characters (buf, start_index, end_index, SYSTEM) then
 						declaration_parts_list.extend (SYSTEM)
 					else
-						if s.cr_found or s.cr_lf_tab_found then
+						if s.newline_or_tab_found then
 							create abnormal_string.make (buf, start_index, end_index, s)
 							entity_table.put (abnormal_string, declaration_parts_list.first)
 						else

@@ -22,11 +22,15 @@ Directory: $HOME/.es
 *.xml			Passed: 63 Failed: 0
 
 Directory: /media/finnian/Windows/Windows/System32
-*.xml			Passed: 872 Failed: 0
+*.xml			Passed: 871 Failed: 0
+*.man			Passed: 260 Failed: 0
+*.mof			Passed: 384 Failed: 0
 
 Directory: /media/finnian/Windows/Windows/WinSxS
 *.manifest 	Passed: 37741 Failed: 0
 
+Directory: /media/finnian/Windows/Windows/servicing/Packages
+*.mum Passed: 5800 Failed: 0
 
 Directory: /media/finnian/Documents
 *.ods 		Passed: 975 Failed: 0

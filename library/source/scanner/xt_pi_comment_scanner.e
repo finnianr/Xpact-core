@@ -28,7 +28,7 @@ feature {NONE} -- PI and comment scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, CR_count: INTEGER; done, has_CR: BOOLEAN
+			index: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			if index >= end_index then
@@ -52,12 +52,7 @@ feature {NONE} -- PI and comment scanning
 
 								else
 									inspect buf [index] when '>' then
-										if has_CR then
-											CR_count := left_shift_normalization (buf, start_index + 1, index, '>', False)
-											next_token_index := index + 1 - CR_count
-										else
-											next_token_index := index + 1
-										end
+										next_token_index := index + 1
 										Result := Tok_comment; done := True
 									else
 										next_token_index := index; Result := Tok_invalid; done := True
@@ -92,7 +87,6 @@ feature {NONE} -- PI and comment scanning
 								index := index + 4
 							end
 						when BT_CR then
-							has_CR := True
 							index := index + 1
 
 					else

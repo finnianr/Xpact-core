@@ -47,9 +47,9 @@ feature -- Content tokenization
 						if index >= a_end_adj then
 							Result := Tok_trailing_cr
 						else
-							if bt_table [buf [index].code] = BT_LF then
+							inspect buf [index] when '%N' then
 								index := index + 1
-							end
+							else end
 							next_token_index := index
 							Result := Tok_data_newline
 						end
@@ -152,9 +152,9 @@ feature -- Content tokenization
 						if index >= end_index then
 							Result := Tok_partial
 						else
-							if bt_table [buf [index].code] = BT_LF then
+							inspect buf [index] when '%N' then
 								index := index + 1
-							end
+							else end
 							next_token_index := index
 							Result := Tok_data_newline
 						end

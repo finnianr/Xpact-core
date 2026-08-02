@@ -28,21 +28,24 @@ feature -- Status query
 
 	is_utf_8: BOOLEAN = True
 
-
-
 feature -- Basic operations
 
 	copy_as_utf_8 (dest: SPECIAL [CHARACTER]; dest_index, n: INTEGER)
 		local
-			ptr: POINTER; i, j, i_final: INTEGER
+			ptr: POINTER; i, j, i_final: INTEGER; c: CHARACTER
 		do
-			utf_8_copied_count := count.min (n)
-			ptr := area; i_final := utf_8_copied_count - 1
+			ptr := area; i_final := count.min (n) - 1
 			from i := 0; j := dest_index until i > i_final loop
-				dest [j] := read_character_8 (ptr, i)
+				c := read_character_8 (ptr, i)
+				inspect c when '%R' then
+					do_nothing
+				else
+					dest [j] := c
+					j := j + 1
+				end
 				i := i + 1
-				j := j + 1
 			end
 			last_index := i
+			utf_8_copied_count := j - dest_index
 		end
 end

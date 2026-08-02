@@ -250,7 +250,7 @@ feature {NONE} -- Prolog sub-scanners
 		local
 			index, t: INTEGER; done: BOOLEAN
 		do
-			index := start_index; cr_lf_tab_found := False
+			index := start_index; newline_or_tab_found := False
 			if attached byte_type_table as bt_table then
 				from until index >= end_index or done loop
 					t := bt_table [buf [index].code]
@@ -274,7 +274,7 @@ feature {NONE} -- Prolog sub-scanners
 								index := index + 3
 							end
 						when BT_LF, BT_CR then
-							cr_lf_tab_found := True
+							newline_or_tab_found := True
 							index := index + 1
 
 						when BT_quote, BT_apostrophe then

@@ -293,7 +293,7 @@ feature -- Basic operations
 			full_buffer: additions.count = Group_size
 			valid_intervals: valid_intervals (additions)
 		local
-			i, new_capacity, start_index, end_index, CR_count: INTEGER; a: like area_v2
+			i, new_capacity, start_index, end_index: INTEGER; a: like area_v2
 		do
 			a := area_v2
 			i := a.count + additions.count
@@ -312,9 +312,9 @@ feature -- Basic operations
 				character_swap_area := character_swap_area.aliased_resized_area_with_default ('%U', new_capacity // Group_size)
 			end
 			if cr_lf_tab_found then
-			-- XML §3.3.3 attribute-value normalisation: replace %N %T with space, remove %R
+			-- XML §3.3.3 attribute-value normalisation: replace %N %T with space
 				start_index := additions [2]; end_index := additions [3] + 1
-				CR_count := left_shift_normalization (buffer, start_index, end_index, '"', True)
+				normalize_whitespace (buffer, start_index, end_index)
 				cr_lf_tab_found := False
 			end
 			a.copy_data (additions, 0, index_count, additions.count)

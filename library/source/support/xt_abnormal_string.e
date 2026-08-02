@@ -33,7 +33,7 @@ feature {NONE} -- Initialization
 			s: XT_STRING_ROUTINES
 		do
 			make_sized (end_index - start_index + 1)
-			cr_lf_tab_found := scanner.cr_lf_tab_found; cr_found := scanner.cr_found
+			newline_or_tab_found := scanner.newline_or_tab_found
 			s.append_area (Current, buffer, start_index, end_index)
 		end
 
@@ -51,16 +51,14 @@ feature -- Conversion
 				create Result.make (count + 1)
 				Result.append (Current)
 				Result.extend ('"')
-				Result.remove_tail (s.left_shift_normalization (Result.area, 0, Result.count - 1, '"', True) + 1)
+				s.normalize_whitespace (Result.area, 0, Result.count - 2)
 				internal_attribute := Result
 			end
 		end
 
 feature -- Status report
 
-	cr_lf_tab_found: BOOLEAN
-
-	cr_found: BOOLEAN
+	newline_or_tab_found: BOOLEAN
 
 feature {NONE} -- Implementation
 
