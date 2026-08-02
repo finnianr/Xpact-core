@@ -43,7 +43,7 @@ feature -- Basic operations
 			create argument_list.make (argument_array.count)
 			across argument_array as arg loop
 				if attached {PATH} arg as path then
-					argument_list.extend (escaped (path))
+					argument_list.extend (unix_escaped (path))
 				elseif attached {STRING} arg as str then
 					argument_list.extend (str)
 				else
@@ -79,20 +79,18 @@ feature -- Basic operations
 			end
 		end
 
-	remove_file (file_path: PATH)
-		do
-
-		end
-
 feature -- Access
 
-	escaped (a_path: PATH): STRING
+	unix_escaped (a_path: PATH): STRING
+		-- path escaped for Unix bash shell
 		local
 			path: STRING
 		do
 			path := a_path.utf_8_name
-			if (path.has (' ') or else across Reserved_path_chars as c some path.has (c) end)
-				and then attached Reserved_path_chars as reserved
+			if attached Reserved_path_chars as reserved and then
+				across path as c some
+					(not c.is_alpha_numeric implies c = ' ' or else reserved.has (c))
+				end
 			then
 				create Result.make ((path.count * 1.3).ceiling)
 				across path as c loop
