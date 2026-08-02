@@ -54,7 +54,7 @@ feature -- Initialization
 
 feature -- Access
 
-	chunk: EL_UTF_8_POINTER_CODEC
+	chunk: EL_LATIN_1_C_STRING
 		-- incremental chunk
 
 	parse_status: INTEGER
@@ -66,7 +66,7 @@ feature -- Eleement change
 
 	set_chunk_size (chunk_size: INTEGER)
 		do
-			create {EL_UTF_8_C_STRING} chunk.make_filled ('%U', chunk_size)
+			create chunk.make_filled ('%U', chunk_size)
 		end
 
 feature -- Status report
@@ -92,29 +92,27 @@ feature -- Basic operations
 
 	parse
 		require
-			readable: is_readable
+			readable: file_readable
 		local
 			byte_count: INTEGER; final_chunk: BOOLEAN
 		do
-			if is_readable then
-				if not gc_enabled then
-					Memory.collection_off
+			if not gc_enabled then
+				Memory.collection_off
+			end
+			from parse_status := Status_ok until final_chunk or parse_status /= Status_OK loop
+				read_to_managed_pointer (chunk, 0, chunk.count); byte_count := bytes_read
+				if off or else (byte_count = chunk.count and then position = count) then
+					final_chunk := True
 				end
-				from open_read; parse_status := Status_ok until final_chunk or parse_status /= Status_OK loop
-					read_to_managed_pointer (chunk, 0, chunk.count); byte_count := bytes_read
-					if off or else (byte_count = chunk.count and then position = count) then
-						final_chunk := True
-					end
-					if byte_count > 0 then
-					-- This aligns with C examples which excludes final newline
-					-- but Claude thinks this is a parsing issue, so this is just a workaround.
-						parse_status := parser.parse (chunk, 0, byte_count, final_chunk)
-					end
+				if byte_count > 0 then
+				-- This aligns with C examples which excludes final newline
+				-- but Claude thinks this is a parsing issue, so this is just a workaround.
+					parse_status := parser.parse (chunk, 0, byte_count, final_chunk)
 				end
-				if not gc_enabled then
-					Memory.collection_on
-					Memory.full_collect
-				end
+			end
+			if not gc_enabled then
+				Memory.collection_on
+				Memory.full_collect
 			end
 			close
 		end

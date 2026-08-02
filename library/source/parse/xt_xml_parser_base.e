@@ -96,8 +96,13 @@ feature -- Basic operations
 				file.set_chunk_size (chunk_size)
 			end
 			if file.is_readable then
-				file.parse
-				status := file.parse_status
+				file.open_read
+				if file.file_readable then
+					file.parse
+					status := file.parse_status
+				else
+					status := Status_unreadable
+				end
 			else
 				status := Status_unreadable
 			end

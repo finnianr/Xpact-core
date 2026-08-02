@@ -3,7 +3,7 @@ note
 		${STRING_8} that has '%T', '%R' or '%N' characters that must be normalized for text or attribute values
 	]"
 
-	author: "Finnian Reilly`"
+	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
 	contact: "finnian at eiffel hyphen loop dot com"
 

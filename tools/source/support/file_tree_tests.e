@@ -22,6 +22,8 @@ inherit
 
 	XT_STRING_ROUTINES_I
 
+	XT_SHARED_EXECUTION_ENVIRONMENT
+
 create
 	make
 
@@ -31,40 +33,55 @@ feature {NONE} -- Initialization
 		require
 			latin_1_path: a_dir_path.name.is_valid_as_string_8
 		do
-			create wild_card.make_empty
 			create expat_error.make_empty
-			create log.make_with_name (generator.as_lower + ".log")
-			if attached a_dir_path.entry as entry and then attached entry.name.to_string_8 as last_step
+			if attached a_dir_path.entry as entry and then attached entry.name as last_step
 				and then last_step.starts_with ("*.")
 			then
-				wild_card := last_step
+				wild_card := last_step.to_string_8
 				dir_path := a_dir_path.parent
 			else
-				wild_card := "*.xml"
+				wild_card := Default_wild_card
 				dir_path := a_dir_path
 			end
+			make_log
+			create file.make_with_path (log.path)
 		end
+
+	make_log
+		do
+			create log.make_with_path (new_log_path)
+		end
+
+feature -- Access
+
+	fail_count: INTEGER
+
+	pass_count: INTEGER
 
 feature -- Basic operations
 
 	execute
-		local
-			find_results: XT_COMMAND_OUTPUT_FILE
 		do
-			create find_results.make_with_output (substitute (Find_template, << dir_path.out, wild_card >>))
-			if find_results.has_output then
+			make_log_directory
+			if attached new_find_results as find_results and then find_results.has_output then
 				do_tests (find_results)
+				put_results (False, pass_count, fail_count)
 			end
-			IO.put_new_line
-			IO.put_string ("Tested against eXpat"); IO.put_new_line
-			IO.put_string ("Passed: " + pass_count.out); IO.put_string (" Failed: " + fail_count.out)
-			IO.put_new_line
+			if not logs_retained and then attached log.path.parent as parent then
+				Environment.remove_directory (parent, False)
+			end
 		end
 
-	set_log (log_path: STRING)
+feature -- Status change
+
+	keep_logs
 		do
-			create log.make_with_name (log_path)
+			logs_retained := True
 		end
+
+feature -- Status report
+
+	logs_retained: BOOLEAN
 
 feature {NONE} -- Implementation
 
@@ -75,7 +92,7 @@ feature {NONE} -- Implementation
 			index: INTEGER
 		do
 			expat_checksum := 0
-			create output_file.make_with_output (substitute (Xml_crc_32, << type, file_path.out >>))
+			create output_file.make_with_output (Xml_crc_32, << type, file_path >>)
 			expat_return_code := output_file.return_code
 			if expat_return_code > 0 then
 				expat_error := output_file.error_lines.first
@@ -98,16 +115,15 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	data_type_pass_count (path: STRING): INTEGER
+	data_type_pass_count (file_path: PATH): INTEGER
 		-- count of data types that pass checksum comparison with eXpat
 		-- -1 if both Xpact and eXpat fail to parse invalid document
 		local
-			file_path: PATH; values_differ, both_fail: BOOLEAN; crc_32: CRC_32_GENERATOR
+			values_differ, both_fail: BOOLEAN; crc_32: CRC_32_GENERATOR
 			description: STRING
 		do
 			across Parse_data_types as data_type until values_differ or both_fail loop
 				create crc_32.make (data_type)
-				create file_path.make_from_string (path)
 				crc_32.parse_file (file_path, 0, True)
 				call_expat_xml_crc_32 (@ data_type.key, file_path)
 				if crc_32.status /= Status_ok and expat_return_code > 0 then
@@ -118,8 +134,7 @@ feature {NONE} -- Implementation
 					if crc_32.checksum.value = expat_checksum then
 						Result := Result + 1
 					else
-						log.put_string ("VALUES DIFFER: " + file_path.out)
-						log.put_new_line
+						put_log_values_differ (file_path)
 						log.put_string (
 							substitute (Checksum_comparison, << @ data_type.key, crc_32.checksum.value.out, expat_checksum.out >>)
 						)
@@ -152,20 +167,32 @@ feature {NONE} -- Implementation
 				else
 					i := i + 1
 					IO.put_integer (i); IO.put_string (". ")
-					if attached find_results.last_string as path then
-						IO.put_string (path)
-						count := data_type_pass_count (path)
-						if count = -1 or count = Parse_data_types.count then
-							IO.put_string (" OK")
-							if count = -1 then
-								IO.put_string (" (Both failed)")
-								IO.put_new_line
-								IO.put_string ("   "); IO.put_string (expat_error)
+					if attached find_results.last_path as file_path then
+						if attached file_path.name as name then
+							if name.has (' ') then
+								IO.put_character ('"')
 							end
-							pass_count := pass_count + 1
+							IO.put_string_32 (name)
+							if name.has (' ') then
+								IO.put_character ('"')
+							end
+						end
+						if has_content (file_path) then
+							count := data_type_pass_count (file_path)
+							if count = -1 or count = Parse_data_types.count then
+								IO.put_string (" OK")
+								if count = -1 then
+									IO.put_string (" (Both failed)")
+									IO.put_new_line
+									IO.put_string ("   "); IO.put_string (expat_error)
+								end
+								pass_count := pass_count + 1
+							else
+								IO.put_string (" FAILED")
+								fail_count := fail_count + 1
+							end
 						else
-							IO.put_string (" FAILED")
-							fail_count := fail_count + 1
+							IO.put_string (" EMPTY skipped")
 						end
 						IO.put_new_line
 					end
@@ -178,12 +205,71 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	is_zipped_format: BOOLEAN
-		local
-			s: XT_STRING_ROUTINES
+	has_content (file_path: PATH): BOOLEAN
 		do
-			across s.to_list (Compressed_files, ';') as l_wild_card until True loop
-				Result := l_wild_card ~ wild_card
+			file.reset_path (file_path)
+			Result := file.count > 0
+		end
+
+	make_log_directory
+		do
+			if attached log.path.parent as parent then
+				Environment.make_directory (parent, False)
+			end
+		end
+
+	put_log_values_differ (file_path: PATH)
+		do
+			log.put_string ("VALUES DIFFER: " + file_path.out)
+			log.put_new_line
+		end
+
+	put_results (is_total: BOOLEAN; a_pass_count, a_fail_count: INTEGER)
+		local
+			passed, failed: STRING
+		do
+			passed := "Passed: "; failed := " Failed: "
+			if is_total then
+				across << passed, failed >> as str loop
+					str.to_lower
+					if str = failed then
+						str.remove_head (1)
+					end
+					str.prepend ("Total ")
+					if str = failed then
+						str.prepend_character (' ')
+					end
+				end
+			end
+			IO.put_new_line
+			IO.put_string ("Tested against eXpat"); IO.put_new_line
+			IO.put_string (passed + a_pass_count.out)
+			IO.put_string (failed + a_fail_count.out)
+			IO.put_new_line
+		end
+
+feature {NONE} -- Factory
+
+	new_find_results: XT_COMMAND_OUTPUT_FILE
+		do
+			create Result.make_with_output (Find_template, << dir_path, wild_card >>)
+		end
+
+	new_log_path: PATH
+		local
+			name: STRING
+		do
+			Result := new_base_log_path
+			name := wild_card + ".log"
+			name.replace_substring ("dot", 1, 1)
+			Result := Result.extended (name)
+		end
+
+	new_base_log_path: PATH
+		do
+			Result := Environment.temporary_path (Environment.command_name.to_string_8 + "-logs")
+			if attached dir_path.entry as entry then
+				Result := Result.extended (entry.name)
 			end
 		end
 
@@ -195,10 +281,6 @@ feature {NONE} -- Internal attributes
 
 	expat_return_code: INTEGER
 
-	fail_count: INTEGER
-
-	pass_count: INTEGER
-
 	wild_card: STRING
 
 	dir_path: PATH
@@ -207,11 +289,13 @@ feature {NONE} -- Internal attributes
 
 	log: PLAIN_TEXT_FILE
 
+	file: PLAIN_TEXT_FILE
+
 feature {NONE} -- Constants
 
 	Checksum_comparison: STRING = "Checksum for %S: Xpact=%S eXpat=%S"
 
-	Compressed_files: STRING = "*.ods; *.odt; *.docx"
+	Default_wild_card: STRING = "*.xml"
 
 	Error_template: STRING = "ERROR (%S): %S"
 
@@ -220,5 +304,5 @@ feature {NONE} -- Constants
 			Result := "find %S -type f -name '%S'"
 		end
 
-	Xml_crc_32: STRING = "xml_crc_32 -type %S -duration 0 '%S'"
+	Xml_crc_32: STRING = "xml_crc_32 -type %S -duration 0 %S"
 end

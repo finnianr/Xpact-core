@@ -170,6 +170,29 @@ feature {NONE} -- Access
 
 feature {NONE} -- Status report
 
+	frozen is_ascii (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): BOOLEAN
+		-- `True' if all characters in `area' from `lower' to `upper' are ASCII
+		require
+			valid_range: upper + 1 >= lower and then upper >= lower implies area.valid_index (lower) and area.valid_index (upper)
+		local
+			i: INTEGER
+		do
+			Result := True
+			from i := lower until i > upper loop
+				if area [i] < '%/128/' then
+					i := i + 1
+				else
+					Result := False
+					i := upper + 1 -- break
+				end
+			end
+		end
+
+	frozen is_ascii_string (s: STRING): BOOLEAN
+		do
+			Result := is_ascii (s.area, 0, s.count - 1)
+		end
+
 	frozen is_white_space (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): BOOLEAN
 		-- count of leading whitespace in `area' from `lower' to `upper'
 		require

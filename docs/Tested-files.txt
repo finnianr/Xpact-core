@@ -26,3 +26,9 @@ Directory: /media/finnian/Windows/Windows/System32
 
 Directory: /media/finnian/Windows/Windows/WinSxS
 *.manifest 	Passed: 37741 Failed: 0
+
+
+Directory: /media/finnian/Documents
+*.ods 		Passed: 975 Failed: 0
+*.odt			Passed: 1230 Failed: 0
+*.docx		Passed: 1233 Failed: 0

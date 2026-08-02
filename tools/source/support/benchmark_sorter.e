@@ -36,7 +36,7 @@ feature {NONE} -- Initialization
 		do
 			create log_list.make (100)
 			create dir_path.make_from_string (a_dir_path)
-			create find_results.make_with_output (substitute (Find_template, << a_dir_path.out >>))
+			create find_results.make_with_output (Find_template, << a_dir_path >>)
 			find_results.append_lines_to (log_list)
 		end
 
@@ -60,7 +60,7 @@ feature -- Basic operations
 				then
 					test_name.prepend_character (' ')
 
-					create log_tail.make_with_output (substitute (Tail_template, << log_path >>))
+					create log_tail.make_with_output (Tail_template, << log_path >>)
 					if log_tail.return_code = 0 and then attached log_tail.first_line as line then
 						index := line.index_of (':', 1)
 						if index > 0 then

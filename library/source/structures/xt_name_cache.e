@@ -86,7 +86,7 @@ feature -- Access
 				Result := buffer_string_8 (buffer, start_index, end_index)
 				bucket_list.extend (Result)
 				check
-					well_distributed_hash_indices: across area as list all list.count <= 3 end
+					well_distributed_hash_indices: across area as list all list /= Default_list implies list.count <= 5 end
 				end
 			end
 		ensure

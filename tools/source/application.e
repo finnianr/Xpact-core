@@ -159,13 +159,17 @@ feature {NONE} -- Application options
 		do
 			if attached argument (argument_count) as path_arg then
 				create file_path.make_from_string (path_arg)
-				create tests.make (file_path)
-				if attached new_argument_8 (0, Option.log) as log_path then
-					tests.set_log (log_path)
+				if attached file_path.entry as entry and then is_xml_package (entry.name) then
+					create {FILE_PACKAGE_TESTS} tests.make (file_path)
+				else
+					create tests.make (file_path)
+				end
+				if index_of_word_option (Option.keep_logs) > 0 then
+					tests.keep_logs
 				end
 				tests.execute
 			else
-				IO.put_string ("Usage: xml_reader -test_files -log <error-log-path> <XML-file-path>")
+				IO.put_string ("Usage: xml_reader -test_files [-keep_logs] <XML-file-path>")
 				IO.put_new_line
 			end
 		end
@@ -216,6 +220,15 @@ feature {NONE} -- Implementation
 			create Result
 		end
 
+	is_xml_package (wild_card: READABLE_STRING_GENERAL): BOOLEAN
+		local
+			s: XT_STRING_ROUTINES
+		do
+			across s.to_list (Compressed_files, ';') as l_wild_card until Result loop
+				Result := wild_card.same_string (l_wild_card)
+			end
+		end
+
 	new_application_table: HASH_TABLE [PROCEDURE, STRING]
 		do
 			create Result.make_from_iterable_tuples (<<
@@ -247,14 +260,19 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Constants
 
+	Compressed_files: STRING
+		once
+			Result := "*.ods; *.odt; *.docx"
+		end
+
 	Operation_parameter: STRING = "<operation>"
 
-	Option: TUPLE [compare_to_expat, chunk_size, duration, log, trace: STRING]
+	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, trace: STRING]
 		local
 			s: XT_STRING_ROUTINES
 		once
 			create Result
-			across s.to_list ("compare_to_expat, chunk_size, duration, log, trace", ',') as word loop
+			across s.to_list ("compare_to_expat, chunk_size, -keep_logs, duration, trace", ',') as word loop
 				Result.put_reference (word, @ word.cursor_index)
 			end
 		end

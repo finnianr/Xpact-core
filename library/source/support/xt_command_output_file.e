@@ -14,32 +14,43 @@ class
 
 inherit
 	PLAIN_TEXT_FILE
-		rename
-			exists as has_output
 		redefine
 			close
 		end
+
+	XT_SHARED_EXECUTION_ENVIRONMENT
 
 create
 	make_with_output
 
 feature {NONE} -- Initialization
 
-	make_with_output (a_command: STRING_8)
+	make_with_output (command_template: STRING; argument_array: ARRAY [ANY])
 		require
-			has_space: a_command.has (' ')
+			has_space: command_template.has (' ')
 		local
-			exec_name: STRING; error_path, output_path: PATH
+			exec_name: STRING; error_path, output_path, temp_path: PATH
 			s: XT_STRING_ROUTINES; error_file: PLAIN_TEXT_FILE
+			checksum: EL_CRC_32_DIGEST; argument_list: ARRAYED_LIST [ANY]
 		do
 			create error_lines.make (0)
-			exec_name := a_command.substring (1, a_command.index_of (' ', 1) - 1)
-			output_path := Environ.temporary_path ("output-" + exec_name + ".txt")
-			error_path := Environ.temporary_path ("error-" + exec_name + ".txt")
-			if attached s.substitute (Command_template, << a_command, output_path.out, error_path.out >>) as command then
-				Environ.system (command)
+			exec_name := Environment.command_name.to_string_8
+			create checksum
+			checksum.add_string (command_template) -- stop clashes
+			across argument_array as argument loop
+				checksum.add_string (argument.out)
 			end
-			return_code := Environ.return_code
+			temp_path := Environment.temporary_path (exec_name)
+			Environment.make_directory (temp_path, False)
+			
+			output_path := temp_path.extended (s.substitute (Output_name_template, << "output", checksum.out >>))
+			error_path := temp_path.extended (s.substitute (Output_name_template, << "error", checksum.out >>))
+
+			create argument_list.make_from_array (argument_array)
+			argument_list.extend (output_path); argument_list.extend (error_path)
+			Environment.do_command (command_template + Redirection_template, argument_list.to_array)
+
+			return_code := Environment.return_code
 			if return_code = 0 then
 				make_open_read (output_path.name)
 				create error_file.make_with_path (error_path)
@@ -59,6 +70,13 @@ feature {NONE} -- Initialization
 			end
 		end
 
+feature -- Status report
+
+	has_output: BOOLEAN
+		do
+			Result := exists and then file_readable
+		end
+
 feature -- Access
 
 	return_code: INTEGER
@@ -73,6 +91,17 @@ feature -- Access
 				if not end_of_file then
 					Result := last_string
 				end
+			end
+		end
+
+	last_path: PATH
+		local
+			u: UTF_CONVERTER; s: XT_STRING_ROUTINES
+		do
+			if s.is_ascii_string (last_string) then
+				create Result.make_from_string (last_string)
+			else
+				create Result.make_from_string (u.utf_8_string_8_to_string_32 (last_string))
 			end
 		end
 
@@ -105,11 +134,13 @@ feature -- Basic operations
 
 feature {NONE} -- Constants
 
-	Environ: XT_EXECUTION_ENVIRONMENT
+	Redirection_template: STRING
 		once
-			create Result
+			Result := " > '%S' 2> '%S'"
+		ensure
+			has_leading_space: Result [1] = ' '
 		end
 
-	Command_template: STRING = "%S > '%S' 2> '%S'"
+	Output_name_template: STRING = "%S.%S.txt"
 
 end

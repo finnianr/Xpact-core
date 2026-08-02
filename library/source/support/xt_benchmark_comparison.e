@@ -15,6 +15,8 @@ deferred class
 inherit
 	XT_STRING_ROUTINES_I
 
+	XT_SHARED_EXECUTION_ENVIRONMENT
+
 feature {NONE} -- Initialization
 
 	make (a_parser: XT_EXPAT_COMPARABLE_PARSER; a_file_path: PATH; a_time_start: TIME; a_duration_ms, a_chunk_size: INTEGER)
@@ -29,7 +31,7 @@ feature {NONE} -- Initialization
 
 	make_default
 		do
-			if attached Environ.item (Var_benchmarks_dir) as dir_path then
+			if attached Environment.item (Var_benchmarks_dir) as dir_path then
 				create benchmark_dir_path.make_from_string (dir_path)
 			else
 				create benchmark_dir_path.make_empty
@@ -94,10 +96,12 @@ feature {NONE} -- Implementation
 		do
 			create log_line.make_empty
 
-			log_path := benchmark_dir_path.extended (xml_file_name); make_dir (log_path)
+			log_path := benchmark_dir_path.extended (xml_file_name)
+			Environment.make_directory (log_path, False)
+
 			log_path := log_path.extended (new_log_name)
 
-			create expat_output.make_with_output (new_command (command_template))
+			create expat_output.make_with_output (new_command (command_template), << >>)
 			if expat_output.has_output then
 				from until done loop
 					expat_output.read_line
@@ -149,16 +153,6 @@ feature {NONE} -- Implementation
 	expat_executable: STRING
 		do
 			Result := command_template.substring (1, command_template.index_of (' ', 1) - 1)
-		end
-
-	make_dir (path: PATH)
-		local
-			dir: DIRECTORY
-		do
-			create dir.make_with_path (path)
-			if not dir.exists then
-				dir.create_dir
-			end
 		end
 
 	relative_performance (expat_pass_count: INTEGER): STRING
@@ -228,11 +222,6 @@ feature {NONE} -- Constants
 	Date_format: STRING
 		once
 			Result := "yyyy [0]dd Mmm hh:[0]mi"
-		end
-
-	Environ: XT_EXECUTION_ENVIRONMENT
-		once
-			create Result
 		end
 
 	Log_template: STRING
