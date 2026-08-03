@@ -38,20 +38,28 @@ feature -- Basic operations
 	do_command (template: STRING; argument_array: ARRAY [ANY])
 		local
 			s: XT_STRING_ROUTINES; argument_list: ARRAYED_LIST [STRING]
-			u: UTF_CONVERTER
+			u: UTF_CONVERTER; command: STRING
 		do
 			create argument_list.make (argument_array.count)
 			across argument_array as arg loop
 				if attached {PATH} arg as path then
 					argument_list.extend (unix_escaped (path))
+
 				elseif attached {STRING} arg as str then
-					argument_list.extend (str)
+					if s.is_ascii_string (str) then
+						argument_list.extend (str)
+					else
+						argument_list.extend (u.utf_8_string_8_to_string_32 (str))
+					end
 				else
 					argument_list.extend (arg.out)
 				end
 			end
-			if attached s.substitute (template, argument_list.to_array) as utf_8 then
-				system (u.utf_8_string_8_to_string_32 (utf_8))
+			command := s.substitute (template, argument_list.to_array)
+			if s.is_ascii_string (command) then
+				system (command)
+			else
+				system (u.utf_8_string_8_to_string_32 (command))
 			end
 		end
 

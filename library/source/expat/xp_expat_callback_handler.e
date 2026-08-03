@@ -275,7 +275,7 @@ feature -- Element change
 		end
 
 	set_processing_instruction_handler (a_handler: POINTER)
-			-- Set native processing-instruction callback.
+		-- Set native processing-instruction callback.
 		do
 			processing_instruction_callback := a_handler
 		ensure

@@ -27,6 +27,7 @@ feature {NONE} -- Initialization
 
 	make_with_output (command_template: STRING; argument_array: ARRAY [ANY])
 		require
+			enough_arguments: command_template.occurrences ('%S') = argument_array.count
 			has_space: command_template.has (' ')
 		local
 			exec_name: STRING; error_path, output_path, temp_path: PATH
@@ -42,7 +43,7 @@ feature {NONE} -- Initialization
 			end
 			temp_path := Environment.temporary_path (exec_name)
 			Environment.make_directory (temp_path, False)
-			
+
 			output_path := temp_path.extended (s.substitute (Output_name_template, << "output", checksum.out >>))
 			error_path := temp_path.extended (s.substitute (Output_name_template, << "error", checksum.out >>))
 

@@ -15,7 +15,7 @@ class
 inherit
 	XT_BENCHMARK_COMPARISON
 		redefine
-			make_default, new_command
+			make_default
 		end
 
 	PARSE_EVENT_CONSTANTS
@@ -40,10 +40,11 @@ feature -- Element change
 
 feature {NONE} -- Factory
 
-	new_command (template: STRING): STRING
+	new_arguments: ARRAY [ANY]
+		-- new arguments to insert into `Command_template' for execution
+		-- xml_crc_32 -type %S -duration %S %S
 		do
-			Result := Precursor (template)
-			Result.replace_substring_all ("$type", new_type_name)
+			Result := << new_type_name, duration_ms, file_path >>
 		end
 
 	new_type_name: STRING
@@ -57,7 +58,7 @@ feature {NONE} -- Internal attributes
 
 feature {NONE} -- Constants
 
-	Command_template: STRING = "xml_crc_32 -type $type -duration $duration $path"
+	Command_template: STRING = "xml_crc_32 -type %S -duration %S %S"
 
 	Log_name_template: STRING
 		once

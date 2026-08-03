@@ -24,7 +24,6 @@ note
 		**-test_files** Class: ${FILE_TREE_TESTS}
 		Compare CRC-32 for tree of XML files against eXpat.
 		Usage: xml_reader -test_files <XML-file-path>
-
 	]"
 
 	author: "Finnian Reilly"
@@ -213,9 +212,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	compile: TUPLE [
-		XP_EXPAT_CALLBACK_HANDLER, EL_UTF_16_C_STRING, EL_UTF_8_C_STRING
-	] --
+	compile: TUPLE [XP_EXPAT_CALLBACK_HANDLER]
 		do
 			create Result
 		end
@@ -232,12 +229,12 @@ feature {NONE} -- Implementation
 	new_application_table: HASH_TABLE [PROCEDURE, STRING]
 		do
 			create Result.make_from_iterable_tuples (<<
-				[agent do_benchmark_sort, "-benchmark_sort"],
-				[agent do_count_tags, "-count_tags"],
-				[agent do_crc_32, "-crc_32"],
-				[agent do_print, "-print"],
-				[agent do_test, "-test"],
-				[agent do_test_files, "-test_files"]
+				[agent do_benchmark_sort,	"-benchmark_sort"],
+				[agent do_count_tags,		"-count_tags"],
+				[agent do_crc_32,				"-crc_32"],
+				[agent do_print,				"-print"],
+				[agent do_test,				"-test"],
+				[agent do_test_files,		"-test_files"]
 			>>)
 		end
 
@@ -272,8 +269,11 @@ feature {NONE} -- Constants
 			s: XT_STRING_ROUTINES
 		once
 			create Result
-			across s.to_list ("compare_to_expat, chunk_size, -keep_logs, duration, trace", ',') as word loop
-				Result.put_reference (word, @ word.cursor_index)
+			if attached s.to_list ("compare_to_expat, chunk_size, duration, keep_logs, trace", ',') as list then
+				from list.start until list.after loop
+					Result.put_reference (list.item, list.index)
+					list.forth
+				end
 			end
 		end
 

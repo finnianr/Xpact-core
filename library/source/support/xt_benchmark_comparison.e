@@ -101,7 +101,7 @@ feature {NONE} -- Implementation
 
 			log_path := log_path.extended (new_log_name)
 
-			create expat_output.make_with_output (new_command (command_template), << >>)
+			create expat_output.make_with_output (command_template, new_arguments)
 			if expat_output.has_output then
 				from until done loop
 					expat_output.read_line
@@ -150,11 +150,6 @@ feature {NONE} -- Implementation
 			Result := (time_now.relative_duration (a_time_start).fine_seconds_count * 1000).rounded
 		end
 
-	expat_executable: STRING
-		do
-			Result := command_template.substring (1, command_template.index_of (' ', 1) - 1)
-		end
-
 	relative_performance (expat_pass_count: INTEGER): STRING
 		local
 			ratio: DOUBLE
@@ -175,13 +170,6 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Factory
 
-	new_command (template: STRING): STRING
-		do
-			Result := template.twin
-			Result.replace_substring_all ("$path", file_path.out)
-			Result.replace_substring_all ("$duration", duration_ms.out)
-		end
-
 	new_log_name: STRING
 		do
 			Result := substitute (log_name_template, << new_type_name >>)
@@ -199,6 +187,13 @@ feature {NONE} -- Deferred
 
 	new_type_name: STRING
 		deferred
+		end
+
+	new_arguments: ARRAY [ANY]
+		-- new arguements to insert into `command_template' for execution
+		deferred
+		ensure
+			enough_place_holders: Result.count = command_template.occurrences ('%S')
 		end
 
 feature {NONE} -- Internal attributes

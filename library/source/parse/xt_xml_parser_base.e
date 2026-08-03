@@ -101,17 +101,19 @@ feature -- Basic operations
 					file.parse
 					status := file.parse_status
 				else
-					status := Status_unreadable
+					error_code := Error_file_has_no_content
+					status := Status_error
 				end
 			else
-				status := Status_unreadable
+				error_code := Error_file_not_readable
+				status := Status_error
 			end
 		end
 
 	parse (chunk: EL_UTF_8_POINTER_CODEC; a_offset, a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
-			-- Accept `a_count' bytes from `chunk[a_offset]' as the next chunk.
-			-- Returns Status_ok, Status_suspended, or Status_error.
-			-- Corresponds to XML_Parse() in xmlparse.c.
+		-- Accept `a_count' bytes from `chunk[a_offset]' as the next chunk.
+		-- Returns Status_ok, Status_suspended, or Status_error.
+		-- Corresponds to XML_Parse() in xmlparse.c.
 		require
 			non_negative_count: a_count >= 0
 			valid_source_range: a_count = 0 or else (a_offset >= 0 and then a_offset + a_count <= chunk.count)
@@ -122,11 +124,12 @@ feature -- Basic operations
 			inspect parsing_state
 				when State_check_encoding then
 					set_encoded_chunk (chunk, a_count)
-					if error_code = Error_not_started then
-						status := Status_invalid_document
-					else
+
+					inspect error_code when Error_none then
 						parsing_state := State_initialized
 						Result := parse (encoded_chunk, 0, encoded_chunk.count, a_is_final) -- Recurse
+					else
+						status := Status_error
 					end
 
 				when State_suspended then
@@ -144,8 +147,10 @@ feature -- Basic operations
 				parsing_state := State_parsing
 				if not call_on_start_parsing then
 					Result := Status_error
+
 				elseif not prepare_buffer (encoded_chunk.character_count) then
 					Result := Status_error
+
 				else
 					write_start := buffer_end
 					if a_count > 0 then
@@ -170,7 +175,7 @@ feature -- Basic operations
 				end
 			end
 		ensure
-			valid_result: Result = Status_ok or Result = Status_error or Result = Status_suspended
+			valid_result: Status_range.has (Result)
 			finished_when_final_ok:
 				(Result = Status_ok and a_is_final) implies parsing_state = State_finished
 			error_code_set_on_error:
@@ -179,14 +184,19 @@ feature -- Basic operations
 
 	put_error (output: IO_MEDIUM; file_path: PATH)
 		do
-			inspect parsing_state
-				when Status_error then
-					output.put_string ("Parse error code: " + error_code.out)
+			if status = Status_error then
+				inspect error_code
+					when Error_file_not_readable then
+						output.put_string ("Cannot read: " + file_path.utf_8_name)
 
-				when Status_unreadable then
-					output.put_string ("Cannot read: " + file_path.out)
+					when Error_file_has_no_content then
+						output.put_string ("File has no content: " + file_path.utf_8_name)
+				else
+					output.put_string ("Parse error code: " + error_code.out)
 					output.put_new_line
-			else
+					output.put_string (error_description)
+				end
+				output.put_new_line
 			end
 		end
 
@@ -229,10 +239,7 @@ feature {NONE} -- Buffer implementation
 
 					error_code := call_processor (start, parse_end_index)
 
-					if error_code /= Error_none then
-						on_set_error_processor
-						Result := Status_error
-					else
+					inspect error_code when Error_none then
 						inspect parsing_state
 							when State_suspended then
 								Result := Status_suspended
@@ -245,12 +252,19 @@ feature {NONE} -- Buffer implementation
 						end
 						on_update_position (position_index, buffer_index)
 						position_index := buffer_index
+
+					when Error_misplaced_xml_pi then
+						on_set_error_processor
+						Result := Status_error
+
+					else
+						on_set_error_processor
+						Result := Status_error
 					end
 				end
 			end
 		ensure
-			valid_result:
-				Result = Status_ok or Result = Status_error or Result = Status_suspended
+			valid_result: Status_range.has (Result)
 			finished_when_final_ok:
 				(Result = Status_ok and a_is_final) implies parsing_state = State_finished
 			error_code_set_on_error:
@@ -336,7 +350,9 @@ feature {NONE} -- Processor dispatch
 					err := process_content (buf, buffer_index, end_index, attributes, s, s.byte_type_table, names, context, section)
 
 					-- Suspended state overrides the reenter request.
-					if parsing_state /= State_parsing then
+					inspect parsing_state when State_parsing then
+						do_nothing
+					else
 						on_clear_reenter
 					end
 
@@ -344,9 +360,11 @@ feature {NONE} -- Processor dispatch
 						done := True
 					else
 						on_clear_reenter
-						if err /= Error_none then
+						inspect err when Error_none then
+							do_nothing
+						else
 							Result := err
-							done   := True
+							done := True
 						end
 					end
 				end
@@ -355,12 +373,13 @@ feature {NONE} -- Processor dispatch
 
 			-- Track how many bytes were available but not consumed,
 			-- so the deferral heuristic can judge the next call.
-			if Result = Error_none then
+			inspect Result when Error_none then
 				if buffer_index = start_index then
 					partial_token_bytes_before := have_now
 				else
 					partial_token_bytes_before := 0
 				end
+			else
 			end
 		ensure
 			buffer_ptr_in_range: buffer_index >= start_index and buffer_index <= end_index
@@ -410,6 +429,11 @@ feature {NONE} -- Processor dispatch
 					token := s.scan_prolog (buf, bt_table, index, end_index)
 					tok_end := s.next_token_index
 					inspect token
+						when Tok_xml_decl then
+							if index /= start_index then
+								Result := Error_misplaced_xml_pi; done := True
+							end
+
 						when Tok_instance_start then
 							if element_context.reached_depth_zero then
 								Result := Error_junk_after_doc_element; done := True

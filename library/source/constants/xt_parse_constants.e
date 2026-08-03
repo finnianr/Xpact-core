@@ -35,15 +35,16 @@ feature -- Parse status (XML_Status enum)
 	Status_error: INTEGER = 0
 	Status_ok: INTEGER = 1
 	Status_suspended: INTEGER = 2
-	Status_unreadable: INTEGER = 4
-	Status_invalid_document: INTEGER = 5
+
+	Status_range: INTEGER_INTERVAL
+		once
+			Result := Status_error |..| Status_suspended
+		end
 
 	Status_names: STRING = "[
 		Error
 		OK
 		Suspended
-		Unreadable
-		Invalid document
 	]"
 
 feature -- Declaration types

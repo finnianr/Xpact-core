@@ -1,0 +1,18 @@
+[x0.97 to eXpat] UTF-16-encoded-DiagnosticsData.xml CRC-32-comment: eXpat passes = 73362; Xpact-core passes = 70938
+[x0.96 to eXpat] UTF-16-encoded-DiagnosticsData.xml CRC-32-pi-name: eXpat passes = 74753; Xpact-core passes = 71857
+[x0.96 to eXpat] UTF-16-encoded-DiagnosticsData.xml CRC-32-pi-data: eXpat passes = 74690; Xpact-core passes = 71887
+[x0.96 to eXpat] UTF-16-encoded-DiagnosticsData.xml CRC-32-cdata: eXpat passes = 74456; Xpact-core passes = 71625
+[x0.96 to eXpat] UTF-16-encoded-DiagnosticsData.xml CRC-32-attribute: eXpat passes = 75080; Xpact-core passes = 72076
+[x0.93 to eXpat] UTF-16-encoded-DiagnosticsData.xml CRC-32-tag: eXpat passes = 72775; Xpact-core passes = 67535
+[x0.89 to eXpat] UTF-16-encoded-DiagnosticsData.xml CRC-32-text: eXpat passes = 70230; Xpact-core passes = 62559
+[x0.84 to eXpat] UTF-16-encoded-DiagnosticsData.xml tag_count: eXpat passes = 71295; Xpact-core passes = 59796
+[x0.0 to eXpat] wordnet_glossary-20010201.rdf tag_count: eXpat passes = 1; Xpact-core passes = 0
+[x0.0 to eXpat] vision2.ecf tag_count: eXpat passes = 1; Xpact-core passes = 0
+[x0.0 to eXpat] recursive-entity-expansion.xml tag_count: eXpat passes = 1; Xpact-core passes = 0
+[x0.0 to eXpat] recset.xml tag_count: eXpat passes = 1; Xpact-core passes = 0
+[x0.0 to eXpat] ns_att_test.xml tag_count: eXpat passes = 1; Xpact-core passes = 0
+[x0.0 to eXpat] nes96.xml tag_count: eXpat passes = 1; Xpact-core passes = 0
+[x0.0 to eXpat] Legislation.xml tag_count: eXpat passes = 1; Xpact-core passes = 0
+[x0.0 to eXpat] DTD-attlist-default-values.xml tag_count: eXpat passes = 1; Xpact-core passes = 0
+
+Average performance: x0.466 to eXpat

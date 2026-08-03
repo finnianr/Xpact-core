@@ -35,6 +35,8 @@ feature {NONE} -- Standard strings
 
 	Xml_declaration_upper: STRING = "<?XML"
 
+	Comment_declaration: STRING = "<!--"
+
 feature {NONE} -- Predefined entities
 
 	Predefined_apos: STRING_8 = "apos"

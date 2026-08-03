@@ -60,6 +60,10 @@ feature -- Error codes (XML_Error enum)
 	Error_amplification_limit_breach:        INTEGER = 43
 	Error_not_started:                       INTEGER = 44
 
+-- Extra file errors not in eXpat API
+	Error_file_not_readable:                 INTEGER = 45
+	Error_file_has_no_content:               INTEGER = 46
+
 feature -- Error text
 
 	Error_descriptions: STRING = "[
@@ -79,7 +83,7 @@ feature -- Error text
 		Bad character reference
 		Binary entity reference
 		Attribute external entity reference
-		Misplaced XML processing instruction
+		XML or text declaration not at start of entity
 		Unknown encoding
 		Incorrect encoding
 		Unclosed CDATA section
@@ -107,6 +111,8 @@ feature -- Error text
 		No buffer
 		Amplification limit breach
 		Not started
+		File not readable (permission required)
+		File has no content to read
 	]"
 
 end

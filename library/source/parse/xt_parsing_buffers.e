@@ -141,7 +141,7 @@ feature {NONE} -- Implementation
 		-- also check if document is actually XML or something weird
 		local
 			leading, l_chunk: EL_UTF_8_C_STRING; lt_index, gt_index: INTEGER; u: UTF_CONVERTER
-			encoding: NATURAL_8; found: BOOLEAN; s: XT_STRING_ROUTINES
+			encoding: NATURAL_8; found: BOOLEAN; declaration: STRING
 		do
 			if attached {EL_UTF_8_C_STRING} encoded_chunk as str then
 				l_chunk := str
@@ -172,18 +172,17 @@ feature {NONE} -- Implementation
 			-- The leading bytes are \x89PNG\r\n, which is the PNG magic header, so it's not XML.
 				if leading.is_whitespace then
 					l_chunk.remove_head (lt_index - 1)
-					inspect encoding when Utf_16 then
-						do_nothing
-					else
-						gt_index := l_chunk.index_of ('>', 1)
-						if gt_index > 0 and then attached l_chunk.substring (1, gt_index).to_string as declaration then
-							declaration.to_upper
-							if declaration [2] = '%U' and then declaration.starts_with (s.ascii_to_utf_16 (Xml_declaration_upper)) then
-								encoding := Utf_16
-
-							elseif declaration.starts_with (Xml_declaration_upper) then
-								encoding :=  encoding_id (declaration)
-							end
+					gt_index := l_chunk.index_of ('>', 1)
+					if gt_index > 0 then
+						declaration := l_chunk.substring (1, gt_index).to_string
+						if encoding = Utf_16 or else declaration.occurrences ('%U') = declaration.count // 2 then
+							declaration.extend ('%U')
+							declaration := u.utf_16le_string_8_to_string_32 (declaration).to_string_8
+							encoding := Utf_16
+						end
+						declaration.to_upper
+						if encoding = 0 and declaration.starts_with (Xml_declaration_upper) then
+							encoding := encoding_id (declaration)
 						end
 					end
 					inspect encoding
@@ -207,6 +206,7 @@ feature {NONE} -- Implementation
 		local
 			encoding: NATURAL_8
 		do
+			Result := Utf_8
 			from encoding := Ascii until encoding > Utf_16 loop
 				if declaration.has_substring (Encoding_names_upper [encoding.to_integer_32]) then
 					Result := encoding

@@ -20,6 +20,13 @@ create
 
 feature {NONE} -- Factory
 
+	new_arguments: ARRAY [ANY]
+		-- new arguments to insert into `Command_template' for execution
+		-- xml_tag_counter $S -duration %S
+		do
+			Result := << file_path, duration_ms >>
+		end
+
 	new_type_name: STRING
 		do
 			Result := "tag_count"
@@ -27,7 +34,7 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Constants
 
-	Command_template: STRING = "xml_tag_counter $path -duration $duration"
+	Command_template: STRING = "xml_tag_counter %S -duration %S"
 
 	Log_name_template: STRING
 		once

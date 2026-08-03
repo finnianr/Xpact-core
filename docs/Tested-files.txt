@@ -1,3 +1,5 @@
+LINUX PARTITION
+
 Directory: /usr/share
 *.glade		Passed: 2 Failed: 0
 *.rng			Passed: 10 Failed: 0
@@ -21,18 +23,42 @@ Directory: $HOME/.steam
 Directory: $HOME/.es
 *.xml			Passed: 63 Failed: 0
 
-Directory: /media/finnian/Windows/Windows/System32
-*.xml			Passed: 871 Failed: 0
-*.man			Passed: 260 Failed: 0
-*.mof			Passed: 384 Failed: 0
-
-Directory: /media/finnian/Windows/Windows/WinSxS
-*.manifest 	Passed: 37741 Failed: 0
-
-Directory: /media/finnian/Windows/Windows/servicing/Packages
-*.mum Passed: 5800 Failed: 0
-
 Directory: /media/finnian/Documents
 *.ods 		Passed: 975 Failed: 0
 *.odt			Passed: 1230 Failed: 0
 *.docx		Passed: 1233 Failed: 0
+
+WINDOWS PARTITION
+
+Directory: Windows/Windows/System32
+*.xml			Passed: 871 Failed: 0
+*.man			Passed: 260 Failed: 0
+*.mof			Passed: 384 Failed: 0
+
+Directory: Windows/Windows/WinSxS
+*.manifest 	Passed: 37741 Failed: 0
+
+Directory: Windows/Windows/servicing/Packages
+*.mum			Passed: 5800 Failed: 0
+
+Directory: "Windows/Program Files/WindowsApps"
+*.xml			Passed: 602 Failed: 0
+
+Directory: Windows/ProgramData/Microsoft/Windows/AppRepository
+*.xml			Passed: 291 Failed: 0
+
+Directory: "Windows/Program Files/WindowsApps"
+*.xml			Passed: 602 Failed: 0
+
+Directory: Windows/Users/Finnian/AppData
+*.xml			Passed: 403 Failed: 0
+
+Directory: Windows/Windows/System32/config/systemprofile/AppData
+*.xml			Passed: 459 Failed: 0
+
+TOTALS
+
+Linux partition: 97,130
+Windows partition: 47,413
+
+Total Passed: 144,543
