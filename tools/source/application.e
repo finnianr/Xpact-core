@@ -14,7 +14,6 @@ note
 		**-print** Class: ${XML_PRINTER}.
 		Reads from specified XML path and prints each XML event to standard output.
 
-
 		**-count_tags** Class: ${TAG_COUNTER}
 		Reads from specified XML path and compiles a table of tag occurrence frequency.
 
@@ -40,6 +39,8 @@ inherit
 	XT_PARSE_CONSTANTS
 
 	PARSE_EVENT_CONSTANTS
+
+	FILE_TREE_TESTS_FACTORY
 
 	ARGUMENTS_32
 		export
@@ -124,6 +125,17 @@ feature {NONE} -- Application options
 			do_parsing (create {TAG_COUNTER}.make)
 		end
 
+	do_corpus_test (app_option: STRING)
+		local
+			corpus: XML_CORPUS_TESTER; file_path: PATH
+		do
+			if attached argument (argument_count) as last_arg then
+				create file_path.make_from_string (last_arg)
+				create corpus.make
+				corpus.parse_file (file_path, 0, True)
+			end
+		end
+
 	do_crc_32 (app_option: STRING)
 		local
 			s: XT_STRING_ROUTINES
@@ -158,14 +170,7 @@ feature {NONE} -- Application options
 		do
 			if attached argument (argument_count) as path_arg then
 				create file_path.make_from_string (path_arg)
-				if attached file_path.entry as entry and then is_xml_package (entry.name) then
-					create {FILE_PACKAGE_TESTS} tests.make (file_path)
-				else
-					create tests.make (file_path)
-				end
-				if index_of_word_option (Option.keep_logs) > 0 then
-					tests.keep_logs
-				end
+				tests := new_tests (file_path, index_of_word_option (Option.keep_logs) > 0)
 				tests.execute
 			else
 				IO.put_string ("Usage: xml_reader -test_files [-keep_logs] <XML-file-path>")
@@ -217,20 +222,12 @@ feature {NONE} -- Implementation
 			create Result
 		end
 
-	is_xml_package (wild_card: READABLE_STRING_GENERAL): BOOLEAN
-		local
-			s: XT_STRING_ROUTINES
-		do
-			across s.to_list (Compressed_files, ';') as l_wild_card until Result loop
-				Result := wild_card.same_string (l_wild_card)
-			end
-		end
-
 	new_application_table: HASH_TABLE [PROCEDURE, STRING]
 		do
 			create Result.make_from_iterable_tuples (<<
 				[agent do_benchmark_sort,	"-benchmark_sort"],
 				[agent do_count_tags,		"-count_tags"],
+				[agent do_corpus_test,		"-corpus_test"],
 				[agent do_crc_32,				"-crc_32"],
 				[agent do_print,				"-print"],
 				[agent do_test,				"-test"],
@@ -257,11 +254,6 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Constants
 
-	Compressed_files: STRING
-		once
-			Result := "*.ods; *.odt; *.docx"
-		end
-
 	Operation_parameter: STRING = "<operation>"
 
 	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, trace: STRING]
@@ -269,12 +261,7 @@ feature {NONE} -- Constants
 			s: XT_STRING_ROUTINES
 		once
 			create Result
-			if attached s.to_list ("compare_to_expat, chunk_size, duration, keep_logs, trace", ',') as list then
-				from list.start until list.after loop
-					Result.put_reference (list.item, list.index)
-					list.forth
-				end
-			end
+			s.fill_tuple (Result, "compare_to_expat, chunk_size, duration, keep_logs, trace")
 		end
 
 end

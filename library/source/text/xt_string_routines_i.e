@@ -63,13 +63,13 @@ feature {NONE} -- Access
 			end
 		end
 
-	frozen new_attribute_value (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; has_lf_tab: BOOLEAN): STRING_8
+	frozen new_attribute_value (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; has_newline_or_tab: BOOLEAN): STRING_8
 		-- `lower .. upper' substring of `area' placed in `output_area'
 		require
-			has_quote_at_upper_plus_one: area.valid_index (upper + 1) and then area [upper + 1] = '"'
+			valid_upper: area.valid_index (upper)
 		do
-			if has_lf_tab then
-				Result := area_substring (area, lower, upper + 1, True) -- include quote
+			if has_newline_or_tab then
+				Result := area_substring (area, lower, upper, True)
 				normalize_whitespace (Result.area, 0, Result.count - 1)
 			else
 				Result := area_substring (area, lower, upper, True)
@@ -347,6 +347,18 @@ feature {NONE} -- Basic operations
 			str.set_count (new_count)
 		end
 
+	frozen fill_tuple (tuple: TUPLE; comma_separated_list: STRING)
+		do
+			if attached to_list (comma_separated_list, ',') as list then
+				from list.start until list.after loop
+					if tuple.valid_type_for_index (list.item, list.index) then
+						tuple.put_reference (list.item, list.index)
+					end
+					list.forth
+				end
+			end
+		end
+
 	frozen substitute (template: STRING; insertions: ARRAY [STRING]): STRING
 		require
 			enough_place_holders: template.occurrences ('%S') = insertions.count
@@ -375,7 +387,7 @@ feature {NONE} -- Basic operations
 		--  %T and %N are replaced with a space
 		-- XML §3.3.3 attribute-value normalisation: replace %N %T with space
 		require
-			valid_range: start_index >= end_index + 1
+			valid_range: start_index <= end_index + 1
 			valid_end_index: buf.valid_index (end_index)
 		local
 			i: INTEGER

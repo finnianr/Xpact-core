@@ -58,6 +58,16 @@ feature -- Access
 
 	pass_count: INTEGER
 
+	sum_fail_count: INTEGER
+		do
+			Result := fail_count
+		end
+
+	sum_pass_count: INTEGER
+		do
+			Result := pass_count
+		end
+
 feature -- Basic operations
 
 	execute
@@ -65,11 +75,35 @@ feature -- Basic operations
 			make_log_directory
 			if attached new_find_results as find_results and then find_results.has_output then
 				do_tests (find_results)
-				put_results (False, pass_count, fail_count)
+				put_results (IO.Output, pass_count, fail_count, False)
 			end
 			if not logs_retained and then attached Environment as env then
 				env.remove_directory (env.temporary_path (env.command_name), True)
 			end
+		end
+
+	put_results (medium: PLAIN_TEXT_FILE; a_pass_count, a_fail_count: INTEGER; is_total: BOOLEAN)
+		local
+			passed, failed: STRING
+		do
+			passed := "Passed: "; failed := " Failed: "
+			if is_total then
+				across << passed, failed >> as str loop
+					str.to_lower
+					if str = failed then
+						str.remove_head (1)
+					end
+					str.prepend ("Total ")
+					if str = failed then
+						str.prepend_character (' ')
+					end
+				end
+			end
+			medium.put_new_line
+			medium.put_string ("Tested against eXpat"); medium.put_new_line
+			medium.put_string (passed + a_pass_count.out)
+			medium.put_string (failed + a_fail_count.out)
+			medium.put_new_line
 		end
 
 feature -- Status change
@@ -222,30 +256,6 @@ feature {NONE} -- Implementation
 		do
 			log.put_string ("VALUES DIFFER: " + file_path.out)
 			log.put_new_line
-		end
-
-	put_results (is_total: BOOLEAN; a_pass_count, a_fail_count: INTEGER)
-		local
-			passed, failed: STRING
-		do
-			passed := "Passed: "; failed := " Failed: "
-			if is_total then
-				across << passed, failed >> as str loop
-					str.to_lower
-					if str = failed then
-						str.remove_head (1)
-					end
-					str.prepend ("Total ")
-					if str = failed then
-						str.prepend_character (' ')
-					end
-				end
-			end
-			IO.put_new_line
-			IO.put_string ("Tested against eXpat"); IO.put_new_line
-			IO.put_string (passed + a_pass_count.out)
-			IO.put_string (failed + a_fail_count.out)
-			IO.put_new_line
 		end
 
 feature {NONE} -- Factory

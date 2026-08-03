@@ -63,6 +63,12 @@ feature -- Basic operations
 			end
 		end
 
+	directory_exists (path: PATH): BOOLEAN
+		do
+			Directory.make_with_path (path)
+			Result := Directory.exists
+		end
+
 	make_directory (path: PATH; recursively: BOOLEAN)
 		do
 			Directory.make_with_path (path)

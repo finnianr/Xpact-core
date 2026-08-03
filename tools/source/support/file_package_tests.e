@@ -16,7 +16,7 @@ class
 inherit
 	FILE_TREE_TESTS
 		redefine
-			execute, make, new_base_log_path, put_log_values_differ
+			execute, make, new_base_log_path, put_log_values_differ, sum_fail_count, sum_pass_count
 		end
 
 create
@@ -58,7 +58,7 @@ feature -- Basic operations
 									and then find_results.file_readable
 								then
 									do_tests (find_results)
-									put_results (False, pass_count, fail_count)
+									put_results (IO.Output, pass_count, fail_count, False)
 									l_fail_count := l_fail_count + fail_count
 								end
 								sum_fail_count := sum_fail_count + fail_count
@@ -71,7 +71,7 @@ feature -- Basic operations
 					end
 				end
 				package_results.close
-				put_results (True, sum_pass_count, sum_fail_count)
+				put_results (IO.Output, sum_pass_count, sum_fail_count, True)
 			else
 				IO.put_string_32 (dir_path.name)
 				IO.put_new_line

@@ -399,12 +399,12 @@ feature {NONE} -- Tag sub-helpers
 							next_token_index := index; Result := Tok_invalid; closed := True
 
 						when BT_LF, BT_CR then
-							attribute_intervals.report_cr_lf_tab
+							attribute_intervals.report_newline_or_tab
 							index := index + 1
 
 						when BT_whitespace then
 							inspect buf [index] when '%T' then
-								attribute_intervals.report_cr_lf_tab
+								attribute_intervals.report_newline_or_tab
 							else end
 							index := index + 1
 

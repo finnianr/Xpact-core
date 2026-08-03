@@ -17,6 +17,7 @@ inherit
 		rename
 			on_content as on_base_content,
 			on_comment as on_base_commment,
+			on_tag_start as on_base_tag_start,
 			on_tag_end as on_base_tag_end,
 			on_processing_instruction as on_base_processing_instruction
 		redefine
@@ -76,6 +77,23 @@ feature {NONE} -- Event handlers
 			end
 		end
 
+	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
+		do
+			if attributes.index_count > 0 then
+				attributes.null_terminate_values (buf) -- purely to test null termination
+			end
+			on_tag_start (context.name, context.depth, attributes.as_table (buf, False))
+
+			if attributes.index_count > 0 then
+				attributes.undo_null_terminated_values (buf) -- purely to test restoring value
+			end
+		ensure then
+			buffer_unchanged:
+				attributes.upper_plus_1_characters (buf).is_equal (
+					old attributes.upper_plus_1_characters (buf) -- purely to test upper_plus_1_characters
+				)
+		end
+
 	on_base_tag_end (name: STRING)
 		do
 			do_with_content (text_buffer)
@@ -87,6 +105,10 @@ feature {NONE} -- Event handlers
 		end
 
 	on_content (text: STRING)
+		deferred
+		end
+
+	on_tag_start (name: STRING_8; depth: INTEGER; attribute_table: HASH_TABLE [STRING, STRING])
 		deferred
 		end
 
@@ -115,6 +137,16 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	put_tabs (n: INTEGER)
+		local
+			i: INTEGER
+		do
+			from i := 1 until i > n loop
+				IO.put_string (Tab_string)
+				i := i + 1
+			end
+		end
+
 feature {NONE} -- Internal attributes
 
 	content_call_count: INTEGER
@@ -122,5 +154,13 @@ feature {NONE} -- Internal attributes
 	is_white_space_skipped: BOOLEAN
 
 	text_buffer: STRING
+
+feature {NONE} -- Constants
+
+	Tab_string: STRING
+		once
+			create Result.make_filled (' ', 3)
+		end
+
 
 end

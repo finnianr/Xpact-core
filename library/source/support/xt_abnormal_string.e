@@ -50,8 +50,7 @@ feature -- Conversion
 			else
 				create Result.make (count + 1)
 				Result.append (Current)
-				Result.extend ('"')
-				s.normalize_whitespace (Result.area, 0, Result.count - 2)
+				s.normalize_whitespace (Result.area, 0, Result.count - 1)
 				internal_attribute := Result
 			end
 		end

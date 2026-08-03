@@ -36,7 +36,7 @@ feature -- Status query
 			Result := character_swap_area.count >= count
 		end
 
-	cr_lf_tab_found: BOOLEAN
+	newline_or_tab_found: BOOLEAN
 
 feature -- Access
 
@@ -135,11 +135,11 @@ feature -- Status change
 			character_swap_area_in_default_state: character_swap_area.filled_with ('%U', 0, count - 1)
 		end
 
-	report_cr_lf_tab
-		-- report the presence of CR LF OR tab characters in next attribute name/value pair
+	report_newline_or_tab
+		-- report the presence of LF OR tab characters in next attribute name/value pair
 		-- to be transfered (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
 		do
-			cr_lf_tab_found := True
+			newline_or_tab_found := True
 		end
 
 feature -- Measurement
@@ -293,7 +293,7 @@ feature -- Basic operations
 			full_buffer: additions.count = Group_size
 			valid_intervals: valid_intervals (additions)
 		local
-			i, new_capacity, start_index, end_index: INTEGER; a: like area_v2
+			i, new_capacity: INTEGER; a: like area_v2
 		do
 			a := area_v2
 			i := a.count + additions.count
@@ -311,11 +311,10 @@ feature -- Basic operations
 				entity_refs_area := entity_refs_area.aliased_resized_area (new_capacity // Group_size)
 				character_swap_area := character_swap_area.aliased_resized_area_with_default ('%U', new_capacity // Group_size)
 			end
-			if cr_lf_tab_found then
+			if newline_or_tab_found then
 			-- XML §3.3.3 attribute-value normalisation: replace %N %T with space
-				start_index := additions [2]; end_index := additions [3] + 1
-				normalize_whitespace (buffer, start_index, end_index)
-				cr_lf_tab_found := False
+				normalize_whitespace (buffer, additions [2], additions [3])
+				newline_or_tab_found := False
 			end
 			a.copy_data (additions, 0, index_count, additions.count)
 			if attached overflow_buffer_area as overflow then
@@ -340,7 +339,7 @@ feature -- Basic operations
 			all_valid: all_valid
 			empty_additions_buffer: additions.count = 0
 			empty_entity_list_buffer: entity_list.count = 0
-			cr_lf_tab_reset: not cr_lf_tab_found
+			cr_lf_tab_reset: not newline_or_tab_found
 		end
 
 feature -- Debug helpers

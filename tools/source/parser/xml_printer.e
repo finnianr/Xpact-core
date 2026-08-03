@@ -94,36 +94,26 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
+	on_tag_start (name: STRING_8; depth: INTEGER; attribute_table: HASH_TABLE [STRING, STRING])
 		do
-			put_tabs (context.depth - 1)
-			IO.put_string (context.name)
+			put_tabs (depth - 1)
+			IO.put_string (name)
 			IO.put_character (':')
 			IO.put_new_line
-			if attributes.index_count > 0 then
-				attributes.null_terminate_values (buf) -- purely to test null termination
-
-				across attributes.as_table (buf, False) as value loop
-					if @ value.is_first then
-						put_tabs (context.depth)
-						IO.put_string ("ATTRIBUTES: {")
-					else
-						IO.put_string (", ")
-					end
-					IO.put_string (@ value.key)
-					IO.put_string (" : %"")
-					IO.put_string (value)
-					IO.put_character ('"')
+			across attribute_table as value loop
+				if @ value.is_first then
+					put_tabs (depth)
+					IO.put_string ("ATTRIBUTES: {")
+				else
+					IO.put_string (", ")
 				end
-				IO.put_character ('}')
-				IO.put_new_line
-				attributes.undo_null_terminated_values (buf) -- purely to test restoring value
+				IO.put_string (@ value.key)
+				IO.put_string (" : %"")
+				IO.put_string (value)
+				IO.put_character ('"')
 			end
-		ensure then
-			buffer_unchanged:
-				attributes.upper_plus_1_characters (buf).is_equal (
-					old attributes.upper_plus_1_characters (buf) -- purely to test upper_plus_1_characters
-				)
+			IO.put_character ('}')
+			IO.put_new_line
 		end
 
 	on_processing_instruction (name, value: STRING)
@@ -150,24 +140,7 @@ feature {NONE} -- Event handlers
 			IO.put_new_line
 		end
 
-feature {NONE} -- Implementation
-
-	put_tabs (n: INTEGER)
-		local
-			i: INTEGER
-		do
-			from i := 1 until i > n loop
-				IO.put_string (Tab_string)
-				i := i + 1
-			end
-		end
-
 feature {NONE} -- Constants
-
-	Tab_string: STRING
-		once
-			create Result.make_filled (' ', 3)
-		end
 
 	Processing_template: STRING = "PROCESS: %S (%"%S%")"
 end
