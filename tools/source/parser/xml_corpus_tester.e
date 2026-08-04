@@ -1,16 +1,16 @@
 note
 	description: "[
-		Parse a corpus information file structured as follows:
+		Test all files specified in XML corpus information file structured as follows:
 		
 			<?xml version="1.0" encoding="UTF-8"?>
 			<!-- XML testing corpus in the wild-->
 			<test-corpus>
-				<section name = "Linux Mint" section_path="/">
+				<section name = "Linux Mint" path="/">
 					<directory path = "/home/finnian/Dev/Eiffel/library/Xpact-core/tools/data"
 						pattern_list = "*.xml; *.eant; *.xsl; *.svg"
 					/>
 				</section>
-				<section  name="Windows 11" section_path="/media/finnian/Windows">
+				<section name="Windows 11" path="/media/finnian/Windows">
 					<directory path = "Windows/Windows/System32"
 						pattern_list = "*.xml; *.man; *.mof"
 					/>

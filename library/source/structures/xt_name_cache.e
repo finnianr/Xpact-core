@@ -48,7 +48,7 @@ feature {NONE} -- Initialization
 
 	make
 		do
-			create area.make_filled (Default_list, Size)
+			create area.make_filled (Default_bucket, Size)
 		end
 
 feature -- Access
@@ -59,34 +59,38 @@ feature -- Access
 			valid_range: start_index <= end_index
 			not_empty: not is_empty
 		local
-			i, bucket_count: INTEGER; bucket_list: like area.item
+			i, j, bucket_count: INTEGER; bucket: like area.item
 			found: BOOLEAN;
 		do
 			Result := empty_string
 			i := bucket_index (buffer, start_index, end_index)
-			bucket_list := area [i]
-			if bucket_list = Default_list then
-				create bucket_list.make (2)
+			bucket := area [i]
+			if bucket = Default_bucket then
+				create bucket.make_empty (5)
 
-				area [i] := bucket_list
+				area [i] := bucket
 
-			elseif attached bucket_list.area as l_area then
+			else
 			-- search for match
-				bucket_count := bucket_list.count
-				from i := 0 until i = bucket_count or found loop
-					if same_string (buffer, start_index, end_index, l_area [i]) then
-						Result := l_area [i]
+				bucket_count := bucket.count
+				from j := 0 until j = bucket_count or found loop
+					if same_string (buffer, start_index, end_index, bucket [j]) then
+						Result := bucket [j]
 						found := True
 					else
-						i := i + 1
+						j := j + 1
 					end
 				end
 			end
 			if not found then
 				Result := buffer_string_8 (buffer, start_index, end_index)
-				bucket_list.extend (Result)
+				if bucket.count + 1 > bucket.capacity then
+					bucket := bucket.aliased_resized_area (bucket.capacity + bucket.capacity // 2)
+					area [i] := bucket
+				end
+				bucket.extend (Result)
 				check
-					well_distributed_hash_indices: across area as list all list /= Default_list implies list.count <= 5 end
+					well_distributed_hash_indices: across area as a all a /= Default_bucket implies a.count <= 5 end
 				end
 			end
 		ensure
@@ -149,12 +153,16 @@ feature {NONE} -- Implementation
 			i, count: INTEGER
 		do
 			count := end_index - start_index + 1
-			if count = name.count and then attached name.area as l_area then
+			if count = name.count and then attached name.area as l_area
+				and then buffer [start_index] = l_area [0]
+				and then buffer [end_index] = l_area [count - 1]
+			then
 				Result := True
-				from i := 0 until i = count or not Result loop
+				from i := 1 until i = count loop
 					if l_area [i] = buffer [start_index + i] then
 						i := i + 1
 					else
+						i := count -- break
 						Result := False
 					end
 				end
@@ -170,7 +178,7 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
-	area: SPECIAL [ARRAYED_LIST [STRING]]
+	area: SPECIAL [SPECIAL [STRING]]
 
 feature {NONE} -- Constants
 
@@ -178,8 +186,8 @@ feature {NONE} -- Constants
 
 	Size: INTEGER = 512
 
-	Default_list: ARRAYED_LIST [STRING]
+	Default_bucket: SPECIAL [STRING]
 		once ("PROCESS")
-			create Result.make (0)
+			create Result.make_empty (0)
 		end
 end
