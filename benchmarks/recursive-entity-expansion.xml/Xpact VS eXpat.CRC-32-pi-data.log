@@ -23,3 +23,6 @@ recursive-entity-expansion.xml: eXpat passes = 3179; Xpact-core passes = 4588 (x
 
 2026 03 AUG 8:56
 recursive-entity-expansion.xml: eXpat passes = 3169; Xpact-core passes = 4550 (x1.44 to eXpat)
+
+2026 04 AUG 10:30
+recursive-entity-expansion.xml: eXpat passes = 3109; Xpact-core passes = 4435 (x1.43 to eXpat)

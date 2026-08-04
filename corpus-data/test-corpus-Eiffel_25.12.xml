@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XML testing corpus in the wild-->
+<test_corpus report_path = "/home/finnian/Dev/Eiffel/library/Xpact-core/docs/Testing-report.txt">
+	<section name = "Linux Mint Root" path="/">
+		<directory path = "usr/local/Eiffel_25.12" pattern_list = "*.eant; *.ecf; *.html; *.xhtml; *.xml"/>
+	</section>
+</test_corpus>

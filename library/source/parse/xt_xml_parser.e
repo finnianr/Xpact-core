@@ -79,19 +79,7 @@ feature {NONE} -- Event handlers
 
 	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
 		do
-			if attributes.index_count > 0 then
-				attributes.null_terminate_values (buf) -- purely to test null termination
-			end
 			on_tag_start (context.name, context.depth, attributes.as_table (buf, False))
-
-			if attributes.index_count > 0 then
-				attributes.undo_null_terminated_values (buf) -- purely to test restoring value
-			end
-		ensure then
-			buffer_unchanged:
-				attributes.upper_plus_1_characters (buf).is_equal (
-					old attributes.upper_plus_1_characters (buf) -- purely to test upper_plus_1_characters
-				)
 		end
 
 	on_base_tag_end (name: STRING)

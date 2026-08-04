@@ -70,7 +70,7 @@ feature -- Error text
 		No memory
 		Syntax
 		No elements
-		Invalid token
+		not well-formed (invalid token)
 		Unclosed token
 		Partial character
 		Tag mismatch

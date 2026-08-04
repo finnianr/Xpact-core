@@ -30,12 +30,12 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_dir_path: IMMUTABLE_STRING_32)
+	make (a_dir_path: PATH)
 		local
 			find_results: XT_COMMAND_OUTPUT_FILE
 		do
+			dir_path := a_dir_path
 			create log_list.make (100)
-			create dir_path.make_from_string (a_dir_path)
 			create find_results.make_with_output (Find_template, << a_dir_path >>)
 			find_results.append_lines_to (log_list)
 		end
@@ -72,7 +72,7 @@ feature -- Basic operations
 								metric_lines.extend (substitute (Metric_template, << metric, line >>))
 							end
 						end
-						log_tail.close
+						log_tail.cleanup
 					end
 				end
 			end

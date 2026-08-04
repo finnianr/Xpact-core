@@ -33,6 +33,30 @@ feature -- Access
 			end
 		end
 
+feature -- Status query
+
+	file_exists (path: PATH; a_medium: detachable IO_MEDIUM): BOOLEAN
+		do
+			File.reset_path (path)
+			Result := File.exists
+			if not Result and then attached a_medium as medium then
+				medium.put_string ("File not found: ")
+				medium.put_string (path.utf_8_name)
+				medium.put_new_line
+			end
+		end
+
+	directory_exists (path: PATH; a_medium: detachable IO_MEDIUM): BOOLEAN
+		do
+			Directory.make_with_path (path)
+			Result := Directory.exists
+			if not Result and then attached a_medium as medium then
+				medium.put_string ("Directory not found: ")
+				medium.put_string (path.utf_8_name)
+				medium.put_new_line
+			end
+		end
+
 feature -- Basic operations
 
 	do_command (template: STRING; argument_array: ARRAY [ANY])
@@ -61,12 +85,6 @@ feature -- Basic operations
 			else
 				system (u.utf_8_string_8_to_string_32 (command))
 			end
-		end
-
-	directory_exists (path: PATH): BOOLEAN
-		do
-			Directory.make_with_path (path)
-			Result := Directory.exists
 		end
 
 	make_directory (path: PATH; recursively: BOOLEAN)
@@ -142,6 +160,11 @@ feature {NONE} -- Constants
 	Directory: DIRECTORY
 		once
 			create Result.make_with_path (Empty_path)
+		end
+
+	File: RAW_FILE
+		once
+			create Result.make_with_name ("none.dat")
 		end
 
 	Reserved_path_chars: STRING = "*?[]<>|&;`$()%"%'!~ %T%N-"

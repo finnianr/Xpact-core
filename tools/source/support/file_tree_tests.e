@@ -1,4 +1,4 @@
-note
+﻿note
 	description: "Mass testing of Xpact parsing of XML files against eXpat"
 
 	author: "Finnian Reilly"
@@ -73,9 +73,12 @@ feature -- Basic operations
 	execute
 		do
 			make_log_directory
-			if attached new_find_results as find_results and then find_results.has_output then
-				do_tests (find_results)
-				put_results (IO.Output, pass_count, fail_count, False)
+			if attached new_find_results as find_results then
+				if find_results.has_output then
+					do_tests (find_results)
+					put_results (IO.Output, pass_count, fail_count, False)
+				end
+				find_results.cleanup
 			end
 			if not logs_retained and then attached Environment as env then
 				env.remove_directory (env.temporary_path (env.command_name), True)
@@ -145,7 +148,7 @@ feature {NONE} -- Implementation
 						done := True
 					end
 				end
-				output_file.close
+				output_file.cleanup
 			end
 		end
 
@@ -232,7 +235,6 @@ feature {NONE} -- Implementation
 					end
 				end
 			end
-			find_results.close
 			log.close
 			if log.count = 0 then
 				log.delete
@@ -263,6 +265,16 @@ feature {NONE} -- Factory
 	new_find_results: XT_COMMAND_OUTPUT_FILE
 		do
 			create Result.make_with_output (Find_template, << dir_path, wild_card >>)
+		-- Check if find command tried to access directories requiring root permission
+		-- find: ‘/etc/cups/ssl’: Permission denied
+			if Result.has_errors and then
+				across Result.error_lines as line all
+					line.ends_with (": Permission denied")
+				end
+			then
+			-- all permission errors so fine to read results
+				Result.open_read
+			end
 		end
 
 	new_log_path: PATH

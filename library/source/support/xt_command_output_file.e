@@ -14,8 +14,9 @@ class
 
 inherit
 	PLAIN_TEXT_FILE
-		redefine
-			close
+		export
+			{NONE} all
+			{ANY} open_read
 		end
 
 	XT_SHARED_EXECUTION_ENVIRONMENT
@@ -30,7 +31,7 @@ feature {NONE} -- Initialization
 			enough_arguments: command_template.occurrences ('%S') = argument_array.count
 			has_space: command_template.has (' ')
 		local
-			exec_name: STRING; error_path, output_path, temp_path: PATH
+			exec_name: STRING; temp_path: PATH
 			s: XT_STRING_ROUTINES; error_file: PLAIN_TEXT_FILE
 			checksum: EL_CRC_32_DIGEST; argument_list: ARRAYED_LIST [ANY]
 		do
@@ -66,7 +67,7 @@ feature {NONE} -- Initialization
 							error_lines.extend (f.last_string.twin)
 						end
 					end
-					f.close; f.delete
+					f.delete; f.close
 				end
 			end
 		end
@@ -76,6 +77,11 @@ feature -- Status report
 	has_output: BOOLEAN
 		do
 			Result := exists and then file_readable
+		end
+
+	has_errors: BOOLEAN
+		do
+			Result := return_code > 0
 		end
 
 feature -- Access
@@ -106,6 +112,10 @@ feature -- Access
 			end
 		end
 
+	error_path: PATH
+
+	output_path: PATH
+
 feature -- Basic operations
 
 	append_lines_to (list: ARRAYED_LIST [STRING])
@@ -121,15 +131,15 @@ feature -- Basic operations
 						list.extend (last_string.twin)
 					end
 				end
-				close
+				cleanup
 			end
 		end
 
-	close
-		require else
-			has_output: has_output
+	cleanup
 		do
-			Precursor
+			if not is_closed then
+				close
+			end
 			delete
 		end
 

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XML testing corpus in the wild-->
+<test_corpus report_path = "/home/finnian/Dev/Eiffel/library/Xpact-core/docs/Testing-report.txt">
+	<section name = "Linux Mint Finnian" path="/home/finnian">
+		<directory path = "Dev/Eiffel/library/Xpact-core/tools/data"
+			pattern_list = "*.xml; *.eant; *.xsl; *.svg"/>
+			
+		<directory path = ".steam" pattern_list = "*.manifest; *.svg; *.xml"/>
+		<directory path = ".es" pattern_list = "*.xml"/>
+		<directory path = "Documents" pattern_list = "*.ods; *.odt; *.docx"/>
+	</section>
+	<section name = "Linux Mint Root" path="/">
+		<directory path = "etc" pattern_list = "*.xml" />
+		<directory path = "usr/share"
+			pattern_list = "*.docbook; *.glade; *.html; *.policy; *.rng; *.svg; *.ui; *.xml; *.xsl"/>
+			
+		<directory path = "usr/local/Eiffel_25.12" pattern_list = "*.eant; *.ecf; *.html; *.xhtml; *.xml"/>
+	</section>
+	<section name="Windows 11" path="/media/finnian/Windows">
+		<directory path = "Windows/System32" pattern_list = "*.xml; *.man; *.mof"/>
+		<directory path = "Windows/WinSxS" pattern_list = "*.manifest"/>
+		<directory path = "Windows/servicing/Packages" pattern_list = "*.mum"/>
+		<directory path = "Program Files/WindowsApps" pattern_list = "*.xml"/>
+		<directory path = "ProgramData/Microsoft/Windows/AppRepository" pattern_list = "*.xml"/>
+		<directory path = "Users/Finnian/AppData" pattern_list = "*.xml"/>
+	</section>
+</test_corpus>

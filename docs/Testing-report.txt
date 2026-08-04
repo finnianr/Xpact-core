@@ -1,0 +1,9 @@
+SECTION: Linux Mint Root
+
+Directory: /etc
+*.xml	       Passed: 29 Failed: 0
+
+
+
+Tested against eXpat
+Total passed: 29 Total failed: 0

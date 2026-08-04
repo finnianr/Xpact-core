@@ -5,19 +5,19 @@ note
 			<?xml version="1.0" encoding="UTF-8"?>
 			<!-- XML testing corpus in the wild-->
 			<test-corpus>
-				<partition name = "Linux Mint" mount_point="/">
+				<section name = "Linux Mint" section_path="/">
 					<directory path = "/home/finnian/Dev/Eiffel/library/Xpact-core/tools/data"
 						pattern_list = "*.xml; *.eant; *.xsl; *.svg"
 					/>
-				</partition>
-				<partition  name="Windows 11" mount_point="/media/finnian/Windows">
+				</section>
+				<section  name="Windows 11" section_path="/media/finnian/Windows">
 					<directory path = "Windows/Windows/System32"
 						pattern_list = "*.xml; *.man; *.mof"
 					/>
 					<directory path = "Windows/Windows/WinSxS"
 						pattern_list = "*.manifest"
 					/>
-				</partition>
+				</section>
 			</test-corpus>
 	]"
 
@@ -51,8 +51,8 @@ feature {NONE} -- Initialisation
 	make
 		do
 			Precursor
-			create mount_point.make_empty
-			create partition_name.make (20)
+			create section_path.make_empty
+			create section_name.make (20)
 			create report_file.make_with_name ("Test-files.txt")
 			create padding.make (12)
 		end
@@ -87,18 +87,22 @@ feature {NONE} -- Event handlers
 
 	on_tag_start (a_name: STRING_8; depth: INTEGER; attribute_table: HASH_TABLE [STRING, STRING])
 		local
-			directory: DIRECTORY; exception: DEVELOPER_EXCEPTION
+			directory: DIRECTORY; report_path: PATH; section: STRING
 		do
-			if a_name ~ Name.partition then
-				if attached attribute_table [Name.mount_point] as str then
-					create mount_point.make_from_string (str)
+			if a_name ~ Name.section then
+				if attached attribute_table [Name.path] as str then
+					create section_path.make_from_string (str)
+				else
+					create section_path.make_empty
 				end
-				if attached attribute_table [Name.name] as str then
-					set_partition_name (str)
+				if attached attribute_table [Name.name] as l_name then
+					set_section_name (l_name)
+				else
+					set_section_name ("<Unspecified>")
 				end
 			elseif a_name ~ Name.directory then
 				if attached attribute_table [Name.path] as relative_path
-					and then attached mount_point.extended (relative_path) as path
+					and then attached section_path.extended (relative_path) as path
 				then
 					create directory.make_with_path (path)
 					if directory.exists then
@@ -111,14 +115,17 @@ feature {NONE} -- Event handlers
 						put_directory (directory.path, False)
 					end
 				end
-			elseif name ~ Name.test_corpus and then attached attribute_table [Name.report_path] as report_path then
-				report_file.reset_path (create {PATH}.make_from_string (report_path))
-				if Environment.directory_exists (report_file.path.parent) then
-					report_file.open_write
+			elseif a_name ~ Name.test_corpus then
+				if attached attribute_table [Name.report_path] as table_item then
+					create report_path.make_from_string (table_item)
+					report_file.reset_path (report_path)
+					if Environment.directory_exists (report_file.path.parent, Void) then
+						report_file.open_write
+					else
+						raise_exception ("No such directory: " + report_file.path.parent.utf_8_name)
+					end
 				else
-					create exception
-					exception.set_description ("No such directory: " + report_file.path.parent.utf_8_name)
-					exception.raise
+					raise_exception ("No report path specified in element: " + Name.test_corpus)
 				end
 			end
 		end
@@ -159,6 +166,15 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	raise_exception (a_description: READABLE_STRING_GENERAL)
+		local
+			exception: DEVELOPER_EXCEPTION
+		do
+			create exception
+			exception.set_description (a_description)
+			exception.raise
+		end
+
 	report_results (tests: FILE_TREE_TESTS; pattern: STRING)
 		local
 			s: XT_STRING_ROUTINES; line: STRING
@@ -171,22 +187,26 @@ feature {NONE} -- Implementation
 			report_file.put_new_line
 		end
 
-	set_partition_name (a_partition_name: STRING)
+	set_section_name (a_section_name: STRING)
 		do
-			partition_name.wipe_out
-			partition_name.append (a_partition_name)
-			report_file.put_string ("PARTITION: " + a_partition_name)
-			report_file.put_new_line
-			report_file.put_new_line
+			section_name.wipe_out
+			section_name.append (a_section_name)
+			if report_file.is_open_write then
+				report_file.put_string ("SECTION: " + a_section_name)
+				report_file.put_new_line
+				report_file.put_new_line
+			else
+				raise_exception ("Report file not open: " + report_file.path.parent.utf_8_name)
+			end
 		end
 
 feature {NONE} -- Internal attributes
 
 	last_tests: detachable FILE_TREE_TESTS
 
-	mount_point: PATH
+	section_path: PATH
 
-	partition_name: STRING
+	section_name: STRING
 
 	sum_fail_count: INTEGER
 
@@ -196,13 +216,13 @@ feature {NONE} -- Internal attributes
 
 feature {NONE} -- Constants
 
-	Name: TUPLE [directory, mount_point, name, path, pattern_list, partition, report_path, test_corpus: STRING]
+	Name: TUPLE [directory, name, path, pattern_list, report_path, section, test_corpus: STRING]
 		local
 			s: XT_STRING_ROUTINES
 		once
 			create Result
-			s.fill_tuple (
-				Result, "directory, mount_point, name, path, pattern_list, partition, report_path, test_corpus"
+			s.fill_tuple (Result,
+				"directory, name, path, pattern_list, report_path, section, test_corpus"
 			)
 		end
 

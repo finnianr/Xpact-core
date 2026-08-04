@@ -18,19 +18,26 @@ create
 feature {NONE} -- Initialization
 
 	make (a_section_flags: SPECIAL [BOOLEAN])
-		local
-			s: XT_STRING_ROUTINES
 		do
 			section_flags := a_section_flags
-			name := s.Empty_string
 			create empty_attribute_values.make_empty (0)
+			create stack.make_empty (50)
 		end
 
 feature -- Access
 
 	depth: INTEGER
+		do
+			Result := stack.count
+		end
 
 	name: STRING
+		local
+			s: like stack
+		do
+			s := stack
+			Result := s [s.count - 1]
+		end
 
 	default_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
 		do
@@ -51,18 +58,30 @@ feature -- Status query
 feature -- Element change
 
 	push (a_name: STRING)
+		local
+			s: like stack
 		do
-			depth := depth + 1
-			name := a_name
+			s := stack
+			if s.count + 1 > stack.capacity then
+				s := s.aliased_resized_area ((stack.capacity * 1.3).ceiling)
+				stack := s
+			end
+			s.extend (a_name)
 		ensure
 			depth_increased: depth = old depth + 1
 		end
 
-	pop
+	pop (a_name: STRING): INTEGER
 		require
 			is_nested: depth > 0
+		local
+			s: like stack
 		do
-			depth := depth - 1
+			s := stack
+			if a_name /= s [s.count - 1] then
+				Result := {XT_PARSE_ERROR_CONSTANTS}.Error_tag_mismatch
+			end
+			s.remove_tail (1)
 			inspect depth when 0 then
 				section_flags [{XT_PARSE_CONSTANTS}.Prolog] := True
 				reached_depth_zero := true
@@ -81,5 +100,7 @@ feature {NONE} -- Internal attributes
 	empty_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
 
 	section_flags: SPECIAL [BOOLEAN]
+
+	stack: SPECIAL [STRING]
 
 end

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XML testing corpus in the wild-->
+<test_corpus report_path = "/home/finnian/Dev/Eiffel/library/Xpact-core/docs/Testing-report-Documents.txt">
+	<section name = "Linux Mint Finnian" path="/home/finnian">
+		<directory path = "Documents" pattern_list = "*.ods; *.odt; *.docx"/>
+	</section>
+</test_corpus>

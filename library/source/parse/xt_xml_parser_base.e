@@ -421,7 +421,7 @@ feature {NONE} -- Processor dispatch
 			buffer_index_at_start: buffer_index = start_index
 		local
 			index, token, tok_end, code, err, buffer_index_copy, lower, upper: INTEGER; done: BOOLEAN
-			context: XT_ELEMENT_CONTEXT
+			context: XT_ELEMENT_CONTEXT; tag_name: STRING
 		do
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
@@ -451,18 +451,23 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_literal then
 							inspect declaration
-								when Entity_ then
-									on_entity_declaration_part (buf, index + 1, tok_end - 2, s)
 								when Attlist then
 									on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, s, names)
+								when Entity_ then
+									on_entity_declaration_part (buf, index + 1, tok_end - 2, s)
+								when Doctype then
+									on_document_declaration_part (buf, index, tok_end - 1, s)
 							else end
 
 						when Tok_name then
 							inspect declaration
-								when Entity_ then
-									on_entity_declaration_part (buf, index, tok_end - 1, s)
 								when Attlist then
 									on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
+								when Entity_ then
+									on_entity_declaration_part (buf, index, tok_end - 1, s)
+								when Doctype then
+									on_document_declaration_part (buf, index, tok_end - 1, s)
+
 							else end
 
 						when Tok_pound_name then
@@ -539,20 +544,26 @@ feature {NONE} -- Processor dispatch
 							attributes.wipe_out
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
-							if attached s.tag_name (names, buf, index) as tag_name then
-								context.push (tag_name)
-								on_tag_start (buf, context, attributes, token)
-								inspect token when Tok_empty_element_with_attributes then
-									attributes.wipe_out
-								else
-								end
-								on_tag_end (tag_name)
-								context.pop
+							tag_name := s.tag_name (names, buf, index)
+							context.push (tag_name)
+							on_tag_start (buf, context, attributes, token)
+							inspect token when Tok_empty_element_with_attributes then
+								attributes.wipe_out
+							else
+							end
+							on_tag_end (tag_name)
+							inspect context.pop (tag_name) when Error_tag_mismatch then
+								Result := Error_tag_mismatch; done := True
+							else
 							end
 
 						when Tok_end_tag then
-							on_tag_end (s.tag_name (names, buf, index + 1))  -- skip '</'
-							context.pop
+							tag_name := s.tag_name (names, buf, index + 1)
+							on_tag_end (tag_name)  -- skip '</'
+							inspect context.pop (tag_name) when Error_tag_mismatch then
+								Result := Error_tag_mismatch; done := True
+							else
+							end
 
 						when Tok_comment then
 							on_comment (buf, index + 4, tok_end - 4, attributes)
@@ -576,10 +587,15 @@ feature {NONE} -- Processor dispatch
 									buffer_index := buffer_index_copy -- restore field
 									section [CDATA] := False -- restore state
 
-									if err /= Error_none then
+									inspect err when Error_none then
+										do_nothing
+									else
 										done := True
 									end
 									Result := err
+
+								elseif DTD_uri.starts_with (Http) then
+									do_nothing -- undefined but there is leniency due to external DTD so skip it
 								else
 									Result := Error_undefined_entity; done := True
 								end
@@ -720,6 +736,25 @@ feature {NONE} -- Event handlers
 					-- Without putting into table there will be a %N missing in output compared to eXpat
 						entity_table.put (s.Empty_string, declaration_parts_list.first)
 					end
+			else
+			end
+		end
+
+	on_document_declaration_part (buf: like buffer; start_index, end_index: INTEGER; s: like scanner)
+		do
+			inspect declaration_parts_list.count
+				when 0 then
+					declaration_parts_list.extend (name_cache.item (buf, start_index, end_index))
+				when 1 then
+					if s.same_characters (buf, start_index, end_index, PUBLIC) then
+						declaration_parts_list.extend (PUBLIC)
+					end
+				when 2 then
+					s.append_area (formal_public_identifier, buf, start_index + 1, end_index - 1)
+					declaration_parts_list.extend (formal_public_identifier)
+				when 3 then
+					s.append_area (DTD_uri, buf, start_index + 1, end_index - 1)
+					declaration_parts_list.extend (DTD_uri)
 			else
 			end
 		end

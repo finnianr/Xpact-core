@@ -348,9 +348,11 @@ feature {NONE} -- Basic operations
 		end
 
 	frozen fill_tuple (tuple: TUPLE; comma_separated_list: STRING)
+		require
+			enough_strings: tuple.count <= comma_separated_list.occurrences (',') + 1
 		do
 			if attached to_list (comma_separated_list, ',') as list then
-				from list.start until list.after loop
+				from list.start until list.after or list.index > tuple.count loop
 					if tuple.valid_type_for_index (list.item, list.index) then
 						tuple.put_reference (list.item, list.index)
 					end

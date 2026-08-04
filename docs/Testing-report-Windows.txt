@@ -1,0 +1,24 @@
+SECTION: Windows 11
+
+Directory: /media/finnian/Windows/Windows/System32
+*.xml	       Passed: 871 Failed: 0
+*.man	       Passed: 260 Failed: 0
+*.mof	       Passed: 384 Failed: 0
+
+Directory: /media/finnian/Windows/Windows/WinSxS
+*.manifest	  Passed: 42334 Failed: 0
+
+Directory: /media/finnian/Windows/Windows/servicing/Packages
+*.mum	       Passed: 5800 Failed: 0
+
+Directory: /media/finnian/Windows/Program Files/WindowsApps
+*.xml	       Passed: 602 Failed: 0
+
+Directory: /media/finnian/Windows/ProgramData/Microsoft/Windows/AppRepository
+*.xml	       Passed: 291 Failed: 0
+
+Directory: /media/finnian/Windows/Users/Finnian/AppData
+*.xml	       Passed: 403 Failed: 0
+
+Tested against eXpat
+Total passed: 50945 Total failed: 0

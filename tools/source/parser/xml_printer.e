@@ -45,11 +45,30 @@ class XML_PRINTER
 
 inherit
 	XT_XML_PARSER
+		redefine
+			on_base_tag_start
+		end
 
 create
 	make
 
 feature {NONE} -- Event handlers
+
+	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
+		do
+			if attributes.index_count > 0 then
+				attributes.null_terminate_values (buf) -- purely to test null termination
+			end
+			on_tag_start (context.name, context.depth, attributes.as_table (buf, False))
+			if attributes.index_count > 0 then
+				attributes.undo_null_terminated_values (buf) -- purely to test restoring value
+			end
+		ensure then
+			buffer_unchanged:
+				attributes.upper_plus_1_characters (buf).is_equal (
+					old attributes.upper_plus_1_characters (buf) -- purely to test upper_plus_1_characters
+				)
+		end
 
 	on_comment (text: STRING_8)
 		do
@@ -100,20 +119,22 @@ feature {NONE} -- Event handlers
 			IO.put_string (name)
 			IO.put_character (':')
 			IO.put_new_line
-			across attribute_table as value loop
-				if @ value.is_first then
-					put_tabs (depth)
-					IO.put_string ("ATTRIBUTES: {")
-				else
-					IO.put_string (", ")
+			if attribute_table.count > 0 then
+				across attribute_table as value loop
+					if @ value.is_first then
+						put_tabs (depth)
+						IO.put_string ("ATTRIBUTES: {")
+					else
+						IO.put_string (", ")
+					end
+					IO.put_string (@ value.key)
+					IO.put_string (" : %"")
+					IO.put_string (value)
+					IO.put_character ('"')
 				end
-				IO.put_string (@ value.key)
-				IO.put_string (" : %"")
-				IO.put_string (value)
-				IO.put_character ('"')
+				IO.put_character ('}')
+				IO.put_new_line
 			end
-			IO.put_character ('}')
-			IO.put_new_line
 		end
 
 	on_processing_instruction (name, value: STRING)

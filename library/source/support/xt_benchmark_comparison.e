@@ -120,7 +120,7 @@ feature {NONE} -- Implementation
 						end
 					end
 				end
-				expat_output.close
+				expat_output.cleanup
 
 				create time_stamp.make_now
 				create log_file.make_with_path (log_path)

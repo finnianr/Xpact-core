@@ -29,6 +29,10 @@ feature {NONE} -- Standard strings
 			valid_last: Result [{XT_PARSE_CONSTANTS}.Entity] ~ "ENTITY"
 		end
 
+	Http: STRING = "http"
+
+	PUBLIC: STRING = "PUBLIC"
+
 	SYSTEM: STRING = "SYSTEM"
 
 	Xml_lower: STRING = "xml"

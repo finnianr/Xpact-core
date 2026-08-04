@@ -205,8 +205,12 @@ feature {NONE} -- Tag scanning
 				inspect byte
 					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon, BT_lead_2_byte, BT_lead_3_byte,
 						BT_lead_4_byte then
-						inspect index_buffer.count when 0 then
-							index_buffer.extend (index + buf [index].is_space.to_integer) -- name lower
+						inspect index_buffer.count
+							when 0 then
+								index_buffer.extend (index + buf [index].is_space.to_integer) -- name lower
+							when 2 then
+							-- <div itemscope itemtype="http://schema.org/Type" for example
+								Result := Tok_invalid; done := True
 						else
 						end
 						index := index + 1
@@ -218,8 +222,9 @@ feature {NONE} -- Tag scanning
 						else end
 						index := index + 1
 					when BT_equals then
-						inspect index_buffer.count when 1 then
-							index_buffer.extend (index - 1) -- name upper
+						inspect index_buffer.count
+							when 1 then
+								index_buffer.extend (index - 1) -- name upper
 						else end
 						index := index + 1
 						Result := scan_attribute_value (buf, index, end_index, bt_table, index_buffer, entity_buffer)
@@ -259,7 +264,11 @@ feature {NONE} -- Tag scanning
 					next_token_index := index; Result := Tok_invalid; done := True
 				end
 			end
-			if not done then
+			if done then
+				inspect Result when Tok_invalid then
+					attributes.wipe_out; index_x4_buffer.wipe_out
+				else end
+			else
 				Result := Tok_partial
 				attributes.wipe_out; index_x4_buffer.wipe_out
 			end

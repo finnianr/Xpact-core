@@ -64,6 +64,8 @@ feature {NONE} -- Initialisation
 			create attribute_value_defaults_table.make (37)
 			create new_line.make_filled ('%N', 1)
 			create {EL_UTF_8_C_STRING} encoded_chunk.make_empty
+			create formal_public_identifier.make (40)
+			create DTD_uri.make (60)
 
 			create scanner.make
 			attribute_intervals := scanner.attribute_intervals
@@ -119,6 +121,8 @@ feature -- Element change
 			end
 			declaration_parts_list.wipe_out
 			entity_cache.reset
+			DTD_uri.wipe_out
+			formal_public_identifier.wipe_out
 			name_cache.reset
 
 			entity_table.wipe_out
@@ -327,10 +331,6 @@ feature {NONE} -- Internal attributes
 
 feature {NONE} -- Internal structures
 
-	declaration_parts_list: ARRAYED_LIST [STRING]
-		-- For example <!ATTLIST magic priority CDATA "50">
-		-- would be: << "magic", "priority", "CDATA", "50" >>
-
 	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
 		-- collected attribute name-value pair indices into `buffer'
 
@@ -339,6 +339,13 @@ feature {NONE} -- Internal structures
 	buffer: SPECIAL [CHARACTER_8]
 		-- Raw byte buffer; do not modify indices outside this class.
 
+	declaration_parts_list: ARRAYED_LIST [STRING]
+		-- For example <!ATTLIST magic priority CDATA "50">
+		-- would be: << "magic", "priority", "CDATA", "50" >>
+
+	DTD_uri: STRING
+		-- DOCTYPE eg.: http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd
+
 	encoded_chunk: EL_UTF_8_POINTER_CODEC
 
 	entity_table: XT_ENTITY_TABLE
@@ -346,6 +353,9 @@ feature {NONE} -- Internal structures
 
 	entity_cache: XT_ENTITY_NAME_CACHE
 		-- efficient lookup of entity names from character buffer interval
+
+	formal_public_identifier: STRING
+		-- Eg. from DOCTYPE "-//W3C//DTD XHTML 1.0 Transitional//EN"
 
 	name_cache: XT_NAME_CACHE
 		-- efficient lookup of attribute/tag name

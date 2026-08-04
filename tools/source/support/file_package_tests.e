@@ -15,8 +15,11 @@ class
 
 inherit
 	FILE_TREE_TESTS
+		rename
+			do_tests as do_xml_tests,
+			dir_path as package_content_path
 		redefine
-			execute, make, new_base_log_path, put_log_values_differ, sum_fail_count, sum_pass_count
+			execute, make, put_log_values_differ,sum_fail_count, sum_pass_count
 		end
 
 create
@@ -39,41 +42,15 @@ feature -- Access
 feature -- Basic operations
 
 	execute
-		local
-			done: BOOLEAN; l_fail_count: INTEGER
 		do
-			if attached new_find_results as package_results and then package_results.has_output then
-				from until done loop
-					package_results.read_line
-					if package_results.end_of_file then
-						done := True
-					else
-						set_package_path (package_results.last_path)
-						if is_extracted then
-							l_fail_count := 0
-							across Package_wild_cards as l_wild_card loop
-								wild_card := l_wild_card
-								log.reset_path (new_log_path)
-								if attached new_find_results as find_results and then find_results.has_output
-									and then find_results.file_readable
-								then
-									do_tests (find_results)
-									put_results (IO.Output, pass_count, fail_count, False)
-									l_fail_count := l_fail_count + fail_count
-								end
-								sum_fail_count := sum_fail_count + fail_count
-								sum_pass_count := sum_pass_count + pass_count
-							end
-							if l_fail_count = 0 then
-								Environment.remove_directory (dir_path, True)
-							end
-						end
-					end
+			if attached new_find_results as package_results then
+				if package_results.has_output then
+					do_tests (package_results)
 				end
-				package_results.close
+				package_results.cleanup
 				put_results (IO.Output, sum_pass_count, sum_fail_count, True)
 			else
-				IO.put_string_32 (dir_path.name)
+				IO.put_string_32 (package_content_path.name)
 				IO.put_new_line
 				IO.put_string ("No files found: " + wild_card)
 				IO.put_new_line
@@ -82,14 +59,39 @@ feature -- Basic operations
 
 feature {NONE} -- Implementation
 
-	new_base_log_path: PATH
+	do_tests (package_results: XT_COMMAND_OUTPUT_FILE)
+		local
+			done: BOOLEAN; l_fail_count: INTEGER
 		do
-			if attached Environment.Temporary_directory_path as temp_path
-				and then attached dir_path.entry as entry
-			then
-				Result := temp_path.extended (entry.name)
-			else
-				create Result.make_empty
+			from until done loop
+				package_results.read_line
+				if package_results.end_of_file then
+					done := True
+				else
+					set_package_path (package_results.last_path)
+					if is_extracted then
+						l_fail_count := 0
+						across Package_wild_cards as l_wild_card loop
+							wild_card := l_wild_card
+							log.reset_path (new_log_path)
+							Environment.make_directory (log.path.parent, False)
+							if attached new_find_results as find_results then
+								if find_results.has_output then
+									do_xml_tests (find_results)
+									put_results (IO.Output, pass_count, fail_count, False)
+									l_fail_count := l_fail_count + fail_count
+								end
+								find_results.cleanup
+							end
+							sum_fail_count := sum_fail_count + fail_count
+							sum_pass_count := sum_pass_count + pass_count
+						end
+						if l_fail_count = 0 then
+							Environment.remove_directory (log.path.parent, False)
+							Environment.remove_directory (package_content_path, True)
+						end
+					end
+				end
 			end
 		end
 
@@ -111,12 +113,11 @@ feature {NONE} -- Implementation
 	set_package_path (a_package_path: PATH)
 		do
 			package_path := a_package_path
-			if attached a_package_path.entry as entry and then attached entry.name as name
-				and then attached Environment.temporary_path (name) as temp_path
-			then
-				dir_path := temp_path
-				Environment.make_directory (dir_path, False)
-				Environment.do_command (Unzip_template, << a_package_path, dir_path >>)
+			package_content_path := Environment.temporary_path (Environment.command_name)
+			if attached a_package_path.entry as entry then
+				package_content_path := package_content_path + entry
+				Environment.make_directory (package_content_path, False)
+				Environment.do_command (Unzip_template, << a_package_path, package_content_path >>)
 				if Environment.return_code = 0 then
 					make_log
 					is_extracted := True

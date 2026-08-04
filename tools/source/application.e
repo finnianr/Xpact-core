@@ -36,16 +36,18 @@ note
 class APPLICATION
 
 inherit
+	ARGUMENTS_32
+		export
+			{NONE} all
+		end
+
 	XT_PARSE_CONSTANTS
 
 	PARSE_EVENT_CONSTANTS
 
 	FILE_TREE_TESTS_FACTORY
 
-	ARGUMENTS_32
-		export
-			{NONE} all
-		end
+	XT_SHARED_EXECUTION_ENVIRONMENT
 
 create make
 
@@ -109,10 +111,11 @@ feature {NONE} -- Application options
 
 	do_benchmark_sort (app_option: STRING)
 		local
-			sorter: BENCHMARK_SORTER
+			sorter: BENCHMARK_SORTER; dir_path: PATH
 		do
-			if attached argument (argument_count) as path_arg then
-				create sorter.make (path_arg)
+			dir_path := path_argument_last
+			if Environment.directory_exists (dir_path, Void) then
+				create sorter.make (dir_path)
 				sorter.execute
 			else
 				IO.put_string ("Usage: xml_reader -benchmark_sort <benchmark-dir-path>")
@@ -122,15 +125,15 @@ feature {NONE} -- Application options
 
 	do_count_tags (app_option: STRING)
 		do
-			do_parsing (create {TAG_COUNTER}.make)
+			do_parsing (create {TAG_COUNTER}.make, path_argument_last)
 		end
 
 	do_corpus_test (app_option: STRING)
 		local
 			corpus: XML_CORPUS_TESTER; file_path: PATH
 		do
-			if attached argument (argument_count) as last_arg then
-				create file_path.make_from_string (last_arg)
+			file_path := path_argument_last
+			if Environment.file_exists (file_path, IO.Output) then
 				create corpus.make
 				corpus.parse_file (file_path, 0, True)
 			end
@@ -141,7 +144,7 @@ feature {NONE} -- Application options
 			s: XT_STRING_ROUTINES
 		do
 			if attached new_crc_32_generator (app_option) as crc_32 then
-				do_parsing (crc_32)
+				do_parsing (crc_32, path_argument_last)
 			else
 				put_usage ("-crc_32 <data-type> [-trace]")
 				IO.put_string ("Valid XML data types: " + s.key_set_string (Parse_data_types.current_keys, False))
@@ -150,8 +153,13 @@ feature {NONE} -- Application options
 		end
 
 	do_print (app_option: STRING)
+		local
+			file_path: PATH
 		do
-			do_parsing (create {XML_PRINTER}.make)
+			file_path := path_argument_last
+			if Environment.file_exists (file_path, IO.Output) then
+				do_parsing (create {XML_PRINTER}.make, file_path)
+			end
 		end
 
 	do_test (app_option: STRING)
@@ -166,11 +174,19 @@ feature {NONE} -- Application options
 
 	do_test_files (app_option: STRING)
 		local
-			tests: FILE_TREE_TESTS; file_path: PATH
+			tests: FILE_TREE_TESTS; path, dir_path: PATH
 		do
-			if attached argument (argument_count) as path_arg then
-				create file_path.make_from_string (path_arg)
-				tests := new_tests (file_path, index_of_word_option (Option.keep_logs) > 0)
+			path := path_argument_last
+			create dir_path.make_empty
+			if attached path.entry as entry and then entry.name.has ('*') then
+				if attached path.parent as parent then
+					dir_path := parent
+				end
+			else
+				dir_path := path
+			end
+			if Environment.directory_exists (dir_path, IO.Output) then
+				tests := new_tests (path, index_of_word_option (Option.keep_logs) > 0)
 				tests.execute
 			else
 				IO.put_string ("Usage: xml_reader -test_files [-keep_logs] <XML-file-path>")
@@ -180,39 +196,39 @@ feature {NONE} -- Application options
 
 feature {NONE} -- Implementation
 
-	do_parsing (parser: XT_XML_PARSER_BASE)
+	path_argument_last: PATH
+		do
+			create Result.make_from_string (argument (argument_count))
+		end
+
+	do_parsing (parser: XT_XML_PARSER_BASE; file_path: PATH)
 		local
 			file: PLAIN_TEXT_FILE; time_start: TIME; duration: INTEGER
-			file_path: PATH; chunk_size: INTEGER; checksum: NATURAL
+			chunk_size: INTEGER; checksum: NATURAL
 		do
-			if attached argument (argument_count) as path_arg then
-				create file_path.make_from_string (path_arg)
-				create file.make_with_path (file_path)
+			if Environment.file_exists (file_path, IO.Output) then
 				chunk_size := new_integer_argument (Option.chunk_size, 0)
-				if file.exists then
-					IO.put_string ("Parsing: " + file_path.out)
-					IO.put_new_line
+				create file.make_with_path (file_path)
+				IO.put_string ("Parsing: " + file_path.utf_8_name)
+				IO.put_new_line
 
-					create time_start.make_now -- start timer
-					parser.parse_file (file_path, chunk_size, True)
-					inspect parser.status
-						when Status_ok then
-							if attached {XT_EXPAT_COMPARABLE_PARSER} parser as comparable then
-								duration := new_integer_argument (Option.duration, 0)
-								comparable.print_stats
-								checksum := comparable.checksum
-								if attached comparable.new_benchmark (file_path, time_start, duration, chunk_size) as benchmark then
-									benchmark.execute (checksum)
-									if index_of_word_option (Option.compare_to_expat) > 0 then
-										benchmark.try_compare_to_expat
-									end
+				create time_start.make_now -- start timer
+				parser.parse_file (file_path, chunk_size, True)
+				inspect parser.status
+					when Status_ok then
+						if attached {XT_EXPAT_COMPARABLE_PARSER} parser as comparable then
+							duration := new_integer_argument (Option.duration, 0)
+							comparable.print_stats
+							checksum := comparable.checksum
+							if attached comparable.new_benchmark (file_path, time_start, duration, chunk_size) as benchmark then
+								benchmark.execute (checksum)
+								if index_of_word_option (Option.compare_to_expat) > 0 then
+									benchmark.try_compare_to_expat
 								end
 							end
-					else
-						parser.put_error (IO.Error, file_path)
-					end
+						end
 				else
-					IO.put_string ("File not found: " + file_path.out + "%N")
+					parser.put_error (IO.Error, file_path)
 				end
 			end
 		end

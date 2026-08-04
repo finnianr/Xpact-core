@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XML testing corpus in the wild-->
+<test_corpus report_path = "/home/finnian/Dev/Eiffel/library/Xpact-core/docs/Testing-report.txt">
+	<section name="Windows 11" path="/media/finnian/Windows">
+		<directory path = "Windows/System32" pattern_list = "*.xml; *.man; *.mof"/>
+		<directory path = "Windows/WinSxS" pattern_list = "*.manifest"/>
+		<directory path = "Windows/servicing/Packages" pattern_list = "*.mum"/>
+		<directory path = "Program Files/WindowsApps" pattern_list = "*.xml"/>
+		<directory path = "ProgramData/Microsoft/Windows/AppRepository" pattern_list = "*.xml"/>
+		<directory path = "Users/Finnian/AppData" pattern_list = "*.xml"/>
+	</section>
+</test_corpus>
