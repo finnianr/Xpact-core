@@ -43,36 +43,20 @@ feature {NONE} -- Initialisation
 feature -- Basic operations
 
 	print_stats
-		local
-			array: SORTABLE_ARRAY [TAG_OCCURRENCE_COUNT]
 		do
-			if attached tag_occurrence_table.linear_representation as count_list then
-				io.put_string ("Tags sorted in order of occurrence count (Highest first)")
-				io.put_new_line
-				io.put_new_line
-				create array.make_from_array (count_list.to_array)
-				array.sort
-				across array.new_cursor.reversed as tag_count loop
-					tag_count.io_print
-				end
+			io.put_string ("Tags sorted in order of occurrence count (Highest first)")
+			io.put_new_line
+			io.put_new_line
+			across tag_occurrence_table.sorted_occurrence_list (False) as tag_count loop
+				tag_count.io_print ("TAG")
 			end
 		end
 
 feature {NONE} -- Event handlers
 
 	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
-		local
-			name: STRING
 		do
-			if attached tag_occurrence_table as table then
-				name := context.name
-				if not table.has_key (name) then
-					table.put (create {TAG_OCCURRENCE_COUNT}.make (name), name)
-				end
-				if attached table.found_item as count then
-					count.increment
-				end
-			end
+			tag_occurrence_table.put (context.name)
 		end
 
 feature -- Factory
@@ -84,6 +68,6 @@ feature -- Factory
 
 feature {NONE} -- Internal attributes
 
-	tag_occurrence_table: HASH_TABLE [TAG_OCCURRENCE_COUNT, STRING]
+	tag_occurrence_table: XT_NAME_OCCURRENCE_COUNT_TABLE
 
 end

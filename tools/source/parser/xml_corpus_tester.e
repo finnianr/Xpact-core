@@ -87,7 +87,7 @@ feature {NONE} -- Event handlers
 
 	on_tag_start (a_name: STRING_8; depth: INTEGER; attribute_table: HASH_TABLE [STRING, STRING])
 		local
-			directory: DIRECTORY; report_path: PATH; section: STRING
+			directory: DIRECTORY; report_path: PATH
 		do
 			if a_name ~ Name.section then
 				if attached attribute_table [Name.path] as str then

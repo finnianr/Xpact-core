@@ -13,11 +13,14 @@ note
 class
 	FILE_TREE_TESTS_FACTORY
 
+inherit
+	XT_FILE_ROUTINES_I
+
 feature {NONE} -- Implementation
 
 	new_tests (file_path: PATH; keep_logs: BOOLEAN): FILE_TREE_TESTS
 		do
-			if attached file_path.entry as entry and then is_xml_package (entry.name) then
+			if is_xml_package (file_path) then
 				create {FILE_PACKAGE_TESTS} Result.make (file_path)
 			else
 				create Result.make (file_path)
@@ -25,22 +28,6 @@ feature {NONE} -- Implementation
 			if keep_logs then
 				Result.keep_logs
 			end
-		end
-
-	is_xml_package (wild_card: READABLE_STRING_GENERAL): BOOLEAN
-		local
-			s: XT_STRING_ROUTINES
-		do
-			across s.to_list (Compressed_files, ';') as l_wild_card until Result loop
-				Result := wild_card.same_string (l_wild_card)
-			end
-		end
-
-feature {NONE} -- Constants
-
-	Compressed_files: STRING
-		once
-			Result := "*.ods; *.odt; *.docx"
 		end
 
 end

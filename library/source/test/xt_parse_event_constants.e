@@ -10,7 +10,7 @@ note
 	revision: "1"
 
 class
-	PARSE_EVENT_CONSTANTS
+	XT_PARSE_EVENT_CONSTANTS
 
 inherit
 	XT_TOKEN_CONSTANTS

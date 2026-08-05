@@ -6,11 +6,11 @@ note
 	contact: "finnian at eiffel hyphen loop dot com"
 
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
-	date: "2026-06-20 7:45:50 GMT (Saturday 20th June 2026)"
-	revision: "1"
+	date: "2026-08-05 12:39:00 GMT (Wednesday 5th August 2026)"
+	revision: "2"
 
 class
-	TAG_OCCURRENCE_COUNT
+	XT_NAME_OCCURRENCE_COUNT
 
 inherit
 	COMPARABLE
@@ -38,9 +38,10 @@ feature -- Basic operations
 			count := count + 1
 		end
 
-	io_print
+	io_print (name_type: STRING)
 		do
-			io.put_string ("TAG: <")
+			io.put_string (name_type)
+			io.put_string (": <")
 			io.put_string (name)
 			io.put_string ("> occurrences ")
 			io.put_integer (count)

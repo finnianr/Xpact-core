@@ -19,7 +19,7 @@ note
 	revision: "1"
 
 class
-	CRC_32_GENERATOR
+	XT_CRC_32_GENERATOR
 
 inherit
 	XT_XML_PARSER_BASE
@@ -41,7 +41,7 @@ inherit
 			on_tag_end_ as on_tag_end
 		end
 
-	PARSE_EVENT_CONSTANTS
+	XT_PARSE_EVENT_CONSTANTS
 		export
 			{NONE} all
 		end
@@ -175,7 +175,7 @@ feature {NONE} -- Event handlers
 
 feature -- Factory
 
-	new_benchmark (a_file_path: PATH; a_time_start: TIME; a_duration_ms, a_chunk_size: INTEGER): CRC_32_BENCHMARK
+	new_benchmark (a_file_path: PATH; a_time_start: TIME; a_duration_ms, a_chunk_size: INTEGER): XT_CRC_32_BENCHMARK
 		do
 			create Result.make (Current, a_file_path, a_time_start, a_duration_ms, a_chunk_size)
 			Result.set_data_type (data_type)

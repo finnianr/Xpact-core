@@ -10,7 +10,7 @@ note
 	revision: "1"
 
 class
-	CRC_32_BENCHMARK
+	XT_CRC_32_BENCHMARK
 
 inherit
 	XT_BENCHMARK_COMPARISON
@@ -18,7 +18,7 @@ inherit
 			make_default
 		end
 
-	PARSE_EVENT_CONSTANTS
+	XT_PARSE_EVENT_CONSTANTS
 
 create
 	make

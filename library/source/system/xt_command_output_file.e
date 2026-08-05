@@ -31,18 +31,16 @@ feature {NONE} -- Initialization
 			enough_arguments: command_template.occurrences ('%S') = argument_array.count
 			has_space: command_template.has (' ')
 		local
-			exec_name: STRING; temp_path: PATH
-			s: XT_STRING_ROUTINES; error_file: PLAIN_TEXT_FILE
+			s: XT_STRING_ROUTINES; error_file: PLAIN_TEXT_FILE; temp_path: PATH
 			checksum: EL_CRC_32_DIGEST; argument_list: ARRAYED_LIST [ANY]
 		do
 			create error_lines.make (0)
-			exec_name := Environment.command_name.to_string_8
 			create checksum
 			checksum.add_string (command_template) -- stop clashes
 			across argument_array as argument loop
 				checksum.add_string (argument.out)
 			end
-			temp_path := Environment.temporary_path (exec_name)
+			temp_path := Environment.temporary_command_path
 			Environment.make_directory (temp_path, False)
 
 			output_path := temp_path.extended (s.substitute (Output_name_template, << "output", checksum.out >>))

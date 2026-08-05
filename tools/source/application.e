@@ -43,7 +43,7 @@ inherit
 
 	XT_PARSE_CONSTANTS
 
-	PARSE_EVENT_CONSTANTS
+	XT_PARSE_EVENT_CONSTANTS
 
 	FILE_TREE_TESTS_FACTORY
 
@@ -55,15 +55,20 @@ feature {NONE} -- Initialization
 
 	make
 		do
-			if argument_count >= 2 and then attached new_application_table as app_table
-				and then attached argument (1).to_string_8 as l_option
-				and then attached app_table [l_option] as run
-			then
-				IO.put_string ("Program " + l_option + ": Xpact-core XML tools (Eiffel)")
-				IO.put_new_line
-				run (l_option.substring (2, l_option.count))
-			else
-				put_usage (Operation_parameter)
+			if attached new_application_table as app_table then
+				if argument_count = 1 and then attached argument (1).to_string_8 as l_option
+					and then l_option ~ "-help"
+				then
+					show_help_menu (app_table)
+				elseif argument_count >= 2 and then attached argument (1).to_string_8 as l_option
+					and then attached app_table [l_option] as run
+				then
+					IO.put_string ("Program " + l_option + ": Xpact-core XML tools (Eiffel)")
+					IO.put_new_line
+					run (l_option.substring (2, l_option.count))
+				else
+					show_help_menu (app_table)
+				end
 			end
 		end
 
@@ -95,7 +100,7 @@ feature {NONE} -- Factory
 			end
 		end
 
-	new_crc_32_generator (app_option: STRING): detachable CRC_32_GENERATOR
+	new_crc_32_generator (app_option: STRING): detachable XT_CRC_32_GENERATOR
 		do
 			if attached new_argument_8 (0, app_option) as data_type_arg
 				and then attached Parse_data_types [data_type_arg] as data_type
@@ -113,26 +118,25 @@ feature {NONE} -- Application options
 		local
 			sorter: BENCHMARK_SORTER; dir_path: PATH
 		do
-			dir_path := path_argument_last
+			dir_path := last_path_argument
 			if Environment.directory_exists (dir_path, Void) then
 				create sorter.make (dir_path)
 				sorter.execute
 			else
-				IO.put_string ("Usage: xml_reader -benchmark_sort <benchmark-dir-path>")
-				IO.put_new_line
+				put_usage (app_option)
 			end
 		end
 
 	do_count_tags (app_option: STRING)
 		do
-			do_parsing (create {TAG_COUNTER}.make, path_argument_last)
+			do_parsing (create {TAG_COUNTER}.make, last_path_argument)
 		end
 
 	do_corpus_test (app_option: STRING)
 		local
 			corpus: XML_CORPUS_TESTER; file_path: PATH
 		do
-			file_path := path_argument_last
+			file_path := last_path_argument
 			if Environment.file_exists (file_path, IO.Output) then
 				create corpus.make
 				corpus.parse_file (file_path, 0, True)
@@ -140,15 +144,11 @@ feature {NONE} -- Application options
 		end
 
 	do_crc_32 (app_option: STRING)
-		local
-			s: XT_STRING_ROUTINES
 		do
 			if attached new_crc_32_generator (app_option) as crc_32 then
-				do_parsing (crc_32, path_argument_last)
+				do_parsing (crc_32, last_path_argument)
 			else
-				put_usage ("-crc_32 <data-type> [-trace]")
-				IO.put_string ("Valid XML data types: " + s.key_set_string (Parse_data_types.current_keys, False))
-				IO.put_new_line
+				put_usage (app_option)
 			end
 		end
 
@@ -156,9 +156,11 @@ feature {NONE} -- Application options
 		local
 			file_path: PATH
 		do
-			file_path := path_argument_last
+			file_path := last_path_argument
 			if Environment.file_exists (file_path, IO.Output) then
 				do_parsing (create {XML_PRINTER}.make, file_path)
+			else
+				put_usage (app_option)
 			end
 		end
 
@@ -169,34 +171,105 @@ feature {NONE} -- Application options
 			if attached new_argument_8 (0, app_option) as name then
 				create test_set.make
 				test_set.execute (name)
+			else
+				put_usage (app_option)
 			end
 		end
 
 	do_test_files (app_option: STRING)
 		local
-			tests: FILE_TREE_TESTS; path, dir_path: PATH
+			tests: FILE_TREE_TESTS; path: PATH; path_exists: BOOLEAN
 		do
-			path := path_argument_last
-			create dir_path.make_empty
-			if attached path.entry as entry and then entry.name.has ('*') then
-				if attached path.parent as parent then
-					dir_path := parent
-				end
+			path := last_path_argument
+			if attached path.entry as entry and then entry.name.starts_with ("*.") then
+				path_exists := Environment.directory_exists (path.parent, IO.Output)
 			else
-				dir_path := path
+				path_exists := Environment.file_exists (path, IO.Output)
 			end
-			if Environment.directory_exists (dir_path, IO.Output) then
+			if path_exists then
 				tests := new_tests (path, index_of_word_option (Option.keep_logs) > 0)
 				tests.execute
 			else
-				IO.put_string ("Usage: xml_reader -test_files [-keep_logs] <XML-file-path>")
-				IO.put_new_line
+				put_usage (app_option)
 			end
+		end
+
+	do_xml_hunt (app_option: STRING)
+		local
+			hunter: FILE_SYSTEM_XML_HUNTER; dir_path: PATH
+		do
+			dir_path := last_path_argument
+			if Environment.directory_exists (dir_path, IO.Output) then
+				create hunter.make (dir_path)
+				hunter.execute
+			else
+				put_usage (app_option)
+			end
+		end
+
+feature {NONE} -- Factory
+
+	new_application_table: HASH_TABLE [PROCEDURE, STRING]
+		do
+			create Result.make_from_iterable_tuples (<<
+				[agent do_benchmark_sort,	"-benchmark_sort"],
+				[agent do_count_tags,		"-count_tags"],
+				[agent do_corpus_test,		"-corpus_test"],
+				[agent do_crc_32,				"-crc_32"],
+				[agent do_print,				"-print"],
+				[agent do_test,				"-test"],
+				[agent do_test_files,		"-test_files"],
+				[agent do_xml_hunt,			"-xml_hunt"]
+			>>)
+		end
+
+	new_usage_table: HASH_TABLE [STRING, STRING]
+		local
+			usage: STRING; s: XT_STRING_ROUTINES
+		do
+			create Result.make (11)
+			usage := s.Empty_string
+			across new_application_table.current_keys as l_option loop
+				inspect l_option [2]
+					when 'b' then
+						usage := new_usage_text (l_option, "<benchmark-dir-path>")
+					when 'c' then
+						if l_option.ends_with ("tags") then
+							usage := new_usage_text (l_option, Bench_mark_options)
+
+						elseif l_option.ends_with ("32") then
+							usage := new_usage_text (l_option, "<data-type> " + Bench_mark_options +
+								"%NOPTIONAL: -trace. Trace all CRC-32 stages step by step for debugging" +
+								"%NValid XML data types: " + s.key_set_string (Parse_data_types.current_keys, False)
+							)
+						else
+							usage := new_usage_text (l_option, "<corpus-xml-config-path>")
+						end
+					when 'p' then
+						usage := new_usage_text (l_option, "<xml-file-path>")
+					when 't' then
+						if l_option.ends_with ("files") then
+							usage := new_usage_text (l_option, "[-keep_logs] (<XML-file-path> | <dir-pattern>)" +
+								"%N eg. %"~/Documents/*.docx%""
+							)
+						else
+							usage := new_usage_text (l_option, "<test-name>")
+						end
+				else
+					usage := new_usage_text (l_option, "<dir-path>")
+				end
+				Result.extend (usage, l_option)
+			end
+		end
+
+	new_usage_text (app_option, parameters: STRING): STRING
+		do
+			Result := Usage_base + app_option + " " + parameters
 		end
 
 feature {NONE} -- Implementation
 
-	path_argument_last: PATH
+	last_path_argument: PATH
 		do
 			create Result.make_from_string (argument (argument_count))
 		end
@@ -238,37 +311,54 @@ feature {NONE} -- Implementation
 			create Result
 		end
 
-	new_application_table: HASH_TABLE [PROCEDURE, STRING]
+	put_usage (a_option: STRING)
 		do
-			create Result.make_from_iterable_tuples (<<
-				[agent do_benchmark_sort,	"-benchmark_sort"],
-				[agent do_count_tags,		"-count_tags"],
-				[agent do_corpus_test,		"-corpus_test"],
-				[agent do_crc_32,				"-crc_32"],
-				[agent do_print,				"-print"],
-				[agent do_test,				"-test"],
-				[agent do_test_files,		"-test_files"]
-			>>)
+			if attached new_usage_table [a_option] as usage then
+				across usage.split ('%N') as line loop
+					IO.put_string (line)
+					IO.put_new_line
+				end
+			end
 		end
 
-	put_usage (operation: STRING)
+	show_help_menu (app_table: HASH_TABLE [PROCEDURE, STRING])
 		local
-			s: XT_STRING_ROUTINES
+			chosen, found: BOOLEAN; n: INTEGER
 		do
-			IO.put_string (
-				"Usage: xml_reader " + operation + " [-chunk_size <value>] [-duration <duration-window-ms>] <XML-file-path>"
-			)
-			IO.put_string ("Valid operations: " + s.key_set_string (new_application_table.current_keys, False))
-			IO.put_new_line
-			IO.put_string ("OPTIONAL: -chunk_size. Defaults to: 4096")
-			IO.put_new_line
-			IO.put_string ("OPTIONAL: -duration. Defaults to: 500")
-			IO.put_new_line
-			IO.put_string ("OPTIONAL: -trace. (-crc_32 only) Trace all CRC-32 stages step by step for debugging")
-			IO.put_new_line
+			IO.put_string ("HELP MENU")
+			across app_table.current_keys as l_option loop
+				IO.put_integer (@ l_option.cursor_index)
+				IO.put_string (". ")
+				IO.put_string (l_option)
+				IO.put_new_line
+			end
+			from until chosen loop
+				IO.put_string ("Enter an option number: ")
+				IO.read_line
+				IO.put_new_line
+				n := IO.last_string.to_integer
+				if 1 <= n and n <= app_table.count then
+					chosen := True
+				else
+					IO.put_new_line
+				end
+			end
+			across app_table.current_keys as l_option until found loop
+				if @ l_option.cursor_index = n then
+					put_usage (l_option)
+					found := True
+				end
+			end
 		end
 
 feature {NONE} -- Constants
+
+	Bench_mark_options: STRING = "[
+		[-chunk_size <value>] [-duration <duration-window-ms>] <XML-file-path>
+		
+		OPTIONAL: -chunk_size. Defaults to: 4096
+		OPTIONAL: -duration. Defaults to: 500
+	]"
 
 	Operation_parameter: STRING = "<operation>"
 
@@ -279,5 +369,7 @@ feature {NONE} -- Constants
 			create Result
 			s.fill_tuple (Result, "compare_to_expat, chunk_size, duration, keep_logs, trace")
 		end
+
+	Usage_base: STRING = "Usage: xml_reader "
 
 end

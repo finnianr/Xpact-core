@@ -14,6 +14,7 @@ export:
 			<void_safety support="all" use="all"/>
 		</capability>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="base_ext" location="$ISE_LIBRARY\library\base_extension\base_extension.ecf"/>
 		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf"/>
 		<library name="c_zlib" location="$ISE_LIBRARY\C_library\zlib\clibs_zlib.ecf"/>
 		<external_include location="$(XPACT_INCLUDE)"/>

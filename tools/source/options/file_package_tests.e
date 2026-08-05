@@ -17,9 +17,9 @@ inherit
 	FILE_TREE_TESTS
 		rename
 			do_tests as do_xml_tests,
-			dir_path as package_content_path
+			path as package_content_path
 		redefine
-			execute, make, put_log_values_differ,sum_fail_count, sum_pass_count
+			execute, make, new_comparison, sum_fail_count, sum_pass_count
 		end
 
 create
@@ -43,7 +43,7 @@ feature -- Basic operations
 
 	execute
 		do
-			if attached new_find_results as package_results then
+			if attached new_find_results (package_content_path, wild_card) as package_results then
 				if package_results.has_output then
 					do_tests (package_results)
 				end
@@ -71,11 +71,11 @@ feature {NONE} -- Implementation
 					set_package_path (package_results.last_path)
 					if is_extracted then
 						l_fail_count := 0
-						across Package_wild_cards as l_wild_card loop
-							wild_card := l_wild_card
+						across internal_wild_cards (wild_card) as part loop
+							wild_card := part
 							log.reset_path (new_log_path)
 							Environment.make_directory (log.path.parent, False)
-							if attached new_find_results as find_results then
+							if attached new_find_results (package_content_path, wild_card) as find_results then
 								if find_results.has_output then
 									do_xml_tests (find_results)
 									put_results (IO.Output, pass_count, fail_count, False)
@@ -104,18 +104,17 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	put_log_values_differ (file_path: PATH)
+	new_comparison (file_path: PATH): XT_EXPAT_COMPARISON
 		do
-			log.put_string (substitute (Values_differ_template, << package_name, file_path.out >>))
-			log.put_new_line
+			create Result.make (file_path, log)
+			Result.set_package_name (package_name)
 		end
 
 	set_package_path (a_package_path: PATH)
 		do
 			package_path := a_package_path
-			package_content_path := Environment.temporary_path (Environment.command_name)
 			if attached a_package_path.entry as entry then
-				package_content_path := package_content_path + entry
+				package_content_path := Environment.temporary_command_path + entry
 				Environment.make_directory (package_content_path, False)
 				Environment.do_command (Unzip_template, << a_package_path, package_content_path >>)
 				if Environment.return_code = 0 then
@@ -137,11 +136,6 @@ feature {NONE} -- Internal attributes
 	is_extracted: BOOLEAN
 
 feature {NONE} -- Constants
-
-	Package_wild_cards: ARRAY [STRING]
-		once
-			Result := << Default_wild_card, "*.rdf", "*.rels" >>
-		end
 
 	Unzip_template: STRING
 		once

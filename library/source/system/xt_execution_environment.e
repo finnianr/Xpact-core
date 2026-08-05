@@ -141,6 +141,11 @@ feature -- Access
 			end
 		end
 
+	temporary_command_path: PATH
+		do
+			Result := temporary_path (command_name)
+		end
+
 	temporary_path (name: READABLE_STRING_GENERAL): PATH
 		do
 			if attached Temporary_directory_path as dir_path then

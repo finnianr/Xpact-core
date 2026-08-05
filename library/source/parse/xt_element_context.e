@@ -24,12 +24,14 @@ feature {NONE} -- Initialization
 			create stack.make_empty (50)
 		end
 
-feature -- Access
+feature -- Measurement
 
 	depth: INTEGER
 		do
 			Result := stack.count
 		end
+
+feature -- Access
 
 	name: STRING
 		local
