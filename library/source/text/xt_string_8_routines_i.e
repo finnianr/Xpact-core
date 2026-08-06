@@ -1,5 +1,5 @@
 note
-	description: "${STRING_8} routines"
+	description: "${STRING_8} related routines"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -11,9 +11,11 @@ note
 	revision: "1"
 
 class
-	XT_STRING_ROUTINES_I
+	XT_STRING_8_ROUTINES_I
 
 inherit
+	XT_SHARED_INDEX_STACK
+
 	STRING_HANDLER
 
 feature {NONE} -- Access
@@ -112,6 +114,30 @@ feature {NONE} -- Access
 			if keep_ref then
 				Result := Result.twin
 			end
+		end
+
+	frozen substitute (template: STRING; insertions: ARRAY [STRING]): STRING
+		require
+			enough_place_holders: template.occurrences ('%S') = insertions.count
+		local
+			index, last_index: INTEGER; index_stack: like Shared_index_stack
+		do
+			Result := template.twin
+			index_stack := Shared_index_stack
+
+			last_index := template.last_index_of ('%S', template.count)
+			from until index = last_index loop
+				index := Result.index_of ('%S', index + 1)
+				if index > 0 then
+					index_stack.put (index)
+				end
+			end
+			from until index_stack.is_empty loop
+				Result.replace_substring (insertions [index_stack.count], index_stack.item, index_stack.item)
+				index_stack.remove
+			end
+		ensure
+			empty_stack: Shared_index_stack.is_empty
 		end
 
 	frozen to_list (str: STRING; c: CHARACTER): LIST [STRING]
@@ -361,30 +387,6 @@ feature {NONE} -- Basic operations
 			end
 		end
 
-	frozen substitute (template: STRING; insertions: ARRAY [STRING]): STRING
-		require
-			enough_place_holders: template.occurrences ('%S') = insertions.count
-		local
-			index, last_index: INTEGER; index_stack: like Shared_index_stack
-		do
-			Result := template.twin
-			index_stack := Shared_index_stack
-
-			last_index := template.last_index_of ('%S', template.count)
-			from until index = last_index loop
-				index := Result.index_of ('%S', index + 1)
-				if index > 0 then
-					index_stack.put (index)
-				end
-			end
-			from until index_stack.is_empty loop
-				Result.replace_substring (insertions [index_stack.count], index_stack.item, index_stack.item)
-				index_stack.remove
-			end
-		ensure
-			empty_stack: Shared_index_stack.is_empty
-		end
-
 	normalize_whitespace (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER)
 		--  %T and %N are replaced with a space
 		-- XML §3.3.3 attribute-value normalisation: replace %N %T with space
@@ -416,11 +418,6 @@ feature {NONE} -- Constants
 		-- used to accumulate text for output
 		once
 			create Result.make_empty
-		end
-
-	Shared_index_stack: ARRAYED_STACK [INTEGER]
-		once
-			create Result.make (10)
 		end
 
 	Output_buffer: STRING_8

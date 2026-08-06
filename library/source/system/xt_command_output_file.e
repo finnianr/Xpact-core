@@ -31,7 +31,7 @@ feature {NONE} -- Initialization
 			enough_arguments: command_template.occurrences ('%S') = argument_array.count
 			has_space: command_template.has (' ')
 		local
-			s: XT_STRING_ROUTINES; error_file: PLAIN_TEXT_FILE; temp_path: PATH
+			s: XT_STRING_8_ROUTINES; error_file: PLAIN_TEXT_FILE; temp_path: PATH
 			checksum: EL_CRC_32_DIGEST; argument_list: ARRAYED_LIST [ANY]
 		do
 			create error_lines.make (0)
@@ -101,7 +101,7 @@ feature -- Access
 
 	last_path: PATH
 		local
-			u: UTF_CONVERTER; s: XT_STRING_ROUTINES
+			u: UTF_CONVERTER; s: XT_STRING_8_ROUTINES
 		do
 			if s.is_ascii_string (last_string) then
 				create Result.make_from_string (last_string)

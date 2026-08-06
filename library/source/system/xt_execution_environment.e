@@ -61,7 +61,7 @@ feature -- Basic operations
 
 	do_command (template: STRING; argument_array: ARRAY [ANY])
 		local
-			s: XT_STRING_ROUTINES; argument_list: ARRAYED_LIST [STRING]
+			s: XT_STRING_8_ROUTINES; argument_list: ARRAYED_LIST [STRING]
 			u: UTF_CONVERTER; command: STRING
 		do
 			create argument_list.make (argument_array.count)
@@ -70,10 +70,10 @@ feature -- Basic operations
 					argument_list.extend (unix_escaped (path))
 
 				elseif attached {STRING} arg as str then
-					if s.is_ascii_string (str) then
+					if s.is_ascii_string (str) or else u.is_valid_utf_8_string_8 (str) then
 						argument_list.extend (str)
 					else
-						argument_list.extend (u.utf_8_string_8_to_string_32 (str))
+						argument_list.extend (u.utf_32_string_to_utf_8_string_8 (str))
 					end
 				else
 					argument_list.extend (arg.out)

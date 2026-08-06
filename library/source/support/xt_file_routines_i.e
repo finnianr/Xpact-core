@@ -43,7 +43,7 @@ feature {NONE} -- Implementation
 	is_xml_package (file_path: PATH): BOOLEAN
 		do
 			if attached file_path.entry as entry then
-				Result := Internal_extension_table.has (extension (entry.name.to_string_8))
+				Result := Internal_extension_table.has (extension (entry.utf_8_name))
 			end
 		end
 
@@ -64,7 +64,7 @@ feature {NONE} -- Implementation
 
 	extension (wild_card: STRING): STRING
 		local
-			index: INTEGER; s: XT_STRING_ROUTINES
+			index: INTEGER; s: XT_STRING_8_ROUTINES
 		do
 			index := wild_card.index_of ('.', 1)
 			if index > 0 then
@@ -81,7 +81,7 @@ feature {NONE} -- Implementation
 			if attached Internal_extension_table [extension (wild_card)] as list then
 				Result := list.split (';')
 			else
-				create {ARRAYED_LIST [STRING]} Result.make (0)
+				Result := Default_internal_wild_cards
 			end
 		end
 
@@ -94,10 +94,17 @@ feature {NONE} -- Constants
 
 	Find_template: STRING
 		once
-			Result := "find %S -type f -name '%S'"
+			Result := "[
+				find # -type f -name "#"
+			]"
 		end
 
 feature {NONE} -- Constants
+
+	Default_internal_wild_cards: ARRAYED_LIST [STRING]
+		once
+			create Result.make_from_array (<< Dot_xml >>)
+		end
 
 	Dot_xml: STRING = "*.xml"
 
@@ -141,8 +148,6 @@ feature {NONE} -- Constants
 				[Dot_xml,				"odm"],
 			-- Zipped KML
 				["*.kml",				"kmz"],
-			-- Java archive (XML presence optional, not guaranteed)
-				[Dot_xml,				"jar"],
 			-- Windows app packages
 				[Dot_xml,				"appx"],
 				[Dot_xml,				"appxbundle"],

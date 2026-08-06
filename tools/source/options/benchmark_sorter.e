@@ -23,7 +23,7 @@ class
 	BENCHMARK_SORTER
 
 inherit
-	XT_STRING_ROUTINES_I
+	XT_STRING_8_ROUTINES_I
 
 create
 	make

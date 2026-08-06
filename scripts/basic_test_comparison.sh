@@ -3,9 +3,9 @@
 
 . scripts/install_xml_reader.sh
 
-echo Testing against tools/data/*
+echo Testing against tools/data/*.*
 
-xml_reader -test_files tools/data
+xml_reader -test_files "tools/data/*.*"
 
 if [ "$1" == "large" ]; then
 	echo

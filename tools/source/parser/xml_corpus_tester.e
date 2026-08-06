@@ -134,7 +134,7 @@ feature {NONE} -- Implementation
 
 	do_tests (dir_path: PATH; pattern_list: STRING)
 		local
-			s: XT_STRING_ROUTINES; tests: FILE_TREE_TESTS
+			s: XT_STRING_8_ROUTINES; tests: FILE_TREE_TESTS
 		do
 			across s.to_list (pattern_list, ';') as pattern loop
 				put_tabs (1)
@@ -177,7 +177,7 @@ feature {NONE} -- Implementation
 
 	report_results (tests: FILE_TREE_TESTS; pattern: STRING)
 		local
-			s: XT_STRING_ROUTINES; line: STRING
+			s: XT_STRING_8_ROUTINES; line: STRING
 		do
 			padding.wipe_out
 			padding.fill_character (' ')
@@ -218,7 +218,7 @@ feature {NONE} -- Constants
 
 	Name: TUPLE [directory, name, path, pattern_list, report_path, section, test_corpus: STRING]
 		local
-			s: XT_STRING_ROUTINES
+			s: XT_STRING_8_ROUTINES
 		once
 			create Result
 			s.fill_tuple (Result,

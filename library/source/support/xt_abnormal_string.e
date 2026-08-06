@@ -30,7 +30,7 @@ feature {NONE} -- Initialization
 
 	make (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; scanner: XT_SCANNER_BASE)
 		local
-			s: XT_STRING_ROUTINES
+			s: XT_STRING_8_ROUTINES
 		do
 			make_sized (end_index - start_index + 1)
 			newline_or_tab_found := scanner.newline_or_tab_found
@@ -43,7 +43,7 @@ feature -- Conversion
 		-- normalized version of `Current' for placing in an attribute value
 		-- (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
 		local
-			s: XT_STRING_ROUTINES
+			s: XT_STRING_8_ROUTINES
 		do
 			if attached internal_attribute as l_attribute then
 				Result := l_attribute

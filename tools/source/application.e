@@ -200,7 +200,7 @@ feature {NONE} -- Application options
 		do
 			dir_path := last_path_argument
 			if Environment.directory_exists (dir_path, IO.Output) then
-				create hunter.make (dir_path)
+				create hunter.make (dir_path, new_integer_argument (Option.resume_at, 0))
 				hunter.execute
 			else
 				put_usage (app_option)
@@ -225,7 +225,7 @@ feature {NONE} -- Factory
 
 	new_usage_table: HASH_TABLE [STRING, STRING]
 		local
-			usage: STRING; s: XT_STRING_ROUTINES
+			usage: STRING; s: XT_STRING_8_ROUTINES
 		do
 			create Result.make (11)
 			usage := s.Empty_string
@@ -255,6 +255,9 @@ feature {NONE} -- Factory
 						else
 							usage := new_usage_text (l_option, "<test-name>")
 						end
+					when 'x' then
+						usage := new_usage_text (l_option, "[-resume_at <file-count>] <dir-path>")
+
 				else
 					usage := new_usage_text (l_option, "<dir-path>")
 				end
@@ -362,12 +365,12 @@ feature {NONE} -- Constants
 
 	Operation_parameter: STRING = "<operation>"
 
-	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, trace: STRING]
+	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, resume_at, trace: STRING]
 		local
-			s: XT_STRING_ROUTINES
+			s: XT_STRING_8_ROUTINES
 		once
 			create Result
-			s.fill_tuple (Result, "compare_to_expat, chunk_size, duration, keep_logs, trace")
+			s.fill_tuple (Result, "compare_to_expat, chunk_size, duration, keep_logs, resume_at, trace")
 		end
 
 	Usage_base: STRING = "Usage: xml_reader "

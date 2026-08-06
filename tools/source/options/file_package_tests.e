@@ -61,8 +61,9 @@ feature {NONE} -- Implementation
 
 	do_tests (package_results: XT_COMMAND_OUTPUT_FILE)
 		local
-			done: BOOLEAN; l_fail_count: INTEGER
+			done: BOOLEAN; l_fail_count: INTEGER; package_wild_card: STRING
 		do
+			package_wild_card := wild_card -- "*.ods" for example
 			from until done loop
 				package_results.read_line
 				if package_results.end_of_file then
@@ -71,8 +72,8 @@ feature {NONE} -- Implementation
 					set_package_path (package_results.last_path)
 					if is_extracted then
 						l_fail_count := 0
-						across internal_wild_cards (wild_card) as part loop
-							wild_card := part
+						across internal_wild_cards (package_wild_card) as internal loop
+							wild_card := internal -- "*.xml" for example
 							log.reset_path (new_log_path)
 							Environment.make_directory (log.path.parent, False)
 							if attached new_find_results (package_content_path, wild_card) as find_results then
@@ -98,7 +99,7 @@ feature {NONE} -- Implementation
 	package_name: STRING
 		do
 			if attached package_path.entry as entry then
-				Result := entry.name.to_string_8
+				Result := entry.utf_8_name
 			else
 				create Result.make_empty
 			end

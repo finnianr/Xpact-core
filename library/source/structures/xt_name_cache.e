@@ -36,7 +36,7 @@ class
 	XT_NAME_CACHE
 
 inherit
-	XT_STRING_ROUTINES_I
+	XT_STRING_8_ROUTINES_I
 		export
 			{NONE} all
 		end
@@ -126,7 +126,7 @@ feature {XT_PARSING_BUFFERS} -- Implementation
 			-- Buffer bytes [start_index .. end_index) as a STRING_8.
 			-- UTF-8 bytes are copied as-is; correct on UTF-8 terminals.
 		local
-			s: XT_STRING_ROUTINES
+			s: XT_STRING_8_ROUTINES
 		do
 			Result := s.new_substring (buffer, start_index, end_index)
 		end

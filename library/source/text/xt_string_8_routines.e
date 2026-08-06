@@ -1,5 +1,5 @@
 note
-	description: "${XT_STRING_ROUTINES_I} for use as local variable, no creation required"
+	description: "${XT_STRING_8_ROUTINES_I} for use as local variable, no creation required"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -10,12 +10,12 @@ note
 	revision: "1"
 
 expanded class
-	XT_STRING_ROUTINES
+	XT_STRING_8_ROUTINES
 
 inherit
-	XT_STRING_ROUTINES_I
+	XT_STRING_8_ROUTINES_I
 		export
-			{NONE} Char_area, Output_buffer
+			{NONE} Char_area, Output_buffer, Shared_index_stack
 			{ANY} all
 		end
 

@@ -13,7 +13,7 @@ class
 	FILE_TREE_TESTS
 
 inherit
-	XT_STRING_ROUTINES_I
+	XT_STRING_8_ROUTINES_I
 
 	XT_FILE_ROUTINES_I
 
@@ -26,7 +26,8 @@ feature {NONE} -- Initialization
 
 	make (a_path: PATH)
 		do
-			path := a_path; wild_card := "*.xml"
+			path := a_path
+			wild_card := "*.xml"
 			if attached a_path.entry as entry then
 				wild_card := entry.utf_8_name
 				if wild_card.starts_with ("*.") then
@@ -35,6 +36,7 @@ feature {NONE} -- Initialization
 			end
 			make_log
 			create file.make_with_path (log.path)
+			create {XT_DO_NOTHING_FILE_HANDLER} file_handler
 		end
 
 	make_log
@@ -110,6 +112,13 @@ feature -- Status report
 
 	logs_retained: BOOLEAN
 
+feature -- Element change
+
+	set_file_handler (a_file_handler: XT_FILE_HANDLER)
+		do
+			file_handler := a_file_handler
+		end
+
 feature {NONE} -- Implementation
 
 	do_tests (find_results: XT_COMMAND_OUTPUT_FILE)
@@ -136,6 +145,7 @@ feature {NONE} -- Implementation
 							end
 						end
 						if has_content (file_path) and then attached new_comparison (file_path) as comparison then
+							file_handler.do_with (file_path)
 							comparison.execute
 							if comparison.both_agree then
 								comparison.put_status (IO.Output)
@@ -207,5 +217,7 @@ feature {NONE} -- Internal attributes
 	log: PLAIN_TEXT_FILE
 
 	file: PLAIN_TEXT_FILE
+
+	file_handler: XT_FILE_HANDLER
 
 end

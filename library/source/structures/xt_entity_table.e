@@ -23,7 +23,7 @@ inherit
 			make, same_keys
 		end
 
-	XT_STRING_ROUTINES_I
+	XT_STRING_8_ROUTINES_I
 		rename
 			Output_buffer as Shared_output_buffer
 		undefine

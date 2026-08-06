@@ -139,7 +139,7 @@ feature {NONE} -- Event handlers
 
 	on_processing_instruction (name, value: STRING)
 		local
-			s: XT_STRING_ROUTINES; template: STRING; index: INTEGER
+			s: XT_STRING_8_ROUTINES; template: STRING; index: INTEGER
 		do
 			put_tabs (element_context.depth)
 			if value.is_empty then

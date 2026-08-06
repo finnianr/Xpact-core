@@ -50,7 +50,9 @@ feature -- Basic operations
 				elseif attached new_file_info (ptr) as info and then attached info.file_entry as path then
 					if info.is_directory then
 						create sub_directory.make_with_path (path)
-						sub_directory.traverse (handler)
+						if sub_directory /~ Tmp_path then
+							sub_directory.traverse (handler)
+						end
 					else
 						handler.do_with (path)
 					end
@@ -105,4 +107,10 @@ feature {NONE} -- Internal attributes
 
 	file_info: FILE_INFO
 
+feature {NONE} -- Constants
+
+	Tmp_path: PATH
+		once
+			create Result.make_from_string ("/tmp")
+		end
 end
