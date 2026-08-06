@@ -10,35 +10,27 @@ note
 	revision: "1"
 
 deferred class
-	EL_UTF_8_POINTER_CODEC
+	XT_C_STRING_CODEC
 
-inherit
-	MANAGED_POINTER
-		rename
-			item as area,
-			share_from_pointer as make_shared
-		export
-			{EL_LATIN_1_C_STRING} area
-			{ANY} count
-			{STRING_HANDLER} make_shared
-			{NONE} all
-		end
+feature -- Initialization
 
-	STRING_HANDLER
-		undefine
-			copy, is_equal
-		end
-
-	EL_STRING_H_C_API
-		undefine
-			copy, is_equal
+	make_shared (a_ptr: POINTER; n: INTEGER)
+		deferred
 		end
 
 feature -- Access
 
+	area: POINTER
+		deferred
+		end
+
 	character_count: INTEGER
 		do
 			Result := count
+		end
+
+	count: INTEGER
+		deferred
 		end
 
 	utf_8_copied_count: INTEGER
@@ -68,12 +60,8 @@ feature -- Basic operations
 
 	remove_head (n: INTEGER)
 		require
-			n_less_than_or_equal: n <= count
-		do
-			if is_shared and n <= count then
-				area := area + n
-				count := count - n
-			end
+			n_less_than_or_equal: n <= character_count
+		deferred
 		end
 
 end

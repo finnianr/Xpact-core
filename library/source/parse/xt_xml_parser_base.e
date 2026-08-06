@@ -110,7 +110,7 @@ feature -- Basic operations
 			end
 		end
 
-	parse (chunk: EL_UTF_8_POINTER_CODEC; a_offset, a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
+	parse (chunk: XT_C_STRING_CODEC; a_offset, a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
 		-- Accept `a_count' bytes from `chunk[a_offset]' as the next chunk.
 		-- Returns Status_ok, Status_suspended, or Status_error.
 		-- Corresponds to XML_Parse() in xmlparse.c.

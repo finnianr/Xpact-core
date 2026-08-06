@@ -9,15 +9,35 @@ note
 	date: "2026-07-30 07:48:00 GMT (Thursday 30th July 2026)"
 	revision: "1"
 class
-	EL_UTF_16_C_STRING
+	XT_UTF_16_CODEC
 
 inherit
-	EL_UTF_8_POINTER_CODEC
+	XT_C_STRING_CODEC
+		rename
+			count as byte_count
+		undefine
+			copy, is_equal
+		redefine
+			character_count, reset
+		end
+
+	MANAGED_POINTER
 		rename
 			count as byte_count,
-			read_natural_16 as read_natural_16_
+			item as area,
+			read_natural_16 as read_natural_16_,
+			share_from_pointer as make_shared
+		export
+			{EL_MANAGED_C_STRING_8} area
+			{STRING_HANDLER} make_shared
+			{NONE} all
 		redefine
-			character_count, make_shared, reset
+			make_shared
+		end
+
+	EL_STRING_H_C_API
+		undefine
+			copy, is_equal
 		end
 
 create
@@ -49,12 +69,22 @@ feature -- Element change
 			partial_code_unit := 0
 		end
 
+feature -- Removal
+
+	remove_head (n: INTEGER)
+		do
+			if is_shared and n <= character_count then
+				area := area + n * 2
+				byte_count := byte_count - n * 2
+			end
+		end
+
 feature -- Basic operations
 
 	copy_as_utf_8 (dest: SPECIAL [CHARACTER]; dest_index, n: INTEGER)
 		local
-			dest_full, partial_pair: BOOLEAN; ptr: POINTER
-			i, i_final, j, remaining_count, code_unit, high_16, low_16, partial_unit, ascii_count: INTEGER
+			dest_full, partial_pair, break: BOOLEAN; ptr: POINTER
+			i, i_final, j, remaining_count, code_unit, high_16, low_16, partial_unit: INTEGER
 		do
 			partial_unit := partial_code_unit
 			partial_code_unit := 0
@@ -62,10 +92,27 @@ feature -- Basic operations
 			remaining_count := n
 			from i := 0; j := dest_index until i > i_final or dest_full or partial_pair loop
 				inspect partial_unit when 0 then
-				-- bulk convert leading run of ASCII code units
-					ascii_count := utf_16_to_ascii (ptr + i * 2, (i_final - i + 1).min (remaining_count), dest, j)
-					i := i + ascii_count; j := j + ascii_count
-					remaining_count := remaining_count - ascii_count
+				-- try and consume all ASCII characters
+					from break := False until i > i_final or break or dest_full loop
+						code_unit := c_read_natural_16 (ptr, i)
+						inspect code_unit when {ASCII}.CR then
+						-- skip '%R'
+							i := i + 1
+						else
+							if code_unit < 0x80 then
+								inspect remaining_count when 0 then
+									dest_full := True
+								else
+									dest [j] := code_unit.to_character_8
+									remaining_count := remaining_count - 1
+									j := j + 1
+									i := i + 1
+								end
+							else
+								break := True
+							end
+						end
+					end
 				else
 				end
 				if i > i_final then
@@ -151,44 +198,5 @@ feature {NONE} -- Implementation
 		do
 			Result := c_read_natural_16 (a_area, i)
 		end
-
-	frozen utf_16_to_ascii (src: POINTER; unit_count: INTEGER; dest: SPECIAL [CHARACTER]; dest_index: INTEGER): INTEGER
-			-- convert leading run of ASCII code units in UTF-16 buffer `src' to single bytes
-			-- in `dest' from `dest_index', stopping at the first unit >= 0x80 or after
-			-- `unit_count' units. Returns count of units converted.
-			-- Note: the 64-bit mask test assumes a little-endian host.
-		local
-			i, n, code_unit: INTEGER; four: NATURAL_64; broken: BOOLEAN
-		do
-			n := unit_count
-			from until i + 4 > n or broken loop
-				four := c_read_natural_64 (src, i * 2)
-				if (four & Non_ascii_mask) = 0 then
-					dest [dest_index + i] := c_read_natural_16 (src, i).to_character_8
-					dest [dest_index + i + 1] := c_read_natural_16 (src, i + 1).to_character_8
-					dest [dest_index + i + 2] := c_read_natural_16 (src, i + 2).to_character_8
-					dest [dest_index + i + 3] := c_read_natural_16 (src, i + 3).to_character_8
-					i := i + 4
-				else
-					broken := True
-				end
-			end
-			from broken := False until i = n or broken loop
-				code_unit := c_read_natural_16 (src, i)
-				if code_unit < 0x80 then
-					dest [dest_index + i] := code_unit.to_character_8
-					i := i + 1
-				else
-					broken := True
-				end
-			end
-			Result := i
-		ensure
-			valid_count: Result >= 0 and Result <= unit_count
-		end
-
-feature {NONE} -- Constants
-
-	Non_ascii_mask: NATURAL_64 = 0xFF80_FF80_FF80_FF80
 
 end

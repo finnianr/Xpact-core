@@ -10,19 +10,16 @@ note
 	revision: "1"
 
 class
-	EL_UTF_8_C_STRING
+	XT_UTF_8_CODEC
 
 inherit
-	EL_LATIN_1_C_STRING
+	XT_LATIN_1_CODEC
 		redefine
 			copy_as_utf_8, is_utf_8
 		end
 
 create
-	make, make_filled, make_from_string, make_shared, make_empty
-
-convert
-	make_from_string ({STRING_8})
+	make_shared, make_empty, make_from_string
 
 feature -- Status query
 
@@ -38,6 +35,7 @@ feature -- Basic operations
 			from i := 0; j := dest_index until i > i_final loop
 				c := read_character_8 (ptr, i)
 				inspect c when '%R' then
+				-- skip '%R'
 					do_nothing
 				else
 					dest [j] := c
@@ -48,4 +46,12 @@ feature -- Basic operations
 			last_index := i
 			utf_8_copied_count := j - dest_index
 		end
+
+--feature -- Duplication
+
+--	new_string (str: STRING_8): like Current
+--		do
+--			create Result.make_from_string (str)
+--		end
+
 end

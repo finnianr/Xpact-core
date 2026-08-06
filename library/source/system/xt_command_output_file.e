@@ -136,9 +136,8 @@ feature -- Basic operations
 	cleanup
 		do
 			if not is_closed then
-				close
+				delete; close
 			end
-			delete
 		end
 
 feature {NONE} -- Constants

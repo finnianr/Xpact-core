@@ -117,7 +117,7 @@ feature {NONE} -- Implementation
 			if expat_return_code > 0 then
 				expat_error := output_file.error_lines.first
 				if output_file.has_output then
-					output_file.delete
+					output_file.cleanup
 				end
 
 			elseif output_file.has_output then

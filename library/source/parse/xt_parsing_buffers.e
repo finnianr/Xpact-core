@@ -53,7 +53,7 @@ inherit
 
 	STRING_HANDLER
 
-feature {NONE} -- Initialisation
+feature {NONE} -- Initialization
 
 	make
 		do
@@ -63,7 +63,7 @@ feature {NONE} -- Initialisation
 			create declaration_parts_list.make (10)
 			create attribute_value_defaults_table.make (37)
 			create new_line.make_filled ('%N', 1)
-			create {EL_UTF_8_C_STRING} encoded_chunk.make_empty
+			create {XT_UTF_8_CODEC} encoded_chunk.make_empty
 			create formal_public_identifier.make (40)
 			create DTD_uri.make (60)
 
@@ -117,7 +117,7 @@ feature -- Element change
 			attribute_intervals.wipe_out
 			attribute_value_defaults_table.wipe_out
 			if not encoded_chunk.is_utf_8 then
-				create {EL_UTF_8_C_STRING} encoded_chunk.make_empty
+				create {XT_UTF_8_CODEC} encoded_chunk.make_empty
 			end
 			declaration_parts_list.wipe_out
 			entity_cache.reset
@@ -140,14 +140,14 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Implementation
 
-	set_encoded_chunk (chunk: EL_UTF_8_POINTER_CODEC; byte_count: INTEGER)
+	set_encoded_chunk (chunk: XT_C_STRING_CODEC; byte_count: INTEGER)
 		-- check encoding in XML header calling `set_scanner (Latin_1)' if required
 		-- also check if document is actually XML or something weird
 		local
-			leading, l_chunk: EL_UTF_8_C_STRING; lt_index, gt_index: INTEGER; u: UTF_CONVERTER
+			leading, l_chunk: XT_UTF_8_CODEC; lt_index, gt_index: INTEGER; u: UTF_CONVERTER
 			encoding: NATURAL_8; found: BOOLEAN; declaration: STRING
 		do
-			if attached {EL_UTF_8_C_STRING} encoded_chunk as str then
+			if attached {XT_UTF_8_CODEC} encoded_chunk as str then
 				l_chunk := str
 			else
 				create l_chunk.make_empty
@@ -194,10 +194,10 @@ feature {NONE} -- Implementation
 							do_nothing
 
 						when Utf_16 then
-							create {EL_UTF_16_C_STRING} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
+							create {XT_UTF_16_CODEC} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
 
 						when Latin_1, Ascii then
-							create {EL_LATIN_1_C_STRING} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
+							create {XT_LATIN_1_CODEC} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
 					else
 					end
 				else
@@ -346,7 +346,7 @@ feature {NONE} -- Internal structures
 	DTD_uri: STRING
 		-- DOCTYPE eg.: http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd
 
-	encoded_chunk: EL_UTF_8_POINTER_CODEC
+	encoded_chunk: XT_C_STRING_CODEC
 
 	entity_table: XT_ENTITY_TABLE
 		-- table of expanded entities defined in DOCTYPE by ENTITY

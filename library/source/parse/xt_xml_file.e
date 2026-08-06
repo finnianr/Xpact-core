@@ -54,7 +54,7 @@ feature -- Initialization
 
 feature -- Access
 
-	chunk: EL_LATIN_1_C_STRING
+	chunk: XT_LATIN_1_CODEC
 		-- incremental chunk
 
 	parse_status: INTEGER

@@ -16,12 +16,30 @@ note
 	revision: "6"
 
 class
-	EL_LATIN_1_C_STRING
+	EL_MANAGED_C_STRING_8
 
 inherit
-	EL_UTF_8_POINTER_CODEC
+	MANAGED_POINTER
+		rename
+			item as area,
+			share_from_pointer as make_shared
+		export
+			{EL_MANAGED_C_STRING_8} area
+			{ANY} count
+			{STRING_HANDLER} make_shared
+			{NONE} all
 		undefine
 			is_equal
+		end
+
+	STRING_HANDLER
+		undefine
+			copy, is_equal
+		end
+
+	EL_STRING_H_C_API
+		undefine
+			copy, is_equal
 		end
 
 	COMPARABLE
@@ -115,7 +133,6 @@ feature -- Measurement
 			same_as_string_8: Result = to_string.index_of (c, start_index)
 		end
 
-
 	match_count (other: SPECIAL [CHARACTER_8]; offset: INTEGER): INTEGER
 		-- count of characters in `other' from `offset' matching those in `area'
 		local
@@ -206,7 +223,7 @@ feature -- Status report
 			end
 		end
 
-	starts_with (other: EL_LATIN_1_C_STRING): BOOLEAN
+	starts_with (other: EL_MANAGED_C_STRING_8): BOOLEAN
 		-- Does `area' start with the same bytes as `other.area'?
 		do
 			if other.count <= count then
@@ -247,38 +264,16 @@ feature -- Basic operations
 			str.set_count (new_count)
 		end
 
-	copy_as_utf_8 (dest: SPECIAL [CHARACTER]; dest_index, n: INTEGER)
-		local
-			dest_full: BOOLEAN; ptr: POINTER; c_i: CHARACTER
-			i, i_final, j, remaining_count: INTEGER
+feature -- Removal
+
+	remove_head (n: INTEGER)
+		require
+			n_less_than_or_equal: n <= count
 		do
-			ptr := area; i_final := count - 1
-			remaining_count := n
-			from i := 0; j := dest_index until i > i_final or dest_full loop
-				c_i := read_character_8 (ptr, i)
-				if c_i < '%/128/' then
-					inspect remaining_count when 0 then
-						dest_full := True
-					else
-						dest [j] := c_i
-						j := j + 1
-						remaining_count := remaining_count - 1
-						i := i + 1
-					end
-				else
-					inspect remaining_count when 0, 1 then
-						dest_full := True
-					else
-						dest [j] := (0xC0 | (c_i.code |>> 6)).to_character_8
-						dest [j + 1] := (0x80 | (c_i.code & 0x3F)).to_character_8
-						j := j + 2
-						remaining_count := remaining_count - 2
-						i := i + 1
-					end
-				end
+			if is_shared and n <= count then
+				area := area + n
+				count := count - n
 			end
-			utf_8_copied_count := n - remaining_count
-			last_index := i
 		end
 
 feature -- Duplication

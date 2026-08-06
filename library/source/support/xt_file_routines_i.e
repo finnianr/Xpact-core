@@ -87,7 +87,7 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Constants
 
-	File_header: EL_LATIN_1_C_STRING
+	File_header: EL_MANAGED_C_STRING_8
 		once
 			create Result.make (4)
 		end
