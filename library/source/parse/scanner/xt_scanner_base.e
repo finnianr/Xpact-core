@@ -1,15 +1,21 @@
 note
 	description: "[
-		Unicode naming bitmaps ported from nametab.h (libexpat).
+		Primitive byte-level operations shared by all scanner mixin classes.
 
-		Three tables are provided:
-		  naming_bitmap   -- 320-entry NATURAL_32 bitmap (namingBitmap[])
-		  nmstrt_pages    -- 256-entry page index for name-start chars (nmstrtPages[])
-		  name_pages      -- 256-entry page index for name chars (namePages[])
+		Scanner mixins inherit this class to obtain `byte_type', `char_at',
+		`next_token_index', and the multi-byte name-character checks.  The
+		concrete encoding provides effective implementations.
 
-		Usage (see XT_UTF8_NAME_CHECKER for the formulas):
-		  UCS2_GET_NAMING (pages, hi, lo):
-		    naming_bitmap [(pages[hi] |<< 3) + (lo |>> 5)] & (1 |<< (lo & 0x1F))
+		The C macros this replaces:
+		  BYTE_TYPE(enc, p)         -> byte_type (buf, index)
+		  BYTE_TO_ASCII(enc, p)     -> char_at (buf, index)
+		  CHAR_MATCHES(enc, p, c)   -> char_at (buf, index) = c
+		  MINBPC(enc)               -> char_width
+		  HAS_CHAR(enc, p, end)     -> index < end_index   (written inline)
+		  HAS_CHARS(enc, p, end, n) -> end_index - index >= n * char_width
+		  IS_NAME_CHAR(enc, p, n)   -> is_name_char_n (buf, index)
+		  IS_NMSTRT_CHAR(enc, p, n) -> is_name_start_char_n (buf, index)
+		  IS_INVALID_CHAR(enc, p, n)-> is_invalid_char_n (buf, index)
 	]"
 
 	author: "Finnian Reilly"
@@ -17,14 +23,218 @@ note
 	contact: "finnian at eiffel hyphen loop dot com"
 
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
-	date: "2026-06-18 19:49:08 GMT (Thursday 18th June 2026)"
+	date: "2026-06-20 20:20:51 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-class XT_NAME_BITMAP
+deferred class XT_SCANNER_BASE
 
-feature -- Naming tables (once, shared across all encodings)
+inherit
+	XT_BYTE_TYPE_CONSTANTS; XT_TOKEN_CONSTANTS; XT_STRING_CONSTANTS
 
-	naming_bitmap: SPECIAL [NATURAL_32]
+	XT_STRING_8_ROUTINES_I
+		export
+			{XT_XML_PARSER_BASE} all
+		end
+
+feature -- Status report
+
+	newline_or_tab_found: BOOLEAN
+
+feature -- Name-character predicates (2-byte UTF-8, U+0080..U+07FF)
+
+	is_name_char_2 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
+			-- Is the 2-byte sequence at index a valid XML NameChar?
+			-- Uses namePages and the naming bitmap.
+		require
+			valid_index: index + 1 < buf.count
+		local
+			b0, b1, pg, idx: INTEGER
+		do
+			b0 := buf [index].code
+			b1 := buf [index + 1].code
+			pg := name_pages [(b0 |>> 2) & 7].to_integer_32
+			idx := (pg |<< 3) + ((b0 & 3) |<< 1) + ((b1 |>> 5) & 1)
+			Result := (Naming_bitmap [idx] & ({NATURAL_32} 1 |<< (b1 & 0x1F))) /= 0
+		end
+
+	is_name_start_char_2 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
+			-- Is the 2-byte sequence at index a valid XML NameStartChar?
+			-- Uses nmstrtPages and the naming bitmap.
+		require
+			valid_index: index + 1 < buf.count
+		local
+			b0, b1, pg, idx: INTEGER
+		do
+			b0 := buf [index].code
+			b1 := buf [index + 1].code
+			pg := Name_start_pages [(b0 |>> 2) & 7].to_integer_32
+			idx := (pg |<< 3) + ((b0 & 3) |<< 1) + ((b1 |>> 5) & 1)
+			Result := (Naming_bitmap [idx] & ({NATURAL_32} 1 |<< (b1 & 0x1F))) /= 0
+		end
+
+	is_invalid_char_2 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
+			-- True for overlong sequences (b0 = 0xC0 or 0xC1 code points U+0000..U+007F).
+			-- The byte table maps 0xC0-0xDF all to BT_lead_2_byte; this check catches the two
+			-- overlong lead bytes that the table does not exclude.
+		require
+			valid_index: index + 1 < buf.count
+		do
+			Result := buf [index].code < 0xC2
+		end
+
+feature -- Name-character predicates (3-byte UTF-8, U+0800..U+FFFF)
+
+	is_name_char_3 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
+			-- Is the 3-byte sequence at index a valid XML NameChar?
+		require
+			valid_index: index + 2 < buf.count
+		local
+			b0, b1, b2, pg, idx: INTEGER
+		do
+			b0 := buf [index].code
+			b1 := buf [index + 1].code
+			b2 := buf [index + 2].code
+			pg := name_pages [((b0 |<< 4) & 0x30) | (b1 |>> 4)].to_integer_32
+			idx := (pg |<< 3) + ((b1 & 0xF) |<< 1) + ((b2 |>> 5) & 1)
+			Result := (Naming_bitmap [idx] & ({NATURAL_32} 1 |<< (b2 & 0x1F))) /= 0
+		end
+
+	is_name_start_char_3 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
+			-- Is the 3-byte sequence at index a valid XML NameStartChar?
+		require
+			valid_index: index + 2 < buf.count
+		local
+			b0, b1, b2, pg, idx: INTEGER
+		do
+			b0 := buf [index].code
+			b1 := buf [index + 1].code
+			b2 := buf [index + 2].code
+			pg := Name_start_pages [((b0 |<< 4) & 0x30) | (b1 |>> 4)].to_integer_32
+			idx := (pg |<< 3) + ((b1 & 0xF) |<< 1) + ((b2 |>> 5) & 1)
+			Result := (Naming_bitmap [idx] & ({NATURAL_32} 1 |<< (b2 & 0x1F))) /= 0
+		end
+
+	is_invalid_char_3 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
+		-- Is the 3-byte sequence U+FFFE or U+FFFF (forbidden in XML)?
+		-- These are the only forbidden 3-byte codepoints: 0xEF 0xBF 0xBE/0xBF.
+		require
+			valid_index: index + 2 < buf.count
+		local
+			b2: INTEGER
+		do
+			if buf [index].code = 0xEF and buf [index + 1].code = 0xBF then
+				b2 := buf [index + 2].code
+				Result := b2 = 0xBE or b2 = 0xBF
+			end
+		end
+
+feature -- Name-character predicates (4-byte UTF-8, U+10000..U+10FFFF)
+
+	is_name_char_4 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
+			-- 4-byte characters are not NameChars in XML 1.0.
+		require
+			valid_index: index + 3 < buf.count
+		do
+			Result := False
+		end
+
+	is_name_start_char_4 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
+			-- 4-byte characters are not NameStartChars in XML 1.0.
+		require
+			valid_index: index + 3 < buf.count
+		do
+			Result := False
+		end
+
+	is_invalid_char_4 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
+			-- Is the 4-byte sequence beyond U+10FFFF?
+			-- Only b0=0xF4 can overflow; any b1 > 0x8F means cp > U+10FFFF.
+		require
+			valid_index: index + 3 < buf.count
+		do
+			Result := buf [index].code = 0xF4 and buf [index + 1].code > 0x8F
+		end
+
+feature {NONE} -- Implementation
+
+	fill_ascii_half (t: SPECIAL [INTEGER])
+			-- Fill entries 0..127 with BT_* values from asciitab.h.
+		do
+			-- 0x00-0x08, 0x0B-0x0C, 0x0E-0x1F: BT_non_xml = 0 (make_filled default)
+			t [9]  := 21; t [10] := 10; t [13] := 9   -- tab, LF, CR
+			t [32] := 21; t [33] := 16; t [34] := 12; t [35] := 19
+			t [36] := 28; t [37] := 30; t [38] := 3;  t [39] := 13
+			t [40] := 31; t [41] := 32; t [42] := 33; t [43] := 34
+			t [44] := 35; t [45] := 27; t [46] := 26; t [47] := 17
+			t.fill_with (25, 48, 57)     -- BT_digit '0'..'9'
+			t [58] := 23; t [59] := 18; t [60] := 2;  t [61] := 14
+			t [62] := 11; t [63] := 15; t [64] := 28
+			t.fill_with (24, 65, 70)     -- BT_hex_digit 'A'..'F'
+			t.fill_with (22, 71, 90)     -- BT_name_start 'G'..'Z'
+			t [91] := 20; t [92] := 28; t [93] := 4;  t [94] := 28
+			t [95] := 22; t [96] := 28  -- '_', '`'
+			t.fill_with (24, 97, 102)    -- BT_hex_digit 'a'..'f'
+			t.fill_with (22, 103, 122)   -- BT_name_start 'g'..'z'
+			t [123] := 28; t [124] := 36; t [125] := 28
+			t [126] := 28; t [127] := 28
+		end
+
+	fill_pages (pages: SPECIAL [NATURAL_8]; a_from, a_to: INTEGER; a_val: NATURAL_8)
+		local
+			i: INTEGER
+		do
+			from i := a_from until i > a_to loop
+				pages [i] := a_val; i := i + 1
+			end
+		end
+
+	leading_10 (buf: SPECIAL [CHARACTER]; index: INTEGER): STRING_8
+		-- leading 10 characters in `buf' starting from `index'
+		local
+			upper: INTEGER
+		do
+			upper := (buf.count - 1).min (index + 10)
+			Result := area_substring (buf, index, upper, True)
+		end
+
+	has_chars (end_index, index, count: INTEGER): BOOLEAN
+			-- end_index - index >= count * char_width  (HAS_CHARS macro)
+		do
+			Result := end_index - index >= count
+		end
+
+	is_invalid_character (buf: SPECIAL [CHARACTER]; index, byte_count: INTEGER): BOOLEAN
+		do
+			inspect byte_count
+				when 2 then
+					Result := is_invalid_char_2 (buf, index)
+				when 3 then
+					Result := is_invalid_char_3 (buf, index)
+				when 4 then
+					Result := is_invalid_char_4 (buf, index)
+			else
+				Result := False
+			end
+		end
+
+feature {NONE} -- Internal attributes
+
+	next_token_index: INTEGER
+
+	index_x4_buffer: SPECIAL [INTEGER]
+
+	scanned_entity_buffer: ARRAYED_LIST [STRING]
+
+feature {XT_XML_PARSER_BASE} -- Deferred
+
+	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+		-- collected attribute name-value pair indices into `buffer'
+		deferred
+		end
+
+feature -- Naming tables
+
+	Naming_bitmap: SPECIAL [NATURAL_32]
 			-- namingBitmap[] from nametab.h.
 		once
 			create Result.make_filled (0, 320)
@@ -110,7 +320,7 @@ feature -- Naming tables (once, shared across all encodings)
 			Result[316] := 0x661FFFFF; Result[317] := 0xFFFFFFFE; Result[318] := 0xFFFFFFFF; Result[319] := 0x77FFFFFF
 		end
 
-	name_start_pages: SPECIAL [NATURAL_8]
+	Name_start_pages: SPECIAL [NATURAL_8]
 			-- nmstrtPages[] from nametab.h (256 entries).
 		once
 			create Result.make_filled (0, 256)
@@ -126,7 +336,7 @@ feature -- Naming tables (once, shared across all encodings)
 			Result[191] := 0x18
 		end
 
-	name_pages: SPECIAL [NATURAL_8]
+	Name_pages: SPECIAL [NATURAL_8]
 			-- namePages[] from nametab.h (256 entries).
 		once
 			create Result.make_filled (0, 256)
@@ -142,15 +352,25 @@ feature -- Naming tables (once, shared across all encodings)
 			Result[191] := 0x18
 		end
 
-feature {NONE} -- Initialisation helper
+feature -- Constants
 
-	fill_pages (pages: SPECIAL [NATURAL_8]; a_from, a_to: INTEGER; a_val: NATURAL_8)
-		local
-			i: INTEGER
-		do
-			from i := a_from until i > a_to loop
-				pages [i] := a_val; i := i + 1
-			end
+	Byte_type_table: SPECIAL [INTEGER]
+			-- Combined ASCII + UTF-8 upper byte classification table.
+		once
+			create Result.make_filled (0, 256)
+			fill_ascii_half (Result)
+			-- 0x80-0xBF: continuation bytes
+			Result.fill_with (8, 128, 191)   -- BT_continuation_byte = 8
+			-- 0xC0-0xDF: 2-byte lead bytes (is_invalid_char_2 catches 0xC0, 0xC1)
+			Result.fill_with (5, 192, 223)   -- BT_lead_2_byte = 5
+			-- 0xE0-0xEF: 3-byte lead bytes
+			Result.fill_with (6, 224, 239)   -- BT_lead_3_byte = 6
+			-- 0xF0-0xF4: 4-byte lead bytes
+			Result.fill_with (7, 240, 244)   -- BT_lead_4_byte = 7
+			-- 0xF5-0xFD: not valid UTF-8 lead bytes
+			Result.fill_with (0, 245, 253)   -- BT_non_xml = 0
+			-- 0xFE-0xFF: malformed
+			Result [254] := 1; Result [255] := 1   -- BT_malform = 1
 		end
 
 end

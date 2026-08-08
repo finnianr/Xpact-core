@@ -48,7 +48,7 @@ feature -- Basic operations
 			io.put_new_line
 			io.put_new_line
 			across tag_occurrence_table.sorted_occurrence_list (False) as tag_count loop
-				tag_count.io_print ("TAG")
+				tag_count.io_print
 			end
 		end
 

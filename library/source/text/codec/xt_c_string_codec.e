@@ -24,6 +24,16 @@ feature -- Access
 		deferred
 		end
 
+	last_index: INTEGER
+
+feature -- Status query
+
+	is_utf_8: BOOLEAN
+		do
+		end
+
+feature -- Measurement
+
 	character_count: INTEGER
 		do
 			Result := count
@@ -34,15 +44,6 @@ feature -- Access
 		end
 
 	utf_8_copied_count: INTEGER
-
-	last_index: INTEGER
-
-feature -- Status query
-
-	is_utf_8: BOOLEAN
-		do
-
-		end
 
 feature -- Element change
 
@@ -60,7 +61,7 @@ feature -- Basic operations
 
 	remove_head (n: INTEGER)
 		require
-			n_less_than_or_equal: n <= character_count
+			n_less_than_or_equal: n <= count
 		deferred
 		end
 

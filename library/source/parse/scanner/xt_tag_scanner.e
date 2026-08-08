@@ -45,13 +45,14 @@ feature {NONE} -- Tag scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index: INTEGER
+			index, bt_code, byte_count: INTEGER
 		do
 			index := start_index
 			if index >= end_index then
 				Result := Tok_partial
 			else
-				inspect bt_table [buf [index].code]
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
 					when BT_exclamation then
 						index := index + 1
 						if index >= end_index then
@@ -69,30 +70,25 @@ feature {NONE} -- Tag scanning
 						end
 					when BT_question then
 						Result := scan_pi (buf, bt_table, index + 1, end_index)
+
 					when BT_forward_slash then
 						Result := scan_end_tag (buf, index + 1, end_index, bt_table)
+
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
 						Result := scan_start_tag_name (buf, index, end_index, 1, bt_table)
-					when BT_lead_2_byte then
-						if end_index - index >= 2 and then not is_invalid_char_2 (buf, index)
-							and then is_name_start_char_2 (buf, index)
-						then
-							index := index + 2
-							Result := scan_start_tag_name (buf, index, end_index, 2, bt_table)
-						else
+
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index < byte_count then
+							Result := Tok_partial_char
+
+						elseif is_invalid_character (buf, index, byte_count) then
 							next_token_index := index
 							Result := Tok_invalid
-						end
-					when BT_lead_3_byte then
-						if end_index - index >= 3 and then not is_invalid_char_3 (buf, index)
-							and then is_name_start_char_3 (buf, index)
-						then
-							index := index + 3
-							Result := scan_start_tag_name (buf, index, end_index, 3, bt_table)
 						else
-							next_token_index := index
-							Result := Tok_invalid
+							index := index + byte_count
+							Result := scan_start_tag_name (buf, index, end_index, byte_count, bt_table)
 						end
 				else
 					next_token_index := index
@@ -106,40 +102,52 @@ feature {NONE} -- Tag scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, name_lower, name_upper: INTEGER; done: BOOLEAN
+			index, name_lower, name_upper, bt_code, byte_count: INTEGER; done: BOOLEAN
 		do
 			index := start_index; name_lower := start_index; name_upper := Unset
 			if index >= end_index then
 				Result := Tok_partial
 			else
-				inspect bt_table [buf [index].code]
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
-					when BT_lead_2_byte then
-						if end_index - index >= 2 and then not is_invalid_char_2 (buf, index)
-							and then is_name_start_char_2 (buf, index)
-						then
-							index := index + 2
+
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index < byte_count then
+							Result := Tok_partial_char; done := True
+
+						elseif is_invalid_character (buf, index, byte_count) then
+							next_token_index := index
+							Result := Tok_invalid; done := True
 						else
-							next_token_index := index; Result := Tok_invalid; done := True
+							index := index + byte_count
 						end
-					when BT_lead_3_byte then
-						if end_index - index >= 3  and then not is_invalid_char_3 (buf, index)
-							and then is_name_start_char_3 (buf, index)
-						then
-							index := index + 3
-						else
-							next_token_index := index; Result := Tok_invalid; done := True
-						end
+
 				else
 					next_token_index := index; Result := Tok_invalid; done := True
 				end
 				if not done then
 					from until index >= end_index or done loop
-						inspect bt_table [buf [index].code]
+						bt_code := bt_table [buf [index].code]
+						inspect bt_code
 							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only,
 								BT_minus, BT_colon then
 								index := index + 1
+
+							when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+								byte_count := bt_code - 3
+								if end_index - index < byte_count then
+									Result := Tok_partial_char; done := True
+
+								elseif is_invalid_character (buf, index, byte_count) then
+									next_token_index := index
+									Result := Tok_invalid; done := True
+								else
+									index := index + byte_count
+								end
+
 							when BT_whitespace, BT_CR, BT_LF then
 								inspect name_upper when Unset then
 									name_upper := index - 1
@@ -194,26 +202,36 @@ feature {NONE} -- Tag scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, byte: INTEGER; done: BOOLEAN; index_buffer: like index_x4_buffer
+			index, bt_code, byte_count: INTEGER; done: BOOLEAN; index_buffer: SPECIAL [INTEGER]
 			entity_buffer: like scanned_entity_buffer
 		do
 			index := start_index; index_buffer := index_x4_buffer
 			entity_buffer := scanned_entity_buffer
 			index_buffer.extend (index + buf [index].is_space.to_integer) -- name lower
 			from until index >= end_index or done loop
-				byte := bt_table [buf [index].code]
-				inspect byte
-					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon, BT_lead_2_byte, BT_lead_3_byte,
-						BT_lead_4_byte then
-						inspect index_buffer.count
-							when 0 then
-								index_buffer.extend (index + buf [index].is_space.to_integer) -- name lower
-							when 2 then
-							-- <div itemscope itemtype="http://schema.org/Type" for example
-								Result := Tok_invalid; done := True
-						else
-						end
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
+					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon then
+						inspect append_name_lower (buf, index_buffer, index) when Tok_invalid then
+							Result := Tok_invalid; done := True
+						else end
 						index := index + 1
+
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index < byte_count then
+							Result := Tok_partial_char; done := True
+
+						elseif is_invalid_character (buf, index, byte_count) then
+							next_token_index := index
+							Result := Tok_invalid; done := True
+						else
+							inspect append_name_lower (buf, index_buffer, index) when Tok_invalid then
+								Result := Tok_invalid; done := True
+							else end
+							index := index + byte_count
+						end
+
 					when BT_whitespace, BT_CR, BT_LF then
 					-- Skip one whitespace byte; outer loop handles subsequent chars naturally.
 					-- Whitespace may separate a name from '=' or one attribute from the next.
@@ -282,14 +300,26 @@ feature {NONE} -- Tag sub-helpers
 	scan_start_tag_name (buf: SPECIAL [CHARACTER]; start_index, end_index, lead_count: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 		-- After consuming name-start char(s); scan rest of start tag name.
 		local
-			index, name_lower, name_upper: INTEGER; done: BOOLEAN
+			index, name_lower, name_upper, byte_count, bt_code: INTEGER; done, is_invalid_char: BOOLEAN
 		do
 			index := start_index; name_lower := start_index - lead_count; name_upper := Unset
 			from until index >= end_index or done loop
-				inspect bt_table [buf [index].code]
-					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon, BT_lead_2_byte,
-						BT_lead_3_byte, BT_lead_4_byte then
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
+					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon then
 						index := index + 1
+
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index < byte_count then
+							Result := Tok_partial_char; done := True
+
+						elseif is_invalid_character (buf, index, byte_count) then
+							next_token_index := index
+							Result := Tok_invalid; done := True
+						else
+							index := index + byte_count
+						end
 					when BT_whitespace, BT_CR, BT_LF then
 						inspect name_upper when Unset then
 							name_upper := index - 1
@@ -297,7 +327,7 @@ feature {NONE} -- Tag sub-helpers
 						index := index + 1
 						from until index >= end_index or done loop
 							inspect bt_table [buf [index].code]
-								when BT_name_start, BT_hex_digit then
+								when BT_name_start, BT_hex_digit, BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
 									Result := scan_attributes (buf, index, end_index, bt_table, attribute_intervals); done := True
 								when BT_gt then
 									next_token_index := index + 1
@@ -457,6 +487,21 @@ feature {NONE} -- Contract support
 				end
 			end
 			Result := index - start_index
+		end
+
+feature {NONE} -- Implementation
+
+	append_name_lower (buf: SPECIAL [CHARACTER]; index_buffer: SPECIAL [INTEGER]; index: INTEGER): INTEGER
+		do
+			Result := 1
+			inspect index_buffer.count
+				when 0 then
+					index_buffer.extend (index + buf [index].is_space.to_integer) -- name lower
+				when 2 then
+				-- <div itemscope itemtype="http://schema.org/Type" for example
+					Result := Tok_invalid
+			else
+			end
 		end
 
 feature {NONE} -- Deferred

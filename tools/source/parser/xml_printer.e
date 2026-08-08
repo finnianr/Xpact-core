@@ -130,6 +130,9 @@ feature {NONE} -- Event handlers
 					IO.put_string (@ value.key)
 					IO.put_string (" : %"")
 					IO.put_string (value)
+					if value ~ "$valueType = 'string'" then
+						do_nothing
+					end
 					IO.put_character ('"')
 				end
 				IO.put_character ('}')

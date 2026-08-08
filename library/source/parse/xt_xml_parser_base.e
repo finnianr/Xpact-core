@@ -479,7 +479,7 @@ feature {NONE} -- Processor dispatch
 							on_comment (buf, index + 4, tok_end - 4, attributes)
 
 						when Tok_pi then
-							on_processing_instruction (buf, index + 2, tok_end - 4, attributes)
+							on_processing_instruction (buf, index + 2, tok_end - 3, attributes)
 							attributes.wipe_out
 
 						when Tok_invalid then

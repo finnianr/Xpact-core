@@ -9,16 +9,19 @@ echo
 echo Benchmarking Eiffel Xpact-core and C eXpat
 echo
 
-for path in	$ISE_LIBRARY/library/vision2/vision2.ecf \
-	tools/data/Legislation.xml \
-	tools/data/recursive-entity-expansion.xml \
-	tools/data/DTD-attlist-default-values.xml \
-	tools/data/UTF-16-encoded-StartupData.xml ; do
-	name=${path##*/}
-	xml_reader -count_tags -duration $DURATION_MS -compare_to_expat $path
-done
+echo vision2.ecf
+xml_reader -count_tags -duration $DURATION_MS -compare_to_expat $ISE_LIBRARY/library/vision2/vision2.ecf
 
 pushd .
+
+cd tools/data
+
+for name in mandarin-names-and-text.xsl recursive-entity-expansion.xml Legislation.xml \
+		DTD-attlist-default-values.xml UTF-16-encoded-DiagnosticsData.xml ; do
+	
+	xml_reader -count_tags -compare_to_expat -duration $DURATION_MS $name
+done
+
 cd $HOME/Dev/C/libexpat
 
 for name in nes96.xml ns_att_test.xml recset.xml wordnet_glossary-20010201.rdf; do

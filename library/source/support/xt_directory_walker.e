@@ -37,7 +37,7 @@ feature {NONE} -- Initialization
 
 feature -- Basic operations
 
-	traverse (handler: XT_FILE_HANDLER )
+	traverse (handler: XT_FILE_HANDLER)
 		local
 			done: BOOLEAN; ptr: POINTER; sub_directory: XT_DIRECTORY_WALKER
 		do
@@ -49,7 +49,7 @@ feature -- Basic operations
 
 				elseif attached new_file_info (ptr) as info and then attached info.file_entry as path then
 					if info.is_directory then
-						create sub_directory.make_with_path (path)
+						sub_directory := new_directory (path)
 						if sub_directory /~ Tmp_path then
 							sub_directory.traverse (handler)
 						end
@@ -59,6 +59,13 @@ feature -- Basic operations
 				end
 			end
 			close
+		end
+
+feature -- Factory
+
+	new_directory (dir_path: PATH): like Current
+		do
+			create Result.make_with_path (dir_path)
 		end
 
 feature {NONE} -- Implementation
@@ -72,7 +79,10 @@ feature {NONE} -- Implementation
 			Result := file_info
 			name := Result.pointer_to_file_name_32 (ptr)
 			Result.update (directory_path.extended (name).name)
-			if not Result.exists then
+			if is_visited (Result) then
+				Result := Void
+
+			elseif not Result.exists then
 				Result := Void
 
 			elseif not Result.is_ready then
@@ -101,6 +111,11 @@ feature {NONE} -- Implementation
 					Result := a_name.occurrences ('.') = 2
 			else
 			end
+		end
+
+	is_visited (info: FILE_INFO): BOOLEAN
+		do
+			Result := False
 		end
 
 feature {NONE} -- Internal attributes

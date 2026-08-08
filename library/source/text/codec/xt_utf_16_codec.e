@@ -1,5 +1,9 @@
 note
-	description: "Decode UTF-16 managed pointer to UTF-8"
+	description: "[
+		Decodes managed pointer of UTF-16 encoded text into UTF-8 character array skipping CR characters.
+		Manages situation of partial code unit at end of string and assumes next `make_shared' cal will
+		supply the missing code unit.
+	]"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -57,6 +61,8 @@ feature -- Access
 
 	partial_code_unit: INTEGER
 
+feature -- Measurement
+
 	character_count: INTEGER
 		do
 			Result := byte_count // 2
@@ -73,9 +79,9 @@ feature -- Removal
 
 	remove_head (n: INTEGER)
 		do
-			if is_shared and n <= character_count then
-				area := area + n * 2
-				byte_count := byte_count - n * 2
+			if is_shared and n <= byte_count then
+				area := area + n
+				byte_count := byte_count - n
 			end
 		end
 

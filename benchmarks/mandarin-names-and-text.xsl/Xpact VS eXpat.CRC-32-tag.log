@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: mandarin-names-and-text.xsl
+
+2026 08 AUG 18:46
+mandarin-names-and-text.xsl: eXpat passes = 2025; Xpact-core passes = 3069 (x1.52 to eXpat)

@@ -51,6 +51,21 @@ feature {NONE} -- Initialization
 			create area.make_filled (Default_bucket, Size)
 		end
 
+feature -- Measurement
+
+	average_bucket_item_count: INTEGER
+		local
+			count, item_count: INTEGER
+		do
+			across area as bucket loop
+				if bucket.count > 0 then
+					count := count + 1
+					item_count := item_count + bucket.count
+				end
+			end
+			Result := (item_count / count).rounded
+		end
+
 feature -- Access
 
 	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING
@@ -90,7 +105,7 @@ feature -- Access
 				end
 				bucket.extend (Result)
 				check
-					well_distributed_hash_indices: across area as a all a /= Default_bucket implies a.count <= 5 end
+					well_distributed_hash_indices: across area as a all a /= Default_bucket implies a.count <= 6 end
 				end
 			end
 		ensure
@@ -136,13 +151,38 @@ feature {NONE} -- Implementation
 	hash_index, bucket_index (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- very fast well distributed hash with only 3 components
 		local
-			first, last, count: NATURAL
+			first, last, count: NATURAL; i, utf_byte_count: INTEGER
 		do
-			first := buffer [start_index].natural_32_code
 			count := (end_index - start_index + 1).to_natural_32
-			inspect count when 1 then
-				Result := size_remainder (first * Golden_ratio, first * Golden_ratio |>> 8)
+			inspect count
+				when 1 then
+					first := buffer [start_index].natural_32_code
+					Result := size_remainder (first * Golden_ratio, first * Golden_ratio |>> 8)
+				when 2 .. 4 then
+					first := buffer [start_index].natural_32_code
+					last := buffer [end_index].natural_32_code
+					Result := size_remainder (first |<< 4, (last |<< 1).bit_xor (count))
+
 			else
+				first := buffer [start_index].natural_32_code
+				if first > 0x7F then
+					if first <= 0x7FF then
+						-- 110xxxxx 10xxxxxx
+						utf_byte_count := 2
+
+					elseif first <= 0xFFFF then
+						-- 1110xxxx 10xxxxxx 10xxxxxx
+						utf_byte_count := 3
+					else
+						-- first <= 1FFFFF - there are no higher code points
+						-- 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+						utf_byte_count := 4
+					end
+					from i := 1 until i = utf_byte_count loop
+						first := (first |<< 8) | buffer [start_index + i].natural_32_code
+						i := i + 1
+					end
+				end
 				last := buffer [end_index].natural_32_code
 				Result := size_remainder (first |<< 4, (last |<< 1).bit_xor (count))
 			end
@@ -184,7 +224,7 @@ feature {NONE} -- Constants
 
 	Golden_ratio: NATURAL = 2654435769
 
-	Size: INTEGER = 512
+	Size: INTEGER = 607
 
 	Default_bucket: SPECIAL [STRING]
 		once ("PROCESS")

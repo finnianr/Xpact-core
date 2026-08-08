@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 				}
 			qsort(flat, n_distinct, sizeof(FlatEntry), compare_entries);
 			for (int i = 0; i < n_distinct; i++)
-				printf("TAG: <%s> occurrences %ld\n", flat[i].name, flat[i].count);
+				printf("<%s> occurrences %ld\n", flat[i].name, flat[i].count);
 			printf("\n");
 			free(flat);
 		}

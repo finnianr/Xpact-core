@@ -1,10 +1,6 @@
 note
 	description: "[
-		An immutable string that uses a C allocated character array instead of ${SPECIAL [CHARACTER_8]}
-		(BORROWED FROM Eiffel-Loop)
-	]"
-	notes: "[
-		WARNING: this is a fixed length string and not null terminated.
+		Decodes managed pointer of ISO-8859-1 encoded text into UTF-8 character array skipping CR characters
 	]"
 
 	author: "Finnian Reilly"
@@ -12,17 +8,14 @@ note
 	contact: "finnian at eiffel hyphen loop dot com"
 
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
-	date: "2026-07-30 07:48:00 GMT (Thursday 30th July 2026)"
-	revision: "6"
+	date: "2026-08-06 07:48:00 GMT (Thursday 30th August 2026)"
+	revision: "1"
 
 class
 	XT_LATIN_1_CODEC
 
 inherit
 	EL_MANAGED_C_STRING_8
-		redefine
-			new_string
-		end
 
 	XT_C_STRING_CODEC
 		undefine
@@ -72,13 +65,5 @@ feature -- Basic operations
 			utf_8_copied_count := n - remaining_count
 			last_index := i
 		end
-
-feature -- Duplication
-
-	new_string (str: STRING_8): like Current
-		do
-			create Result.make_from_string (str)
-		end
-
 
 end

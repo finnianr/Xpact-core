@@ -30,21 +30,21 @@ feature -- Content tokenization
 		require
 			valid_start_index: start_index <= end_index and end_index <= buf.count
 		local
-			index, a_end_adj: INTEGER
+			index, bt_code, byte_count: INTEGER
 		do
 			index := start_index
-			a_end_adj := end_index
-			if index >= a_end_adj then
+			if index >= end_index then
 				Result := Tok_none
 			else
-				inspect bt_table [buf [index].code]
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
 					when BT_lt then
-						Result := scan_lt (buf, index + 1, a_end_adj, bt_table)
+						Result := scan_lt (buf, index + 1, end_index, bt_table)
 					when BT_ampersand then
-						Result := scan_ref (buf, entity_buffer, Tok_data_chars, index + 1, a_end_adj)
+						Result := scan_ref (buf, entity_buffer, Tok_data_chars, index + 1, end_index)
 					when BT_CR then
 						index := index + 1
-						if index >= a_end_adj then
+						if index >= end_index then
 							Result := Tok_trailing_cr
 						else
 							inspect buf [index] when '%N' then
@@ -56,58 +56,45 @@ feature -- Content tokenization
 					when BT_LF then
 						next_token_index := index + 1
 						Result := Tok_data_newline
+
 					when BT_right_square_bracket then
 						index := index + 1
-						if index >= a_end_adj then
+						if index >= end_index then
 							Result := Tok_trailing_rsqb
 						elseif buf [index] /= ']' then
 							-- lone ']', fall through to data chars
-							Result := scan_data_chars (buf, bt_table, index, a_end_adj)
+							Result := scan_data_chars (buf, bt_table, index, end_index)
 						else
 							index := index + 1
-							if index >= a_end_adj then
+							if index >= end_index then
 								Result := Tok_trailing_rsqb
 							elseif buf [index] = '>' then
 								-- illegal ']]>' in content
 								next_token_index := index
 								Result := Tok_invalid
 							else
-								Result := scan_data_chars (buf, bt_table, index, a_end_adj)
+								Result := scan_data_chars (buf, bt_table, index, end_index)
 							end
 						end
 					when BT_non_xml, BT_malform, BT_continuation_byte then
 						next_token_index := index
 						Result := Tok_invalid
-					when BT_lead_2_byte then
-						if a_end_adj - index < 2 then
+
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index < byte_count then
 							Result := Tok_partial_char
-						elseif is_invalid_char_2 (buf, index) then
-							next_token_index := index; Result := Tok_invalid
+
+						elseif is_invalid_character (buf, index, byte_count) then
+							next_token_index := index
+							Result := Tok_invalid
 						else
-							index := index + 2
-							Result := scan_data_chars (buf, bt_table, index, a_end_adj)
-						end
-					when BT_lead_3_byte then
-						if a_end_adj - index < 3 then
-							Result := Tok_partial_char
-						elseif is_invalid_char_3 (buf, index) then
-							next_token_index := index; Result := Tok_invalid
-						else
-							index := index + 3
-							Result := scan_data_chars (buf, bt_table, index, a_end_adj)
-						end
-					when BT_lead_4_byte then
-						if a_end_adj - index < 4 then
-							Result := Tok_partial_char
-						elseif is_invalid_char_4 (buf, index) then
-							next_token_index := index; Result := Tok_invalid
-						else
-							index := index + 4
-							Result := scan_data_chars (buf, bt_table, index, a_end_adj)
+							index := index + byte_count
+							Result := scan_data_chars (buf, bt_table, index, end_index)
 						end
 				else
 					index := index + 1
-					Result := scan_data_chars (buf, bt_table, index, a_end_adj)
+					Result := scan_data_chars (buf, bt_table, index, end_index)
 				end
 			end
 		end
@@ -203,29 +190,20 @@ feature {NONE} -- Data character accumulation
 		-- Accumulate data characters in content context until a delimiter.
 		-- Returns Tok_data_chars.
 		local
-			index: INTEGER; done: BOOLEAN
+			index, bt_code, byte_count: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			from until index >= end_index or done loop
-				inspect BT_table [buf [index].code]
-					when BT_lead_2_byte then
-						if end_index - index < 2 or else is_invalid_char_2 (buf, index) then
+				bt_code := BT_table [buf [index].code]
+				inspect bt_code
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index < byte_count or else is_invalid_character (buf, index, byte_count) then
 							next_token_index := index; Result := Tok_data_chars; done := True
 						else
-							index := index + 2
+							index := index + byte_count
 						end
-					when BT_lead_3_byte then
-						if end_index - index < 3 or else is_invalid_char_3 (buf, index) then
-							next_token_index := index; Result := Tok_data_chars; done := True
-						else
-							index := index + 3
-						end
-					when BT_lead_4_byte then
-						if end_index - index < 4 or else is_invalid_char_4 (buf, index) then
-							next_token_index := index; Result := Tok_data_chars; done := True
-						else
-							index := index + 4
-						end
+
 					when BT_right_square_bracket, BT_ampersand, BT_lt, BT_non_xml,
 						BT_malform, BT_continuation_byte, BT_CR, BT_LF then
 						next_token_index := index; Result := Tok_data_chars; done := True
@@ -241,23 +219,20 @@ feature {NONE} -- Data character accumulation
 	scan_cdata_data_chars (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
 			-- Accumulate data characters inside a CDATA section.
 		local
-			index: INTEGER; done: BOOLEAN
+			index, bt_code, byte_count: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			from until index >= end_index or done loop
-				inspect bt_table [buf [index].code]
-					when BT_lead_2_byte then
-						if end_index - index < 2 or else is_invalid_char_2 (buf, index) then
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index < byte_count or else is_invalid_character (buf, index, byte_count) then
 							next_token_index := index; Result := Tok_data_chars; done := True
 						else
-							index := index + 2
+							index := index + byte_count
 						end
-					when BT_lead_3_byte then
-						if end_index - index < 3 or else is_invalid_char_3 (buf, index) then
-							next_token_index := index; Result := Tok_data_chars; done := True
-						else
-							index := index + 3
-						end
+
 					when BT_non_xml, BT_malform, BT_continuation_byte, BT_CR, BT_LF, BT_right_square_bracket then
 						next_token_index := index; Result := Tok_data_chars; done := True
 				else

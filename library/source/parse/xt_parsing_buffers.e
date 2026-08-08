@@ -190,13 +190,13 @@ feature {NONE} -- Implementation
 						end
 					end
 					inspect encoding
-						when Utf_8 then
+						when Ascii, Utf_8 then
 							do_nothing
 
 						when Utf_16 then
 							create {XT_UTF_16_CODEC} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
 
-						when Latin_1, Ascii then
+						when Latin_1 then
 							create {XT_LATIN_1_CODEC} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
 					else
 					end

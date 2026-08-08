@@ -1,5 +1,7 @@
 note
-	description: "Managed C string that is assumed to be encoded as UTF-8"
+	description: "[
+		Copies managed pointer of UTF-8 encoded text into UTF-8 character array skipping CR characters
+	]"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -46,12 +48,5 @@ feature -- Basic operations
 			last_index := i
 			utf_8_copied_count := j - dest_index
 		end
-
---feature -- Duplication
-
---	new_string (str: STRING_8): like Current
---		do
---			create Result.make_from_string (str)
---		end
 
 end

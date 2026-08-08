@@ -84,6 +84,14 @@ feature {NONE} -- Access
 			Result := area_substring (area, lower, upper, True)
 		end
 
+	frozen new_unicode_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_32
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		local
+			u: UTF_CONVERTER
+		do
+			Result := u.utf_8_string_8_to_string_32 (area_substring (area, lower, upper, False))
+		end
+
 	frozen area_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; keep_ref: BOOLEAN): STRING_8
 		-- `lower .. upper' substring of `area' placed in `output_area'
 		do

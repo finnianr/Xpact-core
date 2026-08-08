@@ -28,7 +28,7 @@ feature {NONE} -- PI and comment scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index: INTEGER; done: BOOLEAN
+			index, byte_count, bt_code: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			if index >= end_index then
@@ -40,7 +40,8 @@ feature {NONE} -- PI and comment scanning
 			else
 				index := index + 1
 				from until index >= end_index or done loop
-					inspect bt_table [buf [index].code]
+					bt_code := bt_table [buf [index].code]
+					inspect bt_code
 						when BT_minus then
 							index := index + 1
 							if index >= end_index then
@@ -62,30 +63,18 @@ feature {NONE} -- PI and comment scanning
 						when BT_non_xml, BT_malform, BT_continuation_byte then
 							next_token_index := index; Result := Tok_invalid; done := True
 
-						when BT_lead_2_byte then
-							if end_index - index < 2 then
+						when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+							byte_count := bt_code - 3
+							if end_index - index < byte_count then
 								Result := Tok_partial_char; done := True
-							elseif is_invalid_char_2 (buf, index) then
-								next_token_index := index; Result := Tok_invalid; done := True
+
+							elseif is_invalid_character (buf, index, byte_count) then
+								next_token_index := index
+								Result := Tok_invalid; done := True
 							else
-								index := index + 2
+								index := index + byte_count
 							end
-						when BT_lead_3_byte then
-							if end_index - index < 3 then
-								Result := Tok_partial_char; done := True
-							elseif is_invalid_char_3 (buf, index) then
-								next_token_index := index; Result := Tok_invalid; done := True
-							else
-								index := index + 3
-							end
-						when BT_lead_4_byte then
-							if end_index - index < 4 then
-								Result := Tok_partial_char; done := True
-							elseif is_invalid_char_4 (buf, index) then
-								next_token_index := index; Result := Tok_invalid; done := True
-							else
-								index := index + 4
-							end
+
 						when BT_CR then
 							index := index + 1
 

@@ -38,12 +38,11 @@ feature -- Basic operations
 			count := count + 1
 		end
 
-	io_print (name_type: STRING)
+	io_print
 		do
-			io.put_string (name_type)
-			io.put_string (": <")
+			io.put_character ('<')
 			io.put_string (name)
-			io.put_string ("> occurrences ")
+			io.put_string (">: occurrences ")
 			io.put_integer (count)
 			io.put_new_line
 		end

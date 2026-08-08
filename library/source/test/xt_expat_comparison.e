@@ -31,8 +31,7 @@ feature {NONE} -- Initialization
 	make (a_file_path: PATH; a_log: PLAIN_TEXT_FILE)
 		do
 			file_path := a_file_path; log := a_log
-			expat_error := Empty_string
-			package_name := Empty_string
+			expat_error := Empty_string; package_name := Empty_string
 		end
 
 feature -- Status report
@@ -108,17 +107,13 @@ feature {NONE} -- Implementation
 	call_expat_xml_crc_32 (type: STRING)
 		-- call C program xml_crc_32 setting `expat_return_code' and `expat_checksum'
 		local
-			output_file: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN
-			index: INTEGER
+			output_file: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN; index: INTEGER
 		do
 			expat_checksum := 0
 			create output_file.make_with_output (Xml_crc_32, << type, file_path >>)
 			expat_return_code := output_file.return_code
 			if expat_return_code > 0 then
 				expat_error := output_file.error_lines.first
-				if output_file.has_output then
-					output_file.cleanup
-				end
 
 			elseif output_file.has_output then
 				from until done loop
@@ -131,8 +126,8 @@ feature {NONE} -- Implementation
 						done := True
 					end
 				end
-				output_file.cleanup
 			end
+			output_file.cleanup
 		end
 
 	log_checksums (insertions: ARRAY [STRING])

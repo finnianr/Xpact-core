@@ -92,9 +92,25 @@ feature -- Tests
 			IO.put_new_line
 		end
 
-	test_string
+	test_file_info
+		local
+			info: FILE_INFO
 		do
+			create info.make
+			info.set_is_following_symlinks (False)
+			across 1 |..| 3 as n loop
+				info.update ("/media/finnian/Windows/Program Files/WindowsApps/AppleInc.AppleDevices_1.1540.23042.0_x64__nzyj5cx40ttqa/VFS")
+				if info.exists then
+					print ("type: " + info.type.out + "%N")
+					print ("is_symlink: " + info.is_symlink.out + "%N")
+					print ("is_directory: " + info.is_directory.out + "%N")
+					print ("device: " + info.device.out + " inode: " + info.inode.out + "%N")
+				else
+					print ("stat failed%N")
+				end
+			end
 		end
+
 
 feature -- Status report
 
@@ -120,7 +136,7 @@ feature {NONE} -- Implementation
 			create Result.make_from_iterable_tuples (<<
 				[agent test_buffer_pool, "buffer_pool"],
 				[agent test_chunk_reading, "chunk_reading"],
-				[agent test_string, "string"]
+				[agent test_file_info, "file_info"]
 			>>)
 		end
 

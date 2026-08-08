@@ -44,10 +44,6 @@ inherit
 
 	XT_LITERAL_SCANNER
 
-	XT_STRING_CONSTANTS
-
-	XT_UTF_8_NAME_CHECKER
-
 create
 	make
 

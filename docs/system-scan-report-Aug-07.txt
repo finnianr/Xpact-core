@@ -1,0 +1,99 @@
+Tested against eXpat
+Total passed: 5 Total failed: 0
+Files: 1473069
+Package: /home/finnian/Videos/Matryoshka/timings.ods
+1. /tmp/xml_reader/timings.ods/META-INF/manifest.xml OK
+2. /tmp/xml_reader/timings.ods/Configurations2/accelerator/current.xml EMPTY skipped
+3. /tmp/xml_reader/timings.ods/settings.xml OK
+4. /tmp/xml_reader/timings.ods/meta.xml OK
+5. /tmp/xml_reader/timings.ods/content.xml OK
+6. /tmp/xml_reader/timings.ods/styles.xml OK
+
+Tested against eXpat
+Passed: 5 Failed: 0
+
+Tested against eXpat
+Total passed: 5 Total failed: 0
+Files: 1473657
+
+Total XML files: 195622
+Extensions sorted in order of occurrence count (Highest first)
+
+EXTENSION: <svg> occurrences 97289
+EXTENSION: <manifest> occurrences 47294
+EXTENSION: <xml> occurrences 20957
+EXTENSION: <mum> occurrences 11948
+EXTENSION: <html> occurrences 9356
+EXTENSION: <ecf> occurrences 2070
+EXTENSION: <eant> occurrences 1181
+EXTENSION: <config> occurrences 696
+EXTENSION: <adml> occurrences 678
+EXTENSION: <> occurrences 642
+EXTENSION: <xsd> occurrences 632
+EXTENSION: <admx> occurrences 606
+EXTENSION: <xsl> occurrences 448
+EXTENSION: <resw> occurrences 432
+EXTENSION: <ts> occurrences 294
+EXTENSION: <resx> occurrences 270
+EXTENSION: <xaml> occurrences 209
+EXTENSION: <targets> occurrences 208
+EXTENSION: <vcxproj> occurrences 88
+EXTENSION: <svgz> occurrences 82
+EXTENSION: <sln> occurrences 61
+EXTENSION: <plist> occurrences 55
+EXTENSION: <props> occurrences 32
+EXTENSION: <rng> occurrences 14
+EXTENSION: <ruleset> occurrences 12
+EXTENSION: <x3d> occurrences 10
+EXTENSION: <glade> occurrences 9
+EXTENSION: <xhtml> occurrences 7
+EXTENSION: <opf> occurrences 5
+EXTENSION: <ncx> occurrences 4
+EXTENSION: <csproj> occurrences 4
+EXTENSION: <xslt> occurrences 3
+EXTENSION: <wxs> occurrences 3
+EXTENSION: <rdf> occurrences 3
+EXTENSION: <fodt> occurrences 2
+EXTENSION: <odc> occurrences 2
+EXTENSION: <nuspec> occurrences 2
+EXTENSION: <odf> occurrences 2
+EXTENSION: <fods> occurrences 2
+EXTENSION: <pom> occurrences 2
+EXTENSION: <appx> occurrences 1
+EXTENSION: <msixbundle> occurrences 1
+EXTENSION: <odg> occurrences 1
+EXTENSION: <docx> occurrences 1
+EXTENSION: <odt> occurrences 1
+EXTENSION: <ods> occurrences 1
+EXTENSION: <pptx> occurrences 1
+EXTENSION: <odp> occurrences 1
+Zero failures
+
+
+Installing xml_reader
+Program -xml_hunt: Xpact-core XML tools (Eiffel)
+
+Files: 1File: /media/finnian/Windows/$Recycle.Bin/S-1-5-18/desktop.ini
+Press <Enter> to continue
+
+Files: 2File: /media/finnian/Windows/$Recycle.Bin/S-1-5-21-1138760094-713679292-4264513304-500/desktop.ini
+Press <Enter> to continue
+
+Files: 3File: /media/finnian/Windows/$Recycle.Bin/S-1-5-21-3124820103-3139305042-1506668120-1000/desktop.ini
+Press <Enter> to continue
+
+Files: 4File: /media/finnian/Windows/$Recycle.Bin/S-1-5-21-3124820103-3139305042-1506668120-1001/$I0JBUJH.lnk
+Press <Enter> to continue^C
+xml_reader: system execution failed.
+Following is the set of recorded exceptions:
+
+-------------------------------------------------------------------------------
+Class / Object      Routine                Nature of exception           Effect
+-------------------------------------------------------------------------------
+APPLICATION         root's creation        Interrupt:                   
+<00007771047FE618>                         Operating system signal.      Exit
+-------------------------------------------------------------------------------
+APPLICATION         root's creation                                     
+<00007771047FE618>                         Routine failure.              Exit
+-------------------------------------------------------------------------------
+

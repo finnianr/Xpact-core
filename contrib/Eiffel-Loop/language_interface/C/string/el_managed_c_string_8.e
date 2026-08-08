@@ -32,11 +32,6 @@ inherit
 			is_equal
 		end
 
-	STRING_HANDLER
-		undefine
-			copy, is_equal
-		end
-
 	EL_STRING_H_C_API
 		undefine
 			copy, is_equal
@@ -48,6 +43,11 @@ inherit
 		end
 
 	DEBUG_OUTPUT
+		undefine
+			copy, is_equal
+		end
+
+	STRING_HANDLER
 		undefine
 			copy, is_equal
 		end
