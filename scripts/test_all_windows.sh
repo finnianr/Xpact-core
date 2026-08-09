@@ -3,4 +3,4 @@
 
 . scripts/install_xml_reader.sh
 
-xml_reader -xml_hunt $* "/media/finnian/Windows/Program Files"
+xml_reader -xml_hunt $* "/media/finnian/Windows"

@@ -66,53 +66,65 @@ feature -- Error codes (XML_Error enum)
 
 feature -- Error text
 
-	Error_descriptions: STRING = "[
-		No memory
-		Syntax
-		No elements
-		not well-formed (invalid token)
-		Unclosed token
-		Partial character
-		Tag mismatch
-		Duplicate attribute
-		Junk after document element
-		Parameter entity reference
-		Undefined entity
-		Recursive entity reference
-		Async entity
-		Bad character reference
-		Binary entity reference
-		Attribute external entity reference
-		XML or text declaration not at start of entity
-		Unknown encoding
-		Incorrect encoding
-		Unclosed CDATA section
-		External entity handling
-		Not standalone
-		Unexpected state
-		Entity declared in parameter entity
-		Feature requires XML DTD
-		Cannot change feature once parsing
-		Unbound prefix
-		Undeclaring prefix
-		Incomplete parameter entity
-		XML declaration
-		Text declaration
-		Public ID
-		Suspended
-		Not suspended
-		Aborted
-		Finished
-		Suspend parameter entity
-		Reserved prefix xml
-		Reserved prefix xmlns
-		Reserved namespace URI
-		Invalid argument
-		No buffer
-		Amplification limit breach
-		Not started
-		File not readable (permission required)
-		File has no content to read
-	]"
+	Error_descriptions: STRING
+		once
+			Result := "[
+				Out of memory
+				Syntax error
+				No element found
+				Not well-formed (invalid token)
+				Unclosed token
+				Partial character
+				Mismatched tag
+				Duplicate attribute
+				Junk after document element
+				Illegal parameter entity reference
+				Undefined entity
+				Recursive entity reference
+				Asynchronous entity
+				Reference to invalid character number
+				Reference to binary entity
+				Reference to external entity in attribute
+				XML or text declaration not at start of entity
+				Unknown encoding
+				Encoding specified in XML declaration is incorrect
+				Unclosed CDATA section
+				Error in processing external entity reference
+				Document is not standalone
+				Unexpected parser state - please send a bug report
+				Entity declared in parameter entity
+				Requested feature requires XML_DTD support in Expat
+				Cannot change setting once parsing has begun
+				Unbound prefix
+				Must not undeclare prefix
+				Incomplete markup in parameter entity
+				XML declaration not well-formed
+				Text declaration not well-formed
+				Illegal character(s) in public id
+				Parser suspended
+				Parser not suspended
+				Parsing aborted
+				Parsing finished
+				Cannot suspend in external parameter entity
+				Reserved prefix (xml) must not be undeclared or bound to another namespace name
+				Reserved prefix (xmlns) must not be declared or undeclared
+				Prefix must not be bound to one of the reserved namespace names
+				Invalid argument
+				A successful prior call to function XML_GetBuffer is required
+				Limit on input amplification factor (from DTD and entities) breached
+				Parser not started
+				File not readable (permission required)
+				File has no content to read
+			]"
+		ensure
+			random_order_check:
+				attached Result.split ('%N') as lines
+					and then lines [Error_syntax] ~ "Syntax error"
+					and then lines [Error_unknown_encoding] ~ "Unknown encoding"
+					and then lines [Error_unbound_prefix] ~ "Unbound prefix"
+					and then lines [Error_undefined_entity] ~ "Undefined entity"
+					and then lines [Error_invalid_argument] ~ "Invalid argument"
+					and then lines [Error_not_started] ~ "Parser not started"
+		end
 
 end

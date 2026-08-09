@@ -192,9 +192,7 @@ feature -- Basic operations
 					when Error_file_has_no_content then
 						output.put_string ("File has no content: " + file_path.utf_8_name)
 				else
-					output.put_string ("Parse error code: " + error_code.out)
-					output.put_new_line
-					output.put_string (error_description)
+					output.put_string ("Parse error: "); output.put_string (error_description)
 				end
 				output.put_new_line
 			end
@@ -430,7 +428,7 @@ feature {NONE} -- Processor dispatch
 					tok_end := s.next_token_index
 					inspect token
 						when Tok_xml_decl then
-							if index /= start_index then
+							if index > 0 then
 								Result := Error_misplaced_xml_pi; done := True
 							end
 
@@ -448,6 +446,11 @@ feature {NONE} -- Processor dispatch
 						when Tok_decl_open then
 							declaration := select_declaration (buf, index + 2, s)
 							declaration_parts_list.wipe_out
+							inspect declaration when 0 then
+								Result := Error_syntax; done := True
+							else
+								declaration_parts_list.wipe_out
+							end
 
 						when Tok_literal then
 							inspect declaration

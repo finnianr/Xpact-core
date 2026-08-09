@@ -38,13 +38,14 @@ feature -- Prolog tokenization
 		require
 			valid_range: start_index <= end_index and end_index <= buf.count
 		local
-			index, tok: INTEGER
+			index, tok, bt_code, byte_count: INTEGER
 		do
 			index := start_index
 			if index >= end_index then
 				Result := Tok_none
 			else
-				inspect bt_table [buf [index].code]
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
 					when BT_quote then
 						Result := scan_lit (buf, index + 1, end_index, BT_quote)
 
@@ -136,30 +137,17 @@ feature -- Prolog tokenization
 						index := index + 1
 						Result := scan_name_or_name_token (buf, index, end_index, tok)
 
-					when BT_lead_2_byte then
-						if end_index - index < 2 then
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index < byte_count then
 							Result := Tok_partial_char
-						elseif is_invalid_char_2 (buf, index) then
+						elseif is_invalid_character (buf, index, byte_count) then
 							next_token_index := index; Result := Tok_invalid
-						elseif is_name_start_char_2 (buf, index) then
-							tok := Tok_name; index := index + 2
+						elseif is_name_start_character (buf, index, byte_count) then
+							tok := Tok_name; index := index + byte_count
 							Result := scan_name_or_name_token (buf, index, end_index, tok)
-						elseif is_name_char_2 (buf, index) then
-							tok := tok_name_token; index := index + 2
-							Result := scan_name_or_name_token (buf, index, end_index, tok)
-						else
-							next_token_index := index; Result := Tok_invalid
-						end
-					when BT_lead_3_byte then
-						if end_index - index < 3 then
-							Result := Tok_partial_char
-						elseif is_invalid_char_3 (buf, index) then
-							next_token_index := index; Result := Tok_invalid
-						elseif is_name_start_char_3 (buf, index) then
-							tok := Tok_name; index := index + 3
-							Result := scan_name_or_name_token (buf, index, end_index, tok)
-						elseif is_name_char_3 (buf, index) then
-							tok := tok_name_token; index := index + 3
+						elseif is_name_character (buf, index, byte_count) then
+							tok := tok_name_token; index := index + byte_count
 							Result := scan_name_or_name_token (buf, index, end_index, tok)
 						else
 							next_token_index := index; Result := Tok_invalid
@@ -248,30 +236,24 @@ feature {NONE} -- Prolog sub-scanners
 		require
 			valid_range: start_index <= end_index
 		local
-			index, t: INTEGER; done: BOOLEAN
+			index, bt_code, byte_count: INTEGER; done: BOOLEAN
 		do
 			index := start_index; newline_or_tab_found := False
 			if attached byte_type_table as bt_table then
 				from until index >= end_index or done loop
-					t := bt_table [buf [index].code]
-					inspect t
+					bt_code := bt_table [buf [index].code]
+					inspect bt_code
 						when BT_non_xml, BT_malform, BT_continuation_byte then
 							next_token_index := index; Result := Tok_invalid; done := True
-						when BT_lead_2_byte then
-							if end_index - index < 2 then
+
+						when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+							byte_count := bt_code - 3
+							if end_index - index < byte_count then
 								Result := Tok_partial_char; done := True
-							elseif is_invalid_char_2 (buf, index) then
+							elseif is_invalid_character (buf, index, byte_count) then
 								next_token_index := index; Result := Tok_invalid; done := True
 							else
-								index := index + 2
-							end
-						when BT_lead_3_byte then
-							if end_index - index < 3 then
-								Result := Tok_partial_char; done := True
-							elseif is_invalid_char_3 (buf, index) then
-								next_token_index := index; Result := Tok_invalid; done := True
-							else
-								index := index + 3
+								index := index + byte_count
 							end
 						when BT_LF, BT_CR then
 							newline_or_tab_found := True
@@ -279,7 +261,7 @@ feature {NONE} -- Prolog sub-scanners
 
 						when BT_quote, BT_apostrophe then
 							index := index + 1
-							if t = a_open then
+							if bt_code = a_open then
 								if index >= end_index then
 									Result := Tok_literal.opposite; done := True
 								else

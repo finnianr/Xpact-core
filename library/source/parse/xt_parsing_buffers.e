@@ -163,6 +163,7 @@ feature {NONE} -- Implementation
 				across << u.utf_8_bom_to_string_8, u.utf_16le_bom_to_string_8 >> as bom until found loop
 					if leading.starts_with (bom) then
 						leading.remove_head (bom.count)
+						l_chunk.remove_head (bom.count)
 						inspect @ bom.cursor_index
 							when 1 then
 								encoding := Utf_8
@@ -175,10 +176,9 @@ feature {NONE} -- Implementation
 			-- Must exlude /usr/share/app-install/icons/gnome-oregano.svg (Linux Mint 22.2)
 			-- The leading bytes are \x89PNG\r\n, which is the PNG magic header, so it's not XML.
 				if leading.is_whitespace then
-					l_chunk.remove_head (lt_index - 1)
 					gt_index := l_chunk.index_of ('>', 1)
 					if gt_index > 0 then
-						declaration := l_chunk.substring (1, gt_index).to_string
+						declaration := l_chunk.substring (lt_index, gt_index).to_string
 						if encoding = Utf_16 or else declaration.occurrences ('%U') = declaration.count // 2 then
 							declaration.extend ('%U')
 							declaration := u.utf_16le_string_8_to_string_32 (declaration).to_string_8

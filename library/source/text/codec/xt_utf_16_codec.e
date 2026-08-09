@@ -61,6 +61,11 @@ feature -- Access
 
 	partial_code_unit: INTEGER
 
+feature -- Status report
+
+	pending_CR: BOOLEAN
+		-- `True' if previous content ended with '%R'
+
 feature -- Measurement
 
 	character_count: INTEGER
@@ -90,20 +95,50 @@ feature -- Basic operations
 	copy_as_utf_8 (dest: SPECIAL [CHARACTER]; dest_index, n: INTEGER)
 		local
 			dest_full, partial_pair, break: BOOLEAN; ptr: POINTER
-			i, i_final, j, remaining_count, code_unit, high_16, low_16, partial_unit: INTEGER
+			i, i_final, j, remaining_count, code_unit, partial_unit: INTEGER
 		do
 			partial_unit := partial_code_unit
 			partial_code_unit := 0
 			ptr := area; i_final := character_count - 1
 			remaining_count := n
-			from i := 0; j := dest_index until i > i_final or dest_full or partial_pair loop
+
+			i := 0; j := dest_index
+			if pending_CR then
+			-- The last chunked ended with a CR
+				inspect read_natural_16 (ptr, i).to_integer_32 when {ASCII}.NL then
+					do_nothing
+				else
+				-- replace isolated '%R' with '%N'
+					dest [j] := '%N'
+					remaining_count := remaining_count - 1
+					j := j + 1
+				end
+				pending_CR := False
+			end
+			from until i > i_final or dest_full or partial_pair loop
 				inspect partial_unit when 0 then
 				-- try and consume all ASCII characters
 					from break := False until i > i_final or break or dest_full loop
-						code_unit := c_read_natural_16 (ptr, i)
+						code_unit := read_natural_16 (ptr, i)
 						inspect code_unit when {ASCII}.CR then
-						-- skip '%R'
-							i := i + 1
+							i := i + 1 -- skip '%R'
+							if i > i_final then
+							-- find out in next chunk if characters is Newline
+								pending_CR := True
+							else
+								inspect read_natural_16 (ptr, i).to_integer_32 when {ASCII}.NL then
+									do_nothing
+								else
+								-- replace isolated '%R' with '%N'
+									inspect remaining_count when 0 then
+										dest_full := True
+									else
+										dest [j] := '%N'
+										remaining_count := remaining_count - 1
+										j := j + 1
+									end
+								end
+							end
 						else
 							if code_unit < 0x80 then
 								inspect remaining_count when 0 then
@@ -138,18 +173,17 @@ feature -- Basic operations
 							dest_full := True
 						else
 							dest [j] := code_unit.to_character_8
-							j := j + 1
 							remaining_count := remaining_count - 1
+							j := j + 1
 							i := i + 1
 						end
 					elseif code_unit < 0x800 then
 						inspect remaining_count when 0, 1 then
 							dest_full := True
 						else
-							dest [j] := (0xC0 | (code_unit |>> 6)).to_character_8
-							dest [j + 1] := (0x80 | (code_unit & 0x3F)).to_character_8
-							j := j + 2
+							fill_2_bytes (dest, j, code_unit)
 							remaining_count := remaining_count - 2
+							j := j + 2
 							i := i + 1
 						end
 					elseif code_unit >= 0xD800 and code_unit <= 0xDBFF then
@@ -158,17 +192,10 @@ feature -- Basic operations
 							inspect remaining_count when 0, 1, 2, 3 then
 								dest_full := True
 							else
-								high_16 := code_unit
-								i := i + 1
-								low_16 := read_natural_16 (ptr, i)
-								code_unit := 0x10000 + ((high_16 - 0xD800) |<< 10) + (low_16 - 0xDC00)
-								dest [j] := (0xF0 | (code_unit |>> 18)).to_character_8
-								dest [j + 1] := (0x80 | ((code_unit |>> 12) & 0x3F)).to_character_8
-								dest [j + 2] := (0x80 | ((code_unit |>> 6) & 0x3F)).to_character_8
-								dest [j + 3] := (0x80 | (code_unit & 0x3F)).to_character_8
-								j := j + 4
+								fill_4_bytes (dest, j, code_unit, read_natural_16 (ptr, i + 1))
 								remaining_count := remaining_count - 4
-								i := i + 1
+								j := j + 4
+								i := i + 2
 							end
 						else
 						-- lone high surrogate at end of chunk: consume it here and
@@ -182,11 +209,9 @@ feature -- Basic operations
 						inspect remaining_count when 0, 1, 2 then
 							dest_full := True
 						else
-							dest [j] := (0xE0 | (code_unit |>> 12)).to_character_8
-							dest [j + 1] := (0x80 | ((code_unit |>> 6) & 0x3F)).to_character_8
-							dest [j + 2] := (0x80 | (code_unit & 0x3F)).to_character_8
-							j := j + 3
+							fill_3_bytes (dest, j, code_unit)
 							remaining_count := remaining_count - 3
+							j := j + 3
 							i := i + 1
 						end
 					end
@@ -197,6 +222,30 @@ feature -- Basic operations
 		end
 
 feature {NONE} -- Implementation
+
+	fill_2_bytes (dest: SPECIAL [CHARACTER]; dest_index, code_unit: INTEGER)
+		do
+			dest [dest_index] := (0xC0 | (code_unit |>> 6)).to_character_8
+			dest [dest_index + 1] := (0x80 | (code_unit & 0x3F)).to_character_8
+		end
+
+	fill_3_bytes (dest: SPECIAL [CHARACTER]; dest_index, code_unit: INTEGER)
+		do
+			dest [dest_index] := (0xE0 | (code_unit |>> 12)).to_character_8
+			dest [dest_index + 1] := (0x80 | ((code_unit |>> 6) & 0x3F)).to_character_8
+			dest [dest_index + 2] := (0x80 | (code_unit & 0x3F)).to_character_8
+		end
+
+	fill_4_bytes (dest: SPECIAL [CHARACTER]; dest_index, high_16, low_16: INTEGER)
+		local
+			code_unit: INTEGER
+		do
+			code_unit := 0x10000 + ((high_16 - 0xD800) |<< 10) + (low_16 - 0xDC00)
+			dest [dest_index] := (0xF0 | (code_unit |>> 18)).to_character_8
+			dest [dest_index + 1] := (0x80 | ((code_unit |>> 12) & 0x3F)).to_character_8
+			dest [dest_index + 2] := (0x80 | ((code_unit |>> 6) & 0x3F)).to_character_8
+			dest [dest_index + 3] := (0x80 | (code_unit & 0x3F)).to_character_8
+		end
 
 	frozen read_natural_16 (a_area: POINTER; i: INTEGER): NATURAL_16
 		require

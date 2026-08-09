@@ -94,7 +94,7 @@ feature {NONE} -- PI and comment scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, token: INTEGER; target_start: INTEGER; done: BOOLEAN
+			index, token, bt_code, byte_count: INTEGER; target_start: INTEGER; done: BOOLEAN
 			lower_upper: SPECIAL [INTEGER]
 		do
 			index := start_index; lower_upper := index_x4_buffer
@@ -102,21 +102,17 @@ feature {NONE} -- PI and comment scanning
 			if index >= end_index then
 				Result := Tok_partial
 			else
-				inspect bt_table [buf [index].code]
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
-					when BT_lead_2_byte then
-						if end_index - index >= 2 and then not is_invalid_char_2 (buf, index)
-							and then is_name_start_char_2 (buf, index)
+
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index >= byte_count and then not is_invalid_character (buf, index, byte_count)
+							and then is_name_start_character (buf, index, byte_count)
 						then
-							index := index + 2
-						else
-							next_token_index := index; Result := Tok_invalid; done := True
-						end
-					when BT_lead_3_byte then
-						if end_index - index >= 3 and then not is_invalid_char_3 (buf, index)
-							and then is_name_start_char_3 (buf, index)
-						then index := index + 3
+							index := index + byte_count
 						else
 							next_token_index := index; Result := Tok_invalid; done := True
 						end
@@ -263,7 +259,7 @@ feature {NONE} -- PI helpers
 	): INTEGER
 			-- Scan PI content until '?>'.  Returns token (Tok_pi or Tok_xml_decl).
 		local
-			index, start_index: INTEGER; done, passed_leading: BOOLEAN
+			index, start_index, bt_code, byte_count: INTEGER; done, passed_leading: BOOLEAN
 		do
 			from index := a_start_index until index > end_index or passed_leading loop
 				inspect buf [index]
@@ -275,32 +271,19 @@ feature {NONE} -- PI helpers
 			end
 			start_index := index
 			from until index >= end_index or done loop
-				inspect bt_table [buf [index].code]
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
 					when BT_non_xml, BT_malform, BT_continuation_byte then
 						next_token_index := index; Result := Tok_invalid; done := True
-					when BT_lead_2_byte then
-						if end_index - index < 2 then
+
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index < byte_count then
 							Result := Tok_partial_char; done := True
-						elseif is_invalid_char_2 (buf, index) then
+						elseif is_invalid_character (buf, index, byte_count) then
 							next_token_index := index; Result := Tok_invalid; done := True
 						else
-							index := index + 2
-						end
-					when BT_lead_3_byte then
-						if end_index - index < 3 then
-							Result := Tok_partial_char; done := True
-						elseif is_invalid_char_3 (buf, index) then
-							next_token_index := index; Result := Tok_invalid; done := True
-						else
-							index := index + 3
-						end
-					when BT_lead_4_byte then
-						if end_index - index < 4 then
-							Result := Tok_partial_char; done := True
-						elseif is_invalid_char_4 (buf, index) then
-							next_token_index := index; Result := Tok_invalid; done := True
-						else
-							index := index + 4
+							index := index + byte_count
 						end
 					when BT_question then
 						index := index + 1

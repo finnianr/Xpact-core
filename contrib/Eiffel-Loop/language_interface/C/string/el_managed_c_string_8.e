@@ -223,7 +223,7 @@ feature -- Status report
 			end
 		end
 
-	starts_with (other: EL_MANAGED_C_STRING_8): BOOLEAN
+	starts_with_c_string (other: EL_MANAGED_C_STRING_8): BOOLEAN
 		-- Does `area' start with the same bytes as `other.area'?
 		do
 			if other.count <= count then
@@ -231,6 +231,16 @@ feature -- Status report
 			end
 		ensure
 			same_as_string: Result = to_string.starts_with (other.to_string)
+		end
+
+	starts_with (str: STRING_8): BOOLEAN
+		-- Does `area' start with the same bytes as `other.area'?
+		do
+			if str.count <= count then
+				Result := c_memory_compare (area, str.area.base_address, str.count)
+			end
+		ensure
+			same_as_string: Result = to_string.starts_with (str)
 		end
 
 	valid_index (i: INTEGER): BOOLEAN

@@ -300,7 +300,7 @@ feature {NONE} -- Tag sub-helpers
 	scan_start_tag_name (buf: SPECIAL [CHARACTER]; start_index, end_index, lead_count: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 		-- After consuming name-start char(s); scan rest of start tag name.
 		local
-			index, name_lower, name_upper, byte_count, bt_code: INTEGER; done, is_invalid_char: BOOLEAN
+			index, name_lower, name_upper, byte_count, bt_code: INTEGER; done: BOOLEAN
 		do
 			index := start_index; name_lower := start_index - lead_count; name_upper := Unset
 			from until index >= end_index or done loop
@@ -428,7 +428,7 @@ feature {NONE} -- Tag sub-helpers
 								index := index + 1
 							end
 						when BT_ampersand then
-							Result := scan_ref (buf, entity_buffer, Tok_attribute_value_s, index + 1, end_index)
+							Result := scan_ref (buf, Tok_attribute_value_s, index + 1, end_index, bt_table, entity_buffer)
 							if Result > 0 then
 								index := next_token_index; Result := 0
 							else

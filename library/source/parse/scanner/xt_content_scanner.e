@@ -41,7 +41,7 @@ feature -- Content tokenization
 					when BT_lt then
 						Result := scan_lt (buf, index + 1, end_index, bt_table)
 					when BT_ampersand then
-						Result := scan_ref (buf, entity_buffer, Tok_data_chars, index + 1, end_index)
+						Result := scan_ref (buf, Tok_data_chars, index + 1, end_index, bt_table, entity_buffer)
 					when BT_CR then
 						index := index + 1
 						if index >= end_index then
@@ -105,13 +105,14 @@ feature -- Content tokenization
 		require
 			valid_range: start_index <= end_index and end_index <= buf.count
 		local
-			index: INTEGER
+			index, bt_code, byte_count: INTEGER
 		do
 			index := start_index
 			if index >= end_index then
 				Result := Tok_none
 			else
-				inspect bt_table [buf [index].code]
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
 					when BT_right_square_bracket then
 						index := index + 1
 						if index >= end_index then
@@ -148,33 +149,18 @@ feature -- Content tokenization
 					when BT_LF then
 						next_token_index := index + 1
 						Result := Tok_data_newline
+
 					when BT_non_xml, BT_malform, BT_continuation_byte then
 						next_token_index := index; Result := Tok_invalid
-					when BT_lead_2_byte then
-						if end_index - index < 2 then
+
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index < byte_count then
 							Result := Tok_partial_char
-						elseif is_invalid_char_2 (buf, index) then
+						elseif is_invalid_character (buf, index, byte_count) then
 							next_token_index := index; Result := Tok_invalid
 						else
-							index := index + 2
-							Result := scan_cdata_data_chars (buf, bt_table, index, end_index)
-						end
-					when BT_lead_3_byte then
-						if end_index - index < 3 then
-							Result := Tok_partial_char
-						elseif is_invalid_char_3 (buf, index) then
-							next_token_index := index; Result := Tok_invalid
-						else
-							index := index + 3
-							Result := scan_cdata_data_chars (buf, bt_table, index, end_index)
-						end
-					when BT_lead_4_byte then
-						if end_index - index < 4 then
-							Result := Tok_partial_char
-						elseif is_invalid_char_4 (buf, index) then
-							next_token_index := index; Result := Tok_invalid
-						else
-							index := index + 4
+							index := index + byte_count
 							Result := scan_cdata_data_chars (buf, bt_table, index, end_index)
 						end
 				else

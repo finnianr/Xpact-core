@@ -40,6 +40,50 @@ feature -- Status report
 
 	newline_or_tab_found: BOOLEAN
 
+feature -- Name-character predicates
+
+	is_invalid_character (buf: SPECIAL [CHARACTER]; index, byte_count: INTEGER): BOOLEAN
+		do
+			inspect byte_count
+				when 2 then
+					Result := is_invalid_char_2 (buf, index)
+				when 3 then
+					Result := is_invalid_char_3 (buf, index)
+				when 4 then
+					Result := is_invalid_char_4 (buf, index)
+			else
+				Result := False
+			end
+		end
+
+	is_name_start_character (buf: SPECIAL [CHARACTER]; index, byte_count: INTEGER): BOOLEAN
+		do
+			inspect byte_count
+				when 2 then
+					Result := is_name_start_char_2 (buf, index)
+				when 3 then
+					Result := is_name_start_char_3 (buf, index)
+				when 4 then
+					Result := is_name_start_char_4 (buf, index)
+			else
+				Result := False
+			end
+		end
+
+	is_name_character (buf: SPECIAL [CHARACTER]; index, byte_count: INTEGER): BOOLEAN
+		do
+			inspect byte_count
+				when 2 then
+					Result := is_name_char_2 (buf, index)
+				when 3 then
+					Result := is_name_char_3 (buf, index)
+				when 4 then
+					Result := is_name_char_4 (buf, index)
+			else
+				Result := False
+			end
+		end
+
 feature -- Name-character predicates (2-byte UTF-8, U+0080..U+07FF)
 
 	is_name_char_2 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
@@ -201,20 +245,6 @@ feature {NONE} -- Implementation
 			-- end_index - index >= count * char_width  (HAS_CHARS macro)
 		do
 			Result := end_index - index >= count
-		end
-
-	is_invalid_character (buf: SPECIAL [CHARACTER]; index, byte_count: INTEGER): BOOLEAN
-		do
-			inspect byte_count
-				when 2 then
-					Result := is_invalid_char_2 (buf, index)
-				when 3 then
-					Result := is_invalid_char_3 (buf, index)
-				when 4 then
-					Result := is_invalid_char_4 (buf, index)
-			else
-				Result := False
-			end
 		end
 
 feature {NONE} -- Internal attributes

@@ -29,21 +29,22 @@ inherit
 
 feature {NONE} -- Reference scanning
 
-	scan_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; token, start_index, end_index: INTEGER): INTEGER
+	scan_ref (buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]): INTEGER
 			-- Scan entity or character reference after '&'.
 			-- Sets next_token_ptr.  Returns Tok_entity_ref, Tok_char_ref, or error.
 		require
 			valid_range: start_index <= end_index
 		local
-			index: INTEGER
+			index, bt_code, byte_count: INTEGER
 		do
 			index := start_index
 			if index >= end_index then
 				Result := Tok_partial
-			elseif attached byte_type_table as bt_table then
-				inspect bt_table [buf [index].code]
+			else
+				bt_code := bt_table [buf [index].code]
+				inspect bt_code
 					when BT_hash then
-						Result := scan_char_ref (buf, entity_buffer, token, index + 1, end_index)
+						Result := scan_char_ref (buf, token, index + 1, end_index, bt_table, entity_buffer)
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
 						from until index >= end_index loop
@@ -66,22 +67,13 @@ feature {NONE} -- Reference scanning
 						if Result = 0 then
 							Result := Tok_partial
 						end
-					when BT_lead_2_byte then
-						if end_index - index >= 2 and then not is_invalid_char_2 (buf, index)
-							and then is_name_start_char_2 (buf, index)
+					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+						byte_count := bt_code - 3
+						if end_index - index >= byte_count and then not is_invalid_character (buf, index, byte_count)
+							and then is_name_start_character (buf, index, byte_count)
 						then
-							index := index + 2
-							Result := scan_ref_name_tail (buf, index, end_index)
-						else
-							next_token_index := index
-							Result := Tok_invalid
-						end
-					when BT_lead_3_byte then
-						if end_index - index >= 3 and then not is_invalid_char_3 (buf, index)
-							and then is_name_start_char_3 (buf, index)
-						then
-							index := index + 3
-							Result := scan_ref_name_tail (buf, index, end_index)
+							index := index + byte_count
+							Result := scan_ref_name_tail (buf, index, end_index, bt_table)
 						else
 							next_token_index := index
 							Result := Tok_invalid
@@ -93,7 +85,7 @@ feature {NONE} -- Reference scanning
 			end
 		end
 
-	scan_char_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; token, start_index, end_index: INTEGER): INTEGER
+	scan_char_ref (buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]): INTEGER
 			-- Scan character reference after '&#'.  Returns Tok_char_ref or error.
 		require start_index <= end_index
 		local
@@ -103,9 +95,9 @@ feature {NONE} -- Reference scanning
 			if index >= end_index then
 				Result := Tok_partial
 			elseif buf [index] = 'x' then
-				Result := scan_hex_char_ref (buf, entity_buffer, token, index + 1, end_index)
+				Result := scan_hex_char_ref (buf, token, index + 1, end_index, entity_buffer)
 
-			elseif attached byte_type_table as bt_table then
+			else
 				inspect bt_table [buf [index].code]
 					when BT_digit then
 						index := index + 1
@@ -136,7 +128,7 @@ feature {NONE} -- Reference scanning
 			end
 		end
 
-	scan_hex_char_ref (buf: SPECIAL [CHARACTER]; entity_buffer: LIST [STRING]; token, start_index, end_index: INTEGER): INTEGER
+	scan_hex_char_ref (buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; entity_buffer: LIST [STRING]): INTEGER
 			-- Scan hex character reference after '&#x'.  Returns Tok_char_ref or error.
 		require start_index <= end_index
 		local
@@ -179,26 +171,24 @@ feature {NONE} -- Reference scanning
 
 feature {NONE} -- Reference sub-helper
 
-	scan_ref_name_tail (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+	scan_ref_name_tail (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 			-- Continue scanning after a valid nmstrt multi-byte start.
 		local
 			index: INTEGER
 		do
 			index := start_index
-			if attached byte_type_table as bt_table then
-				from until index >= end_index loop
-					inspect bt_table [buf [index].code]
-						when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
-							index := index + 1
-						when BT_semicolon then
-							next_token_index := index + 1
-							Result := Tok_entity_ref
-							index := end_index
-					else
-						next_token_index := index
-						Result := Tok_invalid
+			from until index >= end_index loop
+				inspect bt_table [buf [index].code]
+					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
+						index := index + 1
+					when BT_semicolon then
+						next_token_index := index + 1
+						Result := Tok_entity_ref
 						index := end_index
-					end
+				else
+					next_token_index := index
+					Result := Tok_invalid
+					index := end_index
 				end
 			end
 			if Result = 0 then

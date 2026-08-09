@@ -97,11 +97,6 @@ feature {NONE} -- Implementation
 				IO.put_integer (counter)
 			end
 			if resume_at_count.to_boolean implies counter >= resume_at_count then
-				if counter = 21856 then
-					IO.put_new_line
-					IO.put_string (file_path.utf_8_name)
-					IO.put_new_line
-				end
 				do_with_resumed (file_path)
 			end
 		end

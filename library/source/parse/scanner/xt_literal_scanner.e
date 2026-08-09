@@ -48,7 +48,7 @@ feature -- Literal content tokenization
 							index := index + 4
 						when BT_ampersand then
 							if index = start then
-								Result := scan_ref (buf, entity_buffer, Tok_literal, index + 1, end_index)
+								Result := scan_ref (buf, Tok_literal, index + 1, end_index, bt_table, entity_buffer)
 							else
 								next_token_index := index; Result := Tok_data_chars
 							end
@@ -116,7 +116,7 @@ feature -- Literal content tokenization
 							index := index + 4
 						when BT_ampersand then
 							if index = start then
-								Result := scan_ref (buf, entity_buffer, Tok_literal, index + 1, end_index)
+								Result := scan_ref (buf, Tok_literal, index + 1, end_index, bt_table, entity_buffer)
 							else
 								next_token_index := index; Result := Tok_data_chars
 							end
