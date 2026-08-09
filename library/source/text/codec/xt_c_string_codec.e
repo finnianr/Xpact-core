@@ -32,6 +32,9 @@ feature -- Status query
 		do
 		end
 
+	pending_CR: BOOLEAN
+		-- `True' if previous content ended with '%R'
+
 feature -- Measurement
 
 	character_count: INTEGER

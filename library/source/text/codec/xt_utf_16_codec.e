@@ -61,11 +61,6 @@ feature -- Access
 
 	partial_code_unit: INTEGER
 
-feature -- Status report
-
-	pending_CR: BOOLEAN
-		-- `True' if previous content ended with '%R'
-
 feature -- Measurement
 
 	character_count: INTEGER

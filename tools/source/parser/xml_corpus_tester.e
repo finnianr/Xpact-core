@@ -39,6 +39,11 @@ inherit
 			make, on_finish
 		end
 
+	XT_DEFAULT_PARSE_EVENTS
+		rename
+			on_xml_declaration_ as on_xml_declaration
+		end
+
 	FILE_TREE_TESTS_FACTORY
 
 	XT_SHARED_EXECUTION_ENVIRONMENT

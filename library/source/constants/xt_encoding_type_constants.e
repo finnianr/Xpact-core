@@ -36,4 +36,8 @@ feature {NONE} -- Constants
 			Result := << "US-ASCII", "ISO-8859-1", Utf_8_name, Utf_16_name >>
 		end
 
+	Encoding_attribute: STRING = "encoding"
+
+	Valid_encoding_list: STRING = "UTF-8, UTF-16, UTF-16BE, UTF-16LE, ISO-8859-1, US-ASCII"
+
 end

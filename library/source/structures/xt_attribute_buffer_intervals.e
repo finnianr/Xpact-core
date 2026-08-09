@@ -17,10 +17,26 @@ class
 inherit
 	XT_ATTRIBUTE_INTERVAL_LIST
 
+	XT_ENCODING_TYPE_CONSTANTS
+		undefine
+			copy, is_equal
+		end
+
 create
 	make
 
 feature -- Status query
+
+	has_valid_encoding (buffer: SPECIAL [CHARACTER_8]): BOOLEAN
+		do
+			if attached item_value (buffer, Encoding_attribute, False) as encoding then
+				Result := across to_list (Valid_encoding_list, ',') as valid_encoding some
+					encoding.is_case_insensitive_equal (valid_encoding)
+				end
+			else
+				Result := True
+			end
+		end
 
 	is_valid_count: BOOLEAN
 		-- `index_count' is multiple of `Group_size'
@@ -76,6 +92,29 @@ feature -- Access
 					upper_plus_1 := a [i + 3] + 1
 					str_area [j] := i_th_value (i, buffer, overflow_area) [upper_plus_1]
 					i := i + Group_size; j := j + 1
+				end
+			end
+		end
+
+	item_value (a_buffer: SPECIAL [CHARACTER_8]; name: STRING; keep_ref: BOOLEAN): detachable STRING
+		local
+			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]; found: BOOLEAN
+		do
+			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
+				and then attached name_cache as names
+			then
+				from i := 0; i_final := index_count until i = i_final or found loop
+					buffer := i_th_name (i, a_buffer, overflow_area)
+					if same_characters (buffer, a [i], a [i + 1], name) then
+						buffer := i_th_value (i, a_buffer, overflow_area)
+						Result := area_substring (buffer, a [i + 2], a [i + 3], False)
+						if keep_ref then
+							Result := Result.twin
+						end
+						found := True
+					else
+						i := i + Group_size
+					end
 				end
 			end
 		end
@@ -353,7 +392,7 @@ feature -- Debug helpers
 			then
 				from i := 0; i_final := index_count until i = i_final or Result loop
 					buffer := i_th_name (i, a_buffer, overflow_area)
-					if name_cache.item (buffer, a [i], a [i + 1]) ~ name then
+					if same_characters (buffer, a [i], a [i + 1], name) then
 						buffer := i_th_value (i, a_buffer, overflow_area)
 						if area_substring (buffer, a [i + 2], a [i + 3], False) ~ value then
 							Result := True

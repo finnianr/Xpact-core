@@ -54,4 +54,8 @@ feature {NONE} -- Event handlers
 		do
 		end
 
+	on_xml_declaration_ (buf: SPECIAL [CHARACTER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		do
+		end
+
 end

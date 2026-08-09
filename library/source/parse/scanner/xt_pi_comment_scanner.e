@@ -286,16 +286,28 @@ feature {NONE} -- PI helpers
 							index := index + byte_count
 						end
 					when BT_question then
-						index := index + 1
-						if index >= end_index then
-							Result := Tok_partial; done := True
-						elseif buf [index] = '>' then
-							inspect token when Tok_pi then
-								lower_upper.extend (start_index)
-								lower_upper.extend (index - 2)
-							else end
-							next_token_index := index + 1
-							Result := token; done := True
+						inspect token when Tok_xml_decl then
+							buf [index] := '/' -- turn into empty element to collect declaration attributes
+							Result := scan_attributes (buf, start_index, index + 2, bt_table, attribute_intervals)
+							buf [index] := '?' -- revert
+							inspect token when Tok_invalid then
+								do_nothing
+							else
+								Result := Tok_xml_decl
+							end
+							done := True
+						else
+							index := index + 1
+							if index >= end_index then
+								Result := Tok_partial; done := True
+							elseif buf [index] = '>' then
+								inspect token when Tok_pi then
+									lower_upper.extend (start_index)
+									lower_upper.extend (index - 2)
+								else end
+								next_token_index := index + 1
+								Result := token; done := True
+							end
 						end
 				else
 					index := index + 1
@@ -307,6 +319,14 @@ feature {NONE} -- PI helpers
 			inspect Result when Tok_partial then
 				lower_upper.wipe_out
 			else end
+		end
+
+	scan_attributes (
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER bt_table: SPECIAL [INTEGER]
+		attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+
+	): INTEGER
+		deferred
 		end
 
 end

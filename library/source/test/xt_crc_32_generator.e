@@ -38,7 +38,8 @@ inherit
 	XT_DEFAULT_PARSE_EVENTS
 		rename
 			on_cdata_section_close_ as on_cdata_section_close,
-			on_tag_end_ as on_tag_end
+			on_tag_end_ as on_tag_end,
+			on_xml_declaration_ as on_xml_declaration
 		end
 
 	XT_PARSE_EVENT_CONSTANTS

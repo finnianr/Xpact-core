@@ -173,6 +173,10 @@ feature -- Basic operations
 						Result := parse_buffer (encoded_chunk.utf_8_copied_count, a_is_final)
 					end
 				end
+				if a_is_final and then not element_context.reached_depth_zero then
+					error_code := Error_no_elements
+					Result := Status_error
+				end
 			end
 		ensure
 			valid_result: Status_range.has (Result)
@@ -430,6 +434,12 @@ feature {NONE} -- Processor dispatch
 						when Tok_xml_decl then
 							if index > 0 then
 								Result := Error_misplaced_xml_pi; done := True
+
+							elseif not attributes.has_valid_encoding (buf) then
+								Result := Error_unknown_encoding; done := True
+							else
+								on_xml_declaration (buf, attributes)
+								attributes.wipe_out
 							end
 
 						when Tok_instance_start then
@@ -790,6 +800,12 @@ feature {NONE} -- Event handlers
 			valid_range: start_index >= 0 and then start_index <= end_index
 			to_in_buf: end_index <= buffer_end
 		do
+		end
+
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		require
+			valid_attribute_indices_count: attributes.is_valid_count
+		deferred
 		end
 
 feature {NONE} -- Deferred

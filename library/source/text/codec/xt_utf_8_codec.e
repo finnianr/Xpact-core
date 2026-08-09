@@ -34,16 +34,40 @@ feature -- Basic operations
 			ptr: POINTER; i, j, i_final: INTEGER; c: CHARACTER
 		do
 			ptr := area; i_final := count.min (n) - 1
-			from i := 0; j := dest_index until i > i_final loop
+			i := 0; j := dest_index
+			if pending_CR then
+			-- The last chunked ended with a CR
+				inspect read_character_8 (ptr, i) when '%N' then
+					do_nothing
+				else
+				-- replace isolated '%R' with '%N'
+					dest [j] := '%N'
+					i_final := i_final - 1 -- reduce the number of remaining characters
+					j := j + 1
+				end
+				pending_CR := False
+			end
+			from until i > i_final loop
 				c := read_character_8 (ptr, i)
 				inspect c when '%R' then
-				-- skip '%R'
-					do_nothing
+					i := i + 1 -- skip '%R'
+					if i > i_final then
+					-- find out in next chunk if characters is Newline
+						pending_CR := True
+					else
+						inspect read_character_8 (ptr, i) when '%N' then
+							do_nothing
+						else
+						-- replace isolated '%R' with '%N'
+							dest [j] := '%N'
+							j := j + 1
+						end
+					end
 				else
 					dest [j] := c
 					j := j + 1
+					i := i + 1
 				end
-				i := i + 1
 			end
 			last_index := i
 			utf_8_copied_count := j - dest_index

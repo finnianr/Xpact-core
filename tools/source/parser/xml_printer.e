@@ -119,22 +119,7 @@ feature {NONE} -- Event handlers
 			IO.put_string (name)
 			IO.put_character (':')
 			IO.put_new_line
-			if attribute_table.count > 0 then
-				across attribute_table as value loop
-					if @ value.is_first then
-						put_tabs (depth)
-						IO.put_string ("ATTRIBUTES: {")
-					else
-						IO.put_string (", ")
-					end
-					IO.put_string (@ value.key)
-					IO.put_string (" : %"")
-					IO.put_string (value)
-					IO.put_character ('"')
-				end
-				IO.put_character ('}')
-				IO.put_new_line
-			end
+			put_attributes ("ATTRIBUTES", depth, attribute_table)
 		end
 
 	on_processing_instruction (name, value: STRING)
@@ -159,6 +144,34 @@ feature {NONE} -- Event handlers
 				IO.put_string (s.substitute (template, << name, value >>))
 			end
 			IO.put_new_line
+		end
+
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		do
+			put_attributes ("XML", 0, attributes.as_table (buffer, False))
+		end
+
+feature {NONE} -- Implementation
+
+	put_attributes (name: STRING; depth: INTEGER; attribute_table: HASH_TABLE [STRING, STRING])
+		do
+			if attribute_table.count > 0 then
+				across attribute_table as value loop
+					if @ value.is_first then
+						put_tabs (depth)
+						IO.put_string (name)
+						IO.put_string (": {")
+					else
+						IO.put_string (", ")
+					end
+					IO.put_string (@ value.key)
+					IO.put_string (" : %"")
+					IO.put_string (value)
+					IO.put_character ('"')
+				end
+				IO.put_character ('}')
+				IO.put_new_line
+			end
 		end
 
 feature {NONE} -- Constants

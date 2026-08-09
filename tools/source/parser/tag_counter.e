@@ -24,7 +24,8 @@ inherit
 			on_comment_ as on_comment,
 			on_content_ as on_content,
 			on_tag_end_ as on_tag_end,
-			on_processing_instruction_ as on_processing_instruction
+			on_processing_instruction_ as on_processing_instruction,
+			on_xml_declaration_ as on_xml_declaration
 		end
 
 	XT_EXPAT_COMPARABLE_PARSER

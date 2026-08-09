@@ -15,13 +15,14 @@ inherit
 	XP_EVENT_HANDLER
 		rename
 			on_comment as on_comment_x,
-			on_processing_instruction as on_processing_instruction_x
+			on_processing_instruction as on_processing_instruction_x,
+			on_xml_declaration as on_xml_declaration_x
 		redefine
 			wants_start_element_events,
 			wants_end_element_events,
 			wants_character_data_events,
 			on_processing_instruction_x,
-			on_xml_declaration,
+			on_xml_declaration_x,
 			on_comment_x,
 			on_start_cdata_section,
 			on_end_cdata_section,
@@ -805,7 +806,7 @@ feature -- Event handling
 			end
 		end
 
-	on_xml_declaration (a_version, a_encoding: READABLE_STRING_8; a_standalone: INTEGER)
+	on_xml_declaration_x (a_version, a_encoding: READABLE_STRING_8; a_standalone: INTEGER)
 		do
 			emit_xml_declaration (a_version, a_encoding, a_standalone)
 		end
@@ -1349,6 +1350,10 @@ feature {NONE} -- Xpact core event handlers
 		ensure then
 			buffer_unchanged:
 				attributes.upper_plus_1_characters (buf) ~ old attributes.upper_plus_1_characters (buf)
+		end
+
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+		do
 		end
 
 feature {NONE} -- Native callback calls
