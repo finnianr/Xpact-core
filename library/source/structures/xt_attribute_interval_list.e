@@ -20,7 +20,8 @@ inherit
 			index_of as index_of_item,
 			forth as index_forth,
 			extend as extend_index,
-			count as index_count
+			count as index_count,
+			capacity as index_capacity
 		export
 			{NONE} all
 		undefine
@@ -41,11 +42,12 @@ feature {NONE} -- Initialization
 	make (n: INTEGER)
 		do
 			Precursor (n)
-			create character_swap_area.make_filled ('%U', area.capacity // Group_size)
+			create character_swap_area.make_filled ('%U', capacity)
 			create attribute_table.make (11)
+			create name_area.make_empty (capacity)
 			create entity_refs_pool.make (10)
-			create entity_refs_area.make_empty (area.capacity // Group_size)
-			create overflow_buffer_area.make_empty (area.capacity // 2)
+			create entity_refs_area.make_empty (capacity)
+			create overflow_buffer_area.make_empty (capacity)
 			create buffer_pool.make (10)
 
 			entity_cache := new_entity_cache
@@ -65,36 +67,48 @@ feature -- Access
 	name_cache: XT_NAME_CACHE
 		-- efficient lookup of attribute/tag name
 
+feature -- Measurement
+
+	capacity: INTEGER
+		-- count of intervals
+		do
+			Result := index_capacity // Interval_count
+		end
+
+feature -- Status query
+
+	has_duplicate_name: BOOLEAN
+
 feature -- Constants
 
-	Group_size: INTEGER = 4
-		-- number of array items needed to hold intervals of one name-value pair
+	Interval_count: INTEGER = 2
+		-- number of array items needed to hold upper and lower index for one attribute value
 
 feature -- Basic operations
 
 	wipe_out
 		local
-			i, j, i_final: INTEGER
+			i, i_final: INTEGER
 		do
 			index := 0
 			if attached overflow_buffer_area as overflow and then attached entity_refs_area as entity_refs
 				and then attached buffer_pool as pool
 			then
 			-- recycle value and entity reference list buffers
-				from i := 1; i_final := overflow.count until i > i_final loop
+				from i := 0; i_final := overflow.count until i = i_final loop
 					if attached overflow [i] as buffer then
 						pool.return (buffer)
 					end
-					j := (i - 1) // 2
-					if attached entity_refs [j] as list then
+					if attached entity_refs [i] as list then
 						list.wipe_out
 						entity_refs_pool.put (list)
 					end
-					i := i + 2
+					i := i + 1
 				end
-				entity_refs.wipe_out; overflow.wipe_out
+				entity_refs.wipe_out; overflow.wipe_out; name_area.wipe_out
 			end
 			area.wipe_out
+			has_duplicate_name := False
 		end
 
 feature {NONE} -- Factory
@@ -123,6 +137,8 @@ feature {NONE} -- Internal attributes
 
 	entity_refs_area: SPECIAL [detachable ARRAYED_LIST [STRING]]
 
+	name_area: SPECIAL [STRING]
+
 	overflow_buffer_area: SPECIAL [detachable SPECIAL [CHARACTER_8]]
 
 	buffer_pool: XT_CHARACTER_BUFFER_POOL
@@ -130,9 +146,10 @@ feature {NONE} -- Internal attributes
 	entity_refs_pool: ARRAYED_STACK [ARRAYED_LIST [STRING]]
 
 invariant
-	lower_upper_pairs: index_count.integer_remainder (Group_size) = 0
-	proportional_character_swap_capacity: character_swap_area.capacity = area.capacity // Group_size
-	proportional_entity_refs_area_capacity: entity_refs_area.capacity = area.capacity // Group_size
-	proportional_overflow_buffer_capacity: overflow_buffer_area.capacity = area.capacity // 2
+	lower_upper_pairs: index_count.integer_remainder (Interval_count) = 0
+	valid_name_area_capacity: name_area.capacity = capacity
+	valid_character_swap_capacity: character_swap_area.capacity = capacity
+	valid_entity_refs_area_capacity: entity_refs_area.capacity = capacity
+	valid_overflow_buffer_capacity: overflow_buffer_area.capacity = capacity
 
 end

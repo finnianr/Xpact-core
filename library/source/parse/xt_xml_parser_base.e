@@ -97,13 +97,8 @@ feature -- Basic operations
 			end
 			if file.is_readable then
 				file.open_read
-				if file.file_readable then
-					file.parse
-					status := file.parse_status
-				else
-					error_code := Error_file_has_no_content
-					status := Status_error
-				end
+				file.parse
+				status := file.parse_status
 			else
 				error_code := Error_file_not_readable
 				status := Status_error
@@ -192,9 +187,6 @@ feature -- Basic operations
 				inspect error_code
 					when Error_file_not_readable then
 						output.put_string ("Cannot read: " + file_path.utf_8_name)
-
-					when Error_file_has_no_content then
-						output.put_string ("File has no content: " + file_path.utf_8_name)
 				else
 					output.put_string ("Parse error: "); output.put_string (error_description)
 				end
@@ -300,7 +292,7 @@ feature {NONE} -- Buffer implementation
 	reset
 		do
 			Precursor
-			if element_context.has_attributes then
+			if element_context.has_default_values then
 				create element_context.make (section_flags)
 			else
 				element_context.reset
@@ -470,7 +462,9 @@ feature {NONE} -- Processor dispatch
 									on_entity_declaration_part (buf, index + 1, tok_end - 2, s)
 								when Doctype then
 									on_document_declaration_part (buf, index, tok_end - 1, s)
-							else end
+							else
+								Result := Error_syntax; done := True
+							end
 
 						when Tok_name then
 							inspect declaration

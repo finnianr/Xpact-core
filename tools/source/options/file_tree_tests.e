@@ -170,10 +170,10 @@ feature {NONE} -- Implementation
 					end
 				end
 			end
-			log.close
 			if log.count = 0 then
 				log.delete
 			end
+			log.close
 		end
 
 	has_content (file_path: PATH): BOOLEAN

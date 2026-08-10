@@ -53,8 +53,7 @@ feature {NONE} -- Initialization
 			return_code := Environment.return_code
 			if return_code = 0 then
 				make_open_read (output_path.name)
-				create error_file.make_with_path (error_path)
-				error_file.delete
+				Environment.remove_file (error_path)
 			else
 				make_with_path (output_path)
 				create error_file.make_open_read (error_path.name)

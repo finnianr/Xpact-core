@@ -5,3 +5,6 @@ UTF-16-encoded-DiagnosticsData.xml: eXpat passes = 71295; Xpact-core passes = 59
 
 2026 10 AUG 10:48
 UTF-16-encoded-DiagnosticsData.xml: eXpat passes = 71956; Xpact-core passes = 50368 (x0.70 to eXpat)
+
+2026 10 AUG 13:19
+UTF-16-encoded-DiagnosticsData.xml: eXpat passes = 71773; Xpact-core passes = 51084 (x0.71 to eXpat)

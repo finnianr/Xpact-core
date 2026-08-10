@@ -17,7 +17,7 @@ inherit
 		rename
 			make as make_context
 		redefine
-			default_attribute_values, has_attributes
+			default_attribute_values, has_attributes, Has_default_values
 		end
 
 create
@@ -76,6 +76,8 @@ feature -- Status query
 		do
 			Result := default_value_table.has (name)
 		end
+
+	Has_default_values: BOOLEAN = True
 
 feature {NONE} -- Internal attributes
 

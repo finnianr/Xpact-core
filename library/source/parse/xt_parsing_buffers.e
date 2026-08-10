@@ -171,7 +171,9 @@ feature {NONE} -- Implementation
 			end
 			lt_index := l_chunk.index_of ('<', 1)
 			if lt_index = 0 then
-				error_code := Error_not_started
+				if l_chunk.is_whitespace then
+					error_code := Error_no_elements
+				end
 			else
 				leading := l_chunk.substring (1, lt_index - 1)
 			-- Must exlude /usr/share/app-install/icons/gnome-oregano.svg (Linux Mint 22.2)
@@ -211,7 +213,7 @@ feature {NONE} -- Implementation
 					else
 					end
 				else
-					error_code := Error_not_started
+					error_code := Error_invalid_token
 				end
 			end
 		end

@@ -111,6 +111,16 @@ feature -- Basic operations
 			end
 		end
 
+	remove_file (file_path: PATH)
+		do
+			if attached File as f then
+				f.reset_path (file_path)
+				f.open_read
+				f.delete
+				f.close
+			end
+		end
+
 feature -- Access
 
 	unix_escaped (a_path: PATH): STRING

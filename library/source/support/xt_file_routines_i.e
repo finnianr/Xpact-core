@@ -14,6 +14,29 @@ class
 
 feature {NONE} -- Implementation
 
+	extension (wild_card: STRING): STRING
+		local
+			index: INTEGER; s: XT_STRING_8_ROUTINES
+		do
+			index := wild_card.index_of ('.', 1)
+			if index > 0 then
+				Result := wild_card.substring (index + 1, wild_card.count)
+			else
+				Result := s.Empty_string
+			end
+		ensure
+			not_empty: Result.count > 0
+		end
+
+	internal_wild_cards (wild_card: STRING): LIST [STRING]
+		do
+			if attached Internal_extension_table [extension (wild_card)] as list then
+				Result := list.split (';')
+			else
+				Result := Default_internal_wild_cards
+			end
+		end
+
 	is_zip_archive (file_path: PATH): BOOLEAN
 		-- ZIP files start with one of these byte sequences:
 
@@ -23,21 +46,15 @@ feature {NONE} -- Implementation
 		local
 			file: RAW_FILE; i: INTEGER
 		do
-			create file.make_with_path (file_path)
-			file.open_read
-			if file.file_readable and file.count > 4 then
-				file.read_to_managed_pointer (file_header, 0, file_header.count)
-				if file_header.starts_with (PK_string) then
-					from i := 3 until i > 8 or Result loop
-						if file_header [3] = i.to_character_8 and then file_header [4] = (i + 1).to_character_8 then
-							Result := True
-						else
-							i := i + 2
-						end
+			if read_file_header (file_path) = 4 and then File_header.starts_with (PK_string) then
+				from i := 3 until i > 8 or Result loop
+					if File_header [3] = i.to_character_8 and then File_header [4] = (i + 1).to_character_8 then
+						Result := True
+					else
+						i := i + 2
 					end
 				end
 			end
-			file.close
 		end
 
 	is_xml_package (file_path: PATH): BOOLEAN
@@ -62,27 +79,18 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	extension (wild_card: STRING): STRING
+	read_file_header (file_path: PATH): INTEGER
+		-- Read file header into `File_header'
 		local
-			index: INTEGER; s: XT_STRING_8_ROUTINES
+			file: RAW_FILE; i: INTEGER
 		do
-			index := wild_card.index_of ('.', 1)
-			if index > 0 then
-				Result := wild_card.substring (index + 1, wild_card.count)
-			else
-				Result := s.Empty_string
+			create file.make_with_path (file_path)
+			file.open_read
+			if file.file_readable and file.count > 4 then
+				file.read_to_managed_pointer (File_header, 0, File_header.count)
+				Result := file.bytes_read
 			end
-		ensure
-			not_empty: Result.count > 0
-		end
-
-	internal_wild_cards (wild_card: STRING): LIST [STRING]
-		do
-			if attached Internal_extension_table [extension (wild_card)] as list then
-				Result := list.split (';')
-			else
-				Result := Default_internal_wild_cards
-			end
+			file.close
 		end
 
 feature {NONE} -- Constants

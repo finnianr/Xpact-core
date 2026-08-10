@@ -82,6 +82,15 @@ feature -- Basic operations
 				if crc_32.status /= Status_ok and expat_return_code > 0 then
 					both_failed := True
 					xpact_error := crc_32.error_description
+					if not both_agree then
+						log.put_string (file_path.utf_8_name)
+						log.put_new_line
+						log.put_string ("Xpact: "); log.put_string (crc_32.error_description)
+						log.put_new_line
+						log.put_string ("eXpat: "); log.put_string (expat_error)
+						log.put_new_line
+						log.put_new_line
+					end
 
 				elseif crc_32.status = Status_ok then
 					if crc_32.checksum.value = expat_checksum then

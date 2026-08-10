@@ -164,7 +164,7 @@ feature {NONE} -- Event handlers
 					if attributes.is_empty then
 						checksum.add_characters (buf, start_index, end_index)
 					else
-						checksum.add_string (attributes.first_name (buf))
+						checksum.add_string (attributes.first_name)
 					end
 				when Tok_pi_value then
 					if attributes.count > 0 then

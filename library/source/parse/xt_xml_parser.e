@@ -73,7 +73,7 @@ feature {NONE} -- Event handlers
 			if attributes.is_empty then
 				on_processing_instruction (new_substring (buf, start_index, end_index), Empty_string)
 			else
-				on_processing_instruction (attributes.first_name (buf), attributes.first_value (buf))
+				on_processing_instruction (attributes.first_name, attributes.first_value (buf))
 			end
 		end
 

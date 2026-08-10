@@ -62,7 +62,6 @@ feature -- Error codes (XML_Error enum)
 
 -- Extra file errors not in eXpat API
 	Error_file_not_readable:                 INTEGER = 45
-	Error_file_has_no_content:               INTEGER = 46
 
 feature -- Error text
 
@@ -114,7 +113,6 @@ feature -- Error text
 				Limit on input amplification factor (from DTD and entities) breached
 				Parser not started
 				File not readable (permission required)
-				File has no content to read
 			]"
 		ensure
 			random_order_check:

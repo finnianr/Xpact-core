@@ -35,10 +35,14 @@ feature -- Access
 
 	name: STRING
 		local
-			s: like stack
+			s: like stack; s8: XT_STRING_8_ROUTINES
 		do
 			s := stack
-			Result := s [s.count - 1]
+			inspect s.count when 0 then
+				Result := s8.Empty_string
+			else
+				Result := s [s.count - 1]
+			end
 		end
 
 	default_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
@@ -51,6 +55,12 @@ feature -- Access
 feature -- Status query
 
 	has_attributes: BOOLEAN
+		do
+			Result := False
+		end
+
+	has_default_values: BOOLEAN
+		-- `True' if `Current' has a `default_value_table'
 		do
 			Result := False
 		end
