@@ -72,7 +72,7 @@ feature -- Access
 			not_empty: count > 0
 		do
 			if attached area_v2 as a and then a.count >= Interval_count then
-				Result := new_substring (buffer, a [2], a [3])
+				Result := new_substring (buffer, a [0], a [1])
 			else
 				Result := Empty_string
 			end

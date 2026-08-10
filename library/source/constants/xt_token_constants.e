@@ -94,4 +94,51 @@ feature -- Literal / CDATA tokens
 	Tok_prefixed_name: INTEGER = 41
 	Tok_ignore_sect: INTEGER = 42
 
+feature -- String names
+
+	Token_names: STRING = "[
+		Start tag with attributes
+		Start tag no attributes
+		Empty element with attributes
+		Empty element no attributes
+		End tag
+		Data chars
+		Data newline
+		Cdata sect open
+		Entity ref
+		Char ref
+		Pi
+		Xml decl
+		Comment
+		Bom
+		Prolog s
+		Decl open
+		Decl close
+		Name
+		Name token
+		Pound name
+		Or
+		Percent
+		Open paren
+		Close paren
+		Open bracket
+		Close bracket
+		Literal
+		Param entity ref
+		Instance start
+		Name question
+		Name asterisk
+		Name plus
+		Cond sect open
+		Cond sect close
+		Close paren question
+		Close paren asterisk
+		Close paren plus
+		Comma
+		Attribute value s
+		Cdata sect close
+		Prefixed name
+		Ignore sect
+	]"
+
 end

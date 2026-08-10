@@ -143,11 +143,11 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Implementation
 
-	set_encoded_chunk (chunk: XT_C_STRING_CODEC; byte_count: INTEGER)
+	set_encoding (chunk: XT_C_STRING_CODEC; byte_count: INTEGER)
 		-- check encoding in XML header calling `set_scanner (Latin_1)' if required
 		-- also check if document is actually XML or something weird
 		local
-			leading, l_chunk: XT_UTF_8_CODEC; lt_index, gt_index: INTEGER; u: UTF_CONVERTER
+			leading, l_chunk: XT_UTF_8_CODEC; u: UTF_CONVERTER
 			found: BOOLEAN; declaration: STRING; l_encoding: NATURAL_8
 		do
 			if attached {XT_UTF_8_CODEC} encoded_chunk as str then
@@ -169,51 +169,48 @@ feature {NONE} -- Implementation
 					found := True
 				end
 			end
-			lt_index := l_chunk.index_of ('<', 1)
-			if lt_index = 0 then
+			declaration := first_element (l_chunk)
+			if declaration.is_empty then
 				if l_chunk.is_whitespace then
 					error_code := Error_no_elements
 				end
 			else
-				leading := l_chunk.substring (1, lt_index - 1)
-			-- Must exlude /usr/share/app-install/icons/gnome-oregano.svg (Linux Mint 22.2)
-			-- The leading bytes are \x89PNG\r\n, which is the PNG magic header, so it's not XML.
-				if leading.is_whitespace then
-					gt_index := l_chunk.index_of ('>', 1)
-					if gt_index > 0 then
-						declaration := l_chunk.substring (lt_index, gt_index).to_string
-						if encoding = Utf_16 or else declaration.occurrences ('%U') = declaration.count // 2 then
-							declaration.extend ('%U')
-							declaration := u.utf_16le_string_8_to_string_32 (declaration).to_string_8
-							encoding := Utf_16
-						end
-						if declaration.starts_with (Xml_declaration) and then declaration.has_substring (Encoding_attribute) then
-							declaration.to_upper
-							l_encoding := encoding_id (declaration)
-							if l_encoding > 0 then
-								inspect encoding when 0 then
-									encoding := l_encoding
-								else
-									if encoding /= l_encoding then
-										set_incorrect_encoding
-									end
-								end
+				if encoding = Utf_16 or else declaration.occurrences ('%U') = declaration.count // 2 then
+					declaration.extend ('%U')
+					declaration := u.utf_16le_string_8_to_string_32 (declaration).to_string_8
+					encoding := Utf_16
+				end
+				if declaration.starts_with (Xml_declaration) and then declaration.has_substring (Encoding_attribute) then
+					declaration.to_upper
+					l_encoding := encoding_id (declaration)
+					if l_encoding > 0 then
+						inspect encoding when 0 then
+						-- encoding not known but it's definitely not UTF-16
+							if l_encoding = Utf_16 then
+								error_code := Error_incorrect_encoding
+							else
+								encoding := l_encoding -- go with what declaration says
+							end
+						else
+						-- encoding already known
+							if encoding /= l_encoding then
+								error_code := Error_incorrect_encoding
 							end
 						end
 					end
-					inspect encoding
-						when Ascii, Utf_8 then
-							do_nothing
+				elseif encoding = 0 then
+					encoding := Utf_8 -- default
+				end
+				inspect encoding
+					when Ascii, Utf_8 then
+						do_nothing
 
-						when Utf_16 then
-							create {XT_UTF_16_CODEC} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
+					when Utf_16 then
+						create {XT_UTF_16_CODEC} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
 
-						when Latin_1 then
-							create {XT_LATIN_1_CODEC} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
-					else
-					end
+					when Latin_1 then
+						create {XT_LATIN_1_CODEC} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
 				else
-					error_code := Error_invalid_token
 				end
 			end
 		end
@@ -228,6 +225,20 @@ feature {NONE} -- Implementation
 					i := Utf_16 + 1 -- break
 				else
 					i := i + 1
+				end
+			end
+		end
+
+	first_element (chunk: XT_UTF_8_CODEC): STRING
+		local
+			lt_index, gt_index: INTEGER; s: XT_STRING_8_ROUTINES
+		do
+			Result := s.Empty_string
+			lt_index := chunk.index_of ('<', 1)
+			if lt_index > 0 then
+				gt_index := chunk.index_of ('>', lt_index + 1)
+				if gt_index > 0 then
+					Result := chunk.substring (lt_index, gt_index).to_string
 				end
 			end
 		end
@@ -326,10 +337,6 @@ feature {NONE} -- Implementation
 			end_non_negative:    buffer_end >= 0
 		end
 
-	set_incorrect_encoding
-		deferred
-		end
-
 feature {NONE} -- Internal attributes
 
 	buffer_end: INTEGER
@@ -378,28 +385,6 @@ feature {NONE} -- Internal structures
 	new_line: SPECIAL [CHARACTER_8]
 
 	scanner: XT_DOCUMENT_SCANNER
-
-feature {NONE} -- Constants
-
-	Token_names: ARRAY [STRING]
-		once
-			Result := <<
-				"start_tag_with_attributes",   	-- 1
-				"start_tag_no_attributes",     	-- 2
-				"empty_element_with_attributes", -- 3
-				"empty_element_no_attributes",   -- 4
-				"end_tag",          -- 5
-				"data_chars",       -- 6
-				"data_newline",     -- 7
-				"cdata_sect_open",  -- 8
-				"entity_ref",       -- 9
-				"char_ref",         -- 10
-				"pi",               -- 11
-				"xml_decl",         -- 12
-				"comment",          -- 13
-				"bom"               -- 14
-			>>
-		end
 
 invariant
 	room_for_null_terminator: buffer.capacity = buffer_limit + 1

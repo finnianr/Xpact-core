@@ -118,7 +118,7 @@ feature -- Basic operations
 		do
 			inspect parsing_state
 				when State_check_encoding then
-					set_encoded_chunk (chunk, a_count)
+					set_encoding (chunk, a_count)
 
 					inspect error_code when Error_none then
 						parsing_state := State_initialized
@@ -448,16 +448,24 @@ feature {NONE} -- Processor dispatch
 						when Tok_decl_open then
 							declaration := select_declaration (buf, index + 2, s)
 							declaration_parts_list.wipe_out
-							inspect declaration when 0 then
-								Result := Error_syntax; done := True
+							inspect declaration
+								when 0 then
+									Result := Error_syntax; done := True
+								when Doctype then
+									if in_doctype_section then
+										Result := Error_syntax; done := True
+									else
+										in_doctype_section := True
+									end
 							else
-								declaration_parts_list.wipe_out
 							end
 
 						when Tok_literal then
 							inspect declaration
 								when Attlist then
 									on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, s, names)
+								when Element_ then
+									do_nothing -- for now
 								when Entity_ then
 									on_entity_declaration_part (buf, index + 1, tok_end - 2, s)
 								when Doctype then
@@ -470,12 +478,15 @@ feature {NONE} -- Processor dispatch
 							inspect declaration
 								when Attlist then
 									on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
+								when Element_ then
+									do_nothing -- for now
 								when Entity_ then
 									on_entity_declaration_part (buf, index, tok_end - 1, s)
 								when Doctype then
 									on_document_declaration_part (buf, index, tok_end - 1, s)
-
-							else end
+							else
+								Result := Error_syntax; done := True
+							end
 
 						when Tok_pound_name then
 							inspect declaration when Attlist then
@@ -491,6 +502,24 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
+
+						when Tok_open_bracket then
+							if not in_doctype_section then
+								Result := Error_syntax; done := True
+							end
+
+						when Tok_close_bracket then
+							if in_doctype_section then
+								in_doctype_section := False
+							else
+								Result := Error_syntax; done := True
+							end
+
+						when Tok_open_paren, Tok_close_paren, Tok_or then
+							if not in_doctype_section then
+								Result := Error_syntax; done := True
+							end
+
 					else
 						if token <= 0 then
 							done := True  -- partial; wait for more data
@@ -683,12 +712,6 @@ feature {NONE} -- Implementation
 			Result := False
 		end
 
-	set_incorrect_encoding
-		do
-			status := Status_error
-			error_code := Error_incorrect_encoding
-		end
-
 feature {NONE} -- Event handlers
 
 	on_attribute_declaration_part (
@@ -847,6 +870,8 @@ feature {NONE} -- Deferred
 feature {NONE} -- Internal attributes
 
 	element_context: XT_ELEMENT_CONTEXT
+
+	in_doctype_section: BOOLEAN
 
 	section_flags: SPECIAL [BOOLEAN]
 
