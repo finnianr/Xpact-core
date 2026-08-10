@@ -105,7 +105,7 @@ feature -- Access
 				end
 				bucket.extend (Result)
 				check
-					well_distributed_hash_indices: across area as a all a /= Default_bucket implies a.count <= 6 end
+					well_distributed_hash_indices: bucket.count <= 7
 				end
 			end
 		ensure

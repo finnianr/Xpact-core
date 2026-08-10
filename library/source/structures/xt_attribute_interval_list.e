@@ -50,10 +50,10 @@ feature {NONE} -- Initialization
 			create overflow_buffer_area.make_empty (capacity)
 			create buffer_pool.make (10)
 
-			entity_cache := new_entity_cache
-			entity_table := new_entity_table (37)
+			create entity_cache.make
+			create entity_table.make (37)
 			entity_table.set_predefined (entity_cache)
-			name_cache := new_name_cache
+			create name_cache.make
 		end
 
 feature -- Access
@@ -109,23 +109,6 @@ feature -- Basic operations
 			end
 			area.wipe_out
 			has_duplicate_name := False
-		end
-
-feature {NONE} -- Factory
-
-	new_entity_cache: XT_ENTITY_NAME_CACHE
-		do
-			create Result.make
-		end
-
-	new_entity_table (n: INTEGER): XT_ENTITY_TABLE
-		do
-			create Result.make (n)
-		end
-
-	new_name_cache: XT_NAME_CACHE
-		do
-			create Result.make
 		end
 
 feature {NONE} -- Internal attributes

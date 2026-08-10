@@ -127,7 +127,6 @@ feature -- Element change
 			DTD_uri.wipe_out
 			formal_public_identifier.wipe_out
 			name_cache.reset
-
 			entity_table.wipe_out
 			entity_table.set_predefined (entity_cache)
 		end
@@ -147,7 +146,7 @@ feature {NONE} -- Implementation
 		-- check encoding in XML header calling `set_scanner (Latin_1)' if required
 		-- also check if document is actually XML or something weird
 		local
-			leading, l_chunk: XT_UTF_8_CODEC; u: UTF_CONVERTER
+			l_chunk: XT_UTF_8_CODEC; u: UTF_CONVERTER
 			found: BOOLEAN; declaration: STRING; l_encoding: NATURAL_8
 		do
 			if attached {XT_UTF_8_CODEC} encoded_chunk as str then

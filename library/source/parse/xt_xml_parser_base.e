@@ -452,10 +452,8 @@ feature {NONE} -- Processor dispatch
 								when 0 then
 									Result := Error_syntax; done := True
 								when Doctype then
-									if in_doctype_section then
+									if in_doctype_definition then
 										Result := Error_syntax; done := True
-									else
-										in_doctype_section := True
 									end
 							else
 							end
@@ -504,19 +502,21 @@ feature {NONE} -- Processor dispatch
 							Result := Error_invalid_token; done := True
 
 						when Tok_open_bracket then
-							if not in_doctype_section then
+							inspect declaration when Doctype then
+								in_doctype_definition := True
+							else
 								Result := Error_syntax; done := True
 							end
 
 						when Tok_close_bracket then
-							if in_doctype_section then
-								in_doctype_section := False
+							if in_doctype_definition then
+								in_doctype_definition := False
 							else
 								Result := Error_syntax; done := True
 							end
 
 						when Tok_open_paren, Tok_close_paren, Tok_or then
-							if not in_doctype_section then
+							if not in_doctype_definition then
 								Result := Error_syntax; done := True
 							end
 
@@ -871,7 +871,7 @@ feature {NONE} -- Internal attributes
 
 	element_context: XT_ELEMENT_CONTEXT
 
-	in_doctype_section: BOOLEAN
+	in_doctype_definition: BOOLEAN
 
 	section_flags: SPECIAL [BOOLEAN]
 
