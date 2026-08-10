@@ -173,7 +173,7 @@ feature -- Basic operations
 						Result := parse_buffer (encoded_chunk.utf_8_copied_count, a_is_final)
 					end
 				end
-				if a_is_final and then not element_context.reached_depth_zero then
+				if a_is_final and then error_code = Error_none and then not element_context.reached_depth_zero then
 					error_code := Error_no_elements
 					Result := Status_error
 				end
@@ -553,21 +553,29 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_start_tag_with_attributes then
 							context.push (s.tag_name (names, buf, index))
-							on_tag_start (buf, context, attributes, token)
-							attributes.wipe_out
+							if attributes.has_duplicate_name then
+								Result := Error_duplicate_attribute; done := True
+							else
+								on_tag_start (buf, context, attributes, token)
+								attributes.wipe_out
+							end
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
 							tag_name := s.tag_name (names, buf, index)
 							context.push (tag_name)
-							on_tag_start (buf, context, attributes, token)
-							inspect token when Tok_empty_element_with_attributes then
-								attributes.wipe_out
+							if attributes.has_duplicate_name then
+								Result := Error_duplicate_attribute; done := True
 							else
-							end
-							on_tag_end (tag_name)
-							inspect context.pop (tag_name) when Error_tag_mismatch then
-								Result := Error_tag_mismatch; done := True
-							else
+								on_tag_start (buf, context, attributes, token)
+								inspect token when Tok_empty_element_with_attributes then
+									attributes.wipe_out
+								else
+								end
+								on_tag_end (tag_name)
+								inspect context.pop (tag_name) when Error_tag_mismatch then
+									Result := Error_tag_mismatch; done := True
+								else
+								end
 							end
 
 						when Tok_end_tag then
@@ -679,6 +687,12 @@ feature {NONE} -- Implementation
 		-- Corresponds to `m_reenter' in xmlparse.c.
 		do
 			Result := False
+		end
+
+	set_incorrect_encoding
+		do
+			status := Status_error
+			error_code := Error_incorrect_encoding
 		end
 
 feature {NONE} -- Event handlers

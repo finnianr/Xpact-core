@@ -80,6 +80,7 @@ feature {NONE} -- Initialization
 
 	set_defaults
 		do
+			encoding := 0
 			parse_end_index := 0
 			position_index := 0
 			buffer_end := 0
@@ -96,6 +97,8 @@ feature -- Access
 
 	buffer_limit: INTEGER
 		-- Total usable capacity of `buffer'.
+
+	encoding: NATURAL_8
 
 	error_code: INTEGER
 		-- Most recent error (Error_none if none).
@@ -145,7 +148,7 @@ feature {NONE} -- Implementation
 		-- also check if document is actually XML or something weird
 		local
 			leading, l_chunk: XT_UTF_8_CODEC; lt_index, gt_index: INTEGER; u: UTF_CONVERTER
-			encoding: NATURAL_8; found: BOOLEAN; declaration: STRING
+			found: BOOLEAN; declaration: STRING; l_encoding: NATURAL_8
 		do
 			if attached {XT_UTF_8_CODEC} encoded_chunk as str then
 				l_chunk := str
@@ -153,26 +156,24 @@ feature {NONE} -- Implementation
 				create l_chunk.make_empty
 			end
 			l_chunk.make_shared (chunk.area, byte_count)
-
+		-- check for byte order mark if any and remove
+			across << u.utf_8_bom_to_string_8, u.utf_16le_bom_to_string_8 >> as bom until found loop
+				if l_chunk.starts_with (bom) then
+					l_chunk.remove_head (bom.count)
+					inspect @ bom.cursor_index
+						when 1 then
+							encoding := Utf_8
+					else
+						encoding := Utf_16
+					end
+					found := True
+				end
+			end
 			lt_index := l_chunk.index_of ('<', 1)
 			if lt_index = 0 then
 				error_code := Error_not_started
 			else
 				leading := l_chunk.substring (1, lt_index - 1)
-			-- check leading bytes before first '<'
-				across << u.utf_8_bom_to_string_8, u.utf_16le_bom_to_string_8 >> as bom until found loop
-					if leading.starts_with (bom) then
-						leading.remove_head (bom.count)
-						l_chunk.remove_head (bom.count)
-						inspect @ bom.cursor_index
-							when 1 then
-								encoding := Utf_8
-						else
-							encoding := Utf_16
-						end
-						found := True
-					end
-				end
 			-- Must exlude /usr/share/app-install/icons/gnome-oregano.svg (Linux Mint 22.2)
 			-- The leading bytes are \x89PNG\r\n, which is the PNG magic header, so it's not XML.
 				if leading.is_whitespace then
@@ -184,9 +185,18 @@ feature {NONE} -- Implementation
 							declaration := u.utf_16le_string_8_to_string_32 (declaration).to_string_8
 							encoding := Utf_16
 						end
-						declaration.to_upper
-						if encoding = 0 and declaration.starts_with (Xml_declaration_upper) then
-							encoding := encoding_id (declaration)
+						if declaration.starts_with (Xml_declaration) and then declaration.has_substring (Encoding_attribute) then
+							declaration.to_upper
+							l_encoding := encoding_id (declaration)
+							if l_encoding > 0 then
+								inspect encoding when 0 then
+									encoding := l_encoding
+								else
+									if encoding /= l_encoding then
+										set_incorrect_encoding
+									end
+								end
+							end
 						end
 					end
 					inspect encoding
@@ -208,15 +218,14 @@ feature {NONE} -- Implementation
 
 	encoding_id (declaration: STRING): NATURAL_8
 		local
-			encoding: NATURAL_8
+			i: NATURAL_8
 		do
-			Result := Utf_8
-			from encoding := Ascii until encoding > Utf_16 loop
-				if declaration.has_substring (Encoding_names_upper [encoding.to_integer_32]) then
-					Result := encoding
-					encoding := Utf_16 + 1 -- break
+			from i := Ascii until i > Utf_16 loop
+				if declaration.has_substring (Encoding_names_upper [i.to_integer_32]) then
+					Result := i
+					i := Utf_16 + 1 -- break
 				else
-					encoding := encoding + 1
+					i := i + 1
 				end
 			end
 		end
@@ -313,6 +322,10 @@ feature {NONE} -- Implementation
 			buffer_end_reduced:  buffer_end  = old buffer_end  - offset
 			ptr_non_negative:    buffer_index >= 0
 			end_non_negative:    buffer_end >= 0
+		end
+
+	set_incorrect_encoding
+		deferred
 		end
 
 feature {NONE} -- Internal attributes

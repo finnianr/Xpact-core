@@ -32,6 +32,7 @@ feature {NONE} -- Initialization
 		do
 			file_path := a_file_path; log := a_log
 			expat_error := Empty_string; package_name := Empty_string
+			xpact_error := Empty_string
 		end
 
 feature -- Status report
@@ -42,8 +43,17 @@ feature -- Status report
 
 	both_agree: BOOLEAN
 		-- both Xpact and eXpat agree including the case where the document fails to parse
+		local
+			index_colon: INTEGER
 		do
-			Result := both_failed or else pass_count = Parse_data_types.count
+			if both_failed then
+				index_colon := expat_error.index_of (':', 1)
+				if index_colon > 0 then
+					Result := expat_error.same_caseless_characters (xpact_error, 1, xpact_error.count, index_colon + 2)
+				end
+			elseif pass_count = Parse_data_types.count then
+				Result := True
+			end
 		end
 
 feature -- Measurement
@@ -71,6 +81,7 @@ feature -- Basic operations
 				call_expat_xml_crc_32 (@ data_type.key)
 				if crc_32.status /= Status_ok and expat_return_code > 0 then
 					both_failed := True
+					xpact_error := crc_32.error_description
 
 				elseif crc_32.status = Status_ok then
 					if crc_32.checksum.value = expat_checksum then
@@ -155,6 +166,8 @@ feature {NONE} -- Internal attributes
 	log: PLAIN_TEXT_FILE
 
 	package_name: STRING
+
+	xpact_error: STRING
 
 feature {NONE} -- Constants		
 

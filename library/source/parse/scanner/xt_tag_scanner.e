@@ -263,14 +263,25 @@ feature {NONE} -- Tag scanning
 						end
 					when BT_gt then
 						next_token_index := index + 1
-						Result := tok_start_tag_with_attributes
+						inspect index_buffer.count when 2 then
+						-- Eg. class="win-textbox win-textbox-PuaCompatible-font" autofocus />
+							Result := Tok_invalid
+						else
+							Result := tok_start_tag_with_attributes
+						end
 						done := True
+
 					when BT_forward_slash then
 						index := index + 1
-						if index >= end_index then
+						if index_buffer.count = 2 then
+						-- Eg.class="win-textbox win-textbox-PuaCompatible-font" autofocus />
+							Result := Tok_invalid; done := True
+
+						elseif index >= end_index then
 							-- seen '/' but '>' not yet in buffer; all transferred attrs must be cleared
 							attributes.wipe_out; index_buffer.wipe_out; entity_buffer.wipe_out
 							Result := Tok_partial; done := True
+
 						elseif buf [index] = '>' then
 							next_token_index := index + 1
 							Result := tok_empty_element_with_attributes

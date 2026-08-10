@@ -29,7 +29,20 @@ note
 deferred class XT_SCANNER_BASE
 
 inherit
-	XT_BYTE_TYPE_CONSTANTS; XT_TOKEN_CONSTANTS; XT_STRING_CONSTANTS
+	XT_BYTE_TYPE_CONSTANTS
+		export
+			{NONE} all
+		end
+
+	XT_TOKEN_CONSTANTS
+		export
+			{NONE} all
+		end
+
+	XT_STRING_CONSTANTS
+		export
+			{NONE} all
+		end
 
 	XT_STRING_8_ROUTINES_I
 		export

@@ -37,7 +37,7 @@ feature {NONE} -- Standard strings
 
 	Xml_lower: STRING = "xml"
 
-	Xml_declaration_upper: STRING = "<?XML"
+	Xml_declaration: STRING = "<?xml"
 
 	Comment_declaration: STRING = "<!--"
 

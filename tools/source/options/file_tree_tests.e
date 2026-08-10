@@ -79,26 +79,35 @@ feature -- Basic operations
 
 	put_results (medium: PLAIN_TEXT_FILE; a_pass_count, a_fail_count: INTEGER; is_total: BOOLEAN)
 		local
-			passed, failed: STRING
+			label: like new_label
 		do
-			passed := "Passed: "; failed := " Failed: "
+			label := new_label (is_total)
+			medium.put_new_line
+			medium.put_string ("Tested against eXpat"); medium.put_new_line
+			medium.put_string (label.passed + a_pass_count.out)
+			if a_fail_count = 0 then
+				medium.put_string (" (No failures)")
+			else
+				medium.put_string (label.failed + a_fail_count.out)
+			end
+			medium.put_new_line
+		end
+
+	new_label (is_total: BOOLEAN): TUPLE [passed, failed: STRING]
+		do
+			Result := ["Passed: ", " Failed: "]
 			if is_total then
-				across << passed, failed >> as str loop
+				across << Result.passed, Result.failed >> as str loop
 					str.to_lower
-					if str = failed then
+					if str = Result.failed then
 						str.remove_head (1)
 					end
 					str.prepend ("Total ")
-					if str = failed then
+					if str = Result.failed then
 						str.prepend_character (' ')
 					end
 				end
 			end
-			medium.put_new_line
-			medium.put_string ("Tested against eXpat"); medium.put_new_line
-			medium.put_string (passed + a_pass_count.out)
-			medium.put_string (failed + a_fail_count.out)
-			medium.put_new_line
 		end
 
 feature -- Status change

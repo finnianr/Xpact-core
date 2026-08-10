@@ -12,15 +12,6 @@ note
 class
 	XT_ENCODING_TYPE_CONSTANTS
 
-inherit
-	CODE_PAGE_CONSTANTS
-		rename
-			 Utf8 as Utf_8_name,
-			 utf16 as Utf_16_name
-		export
-			{NONE} all
-		end
-
 feature {NONE} -- Constants
 
 	Ascii: NATURAL_8 = 1
@@ -31,9 +22,11 @@ feature {NONE} -- Constants
 
 	Utf_16: NATURAL_8 = 4
 
-	Encoding_names_upper: ARRAY [STRING]
+	Encoding_names_upper: LIST [STRING]
+		local
+			s: XT_STRING_8_ROUTINES
 		once
-			Result := << "US-ASCII", "ISO-8859-1", Utf_8_name, Utf_16_name >>
+			Result := s.to_list ("US-ASCII, ISO-8859-1, UTF-8, UTF-16", ',')
 		end
 
 	Encoding_attribute: STRING = "encoding"

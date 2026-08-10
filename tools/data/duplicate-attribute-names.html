@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+</head>
+<body class="webapp-inner">
+    <table id="deploymentInfoBlob" class="category-box-lite" id="categories" role="presentation">
+        <tr>
+            <td>
+                <span class="category-lite" data-bind="text: $root.organizationText"></span>
+                <span class="value-lite" id="organization" data-bind="text: $root.organizationName"></span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <span class="category-lite" data-bind="text: $root.profileText"></span>
+                <span class="value-lite" id="profile" data-bind="text: $root.profileName"></span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <span class="category-lite" data-bind="text: $root.assignedUserText"></span>
+                <span class="value-lite" id="assignedUser" data-bind="text: $root.assignedUserName"></span>
+            </td>
+        </tr>
+    </table>
+</body>

@@ -2,3 +2,6 @@ Log of benchmarks for parsing file: mandarin-names-and-text.xsl
 
 2026 08 AUG 18:46
 mandarin-names-and-text.xsl: eXpat passes = 2032; Xpact-core passes = 3291 (x1.62 to eXpat)
+
+2026 10 AUG 10:44
+mandarin-names-and-text.xsl: eXpat passes = 2114; Xpact-core passes = 3133 (x1.48 to eXpat)
