@@ -49,6 +49,12 @@ inherit
 			{XT_XML_PARSER_BASE} all
 		end
 
+feature -- Access
+
+	last_colon_index: INTEGER
+
+	next_token_index: INTEGER
+
 feature -- Status report
 
 	newline_or_tab_found: BOOLEAN
@@ -261,8 +267,6 @@ feature {NONE} -- Implementation
 		end
 
 feature {NONE} -- Internal attributes
-
-	next_token_index: INTEGER
 
 	index_x4_buffer: SPECIAL [INTEGER]
 

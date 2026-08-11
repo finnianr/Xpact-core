@@ -151,3 +151,13 @@ ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 18 (x1.29 to eXpat)
 
 2026 10 AUG 23:42
 ns_att_test.xml: eXpat passes = 15; Xpact-core passes = 19 (x1.27 to eXpat)
+
+2026 11 AUG 8:11
+Proved better distribution if you use character after ':' to calculate name table hash
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 19 (x1.36 to eXpat)
+
+2026 11 AUG 9:25
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 19 (x1.36 to eXpat)
+
+2026 11 AUG 9:25
+ns_att_test.xml: eXpat passes = 14; Xpact-core passes = 20 (x1.43 to eXpat)

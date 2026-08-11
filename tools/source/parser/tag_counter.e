@@ -45,12 +45,14 @@ feature -- Basic operations
 
 	print_stats
 		do
-			io.put_string ("Tags sorted in order of occurrence count (Highest first)")
-			io.put_new_line
-			io.put_new_line
+			IO.put_string ("Tags sorted in order of occurrence count (Highest first)")
+			IO.put_new_line
+			IO.put_new_line
 			across tag_occurrence_table.sorted_occurrence_list (False) as tag_count loop
 				tag_count.io_print
 			end
+			IO.put_new_line
+			name_cache.print_stats
 		end
 
 feature {NONE} -- Event handlers

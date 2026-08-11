@@ -308,7 +308,7 @@ feature -- Basic operations
 			all_valid: all_valid
 		end
 
-	transfer (buffer: SPECIAL [CHARACTER_8]; additions: like area; entity_list: ARRAYED_LIST [STRING])
+	transfer (buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER; entity_list: ARRAYED_LIST [STRING])
 		-- transfer contents of `additions' into `area' and contents of `entity_list'
 		-- into `entity_refs_area'
 		require
@@ -342,7 +342,7 @@ feature -- Basic operations
 				normalize_whitespace (buffer, additions [2], additions [3])
 				newline_or_tab_found := False
 			end
-			name := name_cache.item (buffer, additions [0], additions [1])
+			name := name_cache.item (buffer, additions [0], additions [1], colon_index)
 			check_for_duplicate_name (name, l_name_area)
 			l_name_area.extend (name)
 			l_area.copy_data (additions, 2, l_area.count, Interval_count)

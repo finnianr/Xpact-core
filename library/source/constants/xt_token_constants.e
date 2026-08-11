@@ -59,7 +59,7 @@ feature -- Element content tokens (positive)
 
 feature -- Prolog / DTD tokens
 
-	Tok_prolog_s: INTEGER = 15
+	Tok_prolog_whitespace: INTEGER = 15
 	Tok_decl_open: INTEGER = 16
 	Tok_decl_close: INTEGER = 17
 	Tok_name: INTEGER = 18
@@ -111,7 +111,7 @@ feature -- String names
 		Xml decl
 		Comment
 		Bom
-		Prolog s
+		Prolog whitespace
 		Decl open
 		Decl close
 		Name

@@ -16,8 +16,10 @@ class
 
 inherit
 	XT_NAME_CACHE
+		rename
+			item as name_item
 		redefine
-			buffer_string_8, bucket_index, item, make, same_string, reset
+			buffer_string_8, bucket_index, name_item, make, same_string, reset
 		end
 
 	XT_STRING_CONSTANTS
@@ -48,13 +50,8 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING
-		-- "abc" where `buffer [start_index] = 'a'' and `buffer [end_index] = 'c''
-		-- results in "&abc;"
-		require else
-			ampersand_and_semicolon_excluded:
-				buffer [start_index] /= '&' and buffer [end_index] /= ';'
 		do
-			Result := Precursor (buffer, start_index, end_index)
+			Result := name_item (buffer, start_index, end_index, 0)
 		end
 
 	predefined_table: HASH_TABLE [STRING, STRING]
@@ -111,6 +108,16 @@ feature {NONE} -- Implementation
 				end
 			end
 			Result := hash_index (buffer, start_index, end_index)
+		end
+
+	name_item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): STRING
+		-- "abc" where `buffer [start_index] = 'a'' and `buffer [end_index] = 'c''
+		-- results in "&abc;"
+		require else
+			ampersand_and_semicolon_excluded:
+				buffer [start_index] /= '&' and buffer [end_index] /= ';'
+		do
+			Result := Precursor (buffer, start_index, end_index, colon_index)
 		end
 
 	same_string (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; name: STRING_8): BOOLEAN

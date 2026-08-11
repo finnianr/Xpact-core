@@ -140,6 +140,15 @@ feature {NONE} -- Factory
 			room_for_null_terminator: Result.count = n + 1
 		end
 
+	new_token_name (token: INTEGER): STRING
+		do
+			if token > 0 then
+				Result := Token_names.split ('%N') [token]
+			else
+				create Result.make_empty
+			end
+		end
+
 feature {NONE} -- Implementation
 
 	set_encoding (chunk: XT_C_STRING_CODEC; byte_count: INTEGER)

@@ -21,6 +21,7 @@ deferred class XT_TAG_SCANNER
 
 inherit
 	XT_SCANNER_BASE
+
 	XT_REF_SCANNER
 
 feature -- Measurement
@@ -28,13 +29,32 @@ feature -- Measurement
 	tag_name_count: INTEGER
 
 	tag_name (name_cache: XT_NAME_CACHE; buffer: SPECIAL [CHARACTER_8]; lt_index: INTEGER): STRING_8
+		require
+			last_colon_index_valid: last_colon_index_valid (buffer, lt_index)
+
 		local
 			start_index: INTEGER
 		do
 			start_index := lt_index + 1
-			Result := name_cache.item (buffer, start_index, start_index + tag_name_count - 1)
+			Result := name_cache.item (buffer, start_index, start_index + tag_name_count - 1, last_colon_index)
 		ensure
 			same_tag_length: Result.count = name_count (buffer, lt_index + 1)
+		end
+
+feature -- Contract support
+
+	last_colon_index_valid (buffer: SPECIAL [CHARACTER_8]; lt_index: INTEGER): BOOLEAN
+		local
+			index_colon: INTEGER
+		do
+			if attached new_substring (buffer, lt_index + 1, lt_index + tag_name_count) as str then
+				index_colon := str.index_of (':', 1)
+				if index_colon = 0 then
+					Result := last_colon_index = 0
+				else
+					Result := index_colon + lt_index = last_colon_index
+				end
+			end
 		end
 
 feature {NONE} -- Tag scanning
@@ -102,7 +122,7 @@ feature {NONE} -- Tag scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, name_lower, name_upper, bt_code, byte_count: INTEGER; done: BOOLEAN
+			index, name_lower, name_upper, bt_code, byte_count, l_last_colon_index: INTEGER; done: BOOLEAN
 		do
 			index := start_index; name_lower := start_index; name_upper := Unset
 			if index >= end_index then
@@ -132,8 +152,11 @@ feature {NONE} -- Tag scanning
 					from until index >= end_index or done loop
 						bt_code := bt_table [buf [index].code]
 						inspect bt_code
-							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only,
-								BT_minus, BT_colon then
+							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
+								index := index + 1
+
+							when BT_colon then
+								l_last_colon_index := index
 								index := index + 1
 
 							when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
@@ -185,6 +208,7 @@ feature {NONE} -- Tag scanning
 					end
 					if done then
 						tag_name_count := name_upper - name_lower + 1
+						last_colon_index := l_last_colon_index
 					else
 						Result := Tok_partial
 					end
@@ -202,8 +226,8 @@ feature {NONE} -- Tag scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, bt_code, byte_count: INTEGER; done: BOOLEAN; index_buffer: SPECIAL [INTEGER]
-			entity_buffer: like scanned_entity_buffer
+			index, bt_code, byte_count, l_last_colon_index: INTEGER; done: BOOLEAN
+			index_buffer: SPECIAL [INTEGER]; entity_buffer: like scanned_entity_buffer
 		do
 			index := start_index; index_buffer := index_x4_buffer
 			entity_buffer := scanned_entity_buffer
@@ -211,10 +235,14 @@ feature {NONE} -- Tag scanning
 			from until index >= end_index or done loop
 				bt_code := bt_table [buf [index].code]
 				inspect bt_code
-					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon then
+					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 						inspect append_name_lower (buf, index_buffer, index) when Tok_invalid then
 							Result := Tok_invalid; done := True
 						else end
+						index := index + 1
+
+					when BT_colon then
+						l_last_colon_index := index
 						index := index + 1
 
 					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
@@ -239,6 +267,7 @@ feature {NONE} -- Tag scanning
 							index_buffer.extend (index - 1) -- name upper
 						else end
 						index := index + 1
+
 					when BT_equals then
 						inspect index_buffer.count
 							when 1 then
@@ -251,7 +280,7 @@ feature {NONE} -- Tag scanning
 								attributes.wipe_out; index_buffer.wipe_out; entity_buffer.wipe_out
 						else
 							inspect index_buffer.count when 4 then
-								attributes.transfer (buf, index_buffer, entity_buffer)
+								attributes.transfer (buf, index_buffer, l_last_colon_index, entity_buffer)
 							else
 								index_buffer.wipe_out
 							end
@@ -311,13 +340,17 @@ feature {NONE} -- Tag sub-helpers
 	scan_start_tag_name (buf: SPECIAL [CHARACTER]; start_index, end_index, lead_count: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 		-- After consuming name-start char(s); scan rest of start tag name.
 		local
-			index, name_lower, name_upper, byte_count, bt_code: INTEGER; done: BOOLEAN
+			index, name_lower, name_upper, byte_count, bt_code, l_last_colon_index: INTEGER; done: BOOLEAN
 		do
 			index := start_index; name_lower := start_index - lead_count; name_upper := Unset
 			from until index >= end_index or done loop
 				bt_code := bt_table [buf [index].code]
 				inspect bt_code
-					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon then
+					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
+						index := index + 1
+
+					when BT_colon then
+						l_last_colon_index := index
 						index := index + 1
 
 					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
@@ -368,6 +401,7 @@ feature {NONE} -- Tag sub-helpers
 						else end
 						next_token_index := index + 1
 						Result := tok_start_tag_no_attributes; done := True
+
 					when BT_forward_slash then
 						inspect name_upper when Unset then
 							name_upper := index - 1
@@ -387,6 +421,7 @@ feature {NONE} -- Tag sub-helpers
 			end
 			if done then
 				tag_name_count := name_upper - name_lower + 1
+				last_colon_index := l_last_colon_index
 			else
 				Result := Tok_partial
 			end

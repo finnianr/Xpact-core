@@ -44,3 +44,6 @@ ns_att_test.xml: eXpat passes = 16; Xpact-core passes = 18 (x1.13 to eXpat)
 
 2026 10 AUG 22:36
 ns_att_test.xml: eXpat passes = 16; Xpact-core passes = 18 (x1.13 to eXpat)
+
+2026 10 AUG 23:47
+ns_att_test.xml: eXpat passes = 15; Xpact-core passes = 19 (x1.27 to eXpat)

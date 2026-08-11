@@ -66,19 +66,44 @@ feature -- Measurement
 			Result := (item_count / count).rounded
 		end
 
+	buckets_used_count: INTEGER
+		do
+			across area as bucket loop
+				if bucket.count > 0 then
+					Result := Result + 1
+				end
+			end
+		end
+
 feature -- Access
 
-	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING
+	bucket_distribution_gt_1: XT_NAME_OCCURRENCE_COUNT_TABLE
+		do
+			create Result.make (50)
+			across area as bucket loop
+				if bucket.count > 1 then
+					Result.put (bucket.count.out)
+				end
+			end
+		end
+
+	item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): STRING
 		-- UTF-8 encoded name
 		require
 			valid_range: start_index <= end_index
 			not_empty: not is_empty
+			valid_colon_index: colon_index > 0 implies buffer [colon_index] = ':'
 		local
 			i, j, bucket_count: INTEGER; bucket: like area.item
 			found: BOOLEAN;
 		do
 			Result := empty_string
-			i := bucket_index (buffer, start_index, end_index)
+			inspect colon_index when 0 then
+				i := bucket_index (buffer, start_index, end_index)
+			else
+			-- proveably better distribution if you use character after ':'
+				i := bucket_index (buffer, colon_index + 1, end_index)
+			end
 			bucket := area [i]
 			if bucket = Default_bucket then
 				create bucket.make_empty (5)
@@ -105,7 +130,8 @@ feature -- Access
 				end
 				bucket.extend (Result)
 				check
-					well_distributed_hash_indices: bucket.count <= 7
+				-- Tested mandarin-names-and-text.xsl
+					well_distributed_hash_indices: bucket.count <= 4
 				end
 			end
 		ensure
@@ -133,6 +159,24 @@ feature -- Basic operations
 					i := i + 1
 				end
 			end
+		end
+
+	print_stats
+		do
+			IO.put_string ("NAME CACHING")
+			IO.put_new_line
+			IO.put_string ("Buckets used count: ")
+			IO.put_integer (buckets_used_count)
+			IO.put_new_line
+			IO.put_string ("Average hash bucket count: ")
+			IO.put_integer (average_bucket_item_count)
+			IO.put_new_line
+			IO.put_string ("Hash bucket counts greater than 1")
+			IO.put_new_line
+			across bucket_distribution_gt_1.sorted_occurrence_list (False) as bucket_count loop
+				bucket_count.io_print
+			end
+			IO.put_new_line
 		end
 
 feature {XT_PARSING_BUFFERS} -- Implementation

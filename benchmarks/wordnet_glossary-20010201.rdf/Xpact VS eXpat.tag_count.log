@@ -93,3 +93,13 @@ wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 44 (x1.29 
 
 2026 10 AUG 23:42
 wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 44 (x1.29 to eXpat)
+
+2026 11 AUG 8:11
+Proved better distribution if you use character after ':' to calculate name table hash
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 45 (x1.32 to eXpat)
+
+2026 11 AUG 9:25
+wordnet_glossary-20010201.rdf: eXpat passes = 33; Xpact-core passes = 41 (x1.24 to eXpat)
+
+2026 11 AUG 9:26
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 45 (x1.32 to eXpat)

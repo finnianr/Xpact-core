@@ -333,7 +333,6 @@ feature {NONE} -- Processor dispatch
 			else
 				enough := True
 			end
-
 			if enough then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
@@ -420,116 +419,11 @@ feature {NONE} -- Processor dispatch
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
 				if section [Prolog] then
-					token := s.scan_prolog (buf, bt_table, index, end_index)
-					tok_end := s.next_token_index
-					inspect token
-						when Tok_xml_decl then
-							if index > 0 then
-								Result := Error_misplaced_xml_pi; done := True
+					Result := process_prolog (
+						buf, start_index, end_index, attributes, s, bt_table, names, section, index, $index, $done
+					)
+					context := element_context
 
-							elseif not attributes.has_valid_encoding (buf) then
-								Result := Error_unknown_encoding; done := True
-							else
-								on_xml_declaration (buf, attributes)
-								attributes.wipe_out
-							end
-
-						when Tok_instance_start then
-							if element_context.reached_depth_zero then
-								Result := Error_junk_after_doc_element; done := True
-							else
-								section [Prolog] := False
-								if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
-									create {XT_ELEMENT_ATTRIBUTES_CONTEXT} context.make (section, attribute_value_defaults_table)
-									element_context := context
-								end
-							end
-
-						when Tok_decl_open then
-							declaration := select_declaration (buf, index + 2, s)
-							declaration_parts_list.wipe_out
-							inspect declaration
-								when 0 then
-									Result := Error_syntax; done := True
-								when Doctype then
-									if in_doctype_definition then
-										Result := Error_syntax; done := True
-									end
-							else
-							end
-
-						when Tok_literal then
-							inspect declaration
-								when Attlist then
-									on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, s, names)
-								when Element_ then
-									do_nothing -- for now
-								when Entity_ then
-									on_entity_declaration_part (buf, index + 1, tok_end - 2, s)
-								when Doctype then
-									on_document_declaration_part (buf, index, tok_end - 1, s)
-							else
-								Result := Error_syntax; done := True
-							end
-
-						when Tok_name then
-							inspect declaration
-								when Attlist then
-									on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
-								when Element_ then
-									do_nothing -- for now
-								when Entity_ then
-									on_entity_declaration_part (buf, index, tok_end - 1, s)
-								when Doctype then
-									on_document_declaration_part (buf, index, tok_end - 1, s)
-							else
-								Result := Error_syntax; done := True
-							end
-
-						when Tok_pound_name then
-							inspect declaration when Attlist then
-								on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
-							else end
-
-						when Tok_comment then
-							on_comment (buf, index + 4, tok_end - 4, attributes)
-
-						when Tok_pi then
-							on_processing_instruction (buf, index + 2, tok_end - 3, attributes)
-							attributes.wipe_out
-
-						when Tok_invalid then
-							Result := Error_invalid_token; done := True
-
-						when Tok_open_bracket then
-							inspect declaration when Doctype then
-								in_doctype_definition := True
-							else
-								Result := Error_syntax; done := True
-							end
-
-						when Tok_close_bracket then
-							if in_doctype_definition then
-								in_doctype_definition := False
-							else
-								Result := Error_syntax; done := True
-							end
-
-						when Tok_open_paren, Tok_close_paren, Tok_or then
-							if not in_doctype_definition then
-								Result := Error_syntax; done := True
-							end
-
-					else
-						if token <= 0 then
-							done := True  -- partial; wait for more data
-						else
-							index := tok_end  -- skip prolog token
-						end
-					end
-					if not done then
-						index := tok_end
-					end
 				elseif section [CDATA] then
 					token := s.scan_cdata_section (buf, bt_table, index, end_index)
 					tok_end := s.next_token_index
@@ -669,7 +563,155 @@ feature {NONE} -- Processor dispatch
 			end
 			buffer_index := index
 		ensure
-			buffer_ptr_advanced: buffer_index >= start_index and buffer_index <= end_index
+			buffer_index_advanced: buffer_index >= start_index and buffer_index <= end_index
+		end
+
+	process_prolog (
+		buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		s: like scanner; bt_table: SPECIAL [INTEGER]; names: like name_cache; section: SPECIAL [BOOLEAN]
+		index: INTEGER; index_ptr: TYPED_POINTER [INTEGER]; done_ptr: TYPED_POINTER [BOOLEAN]
+	): INTEGER
+		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
+		local
+			token, tok_end: INTEGER; done: BOOLEAN
+		do
+			token := s.scan_prolog (buf, bt_table, index, end_index)
+			tok_end := s.next_token_index
+			inspect token
+				when Tok_xml_decl then
+					if index > 0 then
+						Result := Error_misplaced_xml_pi; done := True
+
+					elseif not attributes.has_valid_encoding (buf) then
+						Result := Error_unknown_encoding; done := True
+					else
+						on_xml_declaration (buf, attributes)
+						attributes.wipe_out
+					end
+
+				when Tok_instance_start then
+					if element_context.reached_depth_zero then
+						Result := Error_junk_after_doc_element; done := True
+					else
+						section [Prolog] := False
+						if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
+							create {XT_ELEMENT_ATTRIBUTES_CONTEXT} element_context.make (section, attribute_value_defaults_table)
+						end
+						declaration := 0
+					end
+
+				when Tok_decl_open then
+					declaration := select_declaration (buf, index + 2, s)
+					declaration_parts_list.wipe_out
+					inspect declaration
+						when 0 then
+							Result := Error_syntax; done := True
+						when Doctype then
+							if in_doctype_definition then
+								Result := Error_syntax; done := True
+							end
+					else
+					end
+
+				when Tok_literal then
+					inspect declaration
+						when Attlist then
+							on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, s, names)
+						when Element_ then
+							do_nothing -- for now
+						when Entity_ then
+							on_entity_declaration_part (buf, index + 1, tok_end - 2, s)
+						when Doctype then
+							on_document_declaration_part (buf, index, tok_end - 1, s)
+					else
+						Result := Error_syntax; done := True
+					end
+
+				when Tok_name then
+					inspect declaration
+						when Attlist then
+							on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
+						when Element_ then
+							do_nothing -- for now
+						when Entity_ then
+							on_entity_declaration_part (buf, index, tok_end - 1, s)
+						when Doctype then
+							on_document_declaration_part (buf, index, tok_end - 1, s)
+					else
+						if in_doctype_definition then
+							Result := Error_syntax
+
+						elseif element_context.reached_depth_zero then
+							Result := Error_junk_after_doc_element; done := True
+						else
+							Result := Error_invalid_token
+						end
+						done := True
+					end
+
+				when Tok_pound_name then
+					inspect declaration when Attlist then
+						on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
+					else end
+
+				when Tok_comment then
+					on_comment (buf, index + 4, tok_end - 4, attributes)
+
+				when Tok_pi then
+					on_processing_instruction (buf, index + 2, tok_end - 3, attributes)
+					attributes.wipe_out
+
+				when Tok_prolog_whitespace then
+					do_nothing
+
+				when Tok_invalid then
+					inspect start_index when 0 then
+						inspect s.scan_first_names (buf, start_index, end_index, bt_table)
+							when Tok_name then
+								Result := Error_syntax
+						else
+							Result := Error_invalid_token
+						end
+					else
+						Result := Error_invalid_token
+					end
+					done := True
+
+				when Tok_open_bracket then
+					inspect declaration when Doctype then
+						in_doctype_definition := True
+					else
+						Result := Error_syntax; done := True
+					end
+
+				when Tok_close_bracket then
+					if in_doctype_definition then
+						in_doctype_definition := False
+					else
+						Result := Error_syntax; done := True
+					end
+
+				when Tok_open_paren, Tok_close_paren, Tok_or, Tok_name_question then
+					if not in_doctype_definition then
+						Result := Error_syntax; done := True
+					end
+
+			else
+				if token <= 0 then
+					done := True  -- partial; wait for more data
+
+				elseif element_context.reached_depth_zero and then not s.is_white_space (buf, index, end_index - 1) then
+					Result := Error_junk_after_doc_element; done := True
+				else
+				-- skip prolog token					
+					index_ptr.memory_copy ($tok_end, {PLATFORM}.Integer_32_bytes)
+				end
+			end
+			if not done then
+				index_ptr.memory_copy ($tok_end, {PLATFORM}.Integer_32_bytes)
+			end
+		-- write back value of `done' to caller local variable
+			done_ptr.memory_copy ($done, {PLATFORM}.boolean_bytes)
 		end
 
 feature {NONE} -- Implementation
@@ -718,11 +760,18 @@ feature {NONE} -- Event handlers
 		buf: like buffer; start_index, end_index, token: INTEGER; s: like scanner; names: like name_cache
 	)
 		local
-			default_values_list: ARRAYED_LIST [STRING]
+			default_values_list: ARRAYED_LIST [STRING]; i, colon_index: INTEGER
 		do
 			inspect declaration_parts_list.count
 				when 0, 1 then
-					declaration_parts_list.extend (names.item (buf, start_index, end_index))
+					from i := start_index until i > end_index loop
+						if buf [i] = ':' then
+							colon_index := i
+							i := end_index -- break
+						end
+						i := i + 1
+					end
+					declaration_parts_list.extend (names.item (buf, start_index, end_index, colon_index))
 				when 2 then
 					if s.same_characters (buf, start_index, end_index, CDATA_upper) then
 						declaration_parts_list.extend (CDATA_upper)
@@ -741,7 +790,7 @@ feature {NONE} -- Event handlers
 							default_values_list.extend (s.new_attribute_value (buf, start_index, end_index, s.newline_or_tab_found))
 						end
 					when Tok_pound_name then
-						declaration_parts_list.extend (names.item (buf, start_index, end_index))
+						declaration_parts_list.extend (names.item (buf, start_index, end_index, 0))
 
 				else
 				end
@@ -788,7 +837,7 @@ feature {NONE} -- Event handlers
 		do
 			inspect declaration_parts_list.count
 				when 0 then
-					declaration_parts_list.extend (name_cache.item (buf, start_index, end_index))
+					declaration_parts_list.extend (name_cache.item (buf, start_index, end_index, 0))
 				when 1 then
 					if s.same_characters (buf, start_index, end_index, PUBLIC) then
 						declaration_parts_list.extend (PUBLIC)

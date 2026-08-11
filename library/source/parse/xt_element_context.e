@@ -104,6 +104,7 @@ feature -- Element change
 
 	reset
 		do
+			stack.wipe_out
 			reached_depth_zero := False
 		end
 

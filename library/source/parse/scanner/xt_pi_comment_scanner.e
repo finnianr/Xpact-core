@@ -134,7 +134,8 @@ feature {NONE} -- PI and comment scanning
 										lower_upper.extend (index - 1)
 										Result := scan_pi_content (buf, index + 1, end_index, token, bt_table, lower_upper); done := True
 										inspect lower_upper.count when 4 then
-											attribute_intervals.transfer (buf, lower_upper, scanned_entity_buffer)
+										-- 0 for `colon_index' argument
+											attribute_intervals.transfer (buf, lower_upper, 0, scanned_entity_buffer)
 										else end
 									else
 										Result := scan_pi_content (buf, index + 1, end_index, token, bt_table, lower_upper); done := True

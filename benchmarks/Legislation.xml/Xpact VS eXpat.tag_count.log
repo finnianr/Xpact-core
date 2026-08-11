@@ -145,3 +145,13 @@ Legislation.xml: eXpat passes = 1287; Xpact-core passes = 1345 (x1.05 to eXpat)
 
 2026 10 AUG 23:42
 Legislation.xml: eXpat passes = 1283; Xpact-core passes = 1347 (x1.05 to eXpat)
+
+2026 11 AUG 8:11
+Proved better distribution if you use character after ':' to calculate name table hash
+Legislation.xml: eXpat passes = 1282; Xpact-core passes = 1371 (x1.07 to eXpat)
+
+2026 11 AUG 9:24
+Legislation.xml: eXpat passes = 1285; Xpact-core passes = 1358 (x1.06 to eXpat)
+
+2026 11 AUG 9:25
+Legislation.xml: eXpat passes = 1285; Xpact-core passes = 1364 (x1.06 to eXpat)

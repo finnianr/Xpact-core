@@ -26,3 +26,22 @@ mandarin-names-and-text.xsl: eXpat passes = 2001; Xpact-core passes = 2611 (x1.3
 
 2026 10 AUG 23:42
 mandarin-names-and-text.xsl: eXpat passes = 1999; Xpact-core passes = 2577 (x1.29 to eXpat)
+
+2026 11 AUG 8:11
+mandarin-names-and-text.xsl: eXpat passes = 2041; Xpact-core passes = 2689 (x1.32 to eXpat)
+
+2026 11 AUG 8:11
+Proved better distribution if you use character after ':' to calculate name table hash
+mandarin-names-and-text.xsl: eXpat passes = 2013; Xpact-core passes = 2706 (x1.34 to eXpat)
+
+2026 11 AUG 9:24
+mandarin-names-and-text.xsl: eXpat passes = 2000; Xpact-core passes = 2711 (x1.36 to eXpat)
+
+2026 11 AUG 9:25
+mandarin-names-and-text.xsl: eXpat passes = 2004; Xpact-core passes = 2706 (x1.35 to eXpat)
+
+2026 11 AUG 9:25
+mandarin-names-and-text.xsl: eXpat passes = 2006; Xpact-core passes = 2654 (x1.32 to eXpat)
+
+2026 11 AUG 9:25
+mandarin-names-and-text.xsl: eXpat passes = 2000; Xpact-core passes = 2683 (x1.34 to eXpat)

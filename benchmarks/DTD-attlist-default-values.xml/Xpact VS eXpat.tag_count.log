@@ -47,3 +47,13 @@ DTD-attlist-default-values.xml: eXpat passes = 214; Xpact-core passes = 243 (x1.
 
 2026 10 AUG 23:42
 DTD-attlist-default-values.xml: eXpat passes = 213; Xpact-core passes = 241 (x1.13 to eXpat)
+
+2026 11 AUG 8:11
+Proved better distribution if you use character after ':' to calculate name table hash
+DTD-attlist-default-values.xml: eXpat passes = 214; Xpact-core passes = 247 (x1.15 to eXpat)
+
+2026 11 AUG 9:25
+DTD-attlist-default-values.xml: eXpat passes = 214; Xpact-core passes = 251 (x1.17 to eXpat)
+
+2026 11 AUG 9:25
+DTD-attlist-default-values.xml: eXpat passes = 214; Xpact-core passes = 248 (x1.16 to eXpat)

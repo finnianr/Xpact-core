@@ -72,7 +72,7 @@ feature -- Prolog tokenization
 					when BT_CR then
 						if index + 1 = end_index then
 							next_token_index := end_index
-							Result := -Tok_prolog_s
+							Result := -Tok_prolog_whitespace
 						else
 							Result := scan_prolog_s (buf, index, end_index)
 						end
@@ -303,12 +303,12 @@ feature {NONE} -- Prolog sub-scanners
 								index := index + 1
 							end
 					else
-						next_token_index := index; Result := Tok_prolog_s; index := end_index
+						next_token_index := index; Result := Tok_prolog_whitespace; index := end_index
 					end
 				end
 			end
 			if Result = 0 then
-				next_token_index := index; Result := Tok_prolog_s
+				next_token_index := index; Result := Tok_prolog_whitespace
 			end
 		end
 

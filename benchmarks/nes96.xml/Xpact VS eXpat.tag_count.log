@@ -116,3 +116,13 @@ nes96.xml: eXpat passes = 245; Xpact-core passes = 269 (x1.10 to eXpat)
 
 2026 10 AUG 23:42
 nes96.xml: eXpat passes = 245; Xpact-core passes = 269 (x1.10 to eXpat)
+
+2026 11 AUG 8:11
+Proved better distribution if you use character after ':' to calculate name table hash
+nes96.xml: eXpat passes = 245; Xpact-core passes = 272 (x1.11 to eXpat)
+
+2026 11 AUG 9:25
+nes96.xml: eXpat passes = 245; Xpact-core passes = 272 (x1.11 to eXpat)
+
+2026 11 AUG 9:25
+nes96.xml: eXpat passes = 246; Xpact-core passes = 272 (x1.11 to eXpat)
