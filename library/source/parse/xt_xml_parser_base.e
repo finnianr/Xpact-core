@@ -573,7 +573,7 @@ feature {NONE} -- Processor dispatch
 	): INTEGER
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
 		local
-			token, tok_end: INTEGER; done: BOOLEAN
+			token, tok_end: INTEGER; done: BOOLEAN; p: EL_TYPED_POINTER_ROUTINES
 		do
 			token := s.scan_prolog (buf, bt_table, index, end_index)
 			tok_end := s.next_token_index
@@ -644,7 +644,7 @@ feature {NONE} -- Processor dispatch
 						elseif element_context.reached_depth_zero then
 							Result := Error_junk_after_doc_element; done := True
 						else
-							Result := Error_invalid_token
+							Result := error_syntax_or_invalid_token (buf, start_index, end_index, s, bt_table)
 						end
 						done := True
 					end
@@ -666,12 +666,7 @@ feature {NONE} -- Processor dispatch
 
 				when Tok_invalid then
 					inspect start_index when 0 then
-						inspect s.scan_first_names (buf, start_index, end_index, bt_table)
-							when Tok_name then
-								Result := Error_syntax
-						else
-							Result := Error_invalid_token
-						end
+						Result := error_syntax_or_invalid_token (buf, start_index, end_index, s, bt_table)
 					else
 						Result := Error_invalid_token
 					end
@@ -698,20 +693,23 @@ feature {NONE} -- Processor dispatch
 
 			else
 				if token <= 0 then
+					if element_context.reached_depth_zero then
+						Result := Error_junk_after_doc_element
+					end
 					done := True  -- partial; wait for more data
 
 				elseif element_context.reached_depth_zero and then not s.is_white_space (buf, index, end_index - 1) then
 					Result := Error_junk_after_doc_element; done := True
 				else
 				-- skip prolog token					
-					index_ptr.memory_copy ($tok_end, {PLATFORM}.Integer_32_bytes)
+					p.put_integer_32 (tok_end, index_ptr)
 				end
 			end
 			if not done then
-				index_ptr.memory_copy ($tok_end, {PLATFORM}.Integer_32_bytes)
+				p.put_integer_32 (tok_end, index_ptr)
 			end
 		-- write back value of `done' to caller local variable
-			done_ptr.memory_copy ($done, {PLATFORM}.boolean_bytes)
+			p.put_boolean (done, done_ptr)
 		end
 
 feature {NONE} -- Implementation
@@ -752,6 +750,16 @@ feature {NONE} -- Implementation
 		-- Corresponds to `m_reenter' in xmlparse.c.
 		do
 			Result := False
+		end
+
+	error_syntax_or_invalid_token (buf: like buffer; start_index, end_index: INTEGER; s: like scanner; bt_table: SPECIAL [INTEGER]): INTEGER
+		do
+			inspect s.scan_non_xml (buf, start_index, end_index, bt_table)
+				when Tok_name, Tok_open_bracket, Tok_close_paren then
+					Result := Error_syntax
+			else
+				Result := Error_invalid_token
+			end
 		end
 
 feature {NONE} -- Event handlers

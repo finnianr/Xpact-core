@@ -81,8 +81,8 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 
 feature -- Name utilities (implements XT_ENCODING deferred features)
 
-	scan_first_names (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
-			-- Scan end tag after '</'.  Returns Tok_end_tag or error.
+	scan_non_xml (bytes: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
+			-- `Tok_name' if binary non-XML bytes can be interpreted as a syntax error or else `Tok_invalid'
 		require
 			valid_range: start_index <= end_index
 		local
@@ -90,7 +90,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 		do
 			index := start_index
 			from until index >= end_index or done loop
-				bt_code := bt_table [buf [index].code]
+				bt_code := bt_table [bytes [index].code]
 				inspect bt_code
 					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon then
 						Result := Tok_name
@@ -101,21 +101,24 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 						if end_index - index < byte_count then
 							Result := Tok_partial_char; done := True
 
-						elseif is_invalid_character (buf, index, byte_count) then
+						elseif is_invalid_character (bytes, index, byte_count) then
 							next_token_index := index
 							Result := Tok_invalid; done := True
 						else
 							Result := Tok_name
 							index := index + byte_count
 						end
-					when BT_whitespace, BT_CR, BT_LF then
-						index := index + 1
+					when BT_CR, BT_LF, BT_whitespace then
 
-					when BT_non_xml then
-						Result := Tok_invalid; done := True
+					when BT_gt, BT_comma, BT_pipe_symbol, BT_right_parenthesis then
+						index := index + 1
+						Result := Tok_close_paren; done := True
+
+					when BT_left_square_bracket then
+						Result := Tok_open_bracket; done := True
 
 				else
-					done := True
+					Result := Tok_invalid; done := True
 				end
 			end
 			inspect Result when Tok_name then

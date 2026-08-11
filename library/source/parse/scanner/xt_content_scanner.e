@@ -76,7 +76,7 @@ feature -- Content tokenization
 								Result := scan_data_chars (buf, bt_table, index, end_index)
 							end
 						end
-					when BT_non_xml, BT_malform, BT_continuation_byte then
+					when BT_non_xml, BT_malform, Bt_trail then
 						next_token_index := index
 						Result := Tok_invalid
 
@@ -150,7 +150,7 @@ feature -- Content tokenization
 						next_token_index := index + 1
 						Result := Tok_data_newline
 
-					when BT_non_xml, BT_malform, BT_continuation_byte then
+					when BT_non_xml, BT_malform, Bt_trail then
 						next_token_index := index; Result := Tok_invalid
 
 					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
@@ -191,7 +191,7 @@ feature {NONE} -- Data character accumulation
 						end
 
 					when BT_right_square_bracket, BT_ampersand, BT_lt, BT_non_xml,
-						BT_malform, BT_continuation_byte, BT_CR, BT_LF then
+						BT_malform, Bt_trail, BT_CR, BT_LF then
 						next_token_index := index; Result := Tok_data_chars; done := True
 				else
 					index := index + 1
@@ -219,7 +219,7 @@ feature {NONE} -- Data character accumulation
 							index := index + byte_count
 						end
 
-					when BT_non_xml, BT_malform, BT_continuation_byte, BT_CR, BT_LF, BT_right_square_bracket then
+					when BT_non_xml, BT_malform, Bt_trail, BT_CR, BT_LF, BT_right_square_bracket then
 						next_token_index := index; Result := Tok_data_chars; done := True
 				else
 					index := index + 1
