@@ -49,18 +49,18 @@ feature -- Character Byte types (ordinal matches C enum)
 
 feature -- Category Byte types (ordinal matches C enum)
 
-	BT_non_xml: INTEGER = 0   		-- e.g. noncharacter-FFFF; also upper-128 in ASCII encoding
-	BT_malform: INTEGER = 1   		-- illegal byte for the current encoding
-	BT_lead_2_byte: INTEGER = 5   -- lead byte of a 2-byte UTF-8 sequence (0xC2-0xDF)
-	BT_lead_3_byte: INTEGER = 6   -- lead byte of a 3-byte UTF-8 sequence (0xE0-0xEF)
-	BT_lead_4_byte: INTEGER = 7   -- lead byte of a 4-byte UTF-8 sequence (0xF0-0xF4)
-	Bt_trail: INTEGER = 8			-- continuation byte (0x80-0xBF) or UTF-16 low surrogate
-	BT_whitespace: INTEGER = 21	-- whitespace: space, tab, sometimes CR
-	BT_name_start: INTEGER = 22	-- name-start: letters (non-hex), underscore, ext chars
-	BT_hex_digit: INTEGER = 24		-- hex digit letter A-F, a-f
-	BT_digit: INTEGER = 25			-- decimal digit 0-9
-	BT_name_only: INTEGER = 26		-- name-only char: '.' and middle-dot U+00B7
-	BT_other: INTEGER = 28			-- known non-name, non-name-start ASCII character
-	BT_non_ascii: INTEGER = 29		-- upper byte; might be name or name-start (Latin-1)
+	BT_non_xml: INTEGER = 0   				-- e.g. noncharacter-FFFF; also upper-128 in ASCII encoding
+	BT_malform: INTEGER = 1   				-- illegal byte for the current encoding
+	BT_lead_2_byte: INTEGER = 5  		 	-- lead byte of a 2-byte UTF-8 sequence (0xC2-0xDF)
+	BT_lead_3_byte: INTEGER = 6   		-- lead byte of a 3-byte UTF-8 sequence (0xE0-0xEF)
+	BT_lead_4_byte: INTEGER = 7   		-- lead byte of a 4-byte UTF-8 sequence (0xF0-0xF4)
+	BT_continuation_byte: INTEGER = 8 	-- continuation byte (0x80-0xBF) or UTF-16 low surrogate
+	BT_whitespace: INTEGER = 21			-- whitespace: space, tab, sometimes CR
+	BT_name_start: INTEGER = 22			-- name-start: letters (non-hex), underscore, ext chars
+	BT_hex_digit: INTEGER = 24				-- hex digit letter A-F, a-f
+	BT_digit: INTEGER = 25					-- decimal digit 0-9
+	BT_name_only: INTEGER = 26				-- name-only char: '.' and middle-dot U+00B7
+	BT_other: INTEGER = 28					-- known non-name, non-name-start ASCII character
+	BT_non_ascii: INTEGER = 29				-- upper byte; might be name or name-start (Latin-1)
 
 end

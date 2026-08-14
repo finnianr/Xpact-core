@@ -24,7 +24,7 @@ inherit
 feature -- Literal content tokenization
 
 	attribute_value_tok (
-		buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]
 	): INTEGER
 			-- Tokenize inside an already-identified attribute value literal.
 			-- Corresponds to attributeValueTok() in xmltok_impl.c.
@@ -94,7 +94,9 @@ feature -- Literal content tokenization
 			end
 		end
 
-	entity_value_tok (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER): INTEGER
+	entity_value_tok (
+		buf: SPECIAL [CHARACTER] start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]
+	): INTEGER
 			-- Tokenize inside an entity value literal.
 			-- Corresponds to entityValueTok() in xmltok_impl.c.
 		require start_index <= end_index and end_index <= buf.count

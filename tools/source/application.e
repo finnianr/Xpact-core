@@ -274,7 +274,14 @@ feature {NONE} -- Implementation
 
 	last_path_argument: PATH
 		do
-			create Result.make_from_string (argument (argument_count))
+			if index_of_word_option (Option.path_prompt) > 0 then
+				IO.put_string ("Enter a file path: ")
+				IO.read_line
+				create Result.make_from_string (IO.last_string)
+				IO.put_new_line
+			else
+				create Result.make_from_string (argument (argument_count))
+			end
 		end
 
 	do_parsing (parser: XT_XML_PARSER_BASE; file_path: PATH)
@@ -365,12 +372,12 @@ feature {NONE} -- Constants
 
 	Operation_parameter: STRING = "<operation>"
 
-	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, resume_at, trace: STRING]
+	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, path_prompt, resume_at, trace: STRING]
 		local
 			s: XT_STRING_8_ROUTINES
 		once
 			create Result
-			s.fill_tuple (Result, "compare_to_expat, chunk_size, duration, keep_logs, resume_at, trace")
+			s.fill_tuple (Result, "compare_to_expat, chunk_size, duration, keep_logs, path_prompt, resume_at, trace")
 		end
 
 	Usage_base: STRING = "Usage: xml_reader "

@@ -34,7 +34,9 @@ feature {NONE} -- Access
 		end
 
 	frozen char_ref_number (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
-			-- Parse &#N; or &#xH; starting at '&'.  Returns the code point or -1.
+			-- Parse &#N; or &#xH; starting at '&'
+			-- Unicode code point of the character reference starting at start_index ('&').
+			-- Returns -1 if the value is not a legal XML character.
 		local
 			index: INTEGER; is_hex: BOOLEAN; c: CHARACTER
 		do

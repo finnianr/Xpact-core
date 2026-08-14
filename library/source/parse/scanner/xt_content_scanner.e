@@ -23,7 +23,7 @@ inherit
 feature -- Content tokenization
 
 	content_tok (
-		buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]; start_index, end_index: INTEGER
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]
 	): INTEGER
 			-- Return the token type for the next token in element content.
 			-- Sets next_token_index.  Corresponds to contentTok() in xmltok_impl.c.
@@ -63,7 +63,7 @@ feature -- Content tokenization
 							Result := Tok_trailing_rsqb
 						elseif buf [index] /= ']' then
 							-- lone ']', fall through to data chars
-							Result := scan_data_chars (buf, bt_table, index, end_index)
+							Result := scan_data_chars (buf, index, end_index, bt_table)
 						else
 							index := index + 1
 							if index >= end_index then
@@ -73,10 +73,10 @@ feature -- Content tokenization
 								next_token_index := index
 								Result := Tok_invalid
 							else
-								Result := scan_data_chars (buf, bt_table, index, end_index)
+								Result := scan_data_chars (buf, index, end_index, bt_table)
 							end
 						end
-					when BT_non_xml, BT_malform, Bt_trail then
+					when BT_non_xml, BT_malform, BT_continuation_byte then
 						next_token_index := index
 						Result := Tok_invalid
 
@@ -90,16 +90,16 @@ feature -- Content tokenization
 							Result := Tok_invalid
 						else
 							index := index + byte_count
-							Result := scan_data_chars (buf, bt_table, index, end_index)
+							Result := scan_data_chars (buf, index, end_index, bt_table)
 						end
 				else
 					index := index + 1
-					Result := scan_data_chars (buf, bt_table, index, end_index)
+					Result := scan_data_chars (buf, index, end_index, bt_table)
 				end
 			end
 		end
 
-	cdata_section_tok (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+	cdata_section_tok (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 		-- Return the next token inside a CDATA section.
 		-- Sets next_token_index.  Corresponds to cdataSectionTok() in xmltok_impl.c.
 		require
@@ -119,7 +119,7 @@ feature -- Content tokenization
 							Result := Tok_partial
 						elseif buf [index] /= ']' then
 							-- lone ']'
-							Result := scan_cdata_data_chars (buf, bt_table, index, end_index)
+							Result := scan_cdata_data_chars (buf, index, end_index, bt_table)
 						else
 							index := index + 1
 							if index >= end_index then
@@ -132,7 +132,7 @@ feature -- Content tokenization
 								-- scan_cdata_data_chars stops immediately on BT_right_square_bracket,
 								-- so next_token_index lands on the second ']' and the next call
 								-- will correctly see ']]>' and return Tok_cdata_sect_close.
-								Result := scan_cdata_data_chars (buf, bt_table, index - 1, end_index)
+								Result := scan_cdata_data_chars (buf, index - 1, end_index, bt_table)
 							end
 						end
 					when BT_CR then
@@ -150,7 +150,7 @@ feature -- Content tokenization
 						next_token_index := index + 1
 						Result := Tok_data_newline
 
-					when BT_non_xml, BT_malform, Bt_trail then
+					when BT_non_xml, BT_malform, BT_continuation_byte then
 						next_token_index := index; Result := Tok_invalid
 
 					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
@@ -161,18 +161,18 @@ feature -- Content tokenization
 							next_token_index := index; Result := Tok_invalid
 						else
 							index := index + byte_count
-							Result := scan_cdata_data_chars (buf, bt_table, index, end_index)
+							Result := scan_cdata_data_chars (buf, index, end_index, bt_table)
 						end
 				else
 					index := index + 1
-					Result := scan_cdata_data_chars (buf, bt_table, index, end_index)
+					Result := scan_cdata_data_chars (buf, index, end_index, bt_table)
 				end
 			end
 		end
 
 feature {NONE} -- Data character accumulation
 
-	scan_data_chars (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+	scan_data_chars (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 		-- Accumulate data characters in content context until a delimiter.
 		-- Returns Tok_data_chars.
 		local
@@ -191,7 +191,7 @@ feature {NONE} -- Data character accumulation
 						end
 
 					when BT_right_square_bracket, BT_ampersand, BT_lt, BT_non_xml,
-						BT_malform, Bt_trail, BT_CR, BT_LF then
+						BT_malform, BT_continuation_byte, BT_CR, BT_LF then
 						next_token_index := index; Result := Tok_data_chars; done := True
 				else
 					index := index + 1
@@ -202,7 +202,7 @@ feature {NONE} -- Data character accumulation
 			end
 		end
 
-	scan_cdata_data_chars (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+	scan_cdata_data_chars (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 			-- Accumulate data characters inside a CDATA section.
 		local
 			index, bt_code, byte_count: INTEGER; done: BOOLEAN
@@ -219,7 +219,7 @@ feature {NONE} -- Data character accumulation
 							index := index + byte_count
 						end
 
-					when BT_non_xml, BT_malform, Bt_trail, BT_CR, BT_LF, BT_right_square_bracket then
+					when BT_non_xml, BT_malform, BT_continuation_byte, BT_CR, BT_LF, BT_right_square_bracket then
 						next_token_index := index; Result := Tok_data_chars; done := True
 				else
 					index := index + 1

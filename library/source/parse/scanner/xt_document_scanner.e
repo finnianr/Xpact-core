@@ -1,20 +1,15 @@
 note
-	description: "[
-		Abstract base for single-table encodings (UTF-8, Latin-1, ASCII).
+	description: "Corresponds to struct normal_encoding and normal_* utility functions in eXpath xmltok.c"
+	notes: "[
+		**From Claude AI**
 
-		Corresponds to struct normal_encoding and normal_* utility functions
-		in xmltok.c.
+		All scanner dispatch features delegate to the mixin scanner classes ${XT_CONTENT_SCANNER},
+		${XT_PROLOG_SCANNER} and ${XT_LITERAL_SCANNER}.
 
-		All scanner dispatch features delegate to the mixin scanner classes
-		(XT_CONTENT_SCANNER, XT_PROLOG_SCANNER, XT_LITERAL_SCANNER).
 		The key bridge between the scanner mixins and this class is:
-		  byte_type (buf, index) -- reads from byte_type_table
-		  char_at   (buf, index) -- reads single byte
 
-		Diamond note: XT_SCANNER_HELPERS and XT_ENCODING both declare
-		next_token_ptr as a stored attribute.  The scanner-mixin parents are
-		given `undefine next_token_ptr` so that XT_ENCODING's single copy
-		is used throughout.
+			byte_type (buf, index) -- reads from byte_type_table
+			char_at   (buf, index) -- reads single byte
 	]"
 
 	author: "Finnian Reilly"
@@ -28,19 +23,15 @@ note
 class XT_DOCUMENT_SCANNER
 
 inherit
-	XT_ENCODING
-		rename
-			predefined_entity_name as predefined_entity_code
-		redefine
-			make
-		end
-
 	XT_CONTENT_SCANNER
 		export
 			{XT_PARSING_BUFFERS} same_characters, attribute_intervals
 		end
 
 	XT_PROLOG_SCANNER
+		export
+			{XT_PARSING_BUFFERS} scan_name
+		end
 
 	XT_LITERAL_SCANNER
 
@@ -51,7 +42,7 @@ feature {NONE} -- Initialisation
 
 	make
 		do
-			Precursor
+			create attribute_intervals.make (11)
 			entity_cache := attribute_intervals.entity_cache
 			create scanned_entity_buffer.make (5)
 			create index_x4_buffer.make_empty (4)
@@ -59,93 +50,69 @@ feature {NONE} -- Initialisation
 
 feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 
-	scan_content (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+	scan_content (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
+			-- Scan the next token in element content.
+			-- Sets `next_token_index'.  Corresponds to scanners[XML_CONTENT_STATE].
+		require
+			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		do
-			Result := content_tok (buf, bt_table, scanned_entity_buffer, start_index, end_index)
+			Result := content_tok (buf, start_index, end_index, bt_table, scanned_entity_buffer)
+		ensure
+			result_in_range: Result >= Tok_trailing_rsqb and Result <= Tok_ignore_sect
 		end
 
-	scan_prolog (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+	scan_prolog (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
+			-- Scan the next token in the document prolog or DTD.
+			-- Corresponds to scanners[XML_PROLOG_STATE].
+		require
+			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		do
-			Result := prolog_tok (buf, bt_table, start_index, end_index)
+			Result := prolog_tok (buf, start_index, end_index, bt_table)
 		end
 
-	scan_cdata_section (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+	scan_cdata_section (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
+			-- Scan the next token inside a CDATA section.
+			-- Corresponds to scanners[XML_CDATA_SECTION_STATE].
+		require
+			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		do
-			Result := cdata_section_tok (buf, bt_table, start_index, end_index)
+			Result := cdata_section_tok (buf, start_index, end_index, bt_table)
 		end
 
-	scan_entity_value (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+	scan_entity_value (
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		entity_buffer: LIST [STRING]
+	): INTEGER
+			-- Scan the next token inside an entity value literal.
+			-- Corresponds to literalScanners[XML_ENTITY_VALUE_LITERAL].
+		require
+			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		do
-			Result := entity_value_tok (buf, bt_table, scanned_entity_buffer, start_index, end_index)
+			Result := entity_value_tok (buf, start_index, end_index, bt_table, entity_buffer)
 		end
 
 feature -- Name utilities (implements XT_ENCODING deferred features)
 
-	scan_non_xml (bytes: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
-			-- `Tok_name' if binary non-XML bytes can be interpreted as a syntax error or else `Tok_invalid'
-		require
-			valid_range: start_index <= end_index
-		local
-			index, bt_code, byte_count: INTEGER; done: BOOLEAN
-		do
-			index := start_index
-			from until index >= end_index or done loop
-				bt_code := bt_table [bytes [index].code]
-				inspect bt_code
-					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon then
-						Result := Tok_name
-						index := index + 1
-
-					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
-						byte_count := bt_code - 3
-						if end_index - index < byte_count then
-							Result := Tok_partial_char; done := True
-
-						elseif is_invalid_character (bytes, index, byte_count) then
-							next_token_index := index
-							Result := Tok_invalid; done := True
-						else
-							Result := Tok_name
-							index := index + byte_count
-						end
-					when BT_CR, BT_LF, BT_whitespace then
-
-					when BT_gt, BT_comma, BT_pipe_symbol, BT_right_parenthesis then
-						index := index + 1
-						Result := Tok_close_paren; done := True
-
-					when BT_left_square_bracket then
-						Result := Tok_open_bracket; done := True
-
-				else
-					Result := Tok_invalid; done := True
-				end
-			end
-			inspect Result when Tok_name then
-				next_token_index := index
-			else
-			end
-		end
-
-	skip_s (buf: SPECIAL [CHARACTER]; start_index: INTEGER): INTEGER
+	skip_whitespace (buf: SPECIAL [CHARACTER]; start_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 			-- Index of first non-whitespace byte at or after start_index.
+		require
+			valid_start_index: start_index >= 0
 		local
 			done: BOOLEAN
 		do
-			if attached byte_type_table as bt_table then
-				from Result := start_index until Result >= buf.count or done loop
-					inspect bt_table [buf [Result].code]
-						when BT_whitespace, BT_CR, BT_LF then
-							Result := Result + 1
-					else
-						done := True
-					end
+			from Result := start_index until Result >= buf.count or done loop
+				inspect bt_table [buf [Result].code]
+					when BT_whitespace, BT_CR, BT_LF then
+						Result := Result + 1
+				else
+					done := True
 				end
 			end
+		ensure
+			result_gte_index: Result >= start_index
 		end
 
-	name_matches_ascii (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER;
-	                    match: STRING_8): BOOLEAN
+	name_matches_ascii (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; match: STRING_8): BOOLEAN
 			-- True if the name at start_index..end_index equals the ASCII string match.
 		local
 			index, i: INTEGER; ok: BOOLEAN
@@ -196,27 +163,25 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 			else end
 		end
 
-feature -- Public ID validation
+feature -- Status query
 
-	is_public_id (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): BOOLEAN
-		-- True if every byte in start_index..end_index-1 is a valid PubidChar.
-		-- Sets bad_char_ptr on failure.
+	is_public_id (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): BOOLEAN
+			-- True when `buf [start_index] .. buf [end_index]' is a valid PUBLIC identifier literal.
+			-- On False, `bad_char_index' is set to the invalid character's index.
 		local
 			index: INTEGER; ok: BOOLEAN
 		do
 			ok := True
-			if attached byte_type_table as bt_table then
-				from index := start_index until index >= end_index or not ok loop
-					inspect bt_table [buf [index].code]
-						when	BT_digit, BT_hex_digit, BT_minus, BT_apostrophe, BT_left_parenthesis, BT_right_parenthesis,
-								BT_plus, BT_comma, BT_forward_slash, BT_equals, BT_question, BT_CR, BT_LF, BT_semicolon,
-								BT_exclamation, BT_asterisk, BT_percent, BT_hash, BT_colon, BT_whitespace,
-								BT_name_start, BT_name_only
-						then
-							index := index + 1
-					else
-						bad_char_index := index; ok := False
-					end
+			from index := start_index until index >= end_index or not ok loop
+				inspect bt_table [buf [index].code]
+					when	BT_digit, BT_hex_digit, BT_minus, BT_apostrophe, BT_left_parenthesis, BT_right_parenthesis,
+							BT_plus, BT_comma, BT_forward_slash, BT_equals, BT_question, BT_CR, BT_LF, BT_semicolon,
+							BT_exclamation, BT_asterisk, BT_percent, BT_hash, BT_colon, BT_whitespace,
+							BT_name_start, BT_name_only
+					then
+						index := index + 1
+				else
+					bad_char_index := index; ok := False
 				end
 			end
 			Result := ok
@@ -224,28 +189,35 @@ feature -- Public ID validation
 
 feature -- Position tracking
 
-	update_position (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; pos: XT_POSITION)
-			-- Update line and column numbers by scanning buf[start_index..end_index-1].
+	update_position (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; pos: XT_POSITION; bt_table: SPECIAL [INTEGER])
+			-- Update line and column numbers by scanning `buf [start_index] .. buf [end_index - 1]'
+		require
+			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		local
 			index: INTEGER
 		do
-			if attached byte_type_table as bt_table then
-				from index := start_index until index >= end_index loop
-					inspect bt_table [buf [index].code]
-						when BT_CR then
-							pos.advance_line
-							if index + 1 < end_index and buf [index + 1] = '%N' then
-								index := index + 1
-							end
-						when BT_LF then
-							pos.advance_line
-					else
-						pos.advance_column
-					end
-					index := index + 1
+			from index := start_index until index >= end_index loop
+				inspect bt_table [buf [index].code]
+					when BT_CR then
+						pos.advance_line
+						if index + 1 < end_index and buf [index + 1] = '%N' then
+							index := index + 1
+						end
+					when BT_LF then
+						pos.advance_line
+				else
+					pos.advance_column
 				end
+				index := index + 1
 			end
 		end
 
+feature {NONE} -- Internal attributes
+
+	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+		-- collected attribute name-value pair indices into `buffer'
+
+	bad_char_index: INTEGER
+			-- Set by `is_public_id' on failure: index of the bad character.
 
 end

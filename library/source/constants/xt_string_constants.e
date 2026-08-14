@@ -23,10 +23,11 @@ feature {NONE} -- Standard strings
 
 	Document_definition_names: LIST [STRING]
 		once
-			Result := ("ATTLIST,DOCTYPE,ELEMENT,ENTITY").split (',')
+			Result := ("ATTLIST,DOCTYPE,ELEMENT,ENTITY,NOTATION").split (',')
+			Result.compare_objects
 		ensure
 			valid_first: Result [{XT_PARSE_CONSTANTS}.Attlist] ~ "ATTLIST"
-			valid_last: Result [{XT_PARSE_CONSTANTS}.Entity] ~ "ENTITY"
+			valid_last: Result [{XT_PARSE_CONSTANTS}.Notation] ~ "NOTATION"
 		end
 
 	Http: STRING = "http"
@@ -52,5 +53,52 @@ feature {NONE} -- Predefined entities
 	Predefined_lt: STRING_8 = "lt"
 
 	Predefined_quot: STRING_8 = "quot"
+
+feature {NONE} -- Constants
+
+	BT_names_list: LIST [STRING]
+		once
+			Result := ("[
+				Non xml
+				Malform
+				Less than
+				Ampersand
+				Right square bracket
+				Lead 2 byte
+				Lead 3 byte
+				Lead 4 byte
+				Continuation byte
+				CR
+				Linefeed
+				Greater than
+				Quote
+				Apostrophe
+				Equals
+				Question
+				Exclamation
+				Forward slash
+				Semicolon
+				Hash
+				Left square bracket
+				Whitespace
+				Name start
+				Colon
+				Hex digit
+				Digit
+				Name only
+				Minus
+				Other
+				Non ascii
+				Percent
+				Left parenthesis
+				Right parenthesis
+				Asterisk
+				Plus
+				Comma
+				Pipe symbol
+			]").split ('%N')
+		ensure
+			aligned_with_bt_value: Result [{XT_BYTE_TYPE_CONSTANTS}.BT_pipe_symbol + 1] ~ "Pipe symbol"
+		end
 
 end

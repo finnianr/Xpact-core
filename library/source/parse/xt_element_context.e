@@ -17,9 +17,9 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_section_flags: SPECIAL [BOOLEAN])
+	make (section_flags: SPECIAL [BOOLEAN])
 		do
-			section_flags := a_section_flags
+			in_section := section_flags
 			create empty_attribute_values.make_empty (0)
 			create stack.make_empty (50)
 		end
@@ -95,7 +95,7 @@ feature -- Element change
 			end
 			s.remove_tail (1)
 			inspect depth when 0 then
-				section_flags [{XT_PARSE_CONSTANTS}.Prolog] := True
+				in_section [{XT_PARSE_CONSTANTS}.Prolog] := True
 				reached_depth_zero := true
 			else end
 		ensure
@@ -112,7 +112,7 @@ feature {NONE} -- Internal attributes
 
 	empty_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
 
-	section_flags: SPECIAL [BOOLEAN]
+	in_section: SPECIAL [BOOLEAN]
 
 	stack: SPECIAL [STRING]
 

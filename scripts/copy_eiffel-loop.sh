@@ -7,7 +7,7 @@ EIFFEL_LOOP=$EIFFEL/library/Eiffel-Loop
 names=(el_string_h_c_api el_c_api el_crc_32_digest el_managed_c_string_8 \ 
 	el_crc_32_constants el_expanded_routines el_traceable_crc_32_digest el_routines \
 	el_integer_math_i el_integer_math el_memory_routines \
-	el_typed_pointer_routines_i el_typed_pointer_routines \
+	el_typed_pointer_routines \
 	el_zlib_crc_32_api)
 	
 args=()

@@ -18,12 +18,17 @@ inherit
 			make, reset, set_defaults
 		end
 
+	XT_PARSE_EVENTS
+
+	EL_TYPED_POINTER_ROUTINES_I
+
 feature {NONE} -- Initialization
 
 	make
 		do
-			create section_flags.make_filled (False, CDATA + 1)
+			create section_flags.make_filled (False, section_count)
 			create element_context.make (section_flags)
+			create doctype_decl_stack.make_empty (2)
 
 			Precursor
 		ensure then
@@ -41,13 +46,10 @@ feature {NONE} -- Initialization
 			is_final_buffer            := False
 			reparse_deferral_enabled   := True
 
-			element_depth       			:= 0
 			handler_call_depth         := 0
 			last_buffer_request_size   := 0
 			partial_token_bytes_before := 0
 			parse_end_byte_index       := 0
-
-			declaration						:= 0
 
 			section_flags [Prolog] := True
 			section_flags [CDATA] := False
@@ -56,8 +58,6 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	handler_call_depth: INTEGER
-
-	element_depth: INTEGER
 
 	parsing_state: INTEGER
 			-- Current state: one of the State_* constants.
@@ -73,9 +73,6 @@ feature -- Access
 				create Result.make_empty
 			end
 		end
-
-	parse_end_byte_index: INTEGER_64
-			-- Cumulative count of bytes committed to the parser.
 
 feature -- Status query
 
@@ -340,7 +337,7 @@ feature {NONE} -- Processor dispatch
 				attributes := attribute_intervals; buf := buffer
 
 				from done := False until done loop
-					err := process_content (buf, buffer_index, end_index, attributes, s, s.byte_type_table, names, context, section)
+					err := process_content (buf, buffer_index, end_index, attributes, s, names, context, section)
 
 					-- Suspended state overrides the reenter request.
 					inspect parsing_state when State_parsing then
@@ -400,8 +397,8 @@ feature {NONE} -- Processor dispatch
 
 	process_content (
 		buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
-		s: like scanner; bt_table: SPECIAL [INTEGER]; names: like name_cache
-		a_context: XT_ELEMENT_CONTEXT; section: SPECIAL [BOOLEAN]
+		s: like scanner; names: like name_cache
+		a_context: XT_ELEMENT_CONTEXT; in_section: SPECIAL [BOOLEAN]
 	): INTEGER
 		-- Scan tokens from `buf' `start_index .. end_index` and triggers relevant XML events.  Advances `buffer_index'.
 		-- Execute one pass of the current processor over `buf [start_index .. end_index)'.
@@ -414,23 +411,24 @@ feature {NONE} -- Processor dispatch
 			buffer_index_at_start: buffer_index = start_index
 		local
 			index, token, tok_end, code, err, buffer_index_copy, lower, upper: INTEGER; done: BOOLEAN
-			context: XT_ELEMENT_CONTEXT; tag_name: STRING
+			context: XT_ELEMENT_CONTEXT; tag_name: STRING; bt_table: SPECIAL [INTEGER]
 		do
+			bt_table := s.Byte_type_table
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
-				if section [Prolog] then
+				if in_section [Prolog] then
 					Result := process_prolog (
-						buf, start_index, end_index, attributes, s, bt_table, names, section, index, $index, $done
+						buf, start_index, end_index, bt_table, attributes, s, names, in_section, index, $index, $done
 					)
 					context := element_context
 
-				elseif section [CDATA] then
-					token := s.scan_cdata_section (buf, bt_table, index, end_index)
+				elseif in_section [CDATA] then
+					token := s.scan_cdata_section (buf, index, end_index, bt_table)
 					tok_end := s.next_token_index
 					inspect token
 						when Tok_cdata_sect_close then
 							on_cdata_section_close
-							section [CDATA] := False
+							in_section [CDATA] := False
 							index := tok_end
 
 						when Tok_data_chars then
@@ -449,11 +447,11 @@ feature {NONE} -- Processor dispatch
 						end
 					end
 				else
-					token := s.scan_content (buf, bt_table, index, end_index)
+					token := s.scan_content (buf, index, end_index, bt_table)
 					tok_end := s.next_token_index
 					inspect token
 						when Tok_cdata_sect_open then
-							section [CDATA] := True
+							in_section [CDATA] := True
 
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
@@ -520,10 +518,10 @@ feature {NONE} -- Processor dispatch
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
 									err := process_content (
-										entity_value.area, 0, entity_value.count, attributes, s, bt_table, names, context, section
+										entity_value.area, 0, entity_value.count, attributes, s, names, context, in_section
 									) -- Recurse
 									buffer_index := buffer_index_copy -- restore field
-									section [CDATA] := False -- restore state
+									in_section [CDATA] := False -- restore state
 
 									inspect err when Error_none then
 										do_nothing
@@ -567,149 +565,216 @@ feature {NONE} -- Processor dispatch
 		end
 
 	process_prolog (
-		buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
-		s: like scanner; bt_table: SPECIAL [INTEGER]; names: like name_cache; section: SPECIAL [BOOLEAN]
-		index: INTEGER; index_ptr: TYPED_POINTER [INTEGER]; done_ptr: TYPED_POINTER [BOOLEAN]
+		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		s: like scanner; names: like name_cache; in_section: SPECIAL [BOOLEAN]
+		index: INTEGER; a_index: TYPED_POINTER [INTEGER]; a_done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
 		local
-			token, tok_end: INTEGER; done: BOOLEAN; p: EL_TYPED_POINTER_ROUTINES
+			token, tok_end, decl_type: INTEGER; done, default_case, common_case: BOOLEAN
 		do
-			token := s.scan_prolog (buf, bt_table, index, end_index)
+			token := s.scan_prolog (buf, index, end_index, bt_table)
 			tok_end := s.next_token_index
-			inspect token
-				when Tok_xml_decl then
-					if index > 0 then
-						Result := Error_misplaced_xml_pi; done := True
-
-					elseif not attributes.has_valid_encoding (buf) then
-						Result := Error_unknown_encoding; done := True
-					else
-						on_xml_declaration (buf, attributes)
-						attributes.wipe_out
-					end
-
-				when Tok_instance_start then
-					if element_context.reached_depth_zero then
-						Result := Error_junk_after_doc_element; done := True
-					else
-						section [Prolog] := False
-						if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
-							create {XT_ELEMENT_ATTRIBUTES_CONTEXT} element_context.make (section, attribute_value_defaults_table)
-						end
-						declaration := 0
-					end
-
-				when Tok_decl_open then
-					declaration := select_declaration (buf, index + 2, s)
-					declaration_parts_list.wipe_out
-					inspect declaration
-						when 0 then
+			if in_section [Doctype_definition] then
+				inspect token
+					when Tok_close_bracket then
+						if doctype_decl_stack.count = 1 then
+							in_section [Doctype_definition] := False
+						else
 							Result := Error_syntax; done := True
-						when Doctype then
-							if in_doctype_definition then
+						end
+
+					when Tok_decl_open then
+						decl_type := declaration_type (buf, index + 2, s)
+						inspect decl_type
+							when 0 then
+								Result := Error_syntax; done := True
+						else
+							inspect doctype_decl_stack.count when 1 then
+								doctype_decl_stack.extend (decl_type)
+								declaration_parts_list.wipe_out
+							else
 								Result := Error_syntax; done := True
 							end
-					else
-					end
+						end
 
-				when Tok_literal then
-					inspect declaration
-						when Attlist then
-							on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, s, names)
-						when Element_ then
-							do_nothing -- for now
-						when Entity_ then
-							on_entity_declaration_part (buf, index + 1, tok_end - 2, s)
-						when Doctype then
-							on_document_declaration_part (buf, index, tok_end - 1, s)
-					else
-						Result := Error_syntax; done := True
-					end
+					when Tok_decl_close then
+						inspect doctype_decl_stack.count when 2 then
+							doctype_decl_stack.remove_tail (1)
+						else
+							Result := Error_syntax; done := True
+						end
 
-				when Tok_name then
-					inspect declaration
-						when Attlist then
-							on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
-						when Element_ then
-							do_nothing -- for now
-						when Entity_ then
-							on_entity_declaration_part (buf, index, tok_end - 1, s)
-						when Doctype then
-							on_document_declaration_part (buf, index, tok_end - 1, s)
-					else
-						if in_doctype_definition then
-							Result := Error_syntax
+					when Tok_name then
+						inspect declaration
+							when Attlist then
+								if doctype_decl_stack.count = 2 then
+									on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
+								else
+									Result := Error_syntax; done := True
+								end
 
-						elseif element_context.reached_depth_zero then
+							when Entity_ then
+								if doctype_decl_stack.count = 2 then
+									on_entity_declaration_part (buf, index, tok_end - 1, s)
+								else
+									Result := Error_syntax; done := True
+								end
+							when Element_, Notation then
+								do_nothing -- for now
+						else
+							default_case := True
+						end
+
+					when Tok_literal then
+						inspect declaration
+							when Attlist then
+								if doctype_decl_stack.count = 2 then
+									on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, s, names)
+								else
+									Result := Error_syntax; done := True
+								end
+							when Entity_ then
+								if doctype_decl_stack.count = 2 then
+									on_entity_declaration_part (buf, index + 1, tok_end - 2, s)
+								else
+									Result := Error_syntax; done := True
+								end
+							when Element_, Notation then
+								do_nothing -- for now
+						else
+							default_case := True
+						end
+
+					when Tok_pound_name then
+						inspect declaration
+							when Attlist then
+								on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
+
+							when Element_, Entity_, Notation then
+								do_nothing -- for now
+						else
+							default_case := True
+						end
+
+				else
+					common_case := True
+				end
+			else
+				inspect token
+					when Tok_xml_decl then
+						if index > 0 then
+							Result := Error_misplaced_xml_pi; done := True
+
+						elseif not attributes.has_valid_encoding (buf) then
+							Result := Error_unknown_encoding; done := True
+						else
+							on_xml_declaration (buf, attributes)
+							attributes.wipe_out
+						end
+
+					when Tok_instance_start then
+						if element_context.reached_depth_zero then
 							Result := Error_junk_after_doc_element; done := True
 						else
-							Result := error_syntax_or_invalid_token (buf, start_index, end_index, s, bt_table)
+							in_section [Prolog] := False
+							if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
+								create {XT_ELEMENT_ATTRIBUTES_CONTEXT} element_context.make (in_section, attribute_value_defaults_table)
+							end
+						end
+
+					when Tok_decl_open then
+						decl_type := declaration_type (buf, index + 2, s)
+						inspect decl_type
+							when 0 then
+								Result := Error_syntax; done := True
+						else
+							inspect doctype_decl_stack.count when 0 then
+								doctype_decl_stack.extend (decl_type)
+								declaration_parts_list.wipe_out
+							else
+								Result := Error_syntax; done := True
+							end
+						end
+
+					when Tok_decl_close then
+						inspect doctype_decl_stack.count when 1 then
+							doctype_decl_stack.remove_tail (1)
+						else
+							Result := Error_syntax; done := True
+						end
+
+					when Tok_literal then
+						if declaration = Doctype and then doctype_decl_stack.count = 1 then
+							on_document_declaration_part (buf, index, tok_end - 1, s)
+						else
+							Result := name_error (buf, index, end_index, s, bt_table); done := True
+						end
+
+					when Tok_name then
+						if declaration = Doctype and then doctype_decl_stack.count = 1 then
+							on_document_declaration_part (buf, index, tok_end - 1, s)
+						else
+							Result := name_error (buf, index, end_index, s, bt_table); done := True
+						end
+
+					when Tok_open_bracket then
+						if doctype_decl_stack.count = 1 then
+							in_section [Doctype_definition] := True
+						else
+							Result := Error_syntax; done := True
+						end
+
+				else
+					common_case := True
+				end
+			end
+			if common_case then
+				inspect token
+					when Tok_comment then
+						on_comment (buf, index + 4, tok_end - 4, attributes)
+
+					when Tok_invalid then
+						Result := Error_invalid_token
+					-- Checking for binary data masquerading as XML
+						if start_index = 0 and then s.has_syntax_error (buf, start_index, end_index, bt_table) then
+							Result := Error_syntax
 						end
 						done := True
-					end
 
-				when Tok_pound_name then
-					inspect declaration when Attlist then
-						on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
-					else end
+					when Tok_open_bracket, Tok_close_bracket, Tok_open_paren, Tok_close_paren, Tok_or, Tok_name_question then
+						if doctype_decl_stack.count = 0 then
+							Result := Error_syntax; done := True
+						end
 
-				when Tok_comment then
-					on_comment (buf, index + 4, tok_end - 4, attributes)
+					when Tok_pi then
+						on_processing_instruction (buf, index + 2, tok_end - 3, attributes)
+						attributes.wipe_out
 
-				when Tok_pi then
-					on_processing_instruction (buf, index + 2, tok_end - 3, attributes)
-					attributes.wipe_out
+					when Tok_prolog_whitespace then
+						do_nothing
 
-				when Tok_prolog_whitespace then
-					do_nothing
+				else
+					default_case := True
+				end
+			end
+			if default_case then
+				if element_context.reached_depth_zero and then not s.is_white_space (buf, index, end_index - 1) then
+					Result := Error_junk_after_doc_element; done := True
 
-				when Tok_invalid then
-					inspect start_index when 0 then
-						Result := error_syntax_or_invalid_token (buf, start_index, end_index, s, bt_table)
-					else
-						Result := Error_invalid_token
-					end
-					done := True
-
-				when Tok_open_bracket then
-					inspect declaration when Doctype then
-						in_doctype_definition := True
-					else
-						Result := Error_syntax; done := True
-					end
-
-				when Tok_close_bracket then
-					if in_doctype_definition then
-						in_doctype_definition := False
-					else
-						Result := Error_syntax; done := True
-					end
-
-				when Tok_open_paren, Tok_close_paren, Tok_or, Tok_name_question then
-					if not in_doctype_definition then
-						Result := Error_syntax; done := True
-					end
-
-			else
-				if token <= 0 then
-					if element_context.reached_depth_zero then
-						Result := Error_junk_after_doc_element
-					end
+				elseif token <= 0 then
 					done := True  -- partial; wait for more data
 
-				elseif element_context.reached_depth_zero and then not s.is_white_space (buf, index, end_index - 1) then
-					Result := Error_junk_after_doc_element; done := True
 				else
 				-- skip prolog token					
-					p.put_integer_32 (tok_end, index_ptr)
+					put_integer_32 (tok_end, a_index)
 				end
 			end
 			if not done then
-				p.put_integer_32 (tok_end, index_ptr)
+				put_integer_32 (tok_end, a_index)
 			end
 		-- write back value of `done' to caller local variable
-			p.put_boolean (done, done_ptr)
+			put_boolean (done, a_done)
 		end
 
 feature {NONE} -- Implementation
@@ -722,6 +787,23 @@ feature {NONE} -- Implementation
 	in_cdata_section: BOOLEAN
 		do
 			Result := section_flags [CDATA]
+		end
+
+	in_doctype_definition: BOOLEAN
+		do
+			Result := doctype_decl_stack.count > 0
+		end
+
+feature {NONE} -- Implementation
+
+	declaration: INTEGER
+		-- top of current DOCTYPE declaration stack
+		do
+			if attached doctype_decl_stack as stack then
+				if stack.count > 0 then
+					Result := stack [stack.count - 1]
+				end
+			end
 		end
 
 	increment_handler_depth
@@ -744,21 +826,44 @@ feature {NONE} -- Implementation
 			depth_decreased: handler_call_depth = old handler_call_depth - 1
 		end
 
-	processor_wants_reenter: BOOLEAN
-		-- True when the processor has set its reenter flag, requesting
-		-- another pass through `process_content' to avoid stack overflow.
-		-- Corresponds to `m_reenter' in xmlparse.c.
+	name_error (buf: like buffer; start_index, end_index: INTEGER; s: like scanner; bt_table: SPECIAL [INTEGER]): INTEGER
+		-- try and agree with eXpat on whether invalid XML will be regarded as a syntax error or invalid token
+		-- the assumption is that parser has been given some binary data masquerading as XML, for example:
+		-- C:\Windows\WinSxS\amd64_microsoft-windows-deviceaccess_31bf3856ad364e35_10.0.26100.4202_none_a94ac2308a15fa4a\r\AppPrivacy.admx
+		local
+			token, index, tok_end: INTEGER; invalid_token: BOOLEAN
 		do
-			Result := False
-		end
+			if element_context.reached_depth_zero then
+				Result := Error_junk_after_doc_element
 
-	error_syntax_or_invalid_token (buf: like buffer; start_index, end_index: INTEGER; s: like scanner; bt_table: SPECIAL [INTEGER]): INTEGER
-		do
-			inspect s.scan_non_xml (buf, start_index, end_index, bt_table)
-				when Tok_name, Tok_open_bracket, Tok_close_paren then
-					Result := Error_syntax
+			elseif start_index = 0 then
+				Result := Error_syntax
 			else
-				Result := Error_invalid_token
+			-- Find first section of invalid markup
+				from index := start_index until index >= end_index or invalid_token loop
+					token := s.scan_prolog (buf, index, end_index, bt_table)
+					if token = Tok_invalid then
+						invalid_token := True
+					else
+						tok_end := s.next_token_index
+					end
+					if not invalid_token then
+						index := tok_end
+					end
+				end
+				if invalid_token then
+					if s.has_syntax_error (buf, index, end_index, bt_table) then
+						Result := Error_syntax
+					else
+						Result := Error_invalid_token
+					end
+				else
+					if s.has_syntax_error (buf, tok_end, end_index, bt_table) then
+						Result := Error_syntax
+					else
+						Result := Error_invalid_token
+					end
+				end
 			end
 		end
 
@@ -803,13 +908,6 @@ feature {NONE} -- Event handlers
 				else
 				end
 			end
-		end
-
-	on_clear_reenter
-			-- Clear the reenter flag after each loop iteration.
-		do
-		ensure
-			cleared: not processor_wants_reenter
 		end
 
 	on_entity_declaration_part (buf: like buffer; start_index, end_index: INTEGER; s: like scanner)
@@ -860,83 +958,22 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_finish (a_status: INTEGER)
-		do
-		end
-
-	on_set_error_processor
-		-- Switch the active processor to the error sink so that any
-		-- further parse calls immediately fail.
-		-- Corresponds to `m_processor = errorProcessor' in xmlparse.c.
-		do
-		end
-
-	on_start_parsing: BOOLEAN
-			-- Called once when a root parser leaves State_initialized.
-			-- Initialise hash salt and any implicit namespace context here.
-			-- Return True on success; False causes the parse to abort with
-			-- Error_no_memory (matching startParsing() in xmlparse.c).
-		do
-			Result := True
-		end
-
-	on_update_position (start_index, end_index: INTEGER)
-			-- Update line/column counters by scanning
-			-- `buffer [start_index .. end_index)'.
-			-- Corresponds to XmlUpdatePosition() calls in xmlparse.c.
-		require
-			valid_range: start_index >= 0 and then start_index <= end_index
-			to_in_buf: end_index <= buffer_end
-		do
-		end
-
-	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
-		require
-			valid_attribute_indices_count: attributes.is_valid_count
-		deferred
-		end
-
-feature {NONE} -- Deferred
-
-	on_cdata_section_close
-		deferred
-		end
-
-	on_comment (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
-		deferred
-		end
-
-	on_content (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
-		deferred
-		end
-
-	on_tag_end (name: STRING_8)
-		deferred
-		end
-
-	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
-		require
-			valid_attribute_indices_count: attributes.is_valid_count
-		deferred
-		end
-
-	on_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
-		deferred
-		end
-
 feature {NONE} -- Internal attributes
 
 	element_context: XT_ELEMENT_CONTEXT
 
-	in_doctype_definition: BOOLEAN
-
 	section_flags: SPECIAL [BOOLEAN]
+		-- parser section state flags
 
-	declaration: INTEGER
+	doctype_decl_stack: SPECIAL [INTEGER]
+		-- DOCTYPE declaration type stack
 
 	last_buffer_request_size: INTEGER
 
 	partial_token_bytes_before: INTEGER
+
+	parse_end_byte_index: INTEGER_64
+			-- Cumulative count of bytes committed to the parser.
 
 	reparse_deferral_enabled: BOOLEAN
 

@@ -7,9 +7,14 @@ note
 		inconsistent about this. Some reparse points get exposed as regular directories with no symlink marker at all,
 		which means your walker's lstat/S_ISLNK check silently passes right through them.
 	]"
-	author: ""
-	date: "$Date$"
-	revision: "$Revision$"
+	author: "Finnian Reilly"
+	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
+	contact: "finnian at eiffel hyphen loop dot com"
+
+	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
+
+	date: "2026-08-05 07:00:00 GMT (Wednesday 5th August 2026)"
+	revision: "1"
 
 class
 	XT_WINDOWS_DIRECTORY_WALKER
@@ -19,7 +24,7 @@ inherit
 		redefine
 			is_visited, make_with_path, new_directory
 		end
-	
+
 create
 	make_with_path, make_root_with_path
 

@@ -57,6 +57,14 @@ feature -- Element content tokens (positive)
 	Tok_comment: INTEGER = 13
 	Tok_bom: INTEGER = 14
 
+	Element_tokens: ARRAY [INTEGER]
+		once
+			Result := <<
+				Tok_start_tag_with_attributes, Tok_start_tag_no_attributes,
+				Tok_empty_element_with_attributes, Tok_empty_element_no_attributes
+			>>
+		end
+
 feature -- Prolog / DTD tokens
 
 	Tok_prolog_whitespace: INTEGER = 15
@@ -105,22 +113,22 @@ feature -- String names
 		Data chars
 		Data newline
 		Cdata sect open
-		Entity ref
-		Char ref
-		Pi
-		Xml decl
+		Entity reference
+		Character reference
+		Processing instruction
+		Xml declaration
 		Comment
-		Bom
+		BOM
 		Prolog whitespace
-		Decl open
-		Decl close
+		Declaration open
+		Declaration close
 		Name
 		Name token
 		Pound name
-		Or
+		Or sign |
 		Percent
-		Open paren
-		Close paren
+		Open parenthesis
+		Close parenthesis
 		Open bracket
 		Close bracket
 		Literal
@@ -135,8 +143,8 @@ feature -- String names
 		Close paren asterisk
 		Close paren plus
 		Comma
-		Attribute value s
-		Cdata sect close
+		Attribute value whitespace
+		Cdata section close
 		Prefixed name
 		Ignore sect
 	]"

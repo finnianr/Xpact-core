@@ -60,7 +60,7 @@ feature {NONE} -- PI and comment scanning
 									end
 								end
 							end
-						when BT_non_xml, BT_malform, Bt_trail then
+						when BT_non_xml, BT_malform, BT_continuation_byte then
 							next_token_index := index; Result := Tok_invalid; done := True
 
 						when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
@@ -88,7 +88,7 @@ feature {NONE} -- PI and comment scanning
 			end
 		end
 
-	scan_pi (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+	scan_pi (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 			-- Scan processing instruction after '<?'.
 			-- Returns Tok_pi (or Tok_xml_decl if target is "xml").
 		require
@@ -274,7 +274,7 @@ feature {NONE} -- PI helpers
 			from until index >= end_index or done loop
 				bt_code := bt_table [buf [index].code]
 				inspect bt_code
-					when BT_non_xml, BT_malform, Bt_trail then
+					when BT_non_xml, BT_malform, BT_continuation_byte then
 						next_token_index := index; Result := Tok_invalid; done := True
 
 					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then

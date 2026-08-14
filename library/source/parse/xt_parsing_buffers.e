@@ -36,11 +36,6 @@ inherit
 			{NONE} all
 		end
 
-	XT_BYTE_TYPE_CONSTANTS
-		export
-			{NONE} all
-		end
-
 	XT_TOKEN_CONSTANTS
 		export
 			{NONE} all
@@ -314,7 +309,8 @@ feature {NONE} -- Implementation
 			ptr_non_negative:    buffer_index >= 0
 		end
 
-	select_declaration (buf: like buffer; offset: INTEGER; s: like scanner): INTEGER
+	declaration_type (buf: like buffer; offset: INTEGER; s: like scanner): INTEGER
+		-- one of: Attlist, Doctype, Element, Entity or 0 if no match
 		do
 			across Document_definition_names as name until Result > 0 loop
 				if s.same_characters (buf, offset, offset + name.count - 1, name) then

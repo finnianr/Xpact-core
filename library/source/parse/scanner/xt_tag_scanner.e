@@ -89,7 +89,7 @@ feature {NONE} -- Tag scanning
 							end
 						end
 					when BT_question then
-						Result := scan_pi (buf, bt_table, index + 1, end_index)
+						Result := scan_pi (buf, index + 1, end_index, bt_table)
 
 					when BT_forward_slash then
 						Result := scan_end_tag (buf, index + 1, end_index, bt_table)
@@ -217,7 +217,7 @@ feature {NONE} -- Tag scanning
 		end
 
 	scan_attributes (
-		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER bt_table: SPECIAL [INTEGER]
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
 		attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 
 	): INTEGER
@@ -510,6 +510,8 @@ feature {NONE} -- Contract support
 	name_count (buf: SPECIAL [CHARACTER]; start_index: INTEGER): INTEGER
 		-- Byte count of the XML name starting at start_index.
 		-- Stops at first byte whose type is not a name-continuation type.
+		require
+			valid_start_index: start_index >= 0
 		local
 			index: INTEGER; done: BOOLEAN
 		do
@@ -533,6 +535,8 @@ feature {NONE} -- Contract support
 				end
 			end
 			Result := index - start_index
+		ensure
+			non_negative: Result >= 0
 		end
 
 feature {NONE} -- Implementation
@@ -559,7 +563,7 @@ feature {NONE} -- Deferred
 		deferred
 		end
 
-	scan_pi (buf: SPECIAL [CHARACTER]; bt_table: SPECIAL [INTEGER]; start_index, end_index: INTEGER): INTEGER
+	scan_pi (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
 		require
 			valid_range: start_index <= end_index

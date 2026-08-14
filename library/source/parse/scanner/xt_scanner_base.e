@@ -54,6 +54,8 @@ feature -- Access
 	last_colon_index: INTEGER
 
 	next_token_index: INTEGER
+		-- Index of the first byte after the token just scanned.
+		-- Invalid if the last call returned Tok_none or Tok_partial.
 
 feature -- Status report
 
@@ -141,8 +143,11 @@ feature -- Name-character predicates (2-byte UTF-8, U+0080..U+07FF)
 			-- overlong lead bytes that the table does not exclude.
 		require
 			valid_index: index + 1 < buf.count
+		local
+			b1: INTEGER
 		do
-			Result := buf [index].code < 0xC2
+			b1 := buf [index + 1].code
+			Result := buf [index].code < 0xC2 or else (b1 & 0x80) = 0 or else (b1 & 0xC0) = 0xC0
 		end
 
 feature -- Name-character predicates (3-byte UTF-8, U+0800..U+FFFF)
@@ -178,16 +183,33 @@ feature -- Name-character predicates (3-byte UTF-8, U+0800..U+FFFF)
 		end
 
 	is_invalid_char_3 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
-		-- Is the 3-byte sequence U+FFFE or U+FFFF (forbidden in XML)?
-		-- These are the only forbidden 3-byte codepoints: 0xEF 0xBF 0xBE/0xBF.
 		require
 			valid_index: index + 2 < buf.count
 		local
-			b2: INTEGER
+			b0, b1, b2: INTEGER
 		do
-			if buf [index].code = 0xEF and buf [index + 1].code = 0xBF then
-				b2 := buf [index + 2].code
-				Result := b2 = 0xBE or b2 = 0xBF
+			b0 := buf [index].code; b1 := buf [index + 1].code; b2 := buf [index + 2].code
+			inspect b2 & 0x80 when 0 then
+				Result := True
+			else
+				if b0 = 0xEF and b1 = 0xBF then
+					Result := b2 > 0xBD
+				elseif (b2 & 0xC0) = 0xC0 then
+					Result := True
+				end
+			end
+			if not Result then
+				inspect b0 when 0xE0 then
+					Result := b1 < 0xA0 or (b1 & 0xC0) = 0xC0
+				else
+					if (b1 & 0x80) = 0 then
+						Result := True
+					elseif b0 = 0xED then
+						Result := b1 > 0x9F
+					else
+						Result := (b1 & 0xC0) = 0xC0
+					end
+				end
 			end
 		end
 
@@ -210,12 +232,24 @@ feature -- Name-character predicates (4-byte UTF-8, U+10000..U+10FFFF)
 		end
 
 	is_invalid_char_4 (buf: SPECIAL [CHARACTER]; index: INTEGER): BOOLEAN
-			-- Is the 4-byte sequence beyond U+10FFFF?
-			-- Only b0=0xF4 can overflow; any b1 > 0x8F means cp > U+10FFFF.
 		require
 			valid_index: index + 3 < buf.count
+		local
+			b0, b1, b2, b3: INTEGER
 		do
-			Result := buf [index].code = 0xF4 and buf [index + 1].code > 0x8F
+			b0 := buf [index].code; b1 := buf [index + 1].code
+			b2 := buf [index + 2].code; b3 := buf [index + 3].code
+			if (b3 & 0x80) = 0 or (b3 & 0xC0) = 0xC0 or (b2 & 0x80) = 0 or (b2 & 0xC0) = 0xC0 then
+				Result := True
+			elseif b0 = 0xF0 then
+				Result := b1 < 0x90 or (b1 & 0xC0) = 0xC0
+			elseif (b1 & 0x80) = 0 then
+				Result := True
+			elseif b0 = 0xF4 then
+				Result := b1 > 0x8F
+			else
+				Result := (b1 & 0xC0) = 0xC0
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -264,6 +298,13 @@ feature {NONE} -- Implementation
 			-- end_index - index >= count * char_width  (HAS_CHARS macro)
 		do
 			Result := end_index - index >= count
+		end
+
+	new_bt_name (index: INTEGER): STRING
+		require
+			valid_index: BT_names_list.valid_index (index + 1)
+		do
+			Result := BT_names_list [index + 1]
 		end
 
 feature {NONE} -- Internal attributes
@@ -408,15 +449,15 @@ feature -- Constants
 			fill_ascii_half (Result)
 			-- 0x80-0xBF: continuation bytes
 			Result.fill_with (8, 128, 191)   -- BT_continuation_byte = 8
-			-- 0xC0-0xDF: 2-byte lead bytes (is_invalid_char_2 catches 0xC0, 0xC1)
+			-- 0xC0 .. 0xDF: 2-byte lead bytes (is_invalid_char_2 catches 0xC0, 0xC1)
 			Result.fill_with (5, 192, 223)   -- BT_lead_2_byte = 5
-			-- 0xE0-0xEF: 3-byte lead bytes
+			-- 0xE0 .. 0xEF: 3-byte lead bytes
 			Result.fill_with (6, 224, 239)   -- BT_lead_3_byte = 6
-			-- 0xF0-0xF4: 4-byte lead bytes
+			-- 0xF0 .. 0xF4: 4-byte lead bytes
 			Result.fill_with (7, 240, 244)   -- BT_lead_4_byte = 7
-			-- 0xF5-0xFD: not valid UTF-8 lead bytes
+			-- 0xF50xFD: not valid UTF-8 lead bytes
 			Result.fill_with (0, 245, 253)   -- BT_non_xml = 0
-			-- 0xFE-0xFF: malformed
+			-- 0xFE .. 0xFF: malformed
 			Result [254] := 1; Result [255] := 1   -- BT_malform = 1
 		end
 
