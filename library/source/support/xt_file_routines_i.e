@@ -44,7 +44,7 @@ feature {NONE} -- Implementation
 		-- PK\x05\x06 empty archive (End of Central Directory only)
 		-- PK\x07\x08 spanned/split archive
 		local
-			file: RAW_FILE; i: INTEGER
+			i: INTEGER
 		do
 			if read_file_header (file_path) = 4 and then File_header.starts_with (PK_string) then
 				from i := 3 until i > 8 or Result loop
@@ -82,7 +82,7 @@ feature {NONE} -- Implementation
 	read_file_header (file_path: PATH): INTEGER
 		-- Read file header into `File_header'
 		local
-			file: RAW_FILE; i: INTEGER
+			file: RAW_FILE
 		do
 			create file.make_with_path (file_path)
 			file.open_read

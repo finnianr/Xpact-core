@@ -87,7 +87,7 @@ feature -- Access
 			end
 		end
 
-	item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): STRING
+	item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like Default_string
 		-- UTF-8 encoded name
 		require
 			valid_range: start_index <= end_index
@@ -97,7 +97,7 @@ feature -- Access
 			i, j, bucket_count: INTEGER; bucket: like area.item
 			found: BOOLEAN;
 		do
-			Result := empty_string
+			Result := Default_string
 			inspect colon_index when 0 then
 				i := bucket_index (buffer, start_index, end_index)
 			else
@@ -135,7 +135,7 @@ feature -- Access
 				end
 			end
 		ensure
-			found_or_created: Result /= empty_string
+			found_or_created: Result /= Default_string
 			null_terminated: Result.area [Result.count] = '%U'
 		end
 
@@ -179,9 +179,9 @@ feature -- Basic operations
 			IO.put_new_line
 		end
 
-feature {XT_PARSING_BUFFERS} -- Implementation
+feature {NONE} -- Implementation
 
-	buffer_string_8 (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING_8
+	buffer_string_8 (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): like Default_string
 			-- Buffer bytes [start_index .. end_index) as a STRING_8.
 			-- UTF-8 bytes are copied as-is; correct on UTF-8 terminals.
 		local
@@ -189,8 +189,6 @@ feature {XT_PARSING_BUFFERS} -- Implementation
 		do
 			Result := s.new_substring (buffer, start_index, end_index)
 		end
-
-feature {NONE} -- Implementation
 
 	hash_index, bucket_index (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- very fast well distributed hash with only 3 components
@@ -262,9 +260,14 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
-	area: SPECIAL [SPECIAL [STRING]]
+	area: SPECIAL [like Default_bucket]
 
 feature {NONE} -- Constants
+
+	Default_string: STRING
+		once
+			create Result.make_empty
+		end
 
 	Golden_ratio: NATURAL = 2654435769
 

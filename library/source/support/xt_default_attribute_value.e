@@ -13,13 +13,16 @@ class
 	XT_DEFAULT_ATTRIBUTE_VALUE
 
 create
-	make
+	make_from_i_th
 
 feature {NONE} -- Initialization
 
-	make (a_name, a_value: STRING)
+	make_from_i_th (list: LIST [STRING]; i: INTEGER)
+		require
+			valid_name_index: list.valid_index (i)
+			valid_value_index: list.valid_index (i + 1)
 		do
-			name := a_name; value := a_value
+			name := list [i]; value := list [i + 1]
 		end
 
 feature -- Access

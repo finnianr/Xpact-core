@@ -30,7 +30,7 @@ feature -- Basic operations
 	copy_as_utf_8 (dest: SPECIAL [CHARACTER]; dest_index, n: INTEGER)
 		local
 			dest_full: BOOLEAN; ptr: POINTER; c_i: CHARACTER
-			i, i_final, j, remaining_count: INTEGER; s: XT_STRING_8_ROUTINES
+			i, i_final, j, remaining_count: INTEGER
 		do
 			ptr := area; i_final := count - 1
 			remaining_count := n

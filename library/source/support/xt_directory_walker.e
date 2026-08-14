@@ -50,7 +50,7 @@ feature -- Basic operations
 				elseif attached new_file_info (ptr) as info and then attached info.file_entry as path then
 					if info.is_directory then
 						sub_directory := new_directory (path)
-						if sub_directory /~ Tmp_path then
+						if sub_directory.directory_path /~ Tmp_path then
 							sub_directory.traverse (handler)
 						end
 					else

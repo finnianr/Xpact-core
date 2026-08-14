@@ -45,3 +45,16 @@ mandarin-names-and-text.xsl: eXpat passes = 2006; Xpact-core passes = 2654 (x1.3
 
 2026 11 AUG 9:25
 mandarin-names-and-text.xsl: eXpat passes = 2000; Xpact-core passes = 2683 (x1.34 to eXpat)
+
+2026 14 AUG 19:23
+mandarin-names-and-text.xsl: eXpat passes = 2003; Xpact-core passes = 2656 (x1.33 to eXpat)
+
+2026 14 AUG 19:24
+mandarin-names-and-text.xsl: eXpat passes = 1998; Xpact-core passes = 2663 (x1.33 to eXpat)
+
+2026 14 AUG 19:42
+mandarin-names-and-text.xsl: eXpat passes = 2009; Xpact-core passes = 2659 (x1.32 to eXpat)
+
+2026 14 AUG 19:43
+Removed XT_ATTRIBUTE_NAME_CACHE, slight difference in performance
+mandarin-names-and-text.xsl: eXpat passes = 2014; Xpact-core passes = 2618 (x1.30 to eXpat)

@@ -155,3 +155,10 @@ Legislation.xml: eXpat passes = 1285; Xpact-core passes = 1358 (x1.06 to eXpat)
 
 2026 11 AUG 9:25
 Legislation.xml: eXpat passes = 1285; Xpact-core passes = 1364 (x1.06 to eXpat)
+
+2026 14 AUG 19:24
+Legislation.xml: eXpat passes = 1256; Xpact-core passes = 1349 (x1.07 to eXpat)
+
+2026 14 AUG 19:43
+Removed XT_ATTRIBUTE_NAME_CACHE, slight difference in performance for this file
+Legislation.xml: eXpat passes = 1278; Xpact-core passes = 1339 (x1.05 to eXpat)

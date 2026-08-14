@@ -42,7 +42,7 @@ feature {NONE} -- Initialization
 						create attribute_array.make_empty (name_value_list.count // 2)
 						from i := 1 until i > name_value_list.count loop
 							if name_value_list.valid_index (i + 1) then
-								attribute_array.extend (create {XT_DEFAULT_ATTRIBUTE_VALUE}.make (name_value_list [i], name_value_list [i + 1]))
+								attribute_array.extend (create {XT_DEFAULT_ATTRIBUTE_VALUE}.make_from_i_th (name_value_list, i))
 							end
 							i := i + 2
 						end
@@ -82,5 +82,6 @@ feature -- Status query
 feature {NONE} -- Internal attributes
 
 	default_value_table: HASH_TABLE [SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE], STRING]
+		-- lookup default attribute values by tag name
 
 end

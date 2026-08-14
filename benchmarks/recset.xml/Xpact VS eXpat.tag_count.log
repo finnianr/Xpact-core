@@ -161,3 +161,10 @@ recset.xml: eXpat passes = 17; Xpact-core passes = 22 (x1.29 to eXpat)
 
 2026 11 AUG 9:26
 recset.xml: eXpat passes = 17; Xpact-core passes = 22 (x1.29 to eXpat)
+
+2026 14 AUG 19:24
+recset.xml: eXpat passes = 17; Xpact-core passes = 22 (x1.29 to eXpat)
+
+2026 14 AUG 19:43
+Removed XT_ATTRIBUTE_NAME_CACHE, no difference in performance
+recset.xml: eXpat passes = 17; Xpact-core passes = 22 (x1.29 to eXpat)

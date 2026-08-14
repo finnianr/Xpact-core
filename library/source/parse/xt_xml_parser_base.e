@@ -610,7 +610,7 @@ feature {NONE} -- Processor dispatch
 						inspect declaration
 							when Attlist then
 								if doctype_decl_stack.count = 2 then
-									on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
+									on_attribute_declaration_part (buf, index, tok_end - 1, token, names, s)
 								else
 									Result := Error_syntax; done := True
 								end
@@ -631,7 +631,7 @@ feature {NONE} -- Processor dispatch
 						inspect declaration
 							when Attlist then
 								if doctype_decl_stack.count = 2 then
-									on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, s, names)
+									on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, names, s)
 								else
 									Result := Error_syntax; done := True
 								end
@@ -650,7 +650,7 @@ feature {NONE} -- Processor dispatch
 					when Tok_pound_name then
 						inspect declaration
 							when Attlist then
-								on_attribute_declaration_part (buf, index, tok_end - 1, token, s, names)
+								on_attribute_declaration_part (buf, index, tok_end - 1, token, names, s)
 
 							when Element_, Entity_, Notation then
 								do_nothing -- for now
@@ -903,22 +903,15 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Event handlers
 
-	on_attribute_declaration_part (
-		buf: like buffer; start_index, end_index, token: INTEGER; s: like scanner; names: like name_cache
-	)
+	on_attribute_declaration_part (buf: like buffer; start_index, end_index, token: INTEGER; names: like name_cache; s: like scanner)
 		local
-			default_values_list: ARRAYED_LIST [STRING]; i, colon_index: INTEGER
+			default_values_list: ARRAYED_LIST [STRING]; colon_index: INTEGER; s8: XT_STRING_8_ROUTINES
 		do
 			inspect declaration_parts_list.count
 				when 0, 1 then
-					from i := start_index until i > end_index loop
-						if buf [i] = ':' then
-							colon_index := i
-							i := end_index -- break
-						end
-						i := i + 1
-					end
-					declaration_parts_list.extend (names.item (buf, start_index, end_index, colon_index))
+					colon_index := s8.index_of (buf, ':', start_index, end_index)
+					declaration_parts_list.extend (names.item (buf, start_index, end_index, colon_index.max (0)))
+
 				when 2 then
 					if s.same_characters (buf, start_index, end_index, CDATA_upper) then
 						declaration_parts_list.extend (CDATA_upper)
@@ -937,7 +930,7 @@ feature {NONE} -- Event handlers
 							default_values_list.extend (s.new_attribute_value (buf, start_index, end_index, s.newline_or_tab_found))
 						end
 					when Tok_pound_name then
-						declaration_parts_list.extend (names.item (buf, start_index, end_index, 0))
+						declaration_parts_list.extend (name_cache.item (buf, start_index, end_index, 0))
 
 				else
 				end
@@ -995,7 +988,7 @@ feature {NONE} -- Event handlers
 feature {NONE} -- Internal attributes
 
 	has_dtd_section: BOOLEAN
-		-- True if document has document type definition after DOCTYPE x [
+		-- True if prolog has document type definition (DTD) after DOCTYPE x [
 
 	element_context: XT_ELEMENT_CONTEXT
 

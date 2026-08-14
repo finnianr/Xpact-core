@@ -64,8 +64,8 @@ feature {NONE} -- Initialization
 
 			create scanner.make
 			attribute_intervals := scanner.attribute_intervals
-			entity_cache := attribute_intervals.entity_cache
 			name_cache := attribute_intervals.name_cache
+			entity_cache := attribute_intervals.entity_cache
 			entity_table := attribute_intervals.entity_table
 
 			set_defaults
@@ -114,6 +114,7 @@ feature -- Element change
 			set_defaults
 			attribute_intervals.wipe_out
 			attribute_value_defaults_table.wipe_out
+
 			if not encoded_chunk.is_utf_8 then
 				create {XT_UTF_8_CODEC} encoded_chunk.make_empty
 			end
@@ -384,7 +385,7 @@ feature {NONE} -- Internal structures
 		-- Eg. from DOCTYPE "-//W3C//DTD XHTML 1.0 Transitional//EN"
 
 	name_cache: XT_NAME_CACHE
-		-- efficient lookup of attribute/tag name
+		-- efficient lookup of tag names
 
 	new_line: SPECIAL [CHARACTER_8]
 
