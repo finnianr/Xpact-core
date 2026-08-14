@@ -45,6 +45,7 @@ feature {NONE} -- Initialization
 
 			is_final_buffer            := False
 			reparse_deferral_enabled   := True
+			has_dtd_section := False
 
 			handler_call_depth         := 0
 			last_buffer_request_size   := 0
@@ -700,6 +701,9 @@ feature {NONE} -- Processor dispatch
 					when Tok_decl_close then
 						inspect doctype_decl_stack.count when 1 then
 							doctype_decl_stack.remove_tail (1)
+							if not has_dtd_section and then not valid_doctype_declaration then
+								Result := Error_syntax; done := True
+							end
 						else
 							Result := Error_syntax; done := True
 						end
@@ -720,7 +724,12 @@ feature {NONE} -- Processor dispatch
 
 					when Tok_open_bracket then
 						if doctype_decl_stack.count = 1 then
-							in_section [Doctype_definition] := True
+							if valid_doctype_declaration then
+								in_section [Doctype_definition] := True
+								has_dtd_section := True
+							else
+								Result := Error_syntax; done := True
+							end
 						else
 							Result := Error_syntax; done := True
 						end
@@ -867,6 +876,31 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	valid_doctype_declaration: BOOLEAN
+		do
+			inspect declaration_parts_list.count
+				when 0 then
+					Result := False
+
+				when 1 then
+					if attached declaration_parts_list [1] as name
+						and then not (name = PUBLIC or name = SYSTEM)
+					then
+						Result := True
+					end
+
+				when 2, 3, 4 then
+					if declaration_parts_list [2] = PUBLIC then
+						Result := declaration_parts_list.count = 4
+
+					elseif declaration_parts_list [2] = SYSTEM then
+						Result := declaration_parts_list.count = 3
+					end
+			else
+				Result := False
+			end
+		end
+
 feature {NONE} -- Event handlers
 
 	on_attribute_declaration_part (
@@ -959,6 +993,9 @@ feature {NONE} -- Event handlers
 		end
 
 feature {NONE} -- Internal attributes
+
+	has_dtd_section: BOOLEAN
+		-- True if document has document type definition after DOCTYPE x [
 
 	element_context: XT_ELEMENT_CONTEXT
 

@@ -1,0 +1,63 @@
+Tested against eXpat
+Total passed: 3 (No failures)
+Files: 318791
+
+Total zipped archive packages: 456
+Extensions sorted in order of occurrence count (Highest first)
+
+<ott>: occurrences 79
+<msix>: occurrences 73
+<odt>: occurrences 65
+<dotx>: occurrences 42
+<ods>: occurrences 39
+<msixbundle>: occurrences 39
+<appx>: occurrences 29
+<otp>: occurrences 23
+<docx>: occurrences 21
+<ots>: occurrences 18
+<potx>: occurrences 8
+<xltx>: occurrences 7
+<xlam>: occurrences 5
+<odb>: occurrences 4
+<xlsx>: occurrences 2
+<appxbundle>: occurrences 1
+<otg>: occurrences 1
+
+Total XML files: 83456
+Extensions sorted in order of occurrence count (Highest first)
+
+<manifest>: occurrences 46367
+<mum>: occurrences 11948
+<svg>: occurrences 10517
+<xml>: occurrences 8603
+<html>: occurrences 3752
+<resw>: occurrences 432
+<config>: occurrences 337
+<adml>: occurrences 320
+<admx>: occurrences 294
+<xsd>: occurrences 210
+<xaml>: occurrences 194
+<resx>: occurrences 192
+<xsl>: occurrences 179
+<plist>: occurrences 45
+<targets>: occurrences 22
+<ruleset>: occurrences 12
+<x3d>: occurrences 10
+<wxs>: occurrences 3
+<odf>: occurrences 2
+<xslt>: occurrences 2
+<props>: occurrences 2
+<nuspec>: occurrences 2
+<odc>: occurrences 2
+<fodt>: occurrences 1
+<odg>: occurrences 1
+<msixbundle>: occurrences 1
+<appx>: occurrences 1
+<docx>: occurrences 1
+<odt>: occurrences 1
+<pptx>: occurrences 1
+<ods>: occurrences 1
+<odp>: occurrences 1
+
+Zero failures
+
