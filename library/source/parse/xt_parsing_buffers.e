@@ -58,7 +58,7 @@ feature {NONE} -- Initialization
 			create declaration_parts_list.make (10)
 			create attribute_value_defaults_table.make (37)
 			create new_line.make_filled ('%N', 1)
-			create {XT_UTF_8_CODEC} encoded_chunk.make_empty
+			create {XT_UTF_8_CODEC} codec.make_empty
 			create formal_public_identifier.make (40)
 			create DTD_uri.make (60)
 
@@ -75,7 +75,7 @@ feature {NONE} -- Initialization
 
 	set_defaults
 		do
-			encoding := 0
+			encoding := Unknown_encoding
 			parse_end_index := 0
 			position_index := 0
 			buffer_end := 0
@@ -94,6 +94,8 @@ feature -- Access
 		-- Total usable capacity of `buffer'.
 
 	encoding: NATURAL_8
+		-- actual encoding or encoding assumption which may or may not be what is declared
+		-- in <?xml ..
 
 	error_code: INTEGER
 		-- Most recent error (Error_none if none).
@@ -112,11 +114,12 @@ feature -- Element change
 	reset
 		do
 			set_defaults
+			attribute_intervals.set_permit_undefined_entities (False)
 			attribute_intervals.wipe_out
 			attribute_value_defaults_table.wipe_out
 
-			if not encoded_chunk.is_utf_8 then
-				create {XT_UTF_8_CODEC} encoded_chunk.make_empty
+			if not codec.is_utf_8 then
+				create {XT_UTF_8_CODEC} codec.make_empty
 			end
 			declaration_parts_list.wipe_out
 			entity_cache.reset
@@ -147,14 +150,24 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Implementation
 
+	character_width (a_encoding: INTEGER): INTEGER
+		do
+			inspect a_encoding
+				when UTF_16 then
+					Result := 2
+			else
+				Result := 1
+			end
+		end
+
 	set_encoding (chunk: XT_C_STRING_CODEC; byte_count: INTEGER)
 		-- check encoding in XML header calling `set_scanner (Latin_1)' if required
 		-- also check if document is actually XML or something weird
 		local
 			l_chunk: XT_UTF_8_CODEC; u: UTF_CONVERTER
-			found: BOOLEAN; declaration: STRING; l_encoding: NATURAL_8
+			found, assumed_utf_8: BOOLEAN; declaration: STRING; declared_encoding: NATURAL_8
 		do
-			if attached {XT_UTF_8_CODEC} encoded_chunk as str then
+			if attached {XT_UTF_8_CODEC} codec as str then
 				l_chunk := str
 			else
 				create l_chunk.make_empty
@@ -183,37 +196,32 @@ feature {NONE} -- Implementation
 					declaration.extend ('%U')
 					declaration := u.utf_16le_string_8_to_string_32 (declaration).to_string_8
 					encoding := Utf_16
+
+				elseif encoding = Unknown_encoding then
+					encoding := Utf_8; assumed_utf_8 := True
 				end
 				if declaration.starts_with (Xml_declaration) and then declaration.has_substring (Encoding_attribute) then
 					declaration.to_upper
-					l_encoding := encoding_id (declaration)
-					if l_encoding > 0 then
-						inspect encoding when 0 then
-						-- encoding not known but it's definitely not UTF-16
-							if l_encoding = Utf_16 then
-								error_code := Error_incorrect_encoding
-							else
-								encoding := l_encoding -- go with what declaration says
-							end
-						else
-						-- encoding already known
-							if encoding /= l_encoding then
-								error_code := Error_incorrect_encoding
-							end
-						end
+					declared_encoding := encoding_id (declaration)
+					if valid_encoding (declared_encoding) and then valid_encoding (encoding)
+						and then character_width (declared_encoding) /= character_width (encoding)
+					then
+						error_code := Error_incorrect_encoding
+
+					elseif valid_encoding (declared_encoding) and assumed_utf_8 then
+						encoding := declared_encoding
 					end
-				elseif encoding = 0 then
-					encoding := Utf_8 -- default
 				end
 				inspect encoding
 					when Ascii, Utf_8 then
 						do_nothing
 
 					when Utf_16 then
-						create {XT_UTF_16_CODEC} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
+						create {XT_UTF_16_CODEC} codec.make_shared (l_chunk.area, l_chunk.count)
 
 					when Latin_1 then
-						create {XT_LATIN_1_CODEC} encoded_chunk.make_shared (l_chunk.area, l_chunk.count)
+						create {XT_LATIN_1_CODEC} codec.make_shared (l_chunk.area, l_chunk.count)
+
 				else
 				end
 			end
@@ -342,6 +350,15 @@ feature {NONE} -- Implementation
 			end_non_negative:    buffer_end >= 0
 		end
 
+	valid_encoding (a_encoding: INTEGER): BOOLEAN
+		do
+			inspect a_encoding
+				when ASCII .. UTF_16 then
+					Result := True
+			else
+			end
+		end
+
 feature {NONE} -- Internal attributes
 
 	buffer_end: INTEGER
@@ -373,7 +390,7 @@ feature {NONE} -- Internal structures
 	DTD_uri: STRING
 		-- DOCTYPE eg.: http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd
 
-	encoded_chunk: XT_C_STRING_CODEC
+	codec: XT_C_STRING_CODEC
 
 	entity_table: XT_ENTITY_TABLE
 		-- table of expanded entities defined in DOCTYPE by ENTITY

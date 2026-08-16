@@ -38,7 +38,7 @@ feature -- Partial / error sentinels (negative or zero)
 			-- Token started but buffer ended before it could be completed.
 
 	Tok_invalid: INTEGER = 0
-			-- Ill-formed input detected; `bad_char_ptr` points at the byte.
+			-- Ill-formed input detected; `bad_char_index` points at the byte.
 
 feature -- Element content tokens (positive)
 

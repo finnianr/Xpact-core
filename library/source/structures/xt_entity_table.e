@@ -46,6 +46,10 @@ feature {NONE} -- Initialization
 			create output_buffer.make_empty
 		end
 
+feature -- Status report
+
+	undefined_entity_found: BOOLEAN
+
 feature -- Access
 
 	item (key: STRING; as_attribute_value: BOOLEAN): detachable STRING
@@ -81,30 +85,43 @@ feature -- Access
 			end
 		end
 
-	expanded_value (entity_list: LIST [STRING]; value: STRING; keep_ref: BOOLEAN): STRING
+	expanded_value (
+		buffer: SPECIAL [CHARACTER_8]; lower_index, upper_index: INTEGER; entity: SPECIAL [STRING]
+		keep_ref: BOOLEAN
+	): STRING
+		-- copy of `value' with any entities like &amp; expanded.
+		-- `undefined_entity_found' set to true if any were undefined
 		local
-			entity_index, start_index: INTEGER
+			amp_index, start_index, i: INTEGER; done, undefined_found: BOOLEAN
 		do
 			Result := output_buffer; Result.wipe_out
-			start_index := 1
-			across entity_list as entity loop
-				entity_index := value.substring_index (entity, start_index)
-				if entity_index > 0 then
-					Result.append_substring (value, start_index, entity_index - 1)
-					if attached item (entity, True) as entity_value then
-						Result.append (entity_value)
+			from i := 0; start_index := lower_index; amp_index := lower_index; done := False until done loop
+				amp_index := index_of (buffer, '&', start_index, upper_index)
+				if amp_index > -1 then
+					append_area (Result, buffer, start_index, amp_index - 1)
+					if i = entity.count then
+						append_area (Result, buffer, amp_index, upper_index)
+						done := True
+
+					elseif attached entity [i] as name
+						and then same_characters (buffer, amp_index, amp_index + name.count - 1, name)
+					then
+						if attached item (name, True) as entity_value then
+							Result.append (entity_value)
+						else
+							undefined_found := True
+						end
+						start_index := amp_index + name.count
+						i := i + 1
 					else
-						Result.append (entity)
+						start_index := amp_index + 1
 					end
-					start_index := entity_index + entity.count
+				else
+					append_area (Result, buffer, start_index, upper_index)
+					done := True
 				end
 			end
-			if start_index <= value.count then
-				Result.append_substring (value, start_index, value.count)
-			end
-			if keep_ref then
-				Result := Result.twin
-			end
+			undefined_entity_found := undefined_found
 		end
 
 feature -- Comparison
@@ -114,42 +131,6 @@ feature -- Comparison
 			--| Default implementation is using ~.
 		do
 			Result := a_search_key = a_key
-		end
-
-feature -- Basic operations
-
-	mix_in_values_to_crc_32 (
-		checksum: EL_CRC_32_DIGEST; buffer: SPECIAL [CHARACTER_8]; entity_list: LIST [STRING]
-		lower_index, upper_index: INTEGER
-	)
-		-- expand entities defined in DOCTYPE for attribute value between `lower_index' and `upper_index'
-		local
-			amp_index, start_index: INTEGER; done: BOOLEAN
-		do
-			from entity_list.start; start_index := lower_index; amp_index := lower_index; done := False until done loop
-				amp_index := index_of (buffer, '&', start_index, upper_index)
-				if amp_index > -1 then
-					checksum.add_characters (buffer, start_index, amp_index - 1)
-					if entity_list.after then
-						checksum.add_characters (buffer, amp_index, upper_index)
-						done := True
-
-					elseif attached entity_list.item as str
-						and then same_characters (buffer, amp_index, amp_index + str.count - 1, str)
-					then
-						if attached item (entity_list.item, True) as entity_value then
-							checksum.add_string (entity_value)
-						end
-						start_index := amp_index + entity_list.item.count
-						entity_list.forth
-					else
-						start_index := amp_index + 1
-					end
-				else
-					checksum.add_characters (buffer, start_index, upper_index)
-					done := True
-				end
-			end
 		end
 
 feature -- Element change

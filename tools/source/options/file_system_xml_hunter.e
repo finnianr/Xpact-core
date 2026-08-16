@@ -34,7 +34,7 @@ feature {NONE} -- Initialization
 		do
 			resume_at_count := a_resume_at_count
 
-			if is_windows_device (dir_path) then
+			if Environment.is_path_ntfs (dir_path) then
 				create {XT_WINDOWS_DIRECTORY_WALKER} directory.make_root_with_path (dir_path)
 			else
 				create directory.make_with_path (dir_path)
@@ -139,23 +139,6 @@ feature {NONE} -- Implementation
 					occurrence_table.put (extension)
 				end
 			end
-		end
-
-	is_windows_device (dir_path: PATH): BOOLEAN
-		local
-			name_parts: LIST [STRING]
-		do
-			name_parts := dir_path.name.to_string_8.split ('/')
-			name_parts.compare_objects
-			if name_parts.count > 3 then
-				Result := Mount_names.has (name_parts [2]) and then name_parts.has ("Windows")
-			end
-		end
-
-	Mount_names: ARRAY [STRING]
-		once
-			Result := << "media", "mnt" >>
-			Result.compare_objects
 		end
 
 	new_xml_extensions: STRING

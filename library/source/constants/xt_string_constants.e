@@ -21,13 +21,31 @@ feature {NONE} -- Standard strings
 			Result := CDATA + "["
 		end
 
+	Xml_lower: STRING = "xml"
+
+	Xml_declaration: STRING = "<?xml"
+
+	Comment_declaration: STRING = "<!--"
+
+feature {NONE} -- Document definition strings
+
 	Document_definition_names: LIST [STRING]
+		local
+			s: XT_STRING_8_ROUTINES
 		once
-			Result := ("ATTLIST,DOCTYPE,ELEMENT,ENTITY,NOTATION").split (',')
+			Result := s.to_list ("ATTLIST, DOCTYPE, ELEMENT, ENTITY, NOTATION", ',')
 			Result.compare_objects
 		ensure
 			valid_first: Result [{XT_PARSE_CONSTANTS}.Attlist] ~ "ATTLIST"
 			valid_last: Result [{XT_PARSE_CONSTANTS}.Notation] ~ "NOTATION"
+		end
+
+	Common_starts_with: LIST [STRING]
+		-- common leading strings at start of document after initial white space
+		local
+			s: XT_STRING_8_ROUTINES
+		once
+			Result := s.to_list ("<?xml, <!DOC, <!--", ',')
 		end
 
 	Http: STRING = "http"
@@ -36,11 +54,24 @@ feature {NONE} -- Standard strings
 
 	SYSTEM: STRING = "SYSTEM"
 
-	Xml_lower: STRING = "xml"
+	Unknown_id: STRING = "Unknown"
 
-	Xml_declaration: STRING = "<?xml"
+	Valid_external_id_list: ARRAY [STRING]
+		once
+			Result := << PUBLIC, SYSTEM >>
+		end
 
-	Comment_declaration: STRING = "<!--"
+feature {NONE} -- XML declaration
+
+	Encoding_attribute: STRING = "encoding"
+
+	Standalone_attribute: STRING = "standalone"
+
+	Valid_yes_no: ARRAY [STRING]
+		once
+			Result := << "yes", "no" >>
+			Result.compare_objects
+		end
 
 feature {NONE} -- Predefined entities
 
@@ -98,7 +129,8 @@ feature {NONE} -- Constants
 				Pipe symbol
 			]").split ('%N')
 		ensure
-			aligned_with_bt_value: Result [{XT_BYTE_TYPE_CONSTANTS}.BT_pipe_symbol + 1] ~ "Pipe symbol"
+			valid_start_index: Result [{XT_BYTE_TYPE_CONSTANTS}.Bt_non_xml + 1] ~ "Non xml"
+			valid_end_index: Result [{XT_BYTE_TYPE_CONSTANTS}.BT_pipe_symbol + 1] ~ "Pipe symbol"
 		end
 
 end

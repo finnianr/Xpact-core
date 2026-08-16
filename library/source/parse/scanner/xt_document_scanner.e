@@ -33,8 +33,6 @@ inherit
 			{XT_PARSING_BUFFERS} scan_name
 		end
 
-	XT_LITERAL_SCANNER
-
 create
 	make
 
@@ -92,6 +90,87 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 		end
 
 feature -- Name utilities (implements XT_ENCODING deferred features)
+
+	entity_value_tok (
+		buf: SPECIAL [CHARACTER] start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]
+	): INTEGER
+			-- Tokenize inside an entity value literal.
+			-- Corresponds to entityValueTok() in xmltok_impl.c.
+		require
+			valid_range: start_index <= end_index and end_index <= buf.count
+		local
+			index, start, byte_count, bt_code: INTEGER; done: BOOLEAN
+		do
+			index := start_index; start := index
+			if index >= end_index then
+				Result := Tok_none
+
+			else
+				from until index >= end_index or done loop
+					bt_code := bt_table [buf [index].code]
+					inspect bt_code
+						when BT_non_xml, BT_malform, BT_continuation_byte then
+							next_token_index := index; Result := Tok_invalid; done := True
+
+						when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+							byte_count := bt_code - 3
+							if end_index - index < byte_count then
+								Result := Tok_partial_char; done := True
+
+							elseif is_invalid_character (buf, index, byte_count) then
+								next_token_index := index
+								Result := Tok_invalid; done := True
+							else
+								index := index + byte_count
+							end
+						when BT_ampersand then
+							if index = start then
+								Result := scan_ref (buf, Tok_literal, index + 1, end_index, bt_table, entity_buffer)
+							else
+								next_token_index := index; Result := Tok_data_chars
+							end
+							done := True
+						when BT_percent then
+							if index = start then
+								-- % starts a parameter entity reference inside entity values
+								-- treat as invalid here (caller
+								-- (should use prolog scanner)
+								next_token_index := index; Result := Tok_invalid
+							else
+								next_token_index := index; Result := Tok_data_chars
+							end
+							done := True
+						when BT_LF then
+							if index = start then
+								next_token_index := index + 1; Result := Tok_data_newline
+							else
+								next_token_index := index; Result := Tok_data_chars
+							end
+							done := True
+						when BT_CR then
+							if index = start then
+								index := index + 1
+								if index >= end_index then
+									Result := Tok_trailing_CR
+								else
+									inspect bt_table [buf [index].code] when BT_LF then
+										index := index + 1
+									end
+									next_token_index := index; Result := Tok_data_newline
+								end
+							else
+								next_token_index := index; Result := Tok_data_chars
+							end
+							done := True
+					else
+						index := index + 1
+					end
+				end
+				if not done then
+					next_token_index := index; Result := Tok_data_chars
+				end
+			end
+		end
 
 	skip_whitespace (buf: SPECIAL [CHARACTER]; start_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 			-- Index of first non-whitespace byte at or after start_index.
@@ -211,13 +290,5 @@ feature -- Position tracking
 				index := index + 1
 			end
 		end
-
-feature {NONE} -- Internal attributes
-
-	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
-		-- collected attribute name-value pair indices into `buffer'
-
-	bad_char_index: INTEGER
-			-- Set by `is_public_id' on failure: index of the bad character.
 
 end

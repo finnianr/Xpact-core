@@ -29,13 +29,16 @@ inherit
 
 feature {NONE} -- Reference scanning
 
-	scan_ref (buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]): INTEGER
+	scan_ref (
+		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		entity_buffer: LIST [STRING]
+	): INTEGER
 			-- Scan entity or character reference after '&'.
-			-- Sets next_token_ptr.  Returns Tok_entity_ref, Tok_char_ref, or error.
+			-- Sets next_token_index.  Returns Tok_entity_ref, Tok_char_ref, or error.
 		require
 			valid_range: start_index <= end_index
 		local
-			index, bt_code, byte_count: INTEGER
+			index, bt_code, byte_count: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			if index >= end_index then
@@ -47,7 +50,7 @@ feature {NONE} -- Reference scanning
 						Result := scan_char_ref (buf, token, index + 1, end_index, bt_table, entity_buffer)
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
-						from until index >= end_index loop
+						from until index >= end_index or done loop
 							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 									index := index + 1
@@ -57,14 +60,14 @@ feature {NONE} -- Reference scanning
 										entity_buffer.extend (entity_cache.item (buf, start_index, index - 1))
 									else end
 									Result := Tok_entity_ref
-									index := end_index  -- exit loop
+									done := True  -- exit loop
 								else
 									next_token_index := index
 									Result := Tok_invalid
-									index := end_index  -- exit loop
+									done := True  -- exit loop
 								end
 						end
-						if Result = 0 then
+						if Result = Tok_invalid and not done then
 							Result := Tok_partial
 						end
 					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
@@ -85,23 +88,27 @@ feature {NONE} -- Reference scanning
 			end
 		end
 
-	scan_char_ref (buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]): INTEGER
+	scan_char_ref (
+		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		entity_buffer: LIST [STRING]
+	): INTEGER
 			-- Scan character reference after '&#'.  Returns Tok_char_ref or error.
-		require start_index <= end_index
+		require
+			valid_range: start_index <= end_index
 		local
-			index: INTEGER
+			index: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			if index >= end_index then
 				Result := Tok_partial
 			elseif buf [index] = 'x' then
-				Result := scan_hex_char_ref (buf, token, index + 1, end_index, entity_buffer)
+				Result := scan_hex_char_ref (buf, token, index + 1, end_index, bt_table, entity_buffer)
 
 			else
 				inspect bt_table [buf [index].code]
 					when BT_digit then
 						index := index + 1
-						from until index >= end_index loop
+						from until index >= end_index or done loop
 							inspect bt_table [buf [index].code]
 								when BT_digit then
 									index := index + 1
@@ -110,15 +117,13 @@ feature {NONE} -- Reference scanning
 									inspect token when Tok_attribute_value_s then
 										entity_buffer.extend (entity_cache.item (buf, start_index - 1, index - 1))
 									else end
-									Result := Tok_char_ref
-									index := end_index
+									Result := Tok_char_ref; done := True
 							else
 								next_token_index := index
-								Result := Tok_invalid
-								index := end_index
+								Result := Tok_invalid; done := True
 							end
 						end
-						if Result = 0 then
+						if Result = Tok_invalid and not done then
 							Result := Tok_partial
 						end
 				else
@@ -128,21 +133,24 @@ feature {NONE} -- Reference scanning
 			end
 		end
 
-	scan_hex_char_ref (buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; entity_buffer: LIST [STRING]): INTEGER
+	scan_hex_char_ref (
+		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		entity_buffer: LIST [STRING]
+	): INTEGER
 			-- Scan hex character reference after '&#x'.  Returns Tok_char_ref or error.
 		require start_index <= end_index
 		local
-			index, bt: INTEGER
+			index, bt: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			if index >= end_index then
 				Result := Tok_partial
 
-			elseif attached byte_type_table as bt_table then
+			else
 				bt := bt_table [buf [index].code]
 				if bt = BT_digit or bt = BT_hex_digit then
 					index := index + 1
-					from until index >= end_index loop
+					from until index >= end_index or done loop
 						bt := bt_table [buf [index].code]
 						if bt = BT_digit or bt = BT_hex_digit then
 							index := index + 1
@@ -151,17 +159,15 @@ feature {NONE} -- Reference scanning
 							inspect token when Tok_attribute_value_s then
 								entity_buffer.extend (entity_cache.item (buf, start_index - 2, index - 1))
 							else end
-							Result := Tok_char_ref
-							index := end_index
+							Result := Tok_char_ref; done := True
 						else
 							next_token_index := index
-							Result := Tok_invalid
-							index := end_index
+							Result := Tok_invalid; done := True
 						end
 					end
-					if Result = 0 then
-					Result := Tok_partial
-				end
+					if Result = Tok_invalid and not done then
+						Result := Tok_partial
+					end
 				else
 					next_token_index := index
 					Result := Tok_invalid
@@ -174,24 +180,22 @@ feature {NONE} -- Reference sub-helper
 	scan_ref_name_tail (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 			-- Continue scanning after a valid nmstrt multi-byte start.
 		local
-			index: INTEGER
+			index: INTEGER; done: BOOLEAN
 		do
 			index := start_index
-			from until index >= end_index loop
+			from until index >= end_index or done loop
 				inspect bt_table [buf [index].code]
 					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 						index := index + 1
 					when BT_semicolon then
 						next_token_index := index + 1
-						Result := Tok_entity_ref
-						index := end_index
+						Result := Tok_entity_ref; done := True
 				else
 					next_token_index := index
-					Result := Tok_invalid
-					index := end_index
+					Result := Tok_invalid; done := True
 				end
 			end
-			if Result = 0 then
+			if Result = Tok_invalid and not done then
 				Result := Tok_partial
 			end
 		end

@@ -35,6 +35,33 @@ feature -- Access
 
 feature -- Status query
 
+	is_path_ntfs (dir_path: PATH): BOOLEAN
+		-- `True' if `dir_path' is on NTFS file system
+		local
+			find_ntfs_command: XT_COMMAND_OUTPUT_FILE; empty_array: ARRAY [ANY]
+			index_root_slash: INTEGER; done: BOOLEAN
+		do
+			create empty_array.make_empty
+			create find_ntfs_command.make_with_output ("lsblk -f | grep -i ntfs", empty_array)
+			if attached find_ntfs_command as ntfs and then ntfs.has_output then
+				from until done loop
+					ntfs.read_line
+					if ntfs.end_of_file then
+						done := True
+
+					elseif attached ntfs.last_string as line then
+						index_root_slash := line.index_of ('/', 1)
+						if index_root_slash > 0 and then attached line.substring (index_root_slash, line.count) as mount_path then
+							if dir_path.name.starts_with_general (mount_path) then
+								Result := True; done := True
+							end
+						end
+					end
+				end
+				ntfs.cleanup
+			end
+		end
+
 	file_exists (path: PATH; a_medium: detachable IO_MEDIUM): BOOLEAN
 		do
 			File.reset_path (path)

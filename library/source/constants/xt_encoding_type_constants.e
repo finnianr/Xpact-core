@@ -22,14 +22,14 @@ feature {NONE} -- Constants
 
 	Utf_16: NATURAL_8 = 4
 
+	Unknown_encoding: NATURAL_8 = 0
+
 	Encoding_names_upper: LIST [STRING]
 		local
 			s: XT_STRING_8_ROUTINES
 		once
 			Result := s.to_list ("US-ASCII, ISO-8859-1, UTF-8, UTF-16", ',')
 		end
-
-	Encoding_attribute: STRING = "encoding"
 
 	Valid_encoding_list: STRING = "UTF-8, UTF-16, UTF-16BE, UTF-16LE, ISO-8859-1, US-ASCII"
 

@@ -73,4 +73,10 @@ feature -- Basic operations
 			utf_8_copied_count := j - dest_index
 		end
 
+feature -- Factory
+
+	new_validating: XT_VALIDATING_UTF_8_CODEC
+		do
+			create Result.make_shared (area, count)
+		end
 end

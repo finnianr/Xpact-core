@@ -226,7 +226,7 @@ feature {NONE} -- Tag scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, bt_code, byte_count, l_last_colon_index: INTEGER; done: BOOLEAN
+			index, bt_code, byte_count, l_last_colon_index, error: INTEGER; done: BOOLEAN
 			index_buffer: SPECIAL [INTEGER]; entity_buffer: like scanned_entity_buffer
 		do
 			index := start_index; index_buffer := index_x4_buffer
@@ -280,7 +280,13 @@ feature {NONE} -- Tag scanning
 								attributes.wipe_out; index_buffer.wipe_out; entity_buffer.wipe_out
 						else
 							inspect index_buffer.count when 4 then
-								attributes.transfer (buf, index_buffer, l_last_colon_index, entity_buffer)
+								error := attributes.transfer (buf, index_buffer, l_last_colon_index, entity_buffer)
+								inspect error when 0 then
+									do_nothing
+								else
+									error_code := error
+									Result := tok_start_tag_with_attributes.opposite; done := True
+								end
 							else
 								index_buffer.wipe_out
 							end
@@ -435,7 +441,7 @@ feature {NONE} -- Tag sub-helpers
 			-- close quote.  Sets next_token_ptr past the closing quote.
 			-- Returns 0 (caller should continue) or a non-zero error/end token code.
 		local
-			index, opening_quote: INTEGER; done, closed: BOOLEAN
+			index, opening_quote, byte_count, bt_code: INTEGER; done, closed: BOOLEAN
 		do
 			index := start_index
 			-- skip to opening quote
@@ -456,7 +462,8 @@ feature {NONE} -- Tag sub-helpers
 				index := index + 1  -- skip opening quote
 				lower_upper.extend (index)
 				from until index >= end_index or closed loop
-					inspect bt_table [buf [index].code]
+					bt_code := bt_table [buf [index].code]
+					inspect bt_code
 						when BT_quote then
 							inspect opening_quote
 								when BT_quote then
@@ -493,6 +500,20 @@ feature {NONE} -- Tag sub-helpers
 							else end
 							index := index + 1
 
+						when BT_non_xml, BT_malform, BT_continuation_byte then
+							next_token_index := index; Result := Tok_invalid; closed := True
+
+						when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+							byte_count := bt_code - 3
+							if end_index - index < byte_count then
+								Result := Tok_partial_char; closed := True
+
+							elseif is_invalid_character (buf, index, byte_count) then
+								next_token_index := index
+								Result := Tok_invalid; closed := True
+							else
+								index := index + byte_count
+							end
 					else
 						index := index + 1
 					end

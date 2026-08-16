@@ -19,8 +19,6 @@ deferred class XT_PI_COMMENT_SCANNER
 inherit
 	XT_SCANNER_BASE
 
-	XT_STRING_CONSTANTS
-
 feature {NONE} -- PI and comment scanning
 
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
@@ -94,7 +92,7 @@ feature {NONE} -- PI and comment scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, token, bt_code, byte_count: INTEGER; target_start: INTEGER; done: BOOLEAN
+			index, token, bt_code, byte_count, error: INTEGER; target_start: INTEGER; done: BOOLEAN
 			lower_upper: SPECIAL [INTEGER]
 		do
 			index := start_index; lower_upper := index_x4_buffer
@@ -106,6 +104,9 @@ feature {NONE} -- PI and comment scanning
 				inspect bt_code
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
+
+					when BT_non_xml, BT_malform, BT_continuation_byte then
+						next_token_index := index; Result := Tok_invalid; done := True
 
 					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
 						byte_count := bt_code - 3
@@ -135,8 +136,9 @@ feature {NONE} -- PI and comment scanning
 										Result := scan_pi_content (buf, index + 1, end_index, token, bt_table, lower_upper); done := True
 										inspect lower_upper.count when 4 then
 										-- 0 for `colon_index' argument
-											attribute_intervals.transfer (buf, lower_upper, 0, scanned_entity_buffer)
-										else end
+											error := attribute_intervals.transfer (buf, lower_upper, 0, scanned_entity_buffer)
+										else
+										end
 									else
 										Result := scan_pi_content (buf, index + 1, end_index, token, bt_table, lower_upper); done := True
 									end

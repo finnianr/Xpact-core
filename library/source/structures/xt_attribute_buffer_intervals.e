@@ -22,6 +22,18 @@ inherit
 			copy, is_equal
 		end
 
+	XT_STRING_CONSTANTS
+		undefine
+			copy, is_equal
+		end
+
+	XT_PARSE_ERROR_CONSTANTS
+		export
+			{NONE} all
+		undefine
+			copy, is_equal
+		end
+
 create
 	make
 
@@ -38,6 +50,15 @@ feature -- Status query
 			end
 		end
 
+	standalone_value (buffer: SPECIAL [CHARACTER_8]): STRING
+		do
+			if attached item_value (buffer, Standalone_attribute, False) as value then
+				Result := value
+			else
+				Result := Valid_yes_no [2]
+			end
+		end
+
 	is_valid_count: BOOLEAN
 		-- `index_count' is multiple of `Interval_count'
 		do
@@ -46,6 +67,8 @@ feature -- Status query
 
 	is_null_terminated: BOOLEAN
 		-- `True' if `null_terminate_values' was called
+
+	permit_undefined_entities: BOOLEAN
 
 	swap_area_big_enough: BOOLEAN
 		do
@@ -176,6 +199,11 @@ feature -- Status change
 			newline_or_tab_found := True
 		end
 
+	set_permit_undefined_entities (yes: BOOLEAN)
+		do
+			permit_undefined_entities := yes
+		end
+
 feature -- Measurement
 
 	count: INTEGER
@@ -247,7 +275,6 @@ feature -- Basic operations
 			attribute_: XT_DEFAULT_ATTRIBUTE_VALUE
 		do
 			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
-				and then attached entity_refs_area as entity_refs and then attached entity_table as table
 				and then attached name_area as l_name_area
 			then
 				from i := 0; i_final := a.count until i = i_final loop
@@ -257,11 +284,7 @@ feature -- Basic operations
 					buffer := i_th_value (i, a_buffer, overflow_area)
 
 					lower_index := a [i]; upper_index := a [i + 1]
-					if attached entity_refs [i // Interval_count] as entity_list then
-						table.mix_in_values_to_crc_32 (checksum, buffer, entity_list, lower_index, upper_index)
-					else
-						checksum.add_characters (buffer, lower_index, upper_index)
-					end
+					checksum.add_characters (buffer, lower_index, upper_index)
 					i := i + Interval_count
 				end
 			-- Add default values for unchecked
@@ -295,6 +318,7 @@ feature -- Basic operations
 						if attached pool.borrow_item (l_count) as l_buffer then
 							l_buffer.wipe_out
 							l_buffer.copy_data (buffer, lower_index, 0, l_count)
+							l_buffer.extend ('%U')
 							overflow [i // 2] := l_buffer
 						end
 					else
@@ -308,15 +332,15 @@ feature -- Basic operations
 			all_valid: all_valid
 		end
 
-	transfer (buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER; entity_list: ARRAYED_LIST [STRING])
+	transfer (buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER; entity_list: ARRAYED_LIST [STRING]): INTEGER
 		-- transfer contents of `additions' into `area' and contents of `entity_list'
 		-- into `entity_refs_area'
 		require
 			full_buffer: additions.count = Interval_count * 2
 			valid_intervals: valid_intervals (additions)
 		local
-			i, new_capacity: INTEGER; l_area: like area_v2; overflow: like overflow_buffer_area
-			l_name_area: like name_area; name: STRING
+			i, new_capacity, value_count: INTEGER; l_area: like area_v2; overflow: like overflow_buffer_area
+			l_name_area: like name_area; expanded_value, name: STRING
 		do
 			l_area := area_v2; overflow := overflow_buffer_area; l_name_area := name_area
 			i := l_area.count + Interval_count
@@ -334,7 +358,6 @@ feature -- Basic operations
 				overflow_buffer_area := overflow
 				l_name_area := l_name_area.aliased_resized_area (new_capacity // Interval_count)
 				name_area := l_name_area
-				entity_refs_area := entity_refs_area.aliased_resized_area (new_capacity // Interval_count)
 				character_swap_area := character_swap_area.aliased_resized_area_with_default ('%U', new_capacity // Interval_count)
 			end
 			if newline_or_tab_found then
@@ -343,31 +366,37 @@ feature -- Basic operations
 				newline_or_tab_found := False
 			end
 			name := name_cache.item (buffer, additions [0], additions [1], colon_index)
-			check_for_duplicate_name (name, l_name_area)
-			l_name_area.extend (name)
-			l_area.copy_data (additions, 2, l_area.count, Interval_count)
-			overflow.extend (Void)
-
-			if entity_list.count > 0 and then attached entity_refs_pool as pool then
-				if pool.count > 0 and then attached pool.item as pool_entity_buffer then
-					pool.remove
-					check
-						is_empty_buffer: pool_entity_buffer.is_empty
-					end
-					pool_entity_buffer.append (entity_list)
-					entity_refs_area.extend (pool_entity_buffer)
-				else
-					entity_refs_area.extend (entity_list.twin)
-				end
+			if has_duplicate_name (name, l_name_area) then
+				Result := Error_duplicate_attribute
 			else
-				entity_refs_area.extend (Void)
+				l_name_area.extend (name)
+				if entity_list.count > 0 then
+					expanded_value := entity_table.expanded_value (buffer, additions [2], additions [3], entity_list.area, False)
+					value_count := expanded_value.count
+
+					if entity_table.undefined_entity_found and then not permit_undefined_entities then
+						Result := Error_undefined_entity
+					else
+						if attached buffer_pool.borrow_item (value_count) as l_buffer
+							and then attached expanded_value.area as value_area
+						then
+							l_buffer.wipe_out
+							l_buffer.copy_data (value_area, 0, 0, value_count + 1) -- include '%U' terminator
+							overflow.extend (l_buffer)
+							additions [2] := 0; additions [3] := value_count - 1
+						end
+					end
+				else
+					overflow.extend (Void)
+				end
+				l_area.copy_data (additions, 2, l_area.count, Interval_count)
 			end
 			additions.wipe_out; entity_list.wipe_out
 		ensure
 			all_valid: all_valid
 			empty_additions_buffer: additions.count = 0
 			empty_entity_list_buffer: entity_list.count = 0
-			cr_lf_tab_reset: not newline_or_tab_found
+			newline_or_tab_reset: not newline_or_tab_found
 		end
 
 feature -- Debug helpers
@@ -483,11 +512,7 @@ feature -- Conversion
 				from i := 0; i_final := a.count until i = i_final loop
 					buffer := i_th_value (i, a_buffer, overflow_area)
 					if attached area_substring (buffer, a [i], a [i + 1], True) as value then
-						if attached entity_refs_area [i // Interval_count] as entity_list then
-							Result.put (entity_table.expanded_value (entity_list, value, True), l_name_area [i // 2])
-						else
-							Result.put (value.twin, l_name_area [i // 2]) -- must make a twin
-						end
+						Result.put (value.twin, l_name_area [i // 2]) -- must make a twin
 					end
 					check
 						not_duplicate_name: Result.inserted
@@ -504,13 +529,13 @@ feature -- Conversion
 
 feature {NONE} -- Implementation
 
-	check_for_duplicate_name (name: STRING; a_name_area: like name_area)
+	has_duplicate_name (name: STRING; a_name_area: like name_area): BOOLEAN
 		local
 			i, i_final: INTEGER
 		do
-			from i := 0; i_final := a_name_area.count until i = i_final loop
+			from i := 0; i_final := a_name_area.count until i = i_final or Result loop
 				if a_name_area [i] = name then
-					has_duplicate_name := True
+					Result := True
 				end
 				i := i + 1
 			end

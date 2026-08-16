@@ -32,6 +32,10 @@ feature -- Status query
 		do
 		end
 
+	not_well_formed: BOOLEAN
+		do
+		end
+
 	pending_CR: BOOLEAN
 		-- `True' if previous content ended with '%R'
 

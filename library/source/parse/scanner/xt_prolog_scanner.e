@@ -162,8 +162,59 @@ feature -- Prolog tokenization
 
 feature -- Status query
 
+	is_plausible_xml (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): BOOLEAN
+		-- `True' if characters from `start_index' to `end_index' are plausibly the start of an XML document
+		local
+			i, j, bt_code, byte_count: INTEGER; found_lt, found, name_start_expected: BOOLEAN
+		do
+			i := start_index; newline_or_tab_found := False
+			Result := True
+		-- Skip white space until '<' found
+			from until i >= end_index or found_lt or not Result loop
+				if buf [i] = '<' then
+					found_lt := True
+
+				elseif not buf [i].is_space then
+					Result := False
+				else
+					i := i + 1
+				end
+			end
+			if Result and found_lt then
+				check
+					i_th_character_is_lt: buf [i] = '<'
+				end
+				Result := i + 4 <= end_index -- enough room for "<!DOC" or 4 byte UTF-8 sequence
+				if Result then
+					from j := 1 until j > Common_starts_with.count or found loop
+						if starts_with (buf, i, Common_starts_with [j]) then
+							found := True
+						else
+							j := j + 1
+						end
+					end
+					if not found then
+					-- check if start of tag
+						i := i + 1
+						bt_code := bt_table [buf [i].code]
+						inspect bt_code
+							when BT_name_start, BT_hex_digit then
+								do_nothing
+
+							when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
+								byte_count := bt_code - 3
+								Result := not is_invalid_character (buf, i, byte_count)
+
+						else
+							Result := False
+						end
+					end
+				end
+			end
+		end
+
 	has_syntax_error (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): BOOLEAN
-		-- Return the next prolog/DTD token.  Sets next_token_index.
+		-- `True' if characters in `buf' from `start_index' to `end_index' appear to have a syntax error
 		require
 			valid_range: start_index <= end_index and end_index <= buf.count
 		local
@@ -515,6 +566,9 @@ feature {NONE} -- Prolog sub-scanners
 				inspect bt_code
 					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus, BT_colon then
 						index := index + 1
+
+					when BT_non_xml, BT_malform, BT_continuation_byte then
+						next_token_index := index; Result := Tok_invalid; done := True
 
 					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
 						byte_count := bt_code - 3

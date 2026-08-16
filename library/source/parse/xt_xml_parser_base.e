@@ -44,6 +44,7 @@ feature {NONE} -- Initialization
 			status 							:= 0
 
 			is_final_buffer            := False
+			is_standalone     	      := False
 			reparse_deferral_enabled   := True
 			has_dtd_section := False
 
@@ -78,7 +79,9 @@ feature -- Access
 feature -- Status query
 
 	is_final_buffer: BOOLEAN
-			-- Was the current parse call marked as the last chunk?
+		-- Was the current parse call marked as the last chunk?
+
+	is_standalone: BOOLEAN
 
 feature -- Basic operations
 
@@ -120,7 +123,7 @@ feature -- Basic operations
 
 					inspect error_code when Error_none then
 						parsing_state := State_initialized
-						Result := parse (encoded_chunk, 0, encoded_chunk.count, a_is_final) -- Recurse
+						Result := parse (codec, 0, codec.count, a_is_final) -- Recurse
 					else
 						status := Status_error
 					end
@@ -134,14 +137,14 @@ feature -- Basic operations
 					Result := Status_error
 			else
 			-- State_initialized or State_parsing
-				if encoded_chunk /= chunk then
-					encoded_chunk.make_shared (chunk.area, a_count)
+				if codec /= chunk then
+					codec.make_shared (chunk.area, a_count)
 				end
 				parsing_state := State_parsing
 				if not call_on_start_parsing then
 					Result := Status_error
 
-				elseif not prepare_buffer (encoded_chunk.character_count) then
+				elseif not prepare_buffer (codec.character_count) then
 					Result := Status_error
 
 				else
@@ -150,20 +153,30 @@ feature -- Basic operations
 					-- Copy caller's bytes into the internal buffer.
 					-- Destination index < source index is impossible here
 					-- (write_start is past all existing data), so copy_data is safe.
-						encoded_chunk.copy_as_utf_8 (buffer, write_start, encoded_chunk.character_count)
-					end
-					utf_8_copied_count := encoded_chunk.utf_8_copied_count
-					remaining_count := encoded_chunk.count - encoded_chunk.last_index
-					if remaining_count > 0 then
-						encoded_chunk.remove_head (encoded_chunk.last_index)
-						if prepare_buffer (utf_8_copied_count + encoded_chunk.character_count) then
-							encoded_chunk.copy_as_utf_8 (buffer, write_start + utf_8_copied_count, remaining_count)
-							Result := parse_buffer (utf_8_copied_count + encoded_chunk.utf_8_copied_count, a_is_final)
-						else
+						codec.copy_as_utf_8 (buffer, write_start, codec.character_count)
+						if codec.not_well_formed then
+							error_code := Error_invalid_token
 							Result := Status_error
+						else
+							utf_8_copied_count := codec.utf_8_copied_count
+							remaining_count := codec.count - codec.last_index
+							if remaining_count > 0 then
+								codec.remove_head (codec.last_index)
+								if prepare_buffer (utf_8_copied_count + codec.character_count) then
+									codec.copy_as_utf_8 (buffer, write_start + utf_8_copied_count, remaining_count)
+									if codec.not_well_formed then
+										error_code := Error_invalid_token
+										Result := Status_error
+									else
+										Result := parse_buffer (utf_8_copied_count + codec.utf_8_copied_count, a_is_final)
+									end
+								else
+									Result := Status_error
+								end
+							else
+								Result := parse_buffer (codec.utf_8_copied_count, a_is_final)
+							end
 						end
-					else
-						Result := parse_buffer (encoded_chunk.utf_8_copied_count, a_is_final)
 					end
 				end
 				if a_is_final and then error_code = Error_none and then not element_context.reached_depth_zero then
@@ -412,8 +425,9 @@ feature {NONE} -- Processor dispatch
 			buffer_index_at_start: buffer_index = start_index
 		local
 			index, token, tok_end, code, err, buffer_index_copy, lower, upper: INTEGER; done: BOOLEAN
-			context: XT_ELEMENT_CONTEXT; tag_name: STRING; bt_table: SPECIAL [INTEGER]
+			context: XT_ELEMENT_CONTEXT; tag_name, entity_name: STRING; bt_table: SPECIAL [INTEGER]
 		do
+			index := s.index_of (buf, (85).to_character_8, start_index, end_index)
 			bt_table := s.Byte_type_table
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
@@ -469,29 +483,21 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_start_tag_with_attributes then
 							context.push (s.tag_name (names, buf, index))
-							if attributes.has_duplicate_name then
-								Result := Error_duplicate_attribute; done := True
-							else
-								on_tag_start (buf, context, attributes, token)
-								attributes.wipe_out
-							end
+							on_tag_start (buf, context, attributes, token)
+							attributes.wipe_out
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
 							tag_name := s.tag_name (names, buf, index)
 							context.push (tag_name)
-							if attributes.has_duplicate_name then
-								Result := Error_duplicate_attribute; done := True
+							on_tag_start (buf, context, attributes, token)
+							inspect token when Tok_empty_element_with_attributes then
+								attributes.wipe_out
 							else
-								on_tag_start (buf, context, attributes, token)
-								inspect token when Tok_empty_element_with_attributes then
-									attributes.wipe_out
-								else
-								end
-								on_tag_end (tag_name)
-								inspect context.pop (tag_name) when Error_tag_mismatch then
-									Result := Error_tag_mismatch; done := True
-								else
-								end
+							end
+							on_tag_end (tag_name)
+							inspect context.pop (tag_name) when Error_tag_mismatch then
+								Result := Error_tag_mismatch; done := True
+							else
 							end
 
 						when Tok_end_tag then
@@ -513,9 +519,8 @@ feature {NONE} -- Processor dispatch
 							lower := index + 1; upper := tok_end - 2
 							code := s.predefined_entity_code (buf, lower, upper)
 							inspect code when -1 then
-								if attached entity_cache.item (buf, lower, upper) as entity_name
-									and then attached entity_table.item (entity_name, False) as entity_value
-								then
+								entity_name := entity_cache.item (buf, lower, upper)
+								if attached entity_table.item (entity_name, False) as entity_value then
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
 									err := process_content (
@@ -531,8 +536,8 @@ feature {NONE} -- Processor dispatch
 									end
 									Result := err
 
-								elseif DTD_uri.starts_with (Http) then
-									do_nothing -- undefined but there is leniency due to external DTD so skip it
+								elseif attributes.permit_undefined_entities then
+									do_nothing
 								else
 									Result := Error_undefined_entity; done := True
 								end
@@ -552,6 +557,7 @@ feature {NONE} -- Processor dispatch
 							end
 					else
 						if token < 0 then
+							Result := s.error_code
 							done := True  -- partial; wait for more data
 						end
 					end
@@ -565,6 +571,103 @@ feature {NONE} -- Processor dispatch
 			buffer_index_advanced: buffer_index >= start_index and buffer_index <= end_index
 		end
 
+	process_doctype_definition (
+		buf: like buffer; index, end_index, token: INTEGER; s: like scanner; names: like name_cache;
+		in_section: SPECIAL [BOOLEAN]; a_done, a_default_case, a_common_case: TYPED_POINTER [BOOLEAN]
+	): INTEGER
+		local
+			decl_type: INTEGER; default_case, common_case, done: BOOLEAN
+		do
+			inspect token
+				when Tok_close_bracket then
+					if doctype_decl_stack.count = 1 then
+						in_section [Doctype_definition] := False
+					else
+						Result := Error_syntax; done := True
+					end
+
+				when Tok_decl_open then
+					decl_type := declaration_type (buf, index + 2, s)
+					inspect decl_type
+						when 0 then
+							Result := Error_syntax; done := True
+					else
+						inspect doctype_decl_stack.count when 1 then
+							doctype_decl_stack.extend (decl_type)
+							declaration_parts_list.wipe_out
+						else
+							Result := Error_syntax; done := True
+						end
+					end
+
+				when Tok_decl_close then
+					inspect doctype_decl_stack.count when 2 then
+						doctype_decl_stack.remove_tail (1)
+					else
+						Result := Error_syntax; done := True
+					end
+
+				when Tok_name then
+					inspect declaration
+						when Attlist then
+							if doctype_decl_stack.count = 2 then
+								on_attribute_declaration_part (buf, index, end_index, token, names, s)
+							else
+								Result := Error_syntax; done := True
+							end
+
+						when Entity_ then
+							if doctype_decl_stack.count = 2 then
+								on_entity_declaration_part (buf, index, end_index, s)
+							else
+								Result := Error_syntax; done := True
+							end
+						when Element_, Notation then
+							do_nothing -- for now
+					else
+						default_case := True
+					end
+
+				when Tok_literal then
+					inspect declaration
+						when Attlist then
+							if doctype_decl_stack.count = 2 then
+								on_attribute_declaration_part (buf, index + 1, end_index - 1, token, names, s)
+							else
+								Result := Error_syntax; done := True
+							end
+						when Entity_ then
+							if doctype_decl_stack.count = 2 then
+								on_entity_declaration_part (buf, index + 1, end_index - 1, s)
+							else
+								Result := Error_syntax; done := True
+							end
+
+						when Element_, Notation then
+							do_nothing -- for now
+					else
+						default_case := True
+					end
+
+				when Tok_pound_name then
+					inspect declaration
+						when Attlist then
+							on_attribute_declaration_part (buf, index, end_index, token, names, s)
+
+						when Element_, Entity_, Notation then
+							do_nothing -- for now
+					else
+						default_case := True
+					end
+			else
+				common_case := True
+			end
+		-- update local variables in calling routine `process_prolog'
+			put_boolean (common_case, a_common_case)
+			put_boolean (default_case, a_default_case)
+			put_boolean (done, a_done)
+		end
+
 	process_prolog (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 		s: like scanner; names: like name_cache; in_section: SPECIAL [BOOLEAN]
@@ -573,94 +676,12 @@ feature {NONE} -- Processor dispatch
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
 		local
 			token, tok_end, decl_type: INTEGER; done, default_case, common_case: BOOLEAN
+			yes_no: STRING
 		do
 			token := s.scan_prolog (buf, index, end_index, bt_table)
 			tok_end := s.next_token_index
 			if in_section [Doctype_definition] then
-				inspect token
-					when Tok_close_bracket then
-						if doctype_decl_stack.count = 1 then
-							in_section [Doctype_definition] := False
-						else
-							Result := Error_syntax; done := True
-						end
-
-					when Tok_decl_open then
-						decl_type := declaration_type (buf, index + 2, s)
-						inspect decl_type
-							when 0 then
-								Result := Error_syntax; done := True
-						else
-							inspect doctype_decl_stack.count when 1 then
-								doctype_decl_stack.extend (decl_type)
-								declaration_parts_list.wipe_out
-							else
-								Result := Error_syntax; done := True
-							end
-						end
-
-					when Tok_decl_close then
-						inspect doctype_decl_stack.count when 2 then
-							doctype_decl_stack.remove_tail (1)
-						else
-							Result := Error_syntax; done := True
-						end
-
-					when Tok_name then
-						inspect declaration
-							when Attlist then
-								if doctype_decl_stack.count = 2 then
-									on_attribute_declaration_part (buf, index, tok_end - 1, token, names, s)
-								else
-									Result := Error_syntax; done := True
-								end
-
-							when Entity_ then
-								if doctype_decl_stack.count = 2 then
-									on_entity_declaration_part (buf, index, tok_end - 1, s)
-								else
-									Result := Error_syntax; done := True
-								end
-							when Element_, Notation then
-								do_nothing -- for now
-						else
-							default_case := True
-						end
-
-					when Tok_literal then
-						inspect declaration
-							when Attlist then
-								if doctype_decl_stack.count = 2 then
-									on_attribute_declaration_part (buf, index + 1, tok_end - 2, token, names, s)
-								else
-									Result := Error_syntax; done := True
-								end
-							when Entity_ then
-								if doctype_decl_stack.count = 2 then
-									on_entity_declaration_part (buf, index + 1, tok_end - 2, s)
-								else
-									Result := Error_syntax; done := True
-								end
-							when Element_, Notation then
-								do_nothing -- for now
-						else
-							default_case := True
-						end
-
-					when Tok_pound_name then
-						inspect declaration
-							when Attlist then
-								on_attribute_declaration_part (buf, index, tok_end - 1, token, names, s)
-
-							when Element_, Entity_, Notation then
-								do_nothing -- for now
-						else
-							default_case := True
-						end
-
-				else
-					common_case := True
-				end
+				Result := process_doctype_definition (buf, index, tok_end - 1, token, s, names, in_section, $done, $default_case, $common_case)
 			else
 				inspect token
 					when Tok_xml_decl then
@@ -670,8 +691,14 @@ feature {NONE} -- Processor dispatch
 						elseif not attributes.has_valid_encoding (buf) then
 							Result := Error_unknown_encoding; done := True
 						else
-							on_xml_declaration (buf, attributes)
-							attributes.wipe_out
+							yes_no := attributes.standalone_value (buf)
+							if Valid_yes_no.has (yes_no) then
+								is_standalone := yes_no [1] = 'y'
+								on_xml_declaration (buf, attributes)
+								attributes.wipe_out
+							else
+								Result := Error_xml_decl; done := True
+							end
 						end
 
 					when Tok_instance_start then
@@ -679,6 +706,11 @@ feature {NONE} -- Processor dispatch
 							Result := Error_junk_after_doc_element; done := True
 						else
 							in_section [Prolog] := False
+							if is_standalone then
+								attributes.set_permit_undefined_entities (False)
+							else
+								attributes.set_permit_undefined_entities (DTD_uri.starts_with (Http))
+							end
 							if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
 								create {XT_ELEMENT_ATTRIBUTES_CONTEXT} element_context.make (in_section, attribute_value_defaults_table)
 							end
@@ -746,7 +778,9 @@ feature {NONE} -- Processor dispatch
 					when Tok_invalid then
 						Result := Error_invalid_token
 					-- Checking for binary data masquerading as XML
-						if start_index = 0 and then s.has_syntax_error (buf, start_index, end_index, bt_table) then
+						if start_index = 0 and then not s.is_plausible_xml (buf, start_index, end_index, bt_table)
+							and then s.has_syntax_error (buf, start_index, end_index, bt_table)
+						then
 							Result := Error_syntax
 						end
 						done := True
@@ -782,7 +816,7 @@ feature {NONE} -- Processor dispatch
 			if not done then
 				put_integer_32 (tok_end, a_index)
 			end
-		-- write back value of `done' to caller local variable
+		-- update `done' local variable in calling routine `process_content'
 			put_boolean (done, a_done)
 		end
 
@@ -815,6 +849,21 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	external_id (buf: like buffer; start_index, end_index: INTEGER): STRING
+		local
+			i: INTEGER; s: XT_STRING_8_ROUTINES
+		do
+			Result := Unknown_id
+			from i := 1 until i > Valid_external_id_list.count loop
+				if s.same_characters (buf, start_index, end_index, Valid_external_id_list [i]) then
+					Result := Valid_external_id_list [i]
+					i := 3 -- break
+				else
+					i := i + 1
+				end
+			end
+		end
+
 	increment_handler_depth
 		-- Signal entry into a parse-event callback.
 		require
@@ -840,7 +889,7 @@ feature {NONE} -- Implementation
 		-- the assumption is that parser has been given some binary data masquerading as XML, for example:
 		-- C:\Windows\WinSxS\amd64_microsoft-windows-deviceaccess_31bf3856ad364e35_10.0.26100.4202_none_a94ac2308a15fa4a\r\AppPrivacy.admx
 		local
-			token, index, tok_end: INTEGER; invalid_token: BOOLEAN
+			token, index, tok_end, name_count: INTEGER; invalid_token: BOOLEAN
 		do
 			if element_context.reached_depth_zero then
 				Result := Error_junk_after_doc_element
@@ -848,11 +897,15 @@ feature {NONE} -- Implementation
 			elseif start_index = 0 then
 				Result := Error_syntax
 			else
+				name_count := 1
 			-- Find first section of invalid markup
-				from index := start_index until index >= end_index or invalid_token loop
+				from index := start_index until index >= end_index or invalid_token or name_count >= 2 loop
 					token := s.scan_prolog (buf, index, end_index, bt_table)
-					if token = Tok_invalid then
-						invalid_token := True
+					inspect token
+						when Tok_name then
+							name_count := name_count + 1
+						when Tok_invalid then
+							invalid_token := True
 					else
 						tok_end := s.next_token_index
 					end
@@ -860,7 +913,10 @@ feature {NONE} -- Implementation
 						index := tok_end
 					end
 				end
-				if invalid_token then
+				if name_count >= 2 then
+					Result := Error_syntax
+
+				elseif invalid_token then
 					if s.has_syntax_error (buf, index, end_index, bt_table) then
 						Result := Error_syntax
 					else
@@ -883,18 +939,18 @@ feature {NONE} -- Implementation
 					Result := False
 
 				when 1 then
-					if attached declaration_parts_list [1] as name
-						and then not (name = PUBLIC or name = SYSTEM)
-					then
-						Result := True
-					end
+					Result := not Valid_external_id_list.has (declaration_parts_list [1])
 
 				when 2, 3, 4 then
-					if declaration_parts_list [2] = PUBLIC then
-						Result := declaration_parts_list.count = 4
+					if Valid_external_id_list.has (declaration_parts_list [2]) then
+						if declaration_parts_list [2] = PUBLIC then
+							Result := declaration_parts_list.count = 4
 
-					elseif declaration_parts_list [2] = SYSTEM then
-						Result := declaration_parts_list.count = 3
+						elseif declaration_parts_list [2] = SYSTEM then
+							Result := declaration_parts_list.count = 3
+						end
+					else
+						Result := False
 					end
 			else
 				Result := False
@@ -939,14 +995,15 @@ feature {NONE} -- Event handlers
 
 	on_entity_declaration_part (buf: like buffer; start_index, end_index: INTEGER; s: like scanner)
 		local
-			abnormal_string: XT_ABNORMAL_STRING
+			abnormal_string: XT_ABNORMAL_STRING; id: STRING
 		do
 			inspect declaration_parts_list.count
 				when 0 then
 					declaration_parts_list.extend (entity_cache.item (buf, start_index, end_index))
 				when 1 then
-					if s.same_characters (buf, start_index, end_index, SYSTEM) then
-						declaration_parts_list.extend (SYSTEM)
+					id := external_id (buf, start_index, end_index)
+					if id /= Unknown_id then
+						declaration_parts_list.extend (id)
 					else
 						if s.newline_or_tab_found then
 							create abnormal_string.make (buf, start_index, end_index, s)
@@ -972,9 +1029,7 @@ feature {NONE} -- Event handlers
 				when 0 then
 					declaration_parts_list.extend (name_cache.item (buf, start_index, end_index, 0))
 				when 1 then
-					if s.same_characters (buf, start_index, end_index, PUBLIC) then
-						declaration_parts_list.extend (PUBLIC)
-					end
+					declaration_parts_list.extend (external_id (buf, start_index, end_index))
 				when 2 then
 					s.append_area (formal_public_identifier, buf, start_index + 1, end_index - 1)
 					declaration_parts_list.extend (formal_public_identifier)
@@ -1003,7 +1058,7 @@ feature {NONE} -- Internal attributes
 	partial_token_bytes_before: INTEGER
 
 	parse_end_byte_index: INTEGER_64
-			-- Cumulative count of bytes committed to the parser.
+		-- Cumulative count of bytes committed to the parser.
 
 	reparse_deferral_enabled: BOOLEAN
 
