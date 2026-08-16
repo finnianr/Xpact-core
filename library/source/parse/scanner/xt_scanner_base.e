@@ -43,7 +43,7 @@ inherit
 
 	XT_STRING_8_ROUTINES_I
 		export
-			{XT_XML_PARSER_BASE} all
+			{XT_XML_PROLOG_PARSER} all
 		end
 
 feature -- Access

@@ -165,7 +165,7 @@ feature -- Status query
 	is_plausible_xml (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): BOOLEAN
 		-- `True' if characters from `start_index' to `end_index' are plausibly the start of an XML document
 		local
-			i, j, bt_code, byte_count: INTEGER; found_lt, found, name_start_expected: BOOLEAN
+			i, j, bt_code, byte_count: INTEGER; found_lt, found: BOOLEAN
 		do
 			i := start_index; newline_or_tab_found := False
 			Result := True

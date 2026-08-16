@@ -7,7 +7,7 @@ note
 
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
 
-	date: "2026-09-05 13:40:00 GMT (Thursday 5th August 2026)"
+	date: "2026-08-05 13:40:00 GMT (Thursday 5th August 2026)"
 	revision: "1"
 
 class
