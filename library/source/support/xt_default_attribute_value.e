@@ -35,7 +35,7 @@ feature -- Status query
 
 	checked: BOOLEAN
 
-feature -- Status query	
+feature -- Status change	
 
 	check_
 		do

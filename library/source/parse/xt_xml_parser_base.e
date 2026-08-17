@@ -553,8 +553,6 @@ feature {NONE} -- Implementation
 			Result := section_flags [CDATA]
 		end
 
-feature {NONE} -- Implementation
-
 	increment_handler_depth
 		-- Signal entry into a parse-event callback.
 		require

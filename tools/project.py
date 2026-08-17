@@ -2,6 +2,6 @@
 
 from eiffel_loop.eiffel.dev_environ import *
 
-#os.environ ['GTK_THEME'] = 'Mint-X-Teal-Custom:dark'
-os.environ ['GTK_THEME'] = 'Mint-X-Teal-Custom:light'
+os.environ ['GTK_THEME'] = 'Mint-X-Teal-Custom:dark'
+#os.environ ['GTK_THEME'] = 'Mint-X-Teal-Custom:light'
 

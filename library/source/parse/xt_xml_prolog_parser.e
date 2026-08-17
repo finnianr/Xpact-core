@@ -30,6 +30,8 @@ feature {NONE} -- Initialization
 			create section_flags.make_filled (False, section_count)
 			create doctype_decl_stack.make_empty (2)
 			create element_context.make (section_flags)
+			create parameter_entity_table.make (3)
+			create parameter_name_cache.make
 			Precursor
 		end
 
@@ -54,7 +56,7 @@ feature {NONE} -- Token processing
 		in_section: SPECIAL [BOOLEAN]; a_done, a_default_case, a_common_case: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
-			decl_type: INTEGER; default_case, common_case, done: BOOLEAN
+			decl_type: INTEGER; default_case, common_case, done: BOOLEAN; name: STRING
 		do
 			inspect token
 				when Tok_close_bracket then
@@ -81,6 +83,7 @@ feature {NONE} -- Token processing
 				when Tok_decl_close then
 					inspect doctype_decl_stack.count when 2 then
 						doctype_decl_stack.remove_tail (1)
+						is_parameter_entity := False
 					else
 						Result := Error_syntax; done := True
 					end
@@ -96,7 +99,11 @@ feature {NONE} -- Token processing
 
 						when Entity_ then
 							if doctype_decl_stack.count = 2 then
-								on_entity_declaration_part (buf, index, end_index, s)
+								if is_parameter_entity then
+									on_parameter_entity_declaration_part (buf, index, end_index, s)
+								else
+									on_entity_declaration_part (buf, index, end_index, s)
+								end
 							else
 								Result := Error_syntax; done := True
 							end
@@ -116,7 +123,11 @@ feature {NONE} -- Token processing
 							end
 						when Entity_ then
 							if doctype_decl_stack.count = 2 then
-								on_entity_declaration_part (buf, index + 1, end_index - 1, s)
+								if is_parameter_entity then
+									on_parameter_entity_declaration_part (buf, index + 1, end_index - 1, s)
+								else
+									on_entity_declaration_part (buf, index + 1, end_index - 1, s)
+								end
 							else
 								Result := Error_syntax; done := True
 							end
@@ -137,6 +148,15 @@ feature {NONE} -- Token processing
 					else
 						default_case := True
 					end
+				when Tok_percent then
+					is_parameter_entity := True
+
+				when Tok_param_entity_ref then
+					name := parameter_name_cache.item (buf, index + 1, end_index - 1, 0)
+					if attached parameter_entity_table [name] as parameter then
+						parameter.set_referenced
+					end
+
 			else
 				common_case := True
 			end
@@ -184,11 +204,7 @@ feature {NONE} -- Token processing
 							Result := Error_junk_after_doc_element; done := True
 						else
 							in_section [Prolog] := False
-							if is_standalone then
-								attributes.set_permit_undefined_entities (False)
-							else
-								attributes.set_permit_undefined_entities (DTD_uri.starts_with (Http))
-							end
+							attributes.set_permit_undefined_entities (permit_undefined_entities)
 							if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
 								create {XT_ELEMENT_ATTRIBUTES_CONTEXT} element_context.make (in_section, attribute_value_defaults_table)
 							end
@@ -354,11 +370,32 @@ feature {NONE} -- Event handlers
 						end
 					end
 				when 2 then
-					if declaration_parts_list [2] = SYSTEM then
-					-- &legal; referenced near end of document /usr/share/gnome/help/synaptic/C/synaptic.xml
-					-- Defined as external: <!ENTITY legal SYSTEM "gpl.xml">
-					-- Without putting into table there will be a %N missing in output compared to eXpat
-						entity_table.put (s.Empty_string, declaration_parts_list.first)
+				-- &legal; referenced near end of document /usr/share/gnome/help/synaptic/C/synaptic.xml
+				-- Defined as external: <!ENTITY legal SYSTEM "gpl.xml">
+				-- Without putting into table there will be a %N missing in output compared to eXpat
+					entity_table.put (s.Empty_string, declaration_parts_list.first)
+			else
+			end
+		end
+
+	on_parameter_entity_declaration_part (buf: like buffer; start_index, end_index: INTEGER; s: like scanner)
+		local
+			id: STRING; parameter: XT_PARAMETER_ENTITY
+		do
+			inspect declaration_parts_list.count
+				when 0 then
+					declaration_parts_list.extend (parameter_name_cache.item (buf, start_index, end_index, 0))
+				when 1 then
+					id := external_id (buf, start_index, end_index)
+					if id /= Unknown_id then
+						declaration_parts_list.extend (id)
+					else
+						declaration_parts_list.extend (s.new_substring (buf, start_index, end_index))
+					end
+				when 2 then
+					if Valid_external_id_list.has (declaration_parts_list [2]) then
+						create parameter.make (declaration_parts_list, s.new_substring (buf, start_index, end_index))
+						parameter_entity_table.put (parameter, declaration_parts_list [1])
 					end
 			else
 			end
@@ -467,6 +504,36 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	permit_undefined_entities: BOOLEAN
+		-- `True' if document is structured to allow undefined entities to be permitted by conforming parser
+		-- Value is cached in `attribute_intervals.permit_undefined_entities'
+		local
+			parameter: XT_PARAMETER_ENTITY
+		do
+			if is_standalone then
+				Result := False
+
+			elseif DTD_uri.starts_with (Http) then
+				Result := True
+
+			elseif attached parameter_entity_table as table then
+			-- Check if a PUBLIC or SYSTEM parameter entity was referenced in DTD
+			-- For example:
+			-- 	<!DOCTYPE xsl:stylesheet [
+			-- 	<!ENTITY % selectors SYSTEM "db-selectors.mod">
+			-- 	%selectors;
+			-- 	]>
+
+				from table.start until table.after or Result loop
+					parameter := table.item_for_iteration
+					if Valid_external_id_list.has (parameter.external_id) then
+						Result := parameter.is_referenced
+					end
+					table.forth
+				end
+			end
+		end
+
 	reset
 		do
 			Precursor
@@ -475,6 +542,8 @@ feature {NONE} -- Implementation
 			else
 				element_context.reset
 			end
+			parameter_entity_table.wipe_out
+			parameter_name_cache.reset
 		end
 
 	valid_doctype_declaration: BOOLEAN
@@ -509,10 +578,17 @@ feature {NONE} -- Internal attributes
 	doctype_decl_stack: SPECIAL [INTEGER]
 		-- DOCTYPE declaration type stack
 
+	is_parameter_entity: BOOLEAN
+
 	has_dtd_section: BOOLEAN
 		-- True if prolog has document type definition (DTD) after DOCTYPE x [
 
 	section_flags: SPECIAL [BOOLEAN]
 		-- parser section state flags
+
+	parameter_name_cache: XT_NAME_CACHE
+		-- efficient lookup of parameter entity names
+
+	parameter_entity_table: HASH_TABLE [XT_PARAMETER_ENTITY, STRING]
 
 end
