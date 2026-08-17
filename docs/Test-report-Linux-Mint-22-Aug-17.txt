@@ -1,0 +1,49 @@
+Total system files: 1_023_441
+
+Total zipped archive packages: 451
+Extensions sorted in order of occurrence count (Highest first)
+
+<odt>: occurrences 156
+<ods>: occurrences 107
+<ott>: occurrences 77
+<docx>: occurrences 55
+<otp>: occurrences 23
+<ots>: occurrences 18
+<xlsx>: occurrences 7
+<epub>: occurrences 3
+<odb>: occurrences 2
+<odp>: occurrences 1
+<pptx>: occurrences 1
+<otg>: occurrences 1
+
+Total XML files: 103270
+Extensions sorted in order of occurrence count (Highest first)
+
+<svg>: occurrences 83411
+<xml>: occurrences 10531
+<html>: occurrences 4937
+<ecf>: occurrences 2070
+<eant>: occurrences 1181
+<xsl>: occurrences 244
+<config>: occurrences 231
+<manifest>: occurrences 209
+<targets>: occurrences 142
+<vcxproj>: occurrences 88
+<svgz>: occurrences 82
+<xsd>: occurrences 62
+<props>: occurrences 26
+<rng>: occurrences 14
+<glade>: occurrences 9
+<xhtml>: occurrences 7
+<opf>: occurrences 5
+<ncx>: occurrences 4
+<csproj>: occurrences 4
+<plist>: occurrences 4
+<rdf>: occurrences 3
+<pom>: occurrences 2
+<fods>: occurrences 2
+<xslt>: occurrences 1
+<fodt>: occurrences 1
+
+Zero failures
+

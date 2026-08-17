@@ -58,3 +58,9 @@ mandarin-names-and-text.xsl: eXpat passes = 2009; Xpact-core passes = 2659 (x1.3
 2026 14 AUG 19:43
 Removed XT_ATTRIBUTE_NAME_CACHE, slight difference in performance
 mandarin-names-and-text.xsl: eXpat passes = 2014; Xpact-core passes = 2618 (x1.30 to eXpat)
+
+2026 17 AUG 9:01
+mandarin-names-and-text.xsl: eXpat passes = 2005; Xpact-core passes = 2577 (x1.29 to eXpat)
+
+2026 17 AUG 9:01
+mandarin-names-and-text.xsl: eXpat passes = 2013; Xpact-core passes = 2596 (x1.29 to eXpat)

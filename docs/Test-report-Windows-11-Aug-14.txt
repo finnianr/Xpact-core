@@ -1,6 +1,4 @@
-Tested against eXpat
-Total passed: 3 (No failures)
-Files: 318791
+Total system files: 318_791
 
 Total zipped archive packages: 456
 Extensions sorted in order of occurrence count (Highest first)

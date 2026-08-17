@@ -99,3 +99,6 @@ recursive-entity-expansion.xml: eXpat passes = 3634; Xpact-core passes = 3738 (x
 2026 14 AUG 19:42
 Removed XT_ATTRIBUTE_NAME_CACHE, slight difference in performance
 recursive-entity-expansion.xml: eXpat passes = 3604; Xpact-core passes = 3793 (x1.05 to eXpat)
+
+2026 17 AUG 9:01
+recursive-entity-expansion.xml: eXpat passes = 3649; Xpact-core passes = 3686 (x1.01 to eXpat)

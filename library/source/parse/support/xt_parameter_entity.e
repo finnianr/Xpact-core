@@ -17,7 +17,7 @@ note
 
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
 
-	date: "2026-08-17 04:40:00 GMT (Sunday 17th August 2026)"
+	date: "2026-08-17 04:40:00 GMT (Monday 17th August 2026)"
 	revision: "1"
 class
 	XT_PARAMETER_ENTITY

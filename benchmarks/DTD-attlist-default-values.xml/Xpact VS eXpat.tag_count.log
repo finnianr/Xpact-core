@@ -64,3 +64,6 @@ DTD-attlist-default-values.xml: eXpat passes = 210; Xpact-core passes = 236 (x1.
 2026 14 AUG 19:43
 Removed XT_ATTRIBUTE_NAME_CACHE, no difference in performance
 DTD-attlist-default-values.xml: eXpat passes = 213; Xpact-core passes = 239 (x1.12 to eXpat)
+
+2026 17 AUG 9:01
+DTD-attlist-default-values.xml: eXpat passes = 214; Xpact-core passes = 238 (x1.11 to eXpat)

@@ -169,13 +169,14 @@ feature {NONE} -- Token processing
 	process_prolog (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
 		s: like scanner; names: like name_cache; in_section: SPECIAL [BOOLEAN]
-		index: INTEGER; a_index: TYPED_POINTER [INTEGER]; a_done: TYPED_POINTER [BOOLEAN]
+		a_index: TYPED_POINTER [INTEGER]; a_done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
 		local
-			token, tok_end, decl_type: INTEGER; done, default_case, common_case: BOOLEAN
+			token, tok_end, decl_type, index: INTEGER; done, default_case, common_case: BOOLEAN
 			yes_no: STRING
 		do
+			index := read_integer_32 (a_index)
 			token := s.scan_prolog (buf, index, end_index, bt_table)
 			tok_end := s.next_token_index
 			if in_section [Doctype_definition] then

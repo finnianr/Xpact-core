@@ -115,3 +115,6 @@ vision2.ecf: eXpat passes = 28884; Xpact-core passes = 32519 (x1.13 to eXpat)
 2026 14 AUG 19:42
 Removed XT_ATTRIBUTE_NAME_CACHE, no difference in performance
 vision2.ecf: eXpat passes = 29455; Xpact-core passes = 33423 (x1.13 to eXpat)
+
+2026 17 AUG 9:01
+vision2.ecf: eXpat passes = 29393; Xpact-core passes = 31664 (x1.08 to eXpat)

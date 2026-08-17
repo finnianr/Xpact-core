@@ -408,7 +408,7 @@ feature {NONE} -- Processor dispatch
 			from until index >= end_index or done loop
 				if in_section [Prolog] then
 					Result := process_prolog (
-						buf, start_index, end_index, bt_table, attributes, s, names, in_section, index, $index, $done
+						buf, start_index, end_index, bt_table, attributes, s, names, in_section, $index, $done
 					)
 					context := element_context
 

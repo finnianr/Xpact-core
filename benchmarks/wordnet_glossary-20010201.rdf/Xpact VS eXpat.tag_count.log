@@ -110,3 +110,6 @@ wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 44 (x1.29 
 2026 14 AUG 19:43
 Removed XT_ATTRIBUTE_NAME_CACHE, no difference in performance
 wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 44 (x1.29 to eXpat)
+
+2026 17 AUG 9:01
+wordnet_glossary-20010201.rdf: eXpat passes = 34; Xpact-core passes = 43 (x1.26 to eXpat)
