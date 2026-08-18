@@ -16,8 +16,8 @@ pushd .
 
 cd tools/data
 
-for name in mandarin-names-and-text.xsl recursive-entity-expansion.xml Legislation.xml \
-		DTD-attlist-default-values.xml mandarin-names-and-text.xsl ; do
+for name in mandarin-names-and-text.xsl recursive-entity-expansion.xml \
+		DTD-attlist-default-values.xml Legislation.xml ; do
 	
 	xml_reader -count_tags -compare_to_expat -duration $DURATION_MS $name
 done

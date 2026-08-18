@@ -1,14 +1,14 @@
-Total system files: 318_791
+Files: 347,550
 
-Total zipped archive packages: 456
+Total zipped archive packages: 582
 Extensions sorted in order of occurrence count (Highest first)
 
+<msix>: occurrences 136
+<msixbundle>: occurrences 102
 <ott>: occurrences 79
-<msix>: occurrences 73
 <odt>: occurrences 65
 <dotx>: occurrences 42
 <ods>: occurrences 39
-<msixbundle>: occurrences 39
 <appx>: occurrences 29
 <otp>: occurrences 23
 <docx>: occurrences 21
@@ -21,32 +21,32 @@ Extensions sorted in order of occurrence count (Highest first)
 <appxbundle>: occurrences 1
 <otg>: occurrences 1
 
-Total XML files: 83456
+Total XML files: 74,077
 Extensions sorted in order of occurrence count (Highest first)
 
-<manifest>: occurrences 46367
-<mum>: occurrences 11948
-<svg>: occurrences 10517
-<xml>: occurrences 8603
-<html>: occurrences 3752
-<resw>: occurrences 432
-<config>: occurrences 337
-<adml>: occurrences 320
-<admx>: occurrences 294
-<xsd>: occurrences 210
-<xaml>: occurrences 194
-<resx>: occurrences 192
-<xsl>: occurrences 179
-<plist>: occurrences 45
-<targets>: occurrences 22
+<manifest>: occurrences 38356
+<svg>: occurrences 13063
+<xml>: occurrences 9873
+<mum>: occurrences 4727
+<html>: occurrences 4308
+<xsd>: occurrences 660
+<adml>: occurrences 656
+<admx>: occurrences 596
+<resw>: occurrences 518
+<config>: occurrences 468
+<resx>: occurrences 270
+<xsl>: occurrences 212
+<xaml>: occurrences 205
+<targets>: occurrences 66
+<plist>: occurrences 51
 <ruleset>: occurrences 12
 <x3d>: occurrences 10
+<props>: occurrences 6
 <wxs>: occurrences 3
+<odc>: occurrences 2
+<nuspec>: occurrences 2
 <odf>: occurrences 2
 <xslt>: occurrences 2
-<props>: occurrences 2
-<nuspec>: occurrences 2
-<odc>: occurrences 2
 <fodt>: occurrences 1
 <odg>: occurrences 1
 <msixbundle>: occurrences 1

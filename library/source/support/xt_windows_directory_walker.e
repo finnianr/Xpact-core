@@ -22,57 +22,21 @@ class
 inherit
 	XT_DIRECTORY_WALKER
 		redefine
-			is_visited, make_with_path, new_directory
+			file_info, is_directory_symlink
 		end
 
 create
-	make_with_path, make_root_with_path
-
-feature {NONE} -- Initialization
-
-	make_with_path (dir_path: PATH)
-		do
-			Precursor (dir_path)
-			inode_table := Default_inode_table
-		end
-
-	make_root_with_path (dir_path: PATH)
-		do
-			make_with_path (dir_path)
-			create inode_table.make (100_000)
-		end
-
-feature -- Element change
-
-	set_inode_table (a_inode_table: like Default_inode_table)
-		do
-			inode_table := a_inode_table
-		end
-
-feature -- Factory
-
-	new_directory (dir_path: PATH): like Current
-		do
-			create Result.make_with_path (dir_path)
-			Result.set_inode_table (inode_table)
-		end
+	make_with_path
 
 feature {NONE} -- Implementation
 
-	is_visited (info: FILE_INFO): BOOLEAN
+	is_directory_symlink (info: like file_info): BOOLEAN
 		do
-			inode_table.put (True, info.inode)
-			Result := inode_table.conflict
+			Result := info.is_directory and then (info.is_symlink or info.is_reparse_point)
 		end
 
 feature {NONE} -- Internal attributes
 
-	inode_table: like Default_inode_table
+	file_info: EL_NTFS_FILE_INFO
 
-feature {NONE} -- Constants
-
-	Default_inode_table: HASH_TABLE [BOOLEAN, INTEGER]
-		once
-			create Result.make (3)
-		end
 end

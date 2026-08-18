@@ -70,7 +70,17 @@ feature -- Factory
 
 feature {NONE} -- Implementation
 
-	new_file_info (ptr: POINTER): detachable FILE_INFO
+	is_directory_symlink (info: like file_info): BOOLEAN
+		do
+			Result := info.is_directory and then info.is_symlink
+		end
+
+	is_file_symlink (info: like file_info): BOOLEAN
+		do
+			Result := info.is_plain and then info.is_symlink
+		end
+
+	new_file_info (ptr: POINTER): detachable like file_info
 		-- file info for `ptr' but only if entry is not a symlink or one of `<< "..", "." >>'
 		-- and the entry is readable
 		local
@@ -79,10 +89,7 @@ feature {NONE} -- Implementation
 			Result := file_info
 			name := Result.pointer_to_file_name_32 (ptr)
 			Result.update (directory_path.extended (name).name)
-			if is_visited (Result) then
-				Result := Void
-
-			elseif not Result.exists then
+			if not Result.exists then
 				Result := Void
 
 			elseif not Result.is_ready then
@@ -91,10 +98,13 @@ feature {NONE} -- Implementation
 			elseif not Result.is_access_readable then
 				Result := Void
 
-			elseif Result.is_symlink then
+			elseif Result.is_character or Result.is_device or else Result.is_fifo or else Result.is_socket then
 				Result := Void
 
-			elseif Result.is_character or Result.is_device or else Result.is_fifo or else Result.is_socket then
+			elseif is_directory_symlink (Result) or else is_file_symlink (Result) then
+				Result := Void
+
+			elseif Result.is_symlink then
 				Result := Void
 
 			elseif current_or_parent (name) then
@@ -111,11 +121,6 @@ feature {NONE} -- Implementation
 					Result := a_name.occurrences ('.') = 2
 			else
 			end
-		end
-
-	is_visited (info: FILE_INFO): BOOLEAN
-		do
-			Result := False
 		end
 
 feature {NONE} -- Internal attributes

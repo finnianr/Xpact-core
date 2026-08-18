@@ -10,7 +10,6 @@ note
 		**-crc_32** Class: ${CRC_32_GENERATOR}.
 		Reads from specified XML path and prints a CRC-32 checksum for output for specified data type.
 
-
 		**-print** Class: ${XML_PRINTER}.
 		Reads from specified XML path and prints each XML event to standard output.
 

@@ -1,0 +1,100 @@
+<svg viewBox="0 0 900 620" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+  <!-- Background -->
+  <rect x="0" y="0" width="900" height="620" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="30" y="34" font-size="22" font-weight="700" fill="#1a1a1a">Xpact-core vs eXpat &#8212; Parsing Speed Benchmark</text>
+  <text x="30" y="56" font-size="13" fill="#666666">Relative parse throughput by test file (higher = faster than eXpat). Overall average: x1.231</text>
+
+  <!-- Chart area -->
+  <g>
+    <!-- Gridlines -->
+    <line x1="320" y1="80" x2="320" y2="558" stroke="#333333" stroke-width="1.5"/>
+    <line x1="435.6" y1="80" x2="435.6" y2="558" stroke="#e0e0e0" stroke-width="1"/>
+    <line x1="551.1" y1="80" x2="551.1" y2="558" stroke="#e0e0e0" stroke-width="1"/>
+    <line x1="666.7" y1="80" x2="666.7" y2="558" stroke="#e0e0e0" stroke-width="1"/>
+    <line x1="782.2" y1="80" x2="782.2" y2="558" stroke="#e0e0e0" stroke-width="1"/>
+
+    <!-- Gridline labels -->
+    <text x="320" y="75" font-size="11" fill="#888888" text-anchor="middle">x1.0</text>
+    <text x="435.6" y="75" font-size="11" fill="#888888" text-anchor="middle">x1.1</text>
+    <text x="551.1" y="75" font-size="11" fill="#888888" text-anchor="middle">x1.2</text>
+    <text x="666.7" y="75" font-size="11" fill="#888888" text-anchor="middle">x1.3</text>
+    <text x="782.2" y="75" font-size="11" fill="#888888" text-anchor="middle">x1.4</text>
+
+    <!-- Average reference line -->
+    <line x1="586.9" y1="82" x2="586.9" y2="558" stroke="#d97706" stroke-width="1.5" stroke-dasharray="5,4"/>
+    <text x="586.9" y="572" font-size="11" fill="#d97706" text-anchor="middle" font-weight="600">avg x1.231</text>
+
+    <!-- Bars: sorted by file size, smallest to largest -->
+
+    <!-- vision2.ecf | 12.5 kB | x1.141 -->
+    <text x="300" y="106" font-size="13" fill="#1a1a1a" text-anchor="end" font-weight="600">vision2.ecf</text>
+    <text x="300" y="120" font-size="10.5" fill="#999999" text-anchor="end">12.5 kB</text>
+    <rect x="320" y="97" width="162.9" height="20" rx="2" fill="#93c5fd"/>
+    <text x="491" y="112" font-size="12" fill="#1a1a1a" font-weight="600">x1.14</text>
+
+    <!-- recursive-entity-expansion.xml | 159.4 kB | x1.239 -->
+    <text x="300" y="158" font-size="13" fill="#1a1a1a" text-anchor="end" font-weight="600">recursive-entity-expansion.xml</text>
+    <text x="300" y="172" font-size="10.5" fill="#999999" text-anchor="end">159.4 kB</text>
+    <rect x="320" y="149" width="276.2" height="20" rx="2" fill="#60a5fa"/>
+    <text x="604" y="164" font-size="12" fill="#1a1a1a" font-weight="600">x1.24</text>
+
+    <!-- mandarin-names-and-text.xsl | 244.4 kB | x1.381 -->
+    <text x="300" y="210" font-size="13" fill="#1a1a1a" text-anchor="end" font-weight="600">mandarin-names-and-text.xsl</text>
+    <text x="300" y="224" font-size="10.5" fill="#999999" text-anchor="end">244.4 kB</text>
+    <rect x="320" y="201" width="440.3" height="20" rx="2" fill="#2563eb"/>
+    <text x="768" y="216" font-size="12" fill="#1a1a1a" font-weight="600">x1.38</text>
+
+    <!-- Legislation.xml | 428.9 kB | x1.11 -->
+    <text x="300" y="262" font-size="13" fill="#1a1a1a" text-anchor="end" font-weight="600">Legislation.xml</text>
+    <text x="300" y="276" font-size="10.5" fill="#999999" text-anchor="end">428.9 kB</text>
+    <rect x="320" y="253" width="127.1" height="20" rx="2" fill="#93c5fd"/>
+    <text x="455" y="268" font-size="12" fill="#1a1a1a" font-weight="600">x1.11</text>
+
+    <!-- DTD-attlist-default-values.xml | 2.5 MB | x1.174 -->
+    <text x="300" y="314" font-size="13" fill="#1a1a1a" text-anchor="end" font-weight="600">DTD-attlist-default-values.xml</text>
+    <text x="300" y="328" font-size="10.5" fill="#999999" text-anchor="end">2.5 MB</text>
+    <rect x="320" y="305" width="201.1" height="20" rx="2" fill="#93c5fd"/>
+    <text x="529" y="320" font-size="12" fill="#1a1a1a" font-weight="600">x1.17</text>
+
+    <!-- nes96.xml | 3.0 MB | x1.228 -->
+    <text x="300" y="366" font-size="13" fill="#1a1a1a" text-anchor="end" font-weight="600">nes96.xml</text>
+    <text x="300" y="380" font-size="10.5" fill="#999999" text-anchor="end">3.0 MB</text>
+    <rect x="320" y="357" width="263.5" height="20" rx="2" fill="#60a5fa"/>
+    <text x="591" y="372" font-size="12" fill="#1a1a1a" font-weight="600">x1.23</text>
+
+    <!-- wordnet_glossary-20010201.rdf | 15.2 MB | x1.357 -->
+    <text x="300" y="418" font-size="13" fill="#1a1a1a" text-anchor="end" font-weight="600">wordnet_glossary-20010201.rdf</text>
+    <text x="300" y="432" font-size="10.5" fill="#999999" text-anchor="end">15.2 MB</text>
+    <rect x="320" y="409" width="412.5" height="20" rx="2" fill="#2563eb"/>
+    <text x="740" y="424" font-size="12" fill="#1a1a1a" font-weight="600">x1.36</text>
+
+    <!-- recset.xml | 30.3 MB | x1.21 -->
+    <text x="300" y="470" font-size="13" fill="#1a1a1a" text-anchor="end" font-weight="600">recset.xml</text>
+    <text x="300" y="484" font-size="10.5" fill="#999999" text-anchor="end">30.3 MB</text>
+    <rect x="320" y="461" width="242.7" height="20" rx="2" fill="#60a5fa"/>
+    <text x="571" y="476" font-size="12" fill="#1a1a1a" font-weight="600">x1.21</text>
+
+    <!-- ns_att_test.xml | 35.7 MB | x1.246 -->
+    <text x="300" y="522" font-size="13" fill="#1a1a1a" text-anchor="end" font-weight="600">ns_att_test.xml</text>
+    <text x="300" y="536" font-size="10.5" fill="#999999" text-anchor="end">35.7 MB</text>
+    <rect x="320" y="513" width="284.3" height="20" rx="2" fill="#2563eb"/>
+    <text x="612" y="528" font-size="12" fill="#1a1a1a" font-weight="600">x1.25</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(320, 592)">
+    <rect x="0" y="-10" width="12" height="12" fill="#93c5fd" rx="2"/>
+    <text x="18" y="0" font-size="10.5" fill="#666666">x1.0&#8211;1.19</text>
+    <rect x="100" y="-10" width="12" height="12" fill="#60a5fa" rx="2"/>
+    <text x="118" y="0" font-size="10.5" fill="#666666">x1.2&#8211;1.29</text>
+    <rect x="205" y="-10" width="12" height="12" fill="#2563eb" rx="2"/>
+    <text x="223" y="0" font-size="10.5" fill="#666666">x1.3+</text>
+    <line x1="290" y1="-4" x2="308" y2="-4" stroke="#d97706" stroke-width="1.5" stroke-dasharray="5,4"/>
+    <text x="313" y="0" font-size="10.5" fill="#666666">Overall average (all metrics)</text>
+  </g>
+
+  <!-- Footer note -->
+  <text x="30" y="612" font-size="10.5" fill="#999999">Files sorted by size (12.5 kB &#8594; 35.7 MB). Bars = average speedup across CRC-32/tag-count metrics per file.</text>
+</svg>

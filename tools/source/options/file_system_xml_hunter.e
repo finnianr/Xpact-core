@@ -35,7 +35,7 @@ feature {NONE} -- Initialization
 			resume_at_count := a_resume_at_count
 
 			if Environment.is_path_ntfs (dir_path) then
-				create {XT_WINDOWS_DIRECTORY_WALKER} directory.make_root_with_path (dir_path)
+				create {XT_WINDOWS_DIRECTORY_WALKER} directory.make_with_path (dir_path)
 			else
 				create directory.make_with_path (dir_path)
 			end

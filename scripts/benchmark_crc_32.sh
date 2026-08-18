@@ -23,8 +23,8 @@ pushd .
 
 cd tools/data
 
-for name in mandarin-names-and-text.xsl recursive-entity-expansion.xml Legislation.xml \
-		DTD-attlist-default-values.xml mandarin-names-and-text.xsl ; do
+for name in mandarin-names-and-text.xsl recursive-entity-expansion.xml \
+		DTD-attlist-default-values.xml Legislation.xml; do
 	for type in $type_list; do
 		echo Type: $type in $name
 		xml_reader -crc_32 $type -duration $DURATION_MS -compare_to_expat $name

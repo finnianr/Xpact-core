@@ -1,4 +1,4 @@
-Total system files: 1_023_441
+Total system files: 1,023,441
 
 Total zipped archive packages: 451
 Extensions sorted in order of occurrence count (Highest first)
