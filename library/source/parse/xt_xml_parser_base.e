@@ -626,10 +626,12 @@ feature {NONE} -- Implementation
 feature {NONE} -- Internal attributes
 
 	runway_expansion_threshold: NATURAL_64
-		-- number of bytes processed after which checks for
-		-- runaway expansion should be performed
+		-- number of bytes processed after which checks for runaway entity expansion
+		-- should be performed
 
 	max_expansion_proportion: DOUBLE
+		-- maximum proportion of entity expanded text to already processed text
+		-- permitted before raising error `Error_amplification_limit_breach'
 
 	last_buffer_request_size: INTEGER
 

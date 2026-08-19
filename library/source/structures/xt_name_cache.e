@@ -163,16 +163,16 @@ feature -- Basic operations
 
 	print_stats
 		do
-			IO.put_string ("NAME CACHING")
+			print ("NAME CACHING")
 			IO.put_new_line
-			IO.put_string ("Buckets used count: ")
+			print ("Buckets used count: ")
 			IO.put_integer (buckets_used_count)
 			IO.put_new_line
-			IO.put_string ("Average hash bucket count: ")
+			print ("Average hash bucket count: ")
 			IO.put_integer (average_bucket_item_count)
 			IO.put_new_line
-			IO.put_string ("Hash bucket counts greater than 1")
-			IO.put_string (":%N")
+			print ("Hash bucket counts greater than 1")
+			print (":%N")
 			if attached bucket_distribution_gt_1.sorted_occurrence_list (False) as sorted_list then
 				if sorted_list.count = 0 then
 					print ("None")
