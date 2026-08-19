@@ -70,6 +70,18 @@ feature -- Status query
 	is_final_buffer: BOOLEAN
 		-- Was the current parse call marked as the last chunk?
 
+feature -- Element change
+
+	set_runway_expansion_threshold (a_runway_expansion_threshold: NATURAL_64)
+		do
+			runway_expansion_threshold := a_runway_expansion_threshold
+		end
+
+	set_max_expansion_proportion (a_max_expansion_proportion: DOUBLE)
+		do
+			max_expansion_proportion := a_max_expansion_proportion
+		end
+
 feature -- Basic operations
 
 	parse_file (file_path: PATH; chunk_size: INTEGER; collection_off: BOOLEAN)
