@@ -98,6 +98,7 @@ feature -- Basic operations
 				Memory.collection_off
 			end
 			if file_readable then
+				content_count := 1 -- prevents division by zero
 				from parse_status := Status_ok until final_chunk or parse_status /= Status_OK loop
 					read_to_managed_pointer (chunk, 0, chunk.count); byte_count := bytes_read
 					if off or else (byte_count = chunk.count and then position = count) then

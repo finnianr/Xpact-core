@@ -14,6 +14,8 @@ deferred class XT_XML_PARSER_BASE
 
 inherit
 	XT_XML_PROLOG_PARSER
+		export
+			{ANY} read_natural_64
 		redefine
 			make, set_defaults
 		end
@@ -113,6 +115,7 @@ feature -- Basic operations
 		-- Returns Status_ok, Status_suspended, or Status_error.
 		-- Corresponds to XML_Parse() in xmlparse.c.
 		require
+			content_count_at_least_1: read_natural_64 (content_count) >= 1 -- guards against division by zero later
 			non_negative_count: a_count >= 0
 			valid_source_range: a_count = 0 or else (a_offset >= 0 and then a_offset + a_count <= chunk.count)
 			not_in_handler: handler_call_depth = 0
@@ -575,6 +578,9 @@ feature {NONE} -- Processor dispatch
 							when Source_expansion_with_checks then
 								entity_expansion_count := entity_expansion_count + (tok_end - index).to_natural_64
 								if (content_count + entity_expansion_count) / content_count > max_expansion_proportion then
+									IO.put_string ("entity_expansion_count: ")
+									IO.put_natural_64 (entity_expansion_count)
+									IO.put_new_line
 									Result := Error_amplification_limit_breach; done := True
 								else
 									put_natural_64 (entity_expansion_count, a_entity_expansion_count)
@@ -660,7 +666,7 @@ feature {NONE} -- Constants
 		-- number of bytes processed after which checks for
 		-- runaway expansion should be performed
 
-	Default_max_expansion_proportion: DOUBLE = 1.0
+	Default_max_expansion_proportion: DOUBLE = 100.0
 
 	Source_content: NATURAL_8 = 0
 
