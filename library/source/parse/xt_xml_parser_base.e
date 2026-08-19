@@ -323,9 +323,9 @@ feature {NONE} -- Processor dispatch
 			ptr_at_start: buffer_index = start_index
 		local
 			error, have_now, had_before, available: INTEGER; enough, done: BOOLEAN
-			section: like section_flags; context: like element_context; s: like scanner
+			section: like section_flags; context: like element_context
 			names: like name_cache; attributes: like attribute_intervals; buf: like buffer
-			bt_table: like scanner.Byte_type_table
+			bt_table: like Byte_type_table
 		do
 			have_now := end_index - start_index
 
@@ -347,12 +347,12 @@ feature {NONE} -- Processor dispatch
 			if enough then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
-				section := section_flags; context := element_context; s := scanner; names := name_cache
-				bt_table := s.Byte_type_table; attributes := attribute_intervals; buf := buffer
+				section := section_flags; context := element_context; names := name_cache
+				bt_table := byte_type_table; attributes := attribute_intervals; buf := buffer
 
 				from done := False until done loop
 					error := process_content (
-						buf, buffer_index, end_index, bt_table, attributes, s, names, context, section,
+						buf, buffer_index, end_index, bt_table, attributes, names, context, section,
 						content_count, entity_expansion_count, Source_content
 					)
 
@@ -414,7 +414,7 @@ feature {NONE} -- Processor dispatch
 
 	process_content (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
-		attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; s: like scanner; names: like name_cache
+		attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; names: like name_cache
 		a_context: XT_ELEMENT_CONTEXT; in_section: SPECIAL [BOOLEAN]
 		a_content_count, a_entity_expansion_count: TYPED_POINTER [NATURAL_64]; a_source_type: NATURAL_8
 	): INTEGER
@@ -435,18 +435,18 @@ feature {NONE} -- Processor dispatch
 			content_count := read_natural_64 (a_content_count)
 			entity_expansion_count := read_natural_64 (a_entity_expansion_count)
 
-			index := s.index_of (buf, (85).to_character_8, start_index, end_index)
+			index := index_of (buf, (85).to_character_8, start_index, end_index)
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
 				if in_section [Prolog] then
 					Result := process_prolog (
-						buf, start_index, end_index, bt_table, attributes, s, names, in_section, $index, $done
+						buf, start_index, end_index, bt_table, attributes, names, in_section, $index, $done
 					)
 					context := element_context
 
 				elseif in_section [CDATA] then
-					token := s.scan_cdata_section (buf, index, end_index, bt_table)
-					tok_end := s.next_token_index
+					token := scan_cdata_section (buf, index, end_index, bt_table)
+					tok_end := next_token_index
 					inspect token
 						when Tok_cdata_sect_close then
 							on_cdata_section_close
@@ -469,8 +469,8 @@ feature {NONE} -- Processor dispatch
 						end
 					end
 				else
-					token := s.scan_content (buf, index, end_index, bt_table)
-					tok_end := s.next_token_index
+					token := scan_content (buf, index, end_index, bt_table)
+					tok_end := next_token_index
 					inspect token
 						when Tok_cdata_sect_open then
 							in_section [CDATA] := True
@@ -485,16 +485,16 @@ feature {NONE} -- Processor dispatch
 							on_content (new_line, 0, 0, attributes)
 
 						when Tok_start_tag_no_attributes then
-							context.push (s.tag_name (names, buf, index))
+							context.push (cached_tag_name (buf, index, names))
 							on_tag_start (buf, context, attributes, token)
 
 						when Tok_start_tag_with_attributes then
-							context.push (s.tag_name (names, buf, index))
+							context.push (cached_tag_name (buf, index, names))
 							on_tag_start (buf, context, attributes, token)
 							attributes.wipe_out
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
-							tag_name := s.tag_name (names, buf, index)
+							tag_name := cached_tag_name (buf, index, names)
 							context.push (tag_name)
 							on_tag_start (buf, context, attributes, token)
 							inspect token when Tok_empty_element_with_attributes then
@@ -508,7 +508,7 @@ feature {NONE} -- Processor dispatch
 							end
 
 						when Tok_end_tag then
-							tag_name := s.tag_name (names, buf, index + 1)
+							tag_name := cached_tag_name (buf, index + 1, names)
 							on_tag_end (tag_name)  -- skip '</'
 							inspect context.pop (tag_name) when Error_tag_mismatch then
 								Result := Error_tag_mismatch; done := True
@@ -524,14 +524,14 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_entity_ref then
 							lower := index + 1; upper := tok_end - 2
-							code := s.predefined_entity_code (buf, lower, upper)
+							code := predefined_entity_code (buf, lower, upper)
 							inspect code when -1 then
 								entity_name := entity_cache.item (buf, lower, upper)
 								if attached entity_table.item (entity_name, False) as entity_value then
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
 									error := process_content (
-										entity_value.area, 0, entity_value.count, bt_table, attributes, s, names, context, in_section,
+										entity_value.area, 0, entity_value.count, bt_table, attributes, names, context, in_section,
 										$content_count, $entity_expansion_count, source_type (content_count, entity_expansion_count, a_source_type)
 									) -- Recurse
 									buffer_index := buffer_index_copy -- restore field
@@ -550,22 +550,22 @@ feature {NONE} -- Processor dispatch
 									Result := Error_undefined_entity; done := True
 								end
 							else
-								on_content (s.unescaped (code), 0, 0, attributes)
+								on_content (unescaped (code), 0, 0, attributes)
 							end
 
 						when Tok_char_ref then
 							-- index is '&'; tok_end is exclusive end past ';'
-							code := s.char_ref_number (buf, index, tok_end)
-							inspect s.valid_char_ref (code) when -1 then
+							code := char_ref_number (buf, index, tok_end)
+							inspect valid_char_ref (code) when -1 then
 								Result := Error_bad_char_ref; done := True
 							else
-								if attached s.utf_8_encoded (code) as l_utf_8 then
+								if attached utf_8_encoded (code) as l_utf_8 then
 									on_content (l_utf_8, 0, l_utf_8.count - 1, attributes)
 								end
 							end
 					else
 						if token < 0 then
-							Result := s.error_code
+							Result := scanned_error_code
 							done := True  -- partial; wait for more data
 						end
 					end

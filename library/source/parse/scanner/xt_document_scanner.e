@@ -20,7 +20,7 @@ note
 	date: "2026-06-20 20:42:32 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-class XT_DOCUMENT_SCANNER
+deferred class XT_DOCUMENT_SCANNER
 
 inherit
 	XT_CONTENT_SCANNER
@@ -31,19 +31,6 @@ inherit
 	XT_PROLOG_SCANNER
 		export
 			{XT_PARSING_BUFFERS} scan_name
-		end
-
-create
-	make
-
-feature {NONE} -- Initialisation
-
-	make
-		do
-			create attribute_intervals.make (11)
-			entity_cache := attribute_intervals.entity_cache
-			create scanned_entity_buffer.make (5)
-			create index_x4_buffer.make_empty (4)
 		end
 
 feature -- Scanner dispatch (implements XT_ENCODING deferred features)

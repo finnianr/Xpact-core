@@ -19,6 +19,13 @@ inherit
 			make, set_defaults, reset
 		end
 
+	XT_DOCUMENT_SCANNER
+		rename
+			CDATA as CDATA_upper
+		redefine
+			make, reset
+		end
+
 	XT_PARSE_EVENTS
 
 	EL_TYPED_POINTER_ROUTINES_I
@@ -32,7 +39,8 @@ feature {NONE} -- Initialization
 			create element_context.make (section_flags)
 			create parameter_entity_table.make (3)
 			create parameter_name_cache.make
-			Precursor
+			Precursor {XT_PARSING_BUFFERS}
+			Precursor {XT_DOCUMENT_SCANNER}
 		end
 
 	set_defaults
@@ -52,7 +60,7 @@ feature -- Status query
 feature {NONE} -- Token processing
 
 	process_doctype_definition (
-		buf: like buffer; index, end_index, token: INTEGER; s: like scanner; names: like name_cache;
+		buf: like buffer; index, end_index, token: INTEGER; names: like name_cache;
 		in_section: SPECIAL [BOOLEAN]; a_done, a_default_case, a_common_case: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
@@ -67,7 +75,7 @@ feature {NONE} -- Token processing
 					end
 
 				when Tok_decl_open then
-					decl_type := declaration_type (buf, index + 2, s)
+					decl_type := declaration_type (buf, index + 2)
 					inspect decl_type
 						when 0 then
 							Result := Error_syntax; done := True
@@ -92,7 +100,7 @@ feature {NONE} -- Token processing
 					inspect declaration
 						when Attlist then
 							if doctype_decl_stack.count = 2 then
-								on_attribute_declaration_part (buf, index, end_index, token, names, s)
+								on_attribute_declaration_part (buf, index, end_index, token, names)
 							else
 								Result := Error_syntax; done := True
 							end
@@ -100,9 +108,9 @@ feature {NONE} -- Token processing
 						when Entity_ then
 							if doctype_decl_stack.count = 2 then
 								if is_parameter_entity then
-									on_parameter_entity_declaration_part (buf, index, end_index, s)
+									on_parameter_entity_declaration_part (buf, index, end_index)
 								else
-									on_entity_declaration_part (buf, index, end_index, s)
+									on_entity_declaration_part (buf, index, end_index)
 								end
 							else
 								Result := Error_syntax; done := True
@@ -117,16 +125,16 @@ feature {NONE} -- Token processing
 					inspect declaration
 						when Attlist then
 							if doctype_decl_stack.count = 2 then
-								on_attribute_declaration_part (buf, index + 1, end_index - 1, token, names, s)
+								on_attribute_declaration_part (buf, index + 1, end_index - 1, token, names)
 							else
 								Result := Error_syntax; done := True
 							end
 						when Entity_ then
 							if doctype_decl_stack.count = 2 then
 								if is_parameter_entity then
-									on_parameter_entity_declaration_part (buf, index + 1, end_index - 1, s)
+									on_parameter_entity_declaration_part (buf, index + 1, end_index - 1)
 								else
-									on_entity_declaration_part (buf, index + 1, end_index - 1, s)
+									on_entity_declaration_part (buf, index + 1, end_index - 1)
 								end
 							else
 								Result := Error_syntax; done := True
@@ -141,7 +149,7 @@ feature {NONE} -- Token processing
 				when Tok_pound_name then
 					inspect declaration
 						when Attlist then
-							on_attribute_declaration_part (buf, index, end_index, token, names, s)
+							on_attribute_declaration_part (buf, index, end_index, token, names)
 
 						when Element_, Entity_, Notation then
 							do_nothing -- for now
@@ -168,7 +176,7 @@ feature {NONE} -- Token processing
 
 	process_prolog (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
-		s: like scanner; names: like name_cache; in_section: SPECIAL [BOOLEAN]
+		names: like name_cache; in_section: SPECIAL [BOOLEAN]
 		a_index: TYPED_POINTER [INTEGER]; a_done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
@@ -177,10 +185,10 @@ feature {NONE} -- Token processing
 			yes_no: STRING
 		do
 			index := read_integer_32 (a_index)
-			token := s.scan_prolog (buf, index, end_index, bt_table)
-			tok_end := s.next_token_index
+			token := scan_prolog (buf, index, end_index, bt_table)
+			tok_end := next_token_index
 			if in_section [Doctype_definition] then
-				Result := process_doctype_definition (buf, index, tok_end - 1, token, s, names, in_section, $done, $default_case, $common_case)
+				Result := process_doctype_definition (buf, index, tok_end - 1, token, names, in_section, $done, $default_case, $common_case)
 			else
 				inspect token
 					when Tok_xml_decl then
@@ -212,7 +220,7 @@ feature {NONE} -- Token processing
 						end
 
 					when Tok_decl_open then
-						decl_type := declaration_type (buf, index + 2, s)
+						decl_type := declaration_type (buf, index + 2)
 						inspect decl_type
 							when 0 then
 								Result := Error_syntax; done := True
@@ -237,16 +245,16 @@ feature {NONE} -- Token processing
 
 					when Tok_literal then
 						if declaration = Doctype and then doctype_decl_stack.count = 1 then
-							on_document_declaration_part (buf, index, tok_end - 1, s)
+							on_document_declaration_part (buf, index, tok_end - 1)
 						else
-							Result := name_error (buf, index, end_index, s, bt_table); done := True
+							Result := name_error (buf, index, end_index, bt_table); done := True
 						end
 
 					when Tok_name then
 						if declaration = Doctype and then doctype_decl_stack.count = 1 then
-							on_document_declaration_part (buf, index, tok_end - 1, s)
+							on_document_declaration_part (buf, index, tok_end - 1)
 						else
-							Result := name_error (buf, index, end_index, s, bt_table); done := True
+							Result := name_error (buf, index, end_index, bt_table); done := True
 						end
 
 					when Tok_open_bracket then
@@ -273,8 +281,8 @@ feature {NONE} -- Token processing
 					when Tok_invalid then
 						Result := Error_invalid_token
 					-- Checking for binary data masquerading as XML
-						if start_index = 0 and then not s.is_plausible_xml (buf, start_index, end_index, bt_table)
-							and then s.has_syntax_error (buf, start_index, end_index, bt_table)
+						if start_index = 0 and then not is_plausible_xml (buf, start_index, end_index, bt_table)
+							and then has_syntax_error (buf, start_index, end_index, bt_table)
 						then
 							Result := Error_syntax
 						end
@@ -297,7 +305,7 @@ feature {NONE} -- Token processing
 				end
 			end
 			if default_case then
-				if element_context.reached_depth_zero and then not s.is_white_space (buf, index, end_index - 1) then
+				if element_context.reached_depth_zero and then not is_white_space (buf, index, end_index - 1) then
 					Result := Error_junk_after_doc_element; done := True
 
 				elseif token <= 0 then
@@ -317,7 +325,7 @@ feature {NONE} -- Token processing
 
 feature {NONE} -- Event handlers
 
-	on_attribute_declaration_part (buf: like buffer; start_index, end_index, token: INTEGER; names: like name_cache; s: like scanner)
+	on_attribute_declaration_part (buf: like buffer; start_index, end_index, token: INTEGER; names: like name_cache)
 		local
 			default_values_list: ARRAYED_LIST [STRING]; colon_index: INTEGER; s8: XT_STRING_8_ROUTINES
 		do
@@ -327,7 +335,7 @@ feature {NONE} -- Event handlers
 					declaration_parts_list.extend (names.item (buf, start_index, end_index, colon_index.max (0)))
 
 				when 2 then
-					if s.same_characters (buf, start_index, end_index, CDATA_upper) then
+					if same_characters (buf, start_index, end_index, CDATA_upper) then
 						declaration_parts_list.extend (CDATA_upper)
 					end
 			else
@@ -341,7 +349,7 @@ feature {NONE} -- Event handlers
 								attribute_value_defaults_table.extend (default_values_list, declaration_parts_list.first)
 							end
 							default_values_list.extend (declaration_parts_list [2])
-							default_values_list.extend (s.new_attribute_value (buf, start_index, end_index, s.newline_or_tab_found))
+							default_values_list.extend (new_attribute_value (buf, start_index, end_index, newline_or_tab_found))
 						end
 					when Tok_pound_name then
 						declaration_parts_list.extend (name_cache.item (buf, start_index, end_index, 0))
@@ -351,7 +359,7 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_entity_declaration_part (buf: like buffer; start_index, end_index: INTEGER; s: like scanner)
+	on_entity_declaration_part (buf: like buffer; start_index, end_index: INTEGER)
 		local
 			abnormal_string: XT_ABNORMAL_STRING; id: STRING
 		do
@@ -363,23 +371,23 @@ feature {NONE} -- Event handlers
 					if id /= Unknown_id then
 						declaration_parts_list.extend (id)
 					else
-						if s.newline_or_tab_found then
-							create abnormal_string.make (buf, start_index, end_index, s)
+						if newline_or_tab_found then
+							create abnormal_string.make (buf, start_index, end_index, newline_or_tab_found)
 							entity_table.put (abnormal_string, declaration_parts_list.first)
 						else
-							entity_table.put (s.new_substring (buf, start_index, end_index), declaration_parts_list.first)
+							entity_table.put (new_substring (buf, start_index, end_index), declaration_parts_list.first)
 						end
 					end
 				when 2 then
 				-- &legal; referenced near end of document /usr/share/gnome/help/synaptic/C/synaptic.xml
 				-- Defined as external: <!ENTITY legal SYSTEM "gpl.xml">
 				-- Without putting into table there will be a %N missing in output compared to eXpat
-					entity_table.put (s.Empty_string, declaration_parts_list.first)
+					entity_table.put (Empty_string, declaration_parts_list.first)
 			else
 			end
 		end
 
-	on_parameter_entity_declaration_part (buf: like buffer; start_index, end_index: INTEGER; s: like scanner)
+	on_parameter_entity_declaration_part (buf: like buffer; start_index, end_index: INTEGER)
 		local
 			id: STRING; parameter: XT_PARAMETER_ENTITY
 		do
@@ -391,18 +399,18 @@ feature {NONE} -- Event handlers
 					if id /= Unknown_id then
 						declaration_parts_list.extend (id)
 					else
-						declaration_parts_list.extend (s.new_substring (buf, start_index, end_index))
+						declaration_parts_list.extend (new_substring (buf, start_index, end_index))
 					end
 				when 2 then
 					if Valid_external_id_list.has (declaration_parts_list [2]) then
-						create parameter.make (declaration_parts_list, s.new_substring (buf, start_index, end_index))
+						create parameter.make (declaration_parts_list, new_substring (buf, start_index, end_index))
 						parameter_entity_table.put (parameter, declaration_parts_list [1])
 					end
 			else
 			end
 		end
 
-	on_document_declaration_part (buf: like buffer; start_index, end_index: INTEGER; s: like scanner)
+	on_document_declaration_part (buf: like buffer; start_index, end_index: INTEGER)
 		do
 			inspect declaration_parts_list.count
 				when 0 then
@@ -410,10 +418,10 @@ feature {NONE} -- Event handlers
 				when 1 then
 					declaration_parts_list.extend (external_id (buf, start_index, end_index))
 				when 2 then
-					s.append_area (formal_public_identifier, buf, start_index + 1, end_index - 1)
+					append_area (formal_public_identifier, buf, start_index + 1, end_index - 1)
 					declaration_parts_list.extend (formal_public_identifier)
 				when 3 then
-					s.append_area (DTD_uri, buf, start_index + 1, end_index - 1)
+					append_area (DTD_uri, buf, start_index + 1, end_index - 1)
 					declaration_parts_list.extend (DTD_uri)
 			else
 			end
@@ -441,6 +449,16 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	declaration_type (buf: like buffer; offset: INTEGER): INTEGER
+		-- one of: Attlist, Doctype, Element, Entity or 0 if no match
+		do
+			across Document_definition_names as name until Result > 0 loop
+				if same_characters (buf, offset, offset + name.count - 1, name) then
+					Result := @ name.cursor_index
+				end
+			end
+		end
+
 	external_id (buf: like buffer; start_index, end_index: INTEGER): STRING
 		-- PUBLIC or SYSTEM id string, defaults to Unknown
 		local
@@ -448,7 +466,7 @@ feature {NONE} -- Implementation
 		do
 			Result := Unknown_id
 			from i := 1 until i > Valid_external_id_list.count loop
-				if s.same_characters (buf, start_index, end_index, Valid_external_id_list [i]) then
+				if same_characters (buf, start_index, end_index, Valid_external_id_list [i]) then
 					Result := Valid_external_id_list [i]
 					i := 3 -- break
 				else
@@ -457,7 +475,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	name_error (buf: like buffer; start_index, end_index: INTEGER; s: like scanner; bt_table: SPECIAL [INTEGER]): INTEGER
+	name_error (buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 		-- try and agree with eXpat on whether invalid XML will be regarded as a syntax error or invalid token
 		-- the assumption is that parser has been given some binary data masquerading as XML, for example:
 		-- C:\Windows\WinSxS\amd64_microsoft-windows-deviceaccess_31bf3856ad364e35_10.0.26100.4202_none_a94ac2308a15fa4a\r\AppPrivacy.admx
@@ -473,14 +491,14 @@ feature {NONE} -- Implementation
 				name_count := 1
 			-- Find first section of invalid markup
 				from index := start_index until index >= end_index or invalid_token or name_count >= 2 loop
-					token := s.scan_prolog (buf, index, end_index, bt_table)
+					token := scan_prolog (buf, index, end_index, bt_table)
 					inspect token
 						when Tok_name then
 							name_count := name_count + 1
 						when Tok_invalid then
 							invalid_token := True
 					else
-						tok_end := s.next_token_index
+						tok_end := next_token_index
 					end
 					if not invalid_token then
 						index := tok_end
@@ -490,13 +508,13 @@ feature {NONE} -- Implementation
 					Result := Error_syntax
 
 				elseif invalid_token then
-					if s.has_syntax_error (buf, index, end_index, bt_table) then
+					if has_syntax_error (buf, index, end_index, bt_table) then
 						Result := Error_syntax
 					else
 						Result := Error_invalid_token
 					end
 				else
-					if s.has_syntax_error (buf, tok_end, end_index, bt_table) then
+					if has_syntax_error (buf, tok_end, end_index, bt_table) then
 						Result := Error_syntax
 					else
 						Result := Error_invalid_token
@@ -537,7 +555,9 @@ feature {NONE} -- Implementation
 
 	reset
 		do
-			Precursor
+			Precursor {XT_PARSING_BUFFERS}
+			Precursor {XT_DOCUMENT_SCANNER}
+
 			if element_context.has_default_values then
 				create element_context.make (section_flags)
 			else

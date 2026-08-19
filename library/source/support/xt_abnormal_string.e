@@ -28,12 +28,12 @@ create
 
 feature {NONE} -- Initialization
 
-	make (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; scanner: XT_SCANNER_BASE)
+	make (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; a_newline_or_tab_found: BOOLEAN)
 		local
 			s: XT_STRING_8_ROUTINES
 		do
 			make_sized (end_index - start_index + 1)
-			newline_or_tab_found := scanner.newline_or_tab_found
+			newline_or_tab_found := a_newline_or_tab_found
 			s.append_area (Current, buffer, start_index, end_index)
 		end
 

@@ -200,9 +200,4 @@ feature {NONE} -- Reference sub-helper
 			end
 		end
 
-feature {NONE} -- Internal attributes
-
-	entity_cache: XT_ENTITY_NAME_CACHE
-		-- efficient lookup of entity names from character buffer interval
-
 end

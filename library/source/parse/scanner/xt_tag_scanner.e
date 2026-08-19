@@ -28,7 +28,7 @@ feature -- Measurement
 
 	tag_name_count: INTEGER
 
-	tag_name (name_cache: XT_NAME_CACHE; buffer: SPECIAL [CHARACTER_8]; lt_index: INTEGER): STRING_8
+	cached_tag_name (buffer: SPECIAL [CHARACTER_8]; lt_index: INTEGER; a_name_cache: XT_NAME_CACHE): STRING_8
 		require
 			last_colon_index_valid: last_colon_index_valid (buffer, lt_index)
 
@@ -36,9 +36,9 @@ feature -- Measurement
 			start_index: INTEGER
 		do
 			start_index := lt_index + 1
-			Result := name_cache.item (buffer, start_index, start_index + tag_name_count - 1, last_colon_index)
+			Result := a_name_cache.item (buffer, start_index, start_index + tag_name_count - 1, last_colon_index)
 		ensure
-			same_tag_length: Result.count = name_count (buffer, lt_index + 1)
+			same_tag_length: Result.count = xml_name_count (buffer, lt_index + 1)
 		end
 
 feature -- Contract support
@@ -284,7 +284,7 @@ feature {NONE} -- Tag scanning
 								inspect error when 0 then
 									do_nothing
 								else
-									error_code := error
+									scanned_error_code := error
 									Result := tok_start_tag_with_attributes.opposite; done := True
 								end
 							else
@@ -524,40 +524,6 @@ feature {NONE} -- Tag sub-helpers
 			elseif not done then
 				Result := Tok_partial
 			end
-		end
-
-feature {NONE} -- Contract support
-
-	name_count (buf: SPECIAL [CHARACTER]; start_index: INTEGER): INTEGER
-		-- Byte count of the XML name starting at start_index.
-		-- Stops at first byte whose type is not a name-continuation type.
-		require
-			valid_start_index: start_index >= 0
-		local
-			index: INTEGER; done: BOOLEAN
-		do
-			if attached byte_type_table as bt_table then
-				from index := start_index until index >= buf.count or done loop
-					inspect bt_table [buf [index].code]
-						when Bt_lead_2_byte then
-							index := index + 2
-
-						when Bt_lead_3_byte then
-							index := index + 3
-
-						when Bt_lead_4_byte then
-							index := index + 4
-
-						when BT_name_start, BT_name_only, BT_hex_digit, BT_digit, BT_minus, BT_colon then
-							index := index + 1
-					else
-						done := True
-					end
-				end
-			end
-			Result := index - start_index
-		ensure
-			non_negative: Result >= 0
 		end
 
 feature {NONE} -- Implementation

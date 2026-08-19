@@ -42,8 +42,17 @@ inherit
 		end
 
 	XT_STRING_8_ROUTINES_I
-		export
-			{XT_XML_PROLOG_PARSER} all
+
+feature {NONE} -- Initialisation
+
+	make
+		do
+			create scanned_entity_buffer.make (5)
+			create index_x4_buffer.make_empty (4)
+			create attribute_intervals.make (11)
+			name_cache := attribute_intervals.name_cache
+			entity_cache := attribute_intervals.entity_cache
+			entity_table := attribute_intervals.entity_table
 		end
 
 feature -- Access
@@ -54,11 +63,21 @@ feature -- Access
 		-- Index of the first byte after the token just scanned.
 		-- Invalid if the last call returned Tok_none or Tok_partial.
 
-	error_code: INTEGER
-
 feature -- Status report
 
 	newline_or_tab_found: BOOLEAN
+
+feature -- Element change
+
+	reset
+		do
+			attribute_intervals.set_permit_undefined_entities (False)
+			attribute_intervals.wipe_out
+			entity_cache.reset
+			name_cache.reset
+			entity_table.wipe_out
+			entity_table.set_predefined (entity_cache)
+		end
 
 feature {NONE} -- Implementation
 
@@ -86,12 +105,23 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
+	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+		-- collected attribute name-value pair indices into `buffer'
+
+	entity_table: XT_ENTITY_TABLE
+		-- table of expanded entities defined in DOCTYPE by ENTITY
+
+	entity_cache: XT_ENTITY_NAME_CACHE
+		-- efficient lookup of entity names from character buffer interval
+
+	name_cache: XT_NAME_CACHE
+		-- efficient lookup of tag names
+
 	index_x4_buffer: SPECIAL [INTEGER]
 
 	scanned_entity_buffer: ARRAYED_LIST [STRING]
 
-	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
-		-- collected attribute name-value pair indices into `buffer'
+	scanned_error_code: INTEGER
 
 	bad_char_index: INTEGER
 			-- Set by `is_public_id' on failure: index of the bad character.

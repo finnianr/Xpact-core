@@ -62,12 +62,6 @@ feature {NONE} -- Initialization
 			create formal_public_identifier.make (40)
 			create DTD_uri.make (60)
 
-			create scanner.make
-			attribute_intervals := scanner.attribute_intervals
-			name_cache := attribute_intervals.name_cache
-			entity_cache := attribute_intervals.entity_cache
-			entity_table := attribute_intervals.entity_table
-
 			set_defaults
 		ensure then
 			empty_buffer: buffer_end = 0 and buffer_index = 0
@@ -114,20 +108,14 @@ feature -- Element change
 	reset
 		do
 			set_defaults
-			attribute_intervals.set_permit_undefined_entities (False)
-			attribute_intervals.wipe_out
 			attribute_value_defaults_table.wipe_out
 
 			if not codec.is_utf_8 then
 				create {XT_UTF_8_CODEC} codec.make_empty
 			end
 			declaration_parts_list.wipe_out
-			entity_cache.reset
 			DTD_uri.wipe_out
 			formal_public_identifier.wipe_out
-			name_cache.reset
-			entity_table.wipe_out
-			entity_table.set_predefined (entity_cache)
 		end
 
 feature {NONE} -- Factory
@@ -227,6 +215,11 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	set_error_code (a_error_code: INTEGER)
+		do
+			error_code := a_error_code
+		end
+
 	encoding_id (declaration: STRING): NATURAL_8
 		local
 			i: NATURAL_8
@@ -318,16 +311,6 @@ feature {NONE} -- Implementation
 			ptr_non_negative:    buffer_index >= 0
 		end
 
-	declaration_type (buf: like buffer; offset: INTEGER; s: like scanner): INTEGER
-		-- one of: Attlist, Doctype, Element, Entity or 0 if no match
-		do
-			across Document_definition_names as name until Result > 0 loop
-				if s.same_characters (buf, offset, offset + name.count - 1, name) then
-					Result := @ name.cursor_index
-				end
-			end
-		end
-
 	shift_buffer_left (offset: INTEGER)
 			-- Slide all live content left by `offset' bytes and adjust
 			-- every index that points into `buffer'.
@@ -359,6 +342,13 @@ feature {NONE} -- Implementation
 			end
 		end
 
+feature {NONE} -- Deferred
+
+	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+		-- collected attribute name-value pair indices into `buffer'
+		deferred
+		end
+
 feature {NONE} -- Internal attributes
 
 	buffer_end: INTEGER
@@ -375,8 +365,6 @@ feature {NONE} -- Internal attributes
 
 feature {NONE} -- Internal structures
 
-	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
-		-- collected attribute name-value pair indices into `buffer'
 
 	attribute_value_defaults_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING]
 
@@ -392,21 +380,11 @@ feature {NONE} -- Internal structures
 
 	codec: XT_C_STRING_CODEC
 
-	entity_table: XT_ENTITY_TABLE
-		-- table of expanded entities defined in DOCTYPE by ENTITY
-
-	entity_cache: XT_ENTITY_NAME_CACHE
-		-- efficient lookup of entity names from character buffer interval
-
 	formal_public_identifier: STRING
 		-- Eg. from DOCTYPE "-//W3C//DTD XHTML 1.0 Transitional//EN"
 
-	name_cache: XT_NAME_CACHE
-		-- efficient lookup of tag names
 
 	new_line: SPECIAL [CHARACTER_8]
-
-	scanner: XT_DOCUMENT_SCANNER
 
 invariant
 	room_for_null_terminator: buffer.capacity = buffer_limit + 1
