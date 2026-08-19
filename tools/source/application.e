@@ -62,7 +62,7 @@ feature {NONE} -- Initialization
 				elseif argument_count >= 2 and then attached argument (1).to_string_8 as l_option
 					and then attached app_table [l_option] as run
 				then
-					IO.put_string ("Program " + l_option + ": Xpact-core XML tools (Eiffel)")
+					print ("Program " + l_option + ": Xpact-core XML tools (Eiffel)")
 					IO.put_new_line
 					run (l_option.substring (2, l_option.count))
 				else
@@ -200,7 +200,12 @@ feature {NONE} -- Application options
 			dir_path := last_path_argument
 			if Environment.directory_exists (dir_path, IO.Output) then
 				create hunter.make (dir_path, new_integer_argument (Option.resume_at, 0))
-				hunter.execute
+				if hunter.valid_driver then
+					hunter.execute
+				else
+					print ("ntfs3 module required for Windows mount")
+					IO.put_new_line
+				end
 			else
 				put_usage (app_option)
 			end
@@ -274,7 +279,7 @@ feature {NONE} -- Implementation
 	last_path_argument: PATH
 		do
 			if index_of_word_option (Option.path_prompt) > 0 then
-				IO.put_string ("Enter a file path: ")
+				print ("Enter a file path: ")
 				IO.read_line
 				create Result.make_from_string (IO.last_string)
 				IO.put_new_line
@@ -291,7 +296,7 @@ feature {NONE} -- Implementation
 			if Environment.file_exists (file_path, IO.Output) then
 				chunk_size := new_integer_argument (Option.chunk_size, 0)
 				create file.make_with_path (file_path)
-				IO.put_string ("Parsing: " + file_path.utf_8_name)
+				print ("Parsing: " + file_path.utf_8_name)
 				IO.put_new_line
 
 				create time_start.make_now -- start timer
@@ -324,7 +329,7 @@ feature {NONE} -- Implementation
 		do
 			if attached new_usage_table [a_option] as usage then
 				across usage.split ('%N') as line loop
-					IO.put_string (line)
+					print (line)
 					IO.put_new_line
 				end
 			end
@@ -334,28 +339,31 @@ feature {NONE} -- Implementation
 		local
 			chosen, found: BOOLEAN; n: INTEGER
 		do
-			IO.put_string ("HELP MENU")
+			print ("HELP MENU")
+			IO.put_new_line
 			across app_table.current_keys as l_option loop
 				IO.put_integer (@ l_option.cursor_index)
-				IO.put_string (". ")
-				IO.put_string (l_option)
+				print (". ")
+				print (l_option)
 				IO.put_new_line
 			end
 			from until chosen loop
-				IO.put_string ("Enter an option number: ")
+				print ("Enter an option number: ")
 				IO.read_line
 				IO.put_new_line
 				n := IO.last_string.to_integer
-				if 1 <= n and n <= app_table.count then
+				if 0 <= n and n <= app_table.count then
 					chosen := True
 				else
 					IO.put_new_line
 				end
 			end
-			across app_table.current_keys as l_option until found loop
-				if @ l_option.cursor_index = n then
-					put_usage (l_option)
-					found := True
+			if n > 0 then
+				across app_table.current_keys as l_option until found loop
+					if @ l_option.cursor_index = n then
+						put_usage (l_option)
+						found := True
+					end
 				end
 			end
 		end

@@ -34,7 +34,7 @@ feature {NONE} -- Initialization
 			s: XT_STRING_8_ROUTINES; error_file: PLAIN_TEXT_FILE; temp_path: PATH
 			checksum: EL_CRC_32_DIGEST; argument_list: ARRAYED_LIST [ANY]
 		do
-			create error_lines.make (0)
+			error_lines := Empty_lines
 			create checksum
 			checksum.add_string (command_template) -- stop clashes
 			across argument_array as argument loop
@@ -56,8 +56,9 @@ feature {NONE} -- Initialization
 				Environment.remove_file (error_path)
 			else
 				make_with_path (output_path)
+				create error_lines.make (0)
 				create error_file.make_open_read (error_path.name)
-				if attached error_file as f then
+				if attached error_file as f and then f.file_readable then
 					from until f.end_of_file loop
 						f.read_line
 						if f.last_string.count > 0 then
@@ -140,6 +141,11 @@ feature -- Basic operations
 		end
 
 feature {NONE} -- Constants
+
+	Empty_lines: ARRAYED_LIST [STRING]
+		once
+			create Result.make (0)
+		end
 
 	Redirection_template: STRING
 		once

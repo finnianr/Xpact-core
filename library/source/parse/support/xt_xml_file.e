@@ -92,7 +92,7 @@ feature -- Basic operations
 
 	parse
 		local
-			byte_count: INTEGER; final_chunk: BOOLEAN
+			byte_count: INTEGER; final_chunk: BOOLEAN; content_count, entity_expansion_count: NATURAL_64
 		do
 			if not gc_enabled then
 				Memory.collection_off
@@ -106,11 +106,11 @@ feature -- Basic operations
 					if byte_count > 0 then
 					-- This aligns with C examples which excludes final newline
 					-- but Claude thinks this is a parsing issue, so this is just a workaround.
-						parse_status := parser.parse (chunk, 0, byte_count, final_chunk)
+						parse_status := parser.parse (chunk, 0, byte_count, final_chunk, $content_count, $entity_expansion_count)
 					end
 				end
 			else
-				parse_status := parser.parse (chunk, 0, 0, True)
+				parse_status := parser.parse (chunk, 0, 0, True, $content_count, $entity_expansion_count)
 			end
 			if not gc_enabled then
 				Memory.collection_on

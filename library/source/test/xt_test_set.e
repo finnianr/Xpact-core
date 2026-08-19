@@ -13,6 +13,9 @@ note
 class
 	XT_TEST_SET
 
+inherit
+	XT_SHARED_EXECUTION_ENVIRONMENT
+
 create
 	make
 
@@ -111,25 +114,41 @@ feature -- Tests
 			end
 		end
 
+	test_mount_driver_name
+		local
+			root: PATH
+		do
+			create root.make_from_string ("/home/finnian")
+			assert ("/ is ext4", Environment.file_system_module (root) ~ "ext4")
+		end
+
 	test_ntfs_link_detection
 		local
-			f: EL_NTFS_FILE_INFO; windows_root: STRING
+			f: EL_NTFS_FILE_INFO; windows_root: STRING; is_symlink, is_reparse_point: BOOLEAN
 		do
 			create f.make
 			windows_root := "/media/finnian/Windows/"
+			IO.put_new_line
 			f.update (windows_root)
 			if f.exists then
-				f.update (windows_root + "Program Files/Common Files/System/wab32.dll")
-				assert ("is_symlink", f.is_symlink)
-				assert ("is_reparse_point", f.is_reparse_point)
-
-				f.update (windows_root + "Program Files/WindowsApps")
-				assert ("is_symlink", not f.is_symlink)
-				assert ("is_reparse_point", not f.is_reparse_point)
-
-				f.update (windows_root + "Documents and Settings")
-				assert ("is_symlink", f.is_symlink)
-				assert ("is_reparse_point", f.is_reparse_point)
+				across << "Program Files/WindowsApps", "Documents and Settings", "Program Files/Common Files/System/wab32.dll" >> as path loop
+					f.update (windows_root + path)
+					print ("Directory: ")
+					print (path)
+					IO.put_new_line
+					inspect @ path.cursor_index when 1 then
+						check
+							WindowsApps: path.ends_with ("WindowsApps")
+						end
+						is_symlink := not f.is_symlink
+						is_reparse_point := not f.is_reparse_point
+					else
+						is_symlink := f.is_symlink
+						is_reparse_point := f.is_reparse_point
+					end
+					assert ("is_symlink", is_symlink)
+					assert ("is_reparse_point", is_reparse_point)
+				end
 			else
 				assert ("Windows partition mounted", False)
 			end
@@ -160,7 +179,8 @@ feature {NONE} -- Implementation
 				[agent test_buffer_pool, "buffer_pool"],
 				[agent test_chunk_reading, "chunk_reading"],
 				[agent test_file_info, "file_info"],
-				[agent test_ntfs_link_detection, "ntfs_link_detection"]
+				[agent test_ntfs_link_detection, "ntfs_link_detection"],
+				[agent test_mount_driver_name, "mount_driver_name"]
 			>>)
 		end
 

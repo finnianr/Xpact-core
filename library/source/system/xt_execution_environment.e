@@ -19,13 +19,12 @@ feature -- Access
 
 	command_name: IMMUTABLE_STRING_32
 		local
-			index_separator, count: INTEGER; separator: CHARACTER_32
+			index_separator, count: INTEGER
 			name: IMMUTABLE_STRING_32
 		do
-			separator := Operating_environment.Directory_separator
 			name := Arguments.Command_name
 			count := name.count
-			index_separator := name.last_index_of (separator, count)
+			index_separator := name.last_index_of (Separator, count)
 			if index_separator > 0 then
 				Result := name.shared_substring (index_separator + 1, count)
 			else
@@ -33,9 +32,33 @@ feature -- Access
 			end
 		end
 
+	file_system_module (a_dir_path: PATH): STRING
+		-- name of file system module that is used to access `dir_path'
+		-- Eg. ext4, fuseblk, ntfs3
+		require
+			has_root: a_dir_path.has_root
+		local
+			find_mnt_command: XT_COMMAND_OUTPUT_FILE; dir_path: PATH
+			done: BOOLEAN; step_count: INTEGER
+		do
+			create Result.make_empty
+			step_count := a_dir_path.name.occurrences (Separator) + 1
+			from dir_path := a_dir_path until done or step_count = 0 loop
+				create find_mnt_command.make_with_output ("findmnt -no FSTYPE %S", << dir_path >>)
+				if not find_mnt_command.has_errors then
+					Result := find_mnt_command.first_line
+					find_mnt_command.cleanup
+					done := True
+				else
+					dir_path := dir_path.parent
+					step_count := step_count - 1
+				end
+			end
+		end
+
 feature -- Status query
 
-	is_path_ntfs (dir_path: PATH): BOOLEAN
+	is_ntfs_path (dir_path: PATH): BOOLEAN
 		-- `True' if `dir_path' is on NTFS file system
 		local
 			find_ntfs_command: XT_COMMAND_OUTPUT_FILE; empty_array: ARRAY [ANY]
@@ -192,6 +215,13 @@ feature -- Access
 			end
 		end
 
+feature -- Constants
+
+	Separator: CHARACTER
+		once
+			Result := Operating_environment.Directory_separator
+		end
+
 feature {NONE} -- Constants
 
 	Empty_path: PATH
@@ -210,4 +240,5 @@ feature {NONE} -- Constants
 		end
 
 	Reserved_path_chars: STRING = "*?[]<>|&;`$()%"%'!~ %T%N-"
+
 end

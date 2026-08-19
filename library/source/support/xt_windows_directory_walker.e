@@ -1,11 +1,13 @@
 note
 	description: "${XT_DIRECTORY_WALKER} that checks for directories already walked using ${FILE_INFO}.inode"
 	notes: "[
-		**Workaround**
+		**WARNING**
+
+		Use only in readonly mode with safe `mount' args:
 		
-		ntfs3 (the newer in-kernel driver you're almost certainly using on Mint 22.2) has historically been
-		inconsistent about this. Some reparse points get exposed as regular directories with no symlink marker at all,
-		which means your walker's lstat/S_ISLNK check silently passes right through them.
+			modprobe ntfs3
+			mount -t ntfs3 /dev/<name> <path> -o ro,noatime,uid=$(id -u),gid=$(id -g)
+	
 	]"
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"

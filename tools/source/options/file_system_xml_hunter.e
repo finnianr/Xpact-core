@@ -1,5 +1,14 @@
 note
 	description: "Hunt file system for XML to test"
+	notes: "[
+		**WARNING**
+
+		Use only in readonly mode with safe `mount' args:
+
+			modprobe ntfs3
+			mount -t ntfs3 /dev/<name> <path> -o ro,noatime,uid=$(id -u),gid=$(id -g)
+
+	]"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -34,8 +43,9 @@ feature {NONE} -- Initialization
 		do
 			resume_at_count := a_resume_at_count
 
-			if Environment.is_path_ntfs (dir_path) then
+			if Environment.is_ntfs_path (dir_path) then
 				create {XT_WINDOWS_DIRECTORY_WALKER} directory.make_with_path (dir_path)
+				valid_driver := Environment.file_system_module (dir_path) ~ "ntfs3"
 			else
 				create directory.make_with_path (dir_path)
 			end
@@ -50,6 +60,11 @@ feature {NONE} -- Initialization
 		ensure
 			valid_extensions: across extension_list as item all item.count > 0 end
 		end
+
+feature -- Status query
+
+	valid_driver: BOOLEAN
+		-- `True' if NTFS path is using ntfs3 driver
 
 feature -- Basic operations
 

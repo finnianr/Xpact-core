@@ -1,7 +1,7 @@
 note
 	description: "Extra routines for class ${TYPED_POINTER}"
 	notes: "[
-		RESULTS: performance benchmark
+		RESULTS: perform benchmark
 		Passes over 500 millisecs (in descending order)
 
 			external inline C:  1078.0 times (100%)
@@ -24,6 +24,13 @@ inherit
 	EL_ROUTINES
 
 feature {NONE} -- Write to memory
+
+	put_natural_64 (value: NATURAL_64; natural_64_ptr: TYPED_POINTER [NATURAL_64])
+		external
+			"C inline use <eif_eiffel.h>"
+		alias
+			"*$natural_64_ptr = $value;"
+		end
 
 	put_integer_32 (value: INTEGER; integer_ptr: TYPED_POINTER [INTEGER])
 		external
@@ -53,6 +60,13 @@ feature {NONE} -- Read from memory
 			"C inline use <eif_eiffel.h>"
 		alias
 			"return *$integer_ptr;"
+		end
+
+	read_natural_64 (natural_64_ptr: TYPED_POINTER [NATURAL_64]): NATURAL_64
+		external
+			"C inline use <eif_eiffel.h>"
+		alias
+			"return *$natural_64_ptr;"
 		end
 
 	read_real_32 (real_32_ptr: TYPED_POINTER [REAL]): INTEGER

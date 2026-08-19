@@ -82,7 +82,7 @@ feature -- Access
 			create Result.make (50)
 			across area as bucket loop
 				if bucket.count > 1 then
-					Result.put (bucket.count.out)
+					Result.put (substitute (Stats_template, << bucket.count.out >>))
 				end
 			end
 		end
@@ -172,9 +172,16 @@ feature -- Basic operations
 			IO.put_integer (average_bucket_item_count)
 			IO.put_new_line
 			IO.put_string ("Hash bucket counts greater than 1")
-			IO.put_new_line
-			across bucket_distribution_gt_1.sorted_occurrence_list (False) as bucket_count loop
-				bucket_count.io_print
+			IO.put_string (":%N")
+			if attached bucket_distribution_gt_1.sorted_occurrence_list (False) as sorted_list then
+				if sorted_list.count = 0 then
+					print ("None")
+				else
+					across sorted_list as bucket_count loop
+						print ("   ")
+						bucket_count.io_print
+					end
+				end
 			end
 			IO.put_new_line
 		end
@@ -273,8 +280,11 @@ feature {NONE} -- Constants
 
 	Size: INTEGER = 607
 
+	Stats_template: STRING = "has %S items"
+
 	Default_bucket: SPECIAL [STRING]
 		once ("PROCESS")
 			create Result.make_empty (0)
 		end
+
 end
