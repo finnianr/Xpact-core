@@ -12,14 +12,19 @@ note
 class
 	XT_ELEMENT_CONTEXT
 
+inherit
+	XT_C_PARSE_DATA_STRUCT
+
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (section_flags: SPECIAL [BOOLEAN])
+	make (a_parse_data: POINTER)
+		require
+			attached_pointer: not a_parse_data.is_default_pointer
 		do
-			in_section := section_flags
+			parse_data := a_parse_data
 			create empty_attribute_values.make_empty (0)
 			create stack.make_empty (50)
 		end
@@ -95,7 +100,7 @@ feature -- Element change
 			end
 			s.remove_tail (1)
 			inspect depth when 0 then
-				in_section [{XT_PARSE_CONSTANTS}.Prolog] := True
+				set_in_prolog_section (parse_data, True)
 				reached_depth_zero := true
 			else end
 		ensure
@@ -112,7 +117,7 @@ feature {NONE} -- Internal attributes
 
 	empty_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
 
-	in_section: SPECIAL [BOOLEAN]
+	parse_data: POINTER
 
 	stack: SPECIAL [STRING]
 

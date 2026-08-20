@@ -92,13 +92,12 @@ feature -- Basic operations
 
 	parse
 		local
-			byte_count: INTEGER; final_chunk: BOOLEAN; content_count, entity_expansion_count: NATURAL_64
+			byte_count: INTEGER; final_chunk: BOOLEAN
 		do
 			if not gc_enabled then
 				Memory.collection_off
 			end
 			if file_readable then
-				content_count := 1 -- prevents division by zero
 				from parse_status := Status_ok until final_chunk or parse_status /= Status_OK loop
 					read_to_managed_pointer (chunk, 0, chunk.count); byte_count := bytes_read
 					if off or else (byte_count = chunk.count and then position = count) then
@@ -107,11 +106,11 @@ feature -- Basic operations
 					if byte_count > 0 then
 					-- This aligns with C examples which excludes final newline
 					-- but Claude thinks this is a parsing issue, so this is just a workaround.
-						parse_status := parser.parse (chunk, 0, byte_count, final_chunk, $content_count, $entity_expansion_count)
+						parse_status := parser.parse (chunk, 0, byte_count, final_chunk)
 					end
 				end
 			else
-				parse_status := parser.parse (chunk, 0, 0, True, $content_count, $entity_expansion_count)
+				parse_status := parser.parse (chunk, 0, 0, True)
 			end
 			if not gc_enabled then
 				Memory.collection_on

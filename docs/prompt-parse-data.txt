@@ -1,0 +1,39 @@
+create a C struct named XT_parse_data in a header file <xt_structs.h> that has the following fields:
+
+EIF_BOOLEAN in_prolog_section;
+EIF_BOOLEAN in_dtd_section;
+EIF_BOOLEAN in_CDATA_section;
+EIF_NATURAL_64 content_count; 
+EIF_NATURAL_64 entity_expansion_count;
+
+These type macros should be included from <eif_eiffel.h>
+ 
+Then create an Eiffel class named XT_PARSE_DATA that provide set and read external methods for each of the struct members given a data pointer.
+
+for example
+
+	set_in_prolog_section (data_ptr: POINTER; flag: BOOLEAN)
+		external
+			..
+		end
+		
+	read_in_prolog_section (data_ptr: POINTER): BOOLEAN
+		external
+			.. 
+		end
+		
+Also include one routine to give the size so I can allocate a MANAGED_POINTER
+
+	parse_data_size: INTEGER
+		external
+			..
+		end
+		
+For the EIF_NATURAL_64 struct members include procedures that will add an integer value to the struct member, for example:
+
+	add_to_content_count (data_ptr: POINTER; value: INTEGER)
+		external
+		end
+
+Add a post-condition ensuring the value got added		
+		

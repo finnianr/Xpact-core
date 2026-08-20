@@ -67,6 +67,13 @@ feature -- Access
 			end
 		end
 
+feature -- Measurement
+
+	parsed_content_count: NATURAL_64
+		do
+			Result := c_content_count (parse_data_memory.item)
+		end
+
 feature -- Status query
 
 	is_final_buffer: BOOLEAN
@@ -107,28 +114,26 @@ feature -- Basic operations
 			end
 		end
 
-	parse (
-		chunk: XT_C_STRING_CODEC; a_offset, a_count: INTEGER; a_is_final: BOOLEAN
-		content_count, entity_expansion_count: TYPED_POINTER [NATURAL_64]
-	): INTEGER
+	parse (chunk: XT_C_STRING_CODEC; a_offset, a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
 		-- Accept `a_count' bytes from `chunk[a_offset]' as the next chunk.
 		-- Returns Status_ok, Status_suspended, or Status_error.
 		-- Corresponds to XML_Parse() in xmlparse.c.
 		require
-			content_count_at_least_1: read_natural_64 (content_count) >= 1 -- guards against division by zero later
+			content_count_at_least_1: parsed_content_count >= 1 -- guards against division by zero later
 			non_negative_count: a_count >= 0
 			valid_source_range: a_count = 0 or else (a_offset >= 0 and then a_offset + a_count <= chunk.count)
 			not_in_handler: handler_call_depth = 0
 		local
-			write_start, remaining_count, utf_8_copied_count: INTEGER
+			write_start, remaining_count, utf_8_copied_count: INTEGER; parse_data: POINTER
 		do
+			parse_data := parse_data_memory.item
 			inspect parsing_state
 				when State_check_encoding then
 					set_encoding (chunk, a_count)
 
 					inspect error_code when Error_none then
 						parsing_state := State_initialized
-						Result := parse (codec, 0, codec.count, a_is_final, content_count, entity_expansion_count) -- Recurse
+						Result := parse (codec, 0, codec.count, a_is_final) -- Recurse
 					else
 						status := Status_error
 					end
@@ -173,15 +178,13 @@ feature -- Basic operations
 										error_code := Error_invalid_token
 										Result := Status_error
 									else
-										Result := parse_buffer (
-											utf_8_copied_count + codec.utf_8_copied_count, a_is_final, content_count, entity_expansion_count
-										)
+										Result := parse_buffer (utf_8_copied_count + codec.utf_8_copied_count, a_is_final, parse_data)
 									end
 								else
 									Result := Status_error
 								end
 							else
-								Result := parse_buffer (codec.utf_8_copied_count, a_is_final, content_count, entity_expansion_count)
+								Result := parse_buffer (codec.utf_8_copied_count, a_is_final, parse_data)
 							end
 						end
 					end
@@ -214,9 +217,7 @@ feature -- Basic operations
 
 feature {NONE} -- Buffer implementation
 
-	parse_buffer (
-		a_count: INTEGER; a_is_final: BOOLEAN; content_count, entity_expansion_count: TYPED_POINTER [NATURAL_64]
-	): INTEGER
+	parse_buffer (a_count: INTEGER; a_is_final: BOOLEAN; parse_data: POINTER): INTEGER
 		-- Parse `a_count' bytes that the caller has already written into
 		-- `buffer' starting at the old `buffer_end'.
 		-- Returns Status_ok, Status_suspended, or Status_error.
@@ -251,7 +252,7 @@ feature {NONE} -- Buffer implementation
 					parse_end_byte_index := parse_end_byte_index + a_count
 					is_final_buffer      := a_is_final
 
-					error_code := call_processor (start, parse_end_index, content_count, entity_expansion_count)
+					error_code := call_processor (start, parse_end_index, parse_data)
 
 					inspect error_code when Error_none then
 						inspect parsing_state
@@ -311,7 +312,7 @@ feature {NONE} -- Buffer implementation
 
 feature {NONE} -- Processor dispatch
 
-	call_processor (start_index, end_index: INTEGER; content_count, entity_expansion_count: TYPED_POINTER [NATURAL_64]): INTEGER
+	call_processor (start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Drive the current processor over `buffer [start_index .. end_index]'.
 			-- Implements the reparse-deferral heuristic and the re-enter loop
 			-- from callProcessor() in xmlparse.c.
@@ -323,7 +324,7 @@ feature {NONE} -- Processor dispatch
 			ptr_at_start: buffer_index = start_index
 		local
 			error, have_now, had_before, available: INTEGER; enough, done: BOOLEAN
-			section: like section_flags; context: like element_context
+			context: like element_context
 			names: like name_cache; attributes: like attribute_intervals; buf: like buffer
 			bt_table: like Byte_type_table
 		do
@@ -347,13 +348,12 @@ feature {NONE} -- Processor dispatch
 			if enough then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
-				section := section_flags; context := element_context; names := name_cache
+				context := element_context; names := name_cache
 				bt_table := byte_type_table; attributes := attribute_intervals; buf := buffer
 
 				from done := False until done loop
 					error := process_content (
-						buf, buffer_index, end_index, bt_table, attributes, names, context, section,
-						content_count, entity_expansion_count, Source_content
+						buf, buffer_index, end_index, bt_table, attributes, names, context, parse_data, Source_content
 					)
 
 					-- Suspended state overrides the reenter request.
@@ -415,8 +415,7 @@ feature {NONE} -- Processor dispatch
 	process_content (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
 		attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; names: like name_cache
-		a_context: XT_ELEMENT_CONTEXT; in_section: SPECIAL [BOOLEAN]
-		a_content_count, a_entity_expansion_count: TYPED_POINTER [NATURAL_64]; a_source_type: NATURAL_8
+		a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER; a_source_type: NATURAL_8
 	): INTEGER
 		-- Scan tokens from `buf' `start_index .. end_index` and triggers relevant XML events.  Advances `buffer_index'.
 		-- Execute one pass of the current processor over `buf [start_index .. end_index)'.
@@ -428,29 +427,25 @@ feature {NONE} -- Processor dispatch
 			end_in_buffer: buf = buffer implies end_index <= buffer_end
 			buffer_index_at_start: buffer_index = start_index
 		local
-			index, token, tok_end, code, error, buffer_index_copy, lower, upper: INTEGER; done: BOOLEAN
-			context: XT_ELEMENT_CONTEXT; tag_name, entity_name: STRING
-			content_count, entity_expansion_count: NATURAL_64
+			index, token, tok_end, code, error, buffer_index_copy, lower, upper: INTEGER
+			context: XT_ELEMENT_CONTEXT; tag_name, entity_name: STRING; done: BOOLEAN
+			content_plus_expansion_count: NATURAL_64
 		do
-			content_count := read_natural_64 (a_content_count)
-			entity_expansion_count := read_natural_64 (a_entity_expansion_count)
-
-			index := index_of (buf, (85).to_character_8, start_index, end_index)
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
-				if in_section [Prolog] then
+				if c_in_prolog_section (parse_data) then
 					Result := process_prolog (
-						buf, start_index, end_index, bt_table, attributes, names, in_section, $index, $done
+						buf, start_index, end_index, bt_table, attributes, names, parse_data, $index, $done
 					)
 					context := element_context
 
-				elseif in_section [CDATA] then
+				elseif c_in_cdata_section (parse_data) then
 					token := scan_cdata_section (buf, index, end_index, bt_table)
 					tok_end := next_token_index
 					inspect token
 						when Tok_cdata_sect_close then
 							on_cdata_section_close
-							in_section [CDATA] := False
+							set_in_cdata_section (parse_data, False)
 							index := tok_end
 
 						when Tok_data_chars then
@@ -473,7 +468,7 @@ feature {NONE} -- Processor dispatch
 					tok_end := next_token_index
 					inspect token
 						when Tok_cdata_sect_open then
-							in_section [CDATA] := True
+							set_in_cdata_section (parse_data, True)
 
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
@@ -531,11 +526,11 @@ feature {NONE} -- Processor dispatch
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
 									error := process_content (
-										entity_value.area, 0, entity_value.count, bt_table, attributes, names, context, in_section,
-										$content_count, $entity_expansion_count, source_type (content_count, entity_expansion_count, a_source_type)
+										entity_value.area, 0, entity_value.count, bt_table, attributes, names, context,
+										parse_data, source_type (parse_data, a_source_type)
 									) -- Recurse
 									buffer_index := buffer_index_copy -- restore field
-									in_section [CDATA] := False -- restore state
+									set_in_cdata_section (parse_data, False) -- restore state
 
 									inspect error when Error_none then
 										do_nothing
@@ -572,18 +567,13 @@ feature {NONE} -- Processor dispatch
 					if not done then
 						inspect a_source_type
 							when Source_expansion then
-								entity_expansion_count := entity_expansion_count + (tok_end - index).to_natural_64
-								put_natural_64 (entity_expansion_count, a_entity_expansion_count)
+								add_to_entity_expansion_count (parse_data, tok_end - index)
 
 							when Source_expansion_with_checks then
-								entity_expansion_count := entity_expansion_count + (tok_end - index).to_natural_64
-								if (content_count + entity_expansion_count) / content_count > max_expansion_proportion then
-									IO.put_string ("entity_expansion_count: ")
-									IO.put_natural_64 (entity_expansion_count)
-									IO.put_new_line
+								add_to_entity_expansion_count (parse_data, tok_end - index)
+								content_plus_expansion_count := c_content_count (parse_data) + c_entity_expansion_count (parse_data)
+								if content_plus_expansion_count / c_content_count (parse_data) > max_expansion_proportion then
 									Result := Error_amplification_limit_breach; done := True
-								else
-									put_natural_64 (entity_expansion_count, a_entity_expansion_count)
 								end
 
 						else end
@@ -593,7 +583,7 @@ feature {NONE} -- Processor dispatch
 			end
 			inspect Result when 0 then
 				inspect a_source_type when Source_content then
-					put_natural_64 (content_count + (index - buffer_index).to_natural_64, a_content_count)
+					add_to_content_count (parse_data, index - buffer_index)
 				else end
 			else end
 			buffer_index := index
@@ -605,7 +595,7 @@ feature {NONE} -- Implementation
 
 	in_cdata_section: BOOLEAN
 		do
-			Result := section_flags [CDATA]
+			Result := c_in_cdata_section (parse_data_memory.item)
 		end
 
 	increment_handler_depth
@@ -628,12 +618,12 @@ feature {NONE} -- Implementation
 			depth_decreased: handler_call_depth = old handler_call_depth - 1
 		end
 
-	source_type (content_count, entity_expansion_count: NATURAL_64; a_source_type: NATURAL_8): NATURAL_8
+	source_type (parse_data: POINTER; a_source_type: NATURAL_8): NATURAL_8
 		do
 			inspect a_source_type when Source_expansion_with_checks then
 				Result := a_source_type
 			else
-				if content_count + entity_expansion_count > runway_expansion_threshold then
+				if c_content_count (parse_data) + c_entity_expansion_count (parse_data) > runway_expansion_threshold then
 					Result := Source_expansion_with_checks
 				else
 					Result := Source_expansion

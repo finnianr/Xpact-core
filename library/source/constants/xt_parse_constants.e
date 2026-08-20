@@ -59,17 +59,4 @@ feature -- Declaration types
 
 	Notation: INTEGER = 5
 
-feature -- Parsing sections
-
-	CDATA: INTEGER = 0
-
-	Doctype_definition: INTEGER = 1
-
-	Prolog: INTEGER = 2
-
-	section_count: INTEGER
-		do
-			Result := Prolog + 1
-		end
-
 end

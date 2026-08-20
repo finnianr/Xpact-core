@@ -28,29 +28,42 @@ inherit
 
 	XT_PARSE_EVENTS
 
+	XT_C_PARSE_DATA_STRUCT
+
 	EL_TYPED_POINTER_ROUTINES_I
 
 feature {NONE} -- Initialization
 
 	make
 		do
-			create section_flags.make_filled (False, section_count)
+			create parse_data_memory.make (size_of_parse_data)
 			create doctype_decl_stack.make_empty (2)
-			create element_context.make (section_flags)
+			create element_context.make (parse_data_memory.item)
 			create parameter_entity_table.make (3)
 			create parameter_name_cache.make
 			Precursor {XT_PARSING_BUFFERS}
 			Precursor {XT_DOCUMENT_SCANNER}
+		ensure then
+			in_prolog_section: in_prolog_section
+			content_count_is_one: c_content_count (parse_data_memory.item) = 1
 		end
 
 	set_defaults
+		local
+			ptr: POINTER
 		do
 			Precursor
 			has_dtd_section			:= False
 			is_standalone   	 	   := False
 
-			section_flags [Prolog]	:= True
-			section_flags [CDATA]	:= False
+			ptr := parse_data_memory.item
+			if not ptr.is_default_pointer then
+				set_in_prolog_section (ptr, True)
+				set_in_cdata_section (ptr, False)
+				set_in_dtd_section (ptr, False)
+				set_content_count (ptr, 1) -- prevent divide by zero error
+				set_entity_expansion_count (ptr, 0)
+			end
 		end
 
 feature -- Status query
@@ -60,31 +73,31 @@ feature -- Status query
 feature {NONE} -- Token processing
 
 	process_doctype_definition (
-		buf: like buffer; index, end_index, token: INTEGER; names: like name_cache;
-		in_section: SPECIAL [BOOLEAN]; a_done, a_default_case, a_common_case: TYPED_POINTER [BOOLEAN]
+		buf: like buffer; index, end_index, token: INTEGER; names: like name_cache; parse_data: POINTER
+		done, default_case, common_case: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
-			decl_type: INTEGER; default_case, common_case, done: BOOLEAN; name: STRING
+			decl_type: INTEGER; name: STRING
 		do
 			inspect token
 				when Tok_close_bracket then
 					if doctype_decl_stack.count = 1 then
-						in_section [Doctype_definition] := False
+						set_in_dtd_section (parse_data, False)
 					else
-						Result := Error_syntax; done := True
+						Result := Error_syntax; put_boolean (done, True)
 					end
 
 				when Tok_decl_open then
 					decl_type := declaration_type (buf, index + 2)
 					inspect decl_type
 						when 0 then
-							Result := Error_syntax; done := True
+							Result := Error_syntax; put_boolean (done, True)
 					else
 						inspect doctype_decl_stack.count when 1 then
 							doctype_decl_stack.extend (decl_type)
 							declaration_parts_list.wipe_out
 						else
-							Result := Error_syntax; done := True
+							Result := Error_syntax; put_boolean (done, True)
 						end
 					end
 
@@ -93,7 +106,7 @@ feature {NONE} -- Token processing
 						doctype_decl_stack.remove_tail (1)
 						is_parameter_entity := False
 					else
-						Result := Error_syntax; done := True
+						Result := Error_syntax; put_boolean (done, True)
 					end
 
 				when Tok_name then
@@ -102,7 +115,7 @@ feature {NONE} -- Token processing
 							if doctype_decl_stack.count = 2 then
 								on_attribute_declaration_part (buf, index, end_index, token, names)
 							else
-								Result := Error_syntax; done := True
+								Result := Error_syntax; put_boolean (done, True)
 							end
 
 						when Entity_ then
@@ -113,12 +126,12 @@ feature {NONE} -- Token processing
 									on_entity_declaration_part (buf, index, end_index)
 								end
 							else
-								Result := Error_syntax; done := True
+								Result := Error_syntax; put_boolean (done, True)
 							end
 						when Element_, Notation then
 							do_nothing -- for now
 					else
-						default_case := True
+						put_boolean (default_case, True)
 					end
 
 				when Tok_literal then
@@ -127,7 +140,7 @@ feature {NONE} -- Token processing
 							if doctype_decl_stack.count = 2 then
 								on_attribute_declaration_part (buf, index + 1, end_index - 1, token, names)
 							else
-								Result := Error_syntax; done := True
+								Result := Error_syntax; put_boolean (done, True)
 							end
 						when Entity_ then
 							if doctype_decl_stack.count = 2 then
@@ -137,13 +150,13 @@ feature {NONE} -- Token processing
 									on_entity_declaration_part (buf, index + 1, end_index - 1)
 								end
 							else
-								Result := Error_syntax; done := True
+								Result := Error_syntax; put_boolean (done, True)
 							end
 
 						when Element_, Notation then
 							do_nothing -- for now
 					else
-						default_case := True
+						put_boolean (default_case, True)
 					end
 
 				when Tok_pound_name then
@@ -154,7 +167,7 @@ feature {NONE} -- Token processing
 						when Element_, Entity_, Notation then
 							do_nothing -- for now
 					else
-						default_case := True
+						put_boolean (default_case, True)
 					end
 				when Tok_percent then
 					is_parameter_entity := True
@@ -166,37 +179,34 @@ feature {NONE} -- Token processing
 					end
 
 			else
-				common_case := True
+				put_boolean (common_case, True)
 			end
-		-- update local variables in calling routine `process_prolog'
-			put_boolean (common_case, a_common_case)
-			put_boolean (default_case, a_default_case)
-			put_boolean (done, a_done)
 		end
 
 	process_prolog (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
-		names: like name_cache; in_section: SPECIAL [BOOLEAN]
-		a_index: TYPED_POINTER [INTEGER]; a_done: TYPED_POINTER [BOOLEAN]
+		names: like name_cache; parse_data: POINTER; a_index: TYPED_POINTER [INTEGER]; done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
 		local
-			token, tok_end, decl_type, index: INTEGER; done, default_case, common_case: BOOLEAN
+			token, tok_end, decl_type, index: INTEGER; default_case, common_case: BOOLEAN
 			yes_no: STRING
 		do
 			index := read_integer_32 (a_index)
 			token := scan_prolog (buf, index, end_index, bt_table)
 			tok_end := next_token_index
-			if in_section [Doctype_definition] then
-				Result := process_doctype_definition (buf, index, tok_end - 1, token, names, in_section, $done, $default_case, $common_case)
+			if c_in_dtd_section (parse_data) then
+				Result := process_doctype_definition (
+					buf, index, tok_end - 1, token, names, parse_data, done, $default_case, $common_case
+				)
 			else
 				inspect token
 					when Tok_xml_decl then
 						if index > 0 then
-							Result := Error_misplaced_xml_pi; done := True
+							Result := Error_misplaced_xml_pi; put_boolean (done, True)
 
 						elseif not attributes.has_valid_encoding (buf) then
-							Result := Error_unknown_encoding; done := True
+							Result := Error_unknown_encoding; put_boolean (done, True)
 						else
 							yes_no := attributes.standalone_value (buf)
 							if Valid_yes_no.has (yes_no) then
@@ -204,18 +214,18 @@ feature {NONE} -- Token processing
 								on_xml_declaration (buf, attributes)
 								attributes.wipe_out
 							else
-								Result := Error_xml_decl; done := True
+								Result := Error_xml_decl; put_boolean (done, True)
 							end
 						end
 
 					when Tok_instance_start then
 						if element_context.reached_depth_zero then
-							Result := Error_junk_after_doc_element; done := True
+							Result := Error_junk_after_doc_element; put_boolean (done, True)
 						else
-							in_section [Prolog] := False
+							set_in_prolog_section (parse_data, False)
 							attributes.set_permit_undefined_entities (permit_undefined_entities)
 							if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
-								create {XT_ELEMENT_ATTRIBUTES_CONTEXT} element_context.make (in_section, attribute_value_defaults_table)
+								create {XT_ELEMENT_ATTRIBUTES_CONTEXT} element_context.make (parse_data, attribute_value_defaults_table)
 							end
 						end
 
@@ -223,13 +233,13 @@ feature {NONE} -- Token processing
 						decl_type := declaration_type (buf, index + 2)
 						inspect decl_type
 							when 0 then
-								Result := Error_syntax; done := True
+								Result := Error_syntax; put_boolean (done, True)
 						else
 							inspect doctype_decl_stack.count when 0 then
 								doctype_decl_stack.extend (decl_type)
 								declaration_parts_list.wipe_out
 							else
-								Result := Error_syntax; done := True
+								Result := Error_syntax; put_boolean (done, True)
 							end
 						end
 
@@ -237,36 +247,36 @@ feature {NONE} -- Token processing
 						inspect doctype_decl_stack.count when 1 then
 							doctype_decl_stack.remove_tail (1)
 							if not has_dtd_section and then not valid_doctype_declaration then
-								Result := Error_syntax; done := True
+								Result := Error_syntax; put_boolean (done, True)
 							end
 						else
-							Result := Error_syntax; done := True
+							Result := Error_syntax; put_boolean (done, True)
 						end
 
 					when Tok_literal then
 						if declaration = Doctype and then doctype_decl_stack.count = 1 then
 							on_document_declaration_part (buf, index, tok_end - 1)
 						else
-							Result := name_error (buf, index, end_index, bt_table); done := True
+							Result := name_error (buf, index, end_index, bt_table); put_boolean (done, True)
 						end
 
 					when Tok_name then
 						if declaration = Doctype and then doctype_decl_stack.count = 1 then
 							on_document_declaration_part (buf, index, tok_end - 1)
 						else
-							Result := name_error (buf, index, end_index, bt_table); done := True
+							Result := name_error (buf, index, end_index, bt_table); put_boolean (done, True)
 						end
 
 					when Tok_open_bracket then
 						if doctype_decl_stack.count = 1 then
 							if valid_doctype_declaration then
-								in_section [Doctype_definition] := True
+								set_in_dtd_section (parse_data, True)
 								has_dtd_section := True
 							else
-								Result := Error_syntax; done := True
+								Result := Error_syntax; put_boolean (done, True)
 							end
 						else
-							Result := Error_syntax; done := True
+							Result := Error_syntax; put_boolean (done, True)
 						end
 
 				else
@@ -286,11 +296,11 @@ feature {NONE} -- Token processing
 						then
 							Result := Error_syntax
 						end
-						done := True
+						put_boolean (done, True)
 
 					when Tok_open_bracket, Tok_close_bracket, Tok_open_paren, Tok_close_paren, Tok_or, Tok_name_question then
 						if doctype_decl_stack.count = 0 then
-							Result := Error_syntax; done := True
+							Result := Error_syntax; put_boolean (done, True)
 						end
 
 					when Tok_pi then
@@ -306,21 +316,19 @@ feature {NONE} -- Token processing
 			end
 			if default_case then
 				if element_context.reached_depth_zero and then not is_white_space (buf, index, end_index - 1) then
-					Result := Error_junk_after_doc_element; done := True
+					Result := Error_junk_after_doc_element; put_boolean (done, True)
 
 				elseif token <= 0 then
-					done := True  -- partial; wait for more data
+					put_boolean (done, True)  -- partial; wait for more data
 
 				else
 				-- skip prolog token					
-					put_integer_32 (tok_end, a_index)
+					put_integer_32 (a_index, tok_end)
 				end
 			end
-			if not done then
-				put_integer_32 (tok_end, a_index)
+			if not read_boolean (done) then
+				put_integer_32 (a_index, tok_end)
 			end
-		-- update `done' local variable in calling routine `process_content'
-			put_boolean (done, a_done)
 		end
 
 feature {NONE} -- Event handlers
@@ -431,7 +439,7 @@ feature {NONE} -- Implementation
 
 	in_prolog_section: BOOLEAN
 		do
-			Result := section_flags [Prolog]
+			Result := c_in_prolog_section (parse_data_memory.item)
 		end
 
 	in_doctype_definition: BOOLEAN
@@ -462,7 +470,7 @@ feature {NONE} -- Implementation
 	external_id (buf: like buffer; start_index, end_index: INTEGER): STRING
 		-- PUBLIC or SYSTEM id string, defaults to Unknown
 		local
-			i: INTEGER; s: XT_STRING_8_ROUTINES
+			i: INTEGER
 		do
 			Result := Unknown_id
 			from i := 1 until i > Valid_external_id_list.count loop
@@ -559,7 +567,7 @@ feature {NONE} -- Implementation
 			Precursor {XT_DOCUMENT_SCANNER}
 
 			if element_context.has_default_values then
-				create element_context.make (section_flags)
+				create element_context.make (parse_data_memory.item)
 			else
 				element_context.reset
 			end
@@ -604,12 +612,12 @@ feature {NONE} -- Internal attributes
 	has_dtd_section: BOOLEAN
 		-- True if prolog has document type definition (DTD) after DOCTYPE x [
 
-	section_flags: SPECIAL [BOOLEAN]
-		-- parser section state flags
-
 	parameter_name_cache: XT_NAME_CACHE
 		-- efficient lookup of parameter entity names
 
 	parameter_entity_table: HASH_TABLE [XT_PARAMETER_ENTITY, STRING]
+
+	parse_data_memory: MANAGED_POINTER
+		-- allocated memory for C struct `XT_C_PARSE_DATA_STRUCT'
 
 end
