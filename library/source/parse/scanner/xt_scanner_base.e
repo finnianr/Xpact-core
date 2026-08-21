@@ -119,7 +119,7 @@ feature {NONE} -- Internal attributes
 
 	index_x4_buffer: SPECIAL [INTEGER]
 
-	scanned_entity_buffer: ARRAYED_LIST [STRING]
+	scanned_entity_buffer: ARRAYED_LIST [XT_ENTITY_NAME]
 
 	scanned_error_code: INTEGER
 

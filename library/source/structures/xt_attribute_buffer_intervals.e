@@ -332,7 +332,9 @@ feature -- Basic operations
 			all_valid: all_valid
 		end
 
-	transfer (buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER; entity_list: ARRAYED_LIST [STRING]): INTEGER
+	transfer (
+		buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER; entity_list: ARRAYED_LIST [XT_ENTITY_NAME]
+	): INTEGER
 		-- transfer contents of `additions' into `area' and contents of `entity_list'
 		-- into `entity_refs_area'
 		require

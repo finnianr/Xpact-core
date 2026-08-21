@@ -13,12 +13,13 @@ class
 	XT_ENTITY_TABLE
 
 inherit
-	HASH_TABLE [STRING, STRING]
+	HASH_TABLE [STRING, XT_ENTITY_NAME]
 		rename
-			item as table_item
+			item as table_item,
+			put as put_name
 		export
 			{NONE} all
-			{ANY} put, inserted
+			{ANY} inserted
 		redefine
 			make, same_keys
 		end
@@ -52,7 +53,7 @@ feature -- Status report
 
 feature -- Access
 
-	item (key: STRING; as_attribute_value: BOOLEAN): detachable STRING
+	item (key: XT_ENTITY_NAME; as_attribute_value: BOOLEAN): detachable STRING
 		-- if `as_attribute_value' is `True' normalize Result for attribute values
 		--  (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
 		require
@@ -60,17 +61,16 @@ feature -- Access
 		local
 			code: INTEGER
 		do
-			inspect key [2]
-				when '#' then
-					if attached table_item (key) as value then
-						Result := value
-					else
-						code := char_ref_number (key.area, 0, key.count - 1)
-						if attached utf_8_encoded (code) as l_area then
-							Result := new_substring (l_area, 0, l_area.count - 1)
-							extend (Result, key)
-						end
+			inspect key [2] when '#' then
+				if attached table_item (key) as value then
+					Result := value
+				else
+					code := char_ref_number (key.area, 0, key.count - 1)
+					if attached utf_8_encoded (code) as l_area then
+						Result := new_substring (l_area, 0, l_area.count - 1)
+						extend (Result, key)
 					end
+				end
 			else
 				if attached table_item (key) as value then
 					if value.same_type (Empty_string) then
@@ -86,7 +86,7 @@ feature -- Access
 		end
 
 	expanded_value (
-		buffer: SPECIAL [CHARACTER_8]; lower_index, upper_index: INTEGER; entity: SPECIAL [STRING]
+		buffer: SPECIAL [CHARACTER_8]; lower_index, upper_index: INTEGER; entity: SPECIAL [XT_ENTITY_NAME]
 		keep_ref: BOOLEAN
 	): STRING
 		-- copy of `value' with any entities like &amp; expanded.
@@ -126,7 +126,7 @@ feature -- Access
 
 feature -- Comparison
 
-	same_keys (a_search_key, a_key: STRING): BOOLEAN
+	same_keys (a_search_key, a_key: XT_ENTITY_NAME): BOOLEAN
 			-- Does `a_search_key' equal to `a_key'?
 			--| Default implementation is using ~.
 		do
@@ -138,6 +138,17 @@ feature -- Element change
 	set_predefined (entity_cache: XT_ENTITY_NAME_CACHE)
 		do
 			merge (entity_cache.predefined_table)
+		end
+
+feature -- Element change
+
+	put (new: STRING; a_name: STRING)
+		do
+			if attached {XT_ENTITY_NAME} a_name as name then
+				put_name (new, name)
+			else
+				put_name (new, create {XT_ENTITY_NAME}.make_shared (a_name))
+			end
 		end
 
 feature {NONE} -- Internal attributes

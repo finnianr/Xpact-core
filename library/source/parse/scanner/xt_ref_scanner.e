@@ -31,7 +31,7 @@ feature {NONE} -- Reference scanning
 
 	scan_ref (
 		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
-		entity_buffer: LIST [STRING]
+		entity_buffer: LIST [XT_ENTITY_NAME]
 	): INTEGER
 			-- Scan entity or character reference after '&'.
 			-- Sets next_token_index.  Returns Tok_entity_ref, Tok_char_ref, or error.
@@ -90,7 +90,7 @@ feature {NONE} -- Reference scanning
 
 	scan_char_ref (
 		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
-		entity_buffer: LIST [STRING]
+		entity_buffer: LIST [XT_ENTITY_NAME]
 	): INTEGER
 			-- Scan character reference after '&#'.  Returns Tok_char_ref or error.
 		require

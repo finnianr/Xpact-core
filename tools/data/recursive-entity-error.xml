@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!DOCTYPE root [
+  <!ENTITY a "&b;">
+  <!ENTITY b "&a;">
+]>
+<!-- 
+Error_recursive_entity_ref is triggered when an internal entity refers back to itself,
+either directly or through a chain
+-->
+<root>&a;</root>

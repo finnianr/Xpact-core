@@ -1,6 +1,6 @@
 note
 	description: "[
-		${XT_NAME_CACHE} specialized for entity names like: &rdf; &#10; &#x20AC;
+		${XT_NAME_CACHE} specialized for entity names like: `&rdf; &#10; &#x20AC;' etc
 	]"
 
 	author: "Finnian Reilly"
@@ -19,7 +19,8 @@ inherit
 		rename
 			item as name_item
 		redefine
-			buffer_string_8, bucket_index, name_item, make, same_string, reset
+			buffer_string_8, bucket_index, name_item, make, same_string, reset,
+			Default_string
 		end
 
 	XT_STRING_CONSTANTS
@@ -49,12 +50,12 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING
+	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): like Default_string
 		do
 			Result := name_item (buffer, start_index, end_index, 0)
 		end
 
-	predefined_table: HASH_TABLE [STRING, STRING]
+	predefined_table: HASH_TABLE [STRING, XT_ENTITY_NAME]
 
 feature -- Element change
 
@@ -75,20 +76,10 @@ feature -- Element change
 
 feature {XT_PARSING_BUFFERS} -- Implementation
 
-	buffer_string_8 (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): STRING_8
+	buffer_string_8 (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): like Default_string
 		-- take buffer segment from `start_index' to `end_index' and insert into "&;" at position 2
-		local
-			count, full_count: INTEGER
 		do
-			count := end_index - start_index + 1
-			full_count := count + 2
-			create Result.make_filled ('%U', full_count)
-
-			if attached Result.area as l_area then
-				l_area [0] := '&'
-				l_area.copy_data (buffer, start_index, 1, count)
-				l_area [full_count - 1] := ';'
-			end
+			create Result.make_from_buffer (buffer, start_index, end_index)
 		end
 
 feature {NONE} -- Implementation
@@ -110,7 +101,7 @@ feature {NONE} -- Implementation
 			Result := hash_index (buffer, start_index, end_index)
 		end
 
-	name_item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): STRING
+	name_item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like Default_string
 		-- "abc" where `buffer [start_index] = 'a'' and `buffer [end_index] = 'c''
 		-- results in "&abc;"
 		require else
@@ -142,6 +133,13 @@ feature {NONE} -- Implementation
 				['&', Predefined_amp], ['<', Predefined_lt], ['>', Predefined_gt],
 				['%'', Predefined_apos], ['"', Predefined_quot]
 			>>)
+		end
+
+feature {NONE} -- Constants
+
+	Default_string: XT_ENTITY_NAME
+		once
+			create Result.make_empty
 		end
 
 end

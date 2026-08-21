@@ -66,7 +66,7 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 
 	scan_entity_value (
 		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
-		entity_buffer: LIST [STRING]
+		entity_buffer: LIST [XT_ENTITY_NAME]
 	): INTEGER
 			-- Scan the next token inside an entity value literal.
 			-- Corresponds to literalScanners[XML_ENTITY_VALUE_LITERAL].
@@ -79,7 +79,8 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 feature -- Name utilities (implements XT_ENCODING deferred features)
 
 	entity_value_tok (
-		buf: SPECIAL [CHARACTER] start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]
+		buf: SPECIAL [CHARACTER] start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		entity_buffer: LIST [XT_ENTITY_NAME]
 	): INTEGER
 			-- Tokenize inside an entity value literal.
 			-- Corresponds to entityValueTok() in xmltok_impl.c.

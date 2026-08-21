@@ -23,7 +23,8 @@ inherit
 feature -- Content tokenization
 
 	content_tok (
-		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; entity_buffer: LIST [STRING]
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		entity_buffer: LIST [XT_ENTITY_NAME]
 	): INTEGER
 			-- Return the token type for the next token in element content.
 			-- Sets next_token_index.  Corresponds to contentTok() in xmltok_impl.c.

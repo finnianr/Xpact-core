@@ -265,7 +265,7 @@ feature {NONE} -- Status report
 				end
 			end
 		ensure
-			definition: Result implies new_substring (area, lower, upper) ~ string
+			definition: Result implies new_substring (area, lower, upper).same_string (string)
 		end
 
 	frozen starts_with (area: SPECIAL [CHARACTER_8]; start_index: INTEGER; latin_1: STRING): BOOLEAN

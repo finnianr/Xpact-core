@@ -435,7 +435,7 @@ feature {NONE} -- Tag sub-helpers
 
 	scan_attribute_value (
 		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER
-		bt_table: SPECIAL [INTEGER]; lower_upper: SPECIAL [INTEGER]; entity_buffer: LIST [STRING];
+		bt_table: SPECIAL [INTEGER]; lower_upper: SPECIAL [INTEGER]; entity_buffer: LIST [XT_ENTITY_NAME];
 	): INTEGER
 			-- Scan past whitespace to the opening quote, then the value up to matching
 			-- close quote.  Sets next_token_ptr past the closing quote.

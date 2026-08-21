@@ -428,7 +428,7 @@ feature {NONE} -- Processor dispatch
 			buffer_index_at_start: buffer_index = start_index
 		local
 			index, token, tok_end, code, error, buffer_index_copy, lower, upper: INTEGER
-			context: XT_ELEMENT_CONTEXT; tag_name, entity_name: STRING; done: BOOLEAN
+			context: XT_ELEMENT_CONTEXT; tag_name: STRING; entity_name: XT_ENTITY_NAME; done: BOOLEAN
 			content_plus_expansion_count: NATURAL_64
 		do
 			index := start_index; context := a_context
@@ -522,13 +522,18 @@ feature {NONE} -- Processor dispatch
 							code := predefined_entity_code (buf, lower, upper)
 							inspect code when -1 then
 								entity_name := entity_cache.item (buf, lower, upper)
-								if attached entity_table.item (entity_name, False) as entity_value then
+								if entity_name.is_open then
+									Result := Error_recursive_entity_ref; done := True
+
+								elseif attached entity_table.item (entity_name, False) as entity_value then
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
+									entity_name.open
 									error := process_content (
 										entity_value.area, 0, entity_value.count, bt_table, attributes, names, context,
 										parse_data, source_type (parse_data, a_source_type)
 									) -- Recurse
+									entity_name.close
 									buffer_index := buffer_index_copy -- restore field
 									set_in_cdata_section (parse_data, False) -- restore state
 
@@ -664,7 +669,7 @@ feature {NONE} -- Constants
 		-- entity expansion
 
 	Source_expansion_with_checks: NATURAL_8 = 2
-		-- entity expansion and instruction to test `max_expansion_proportion' exceeded
+		-- entity expansion and instruction to test if `max_expansion_proportion' exceeded
 
 invariant
 	valid_state: Parsing_states.has (parsing_state)
