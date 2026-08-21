@@ -1,5 +1,9 @@
 note
 	description: "[
+		Parser section state and running totals of content bytes parsed and content resulting
+		from the expansion of defined entities.
+	]"
+	notes: "[
 		External read/write access to the C structure `XT_parse_data' in `<xt_structs.h>'
 		
 		Defined:
@@ -28,9 +32,10 @@ feature {NONE} -- Measurement
 			"return (EIF_INTEGER_32) sizeof (XT_parse_data);"
 		end
 
-feature {NONE} -- Access
+feature {NONE} -- Parse section state
 
 	frozen c_in_prolog_section (data_ptr: POINTER): BOOLEAN
+		-- `True' when parsing prolog section
 		external
 			"C inline use <xt_structs.h>"
 		alias
@@ -38,6 +43,7 @@ feature {NONE} -- Access
 		end
 
 	frozen c_in_dtd_section (data_ptr: POINTER): BOOLEAN
+		-- `True' when parsing document type definition section
 		external
 			"C inline use <xt_structs.h>"
 		alias
@@ -45,11 +51,14 @@ feature {NONE} -- Access
 		end
 
 	frozen c_in_cdata_section (data_ptr: POINTER): BOOLEAN
+		-- `True' when outputting text in CDATA section
 		external
 			"C inline use <xt_structs.h>"
 		alias
 			"return ((XT_parse_data*) $data_ptr)->in_CDATA_section;"
 		end
+
+feature {NONE} -- Measurement
 
 	frozen c_content_count (data_ptr: POINTER): NATURAL_64
 		external
@@ -65,7 +74,7 @@ feature {NONE} -- Access
 			"return ((XT_parse_data*) $data_ptr)->entity_expansion_count;"
 		end
 
-feature {NONE} -- Element change
+feature {NONE} -- Status change
 
 	frozen set_in_prolog_section (data_ptr: POINTER; flag: BOOLEAN)
 		external
@@ -87,6 +96,8 @@ feature {NONE} -- Element change
 		alias
 			"((XT_parse_data*) $data_ptr)->in_CDATA_section = $flag;"
 		end
+
+feature {NONE} -- Initialization
 
 	frozen set_content_count (data_ptr: POINTER; value: NATURAL_64)
 		external

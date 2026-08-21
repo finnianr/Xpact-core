@@ -220,7 +220,7 @@ feature {NONE} -- Contract support
 		local
 			index: INTEGER; done: BOOLEAN
 		do
-			if attached byte_type_table as bt_table then
+			if attached Byte_type_table as bt_table then
 				from index := start_index until index >= buf.count or done loop
 					inspect bt_table [buf [index].code]
 						when Bt_lead_2_byte then
