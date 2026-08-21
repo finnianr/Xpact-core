@@ -218,7 +218,7 @@ feature {NONE} -- Tag scanning
 
 	scan_attributes (
 		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
-		attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		attributes: XT_ATTRIBUTE_LIST
 
 	): INTEGER
 		-- Scan attribute list starting at the first attribute name character.
@@ -378,7 +378,7 @@ feature {NONE} -- Tag sub-helpers
 						from until index >= end_index or done loop
 							inspect bt_table [buf [index].code]
 								when BT_name_start, BT_hex_digit, BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
-									Result := scan_attributes (buf, index, end_index, bt_table, attribute_intervals); done := True
+									Result := scan_attributes (buf, index, end_index, bt_table, attribute_list); done := True
 								when BT_gt then
 									next_token_index := index + 1
 									Result := tok_start_tag_no_attributes; done := True
@@ -491,12 +491,12 @@ feature {NONE} -- Tag sub-helpers
 							next_token_index := index; Result := Tok_invalid; closed := True
 
 						when BT_LF, BT_CR then
-							attribute_intervals.report_newline_or_tab
+							attribute_list.report_newline_or_tab
 							index := index + 1
 
 						when BT_whitespace then
 							inspect buf [index] when '%T' then
-								attribute_intervals.report_newline_or_tab
+								attribute_list.report_newline_or_tab
 							else end
 							index := index + 1
 

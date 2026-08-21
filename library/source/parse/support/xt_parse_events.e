@@ -58,11 +58,11 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_comment (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_comment (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		deferred
 		end
 
-	on_content (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_content (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		deferred
 		end
 
@@ -70,18 +70,18 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
+	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		require
 			valid_token: element_tokens.has (token)
 			valid_attribute_indices_count: attributes.is_valid_count
 		deferred
 		end
 
-	on_processing_instruction (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_processing_instruction (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		deferred
 		end
 
-	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST)
 		require
 			valid_attribute_indices_count: attributes.is_valid_count
 		deferred

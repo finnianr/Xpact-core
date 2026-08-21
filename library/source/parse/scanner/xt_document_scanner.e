@@ -25,7 +25,7 @@ deferred class XT_DOCUMENT_SCANNER
 inherit
 	XT_CONTENT_SCANNER
 		export
-			{XT_PARSING_BUFFERS} same_characters, attribute_intervals
+			{XT_PARSING_BUFFERS} same_characters, attribute_list
 		end
 
 	XT_PROLOG_SCANNER

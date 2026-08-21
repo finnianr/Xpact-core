@@ -54,7 +54,7 @@ create
 
 feature {NONE} -- Event handlers
 
-	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
+	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		do
 			if attributes.index_count > 0 then
 				attributes.null_terminate_values (buf) -- purely to test null termination
@@ -146,7 +146,7 @@ feature {NONE} -- Event handlers
 			IO.put_new_line
 		end
 
-	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST)
 		do
 			put_attributes ("XML", 0, attributes.as_table (buffer, False))
 		end

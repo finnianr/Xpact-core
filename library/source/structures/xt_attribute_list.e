@@ -1,6 +1,6 @@
 note
 	description: "[
-		List of indices demarking name-value attribute pair substrings in ${XT_XML_PARSER_BASE}.buffer
+		List of indices demarking attribute value substrings in ${XT_XML_PARSER_BASE}.buffer
 	]"
 
 	author: "Finnian Reilly"
@@ -12,7 +12,7 @@ note
 	revision: "1"
 
 class
-	XT_ATTRIBUTE_BUFFER_INTERVALS
+	XT_ATTRIBUTE_LIST
 
 inherit
 	XT_ATTRIBUTE_INTERVAL_LIST

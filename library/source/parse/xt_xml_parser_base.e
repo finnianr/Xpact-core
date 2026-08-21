@@ -325,7 +325,7 @@ feature {NONE} -- Processor dispatch
 		local
 			error, have_now, had_before, available: INTEGER; enough, done: BOOLEAN
 			context: like element_context
-			names: like name_cache; attributes: like attribute_intervals; buf: like buffer
+			names: like name_cache; attributes: like attribute_list; buf: like buffer
 			bt_table: like Byte_type_table
 		do
 			have_now := end_index - start_index
@@ -349,7 +349,7 @@ feature {NONE} -- Processor dispatch
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
 				context := element_context; names := name_cache
-				bt_table := byte_type_table; attributes := attribute_intervals; buf := buffer
+				bt_table := byte_type_table; attributes := attribute_list; buf := buffer
 
 				from done := False until done loop
 					error := process_content (
@@ -414,7 +414,7 @@ feature {NONE} -- Processor dispatch
 
 	process_content (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
-		attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; names: like name_cache
+		attributes: XT_ATTRIBUTE_LIST; names: like name_cache
 		a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER; a_source_type: NATURAL_8
 	): INTEGER
 		-- Scan tokens from `buf' `start_index .. end_index` and triggers relevant XML events.  Advances `buffer_index'.

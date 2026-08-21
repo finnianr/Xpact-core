@@ -55,12 +55,8 @@ feature {NONE} -- Initialization
 			check attached Token_names end
 
 			buffer := new_buffer_area (Default_buffer_size)
-			create declaration_parts_list.make (10)
-			create attribute_value_defaults_table.make (37)
 			create new_line.make_filled ('%N', 1)
 			create {XT_UTF_8_CODEC} codec.make_empty
-			create formal_public_identifier.make (40)
-			create DTD_uri.make (60)
 
 			set_defaults
 		ensure then
@@ -108,14 +104,10 @@ feature -- Element change
 	reset
 		do
 			set_defaults
-			attribute_value_defaults_table.wipe_out
 
 			if not codec.is_utf_8 then
 				create {XT_UTF_8_CODEC} codec.make_empty
 			end
-			declaration_parts_list.wipe_out
-			DTD_uri.wipe_out
-			formal_public_identifier.wipe_out
 		end
 
 feature {NONE} -- Factory
@@ -319,7 +311,7 @@ feature {NONE} -- Implementation
 			positive_offset: offset > 0
 			offset_leq_ptr: offset <= buffer_index
 		do
-			attribute_intervals.shift_buffer_left (buffer, offset)
+			attribute_list.shift_buffer_left (buffer, offset)
 
 			buffer.copy_data (buffer, offset, 0, buffer_end - offset)
 			buffer_end := buffer_end - offset
@@ -344,7 +336,7 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Deferred
 
-	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+	attribute_list: XT_ATTRIBUTE_LIST
 		-- collected attribute name-value pair indices into `buffer'
 		deferred
 		end
@@ -365,24 +357,10 @@ feature {NONE} -- Internal attributes
 
 feature {NONE} -- Internal structures
 
-
-	attribute_value_defaults_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING]
-
 	buffer: SPECIAL [CHARACTER_8]
 		-- Raw byte buffer; do not modify indices outside this class.
 
-	declaration_parts_list: ARRAYED_LIST [STRING]
-		-- For example <!ATTLIST magic priority CDATA "50">
-		-- would be: << "magic", "priority", "CDATA", "50" >>
-
-	DTD_uri: STRING
-		-- DOCTYPE eg.: http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd
-
 	codec: XT_C_STRING_CODEC
-
-	formal_public_identifier: STRING
-		-- Eg. from DOCTYPE "-//W3C//DTD XHTML 1.0 Transitional//EN"
-
 
 	new_line: SPECIAL [CHARACTER_8]
 

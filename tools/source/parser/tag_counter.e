@@ -57,7 +57,7 @@ feature -- Basic operations
 
 feature {NONE} -- Event handlers
 
-	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
+	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		do
 			tag_occurrence_table.put (context.name)
 		end

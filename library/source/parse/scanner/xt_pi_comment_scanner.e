@@ -136,7 +136,7 @@ feature {NONE} -- PI and comment scanning
 										Result := scan_pi_content (buf, index + 1, end_index, token, bt_table, lower_upper); done := True
 										inspect lower_upper.count when 4 then
 										-- 0 for `colon_index' argument
-											error := attribute_intervals.transfer (buf, lower_upper, 0, scanned_entity_buffer)
+											error := attribute_list.transfer (buf, lower_upper, 0, scanned_entity_buffer)
 										else
 										end
 									else
@@ -168,7 +168,7 @@ feature {NONE} -- PI and comment scanning
 				end
 			end
 			inspect Result when Tok_partial then
-				attribute_intervals.wipe_out
+				attribute_list.wipe_out
 			else end
 		end
 
@@ -291,7 +291,7 @@ feature {NONE} -- PI helpers
 					when BT_question then
 						inspect token when Tok_xml_decl then
 							buf [index] := '/' -- turn into empty element to collect declaration attributes
-							Result := scan_attributes (buf, start_index, index + 2, bt_table, attribute_intervals)
+							Result := scan_attributes (buf, start_index, index + 2, bt_table, attribute_list)
 							buf [index] := '?' -- revert
 							inspect token when Tok_invalid then
 								do_nothing
@@ -326,7 +326,7 @@ feature {NONE} -- PI helpers
 
 	scan_attributes (
 		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER bt_table: SPECIAL [INTEGER]
-		attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		attributes: XT_ATTRIBUTE_LIST
 
 	): INTEGER
 		deferred

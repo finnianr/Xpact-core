@@ -1188,7 +1188,7 @@ feature -- Event handling
 			end
 		end
 
-	on_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
 		end
 
@@ -1284,7 +1284,7 @@ feature -- External entity resolution
 
 feature {NONE} -- Xpact core event handlers
 
-	on_comment (buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_comment (buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		local
 			null_index: INTEGER; c, null: CHARACTER; call_back_ptr: POINTER
 		do
@@ -1297,7 +1297,7 @@ feature {NONE} -- Xpact core event handlers
 			end
 		end
 
-	on_content (buf: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_content (buf: SPECIAL [CHARACTER]; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		local
 			call_back_ptr: POINTER
 		do
@@ -1325,7 +1325,7 @@ feature {NONE} -- Xpact core event handlers
 			end
 		end
 
-	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
+	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		require else
 			null_terminated_name: context.name.area [context.name.count] = '%U'
 		local
@@ -1352,7 +1352,7 @@ feature {NONE} -- Xpact core event handlers
 				attributes.upper_plus_1_characters (buf) ~ old attributes.upper_plus_1_characters (buf)
 		end
 
-	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST)
 		do
 		end
 

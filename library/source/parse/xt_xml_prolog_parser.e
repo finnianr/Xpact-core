@@ -36,8 +36,12 @@ feature {NONE} -- Initialization
 
 	make
 		do
+			create attribute_value_defaults_table.make (37)
 			create parse_data_memory.make (size_of_parse_data)
 			create doctype_decl_stack.make_empty (2)
+			create declaration_parts_list.make (10)
+			create formal_public_identifier.make (40)
+			create DTD_uri.make (60)
 			create element_context.make (parse_data_memory.item)
 			create parameter_entity_table.make (3)
 			create parameter_name_cache.make
@@ -184,7 +188,7 @@ feature {NONE} -- Token processing
 		end
 
 	process_prolog (
-		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_LIST
 		names: like name_cache; parse_data: POINTER; a_index: TYPED_POINTER [INTEGER]; done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
@@ -566,6 +570,7 @@ feature {NONE} -- Implementation
 			Precursor {XT_PARSING_BUFFERS}
 			Precursor {XT_DOCUMENT_SCANNER}
 
+			attribute_value_defaults_table.wipe_out
 			if element_context.has_default_values then
 				create element_context.make (parse_data_memory.item)
 			else
@@ -573,6 +578,9 @@ feature {NONE} -- Implementation
 			end
 			parameter_entity_table.wipe_out
 			parameter_name_cache.reset
+			declaration_parts_list.wipe_out
+			DTD_uri.wipe_out
+			formal_public_identifier.wipe_out
 		end
 
 	valid_doctype_declaration: BOOLEAN
@@ -602,10 +610,23 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
-	element_context: XT_ELEMENT_CONTEXT
+	attribute_value_defaults_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING]
+
+	declaration_parts_list: ARRAYED_LIST [STRING]
+		-- For example <!ATTLIST magic priority CDATA "50">
+		-- would be: << "magic", "priority", "CDATA", "50" >>
+
+	DTD_uri: STRING
+		-- DOCTYPE eg.: http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd
 
 	doctype_decl_stack: SPECIAL [INTEGER]
 		-- DOCTYPE declaration type stack
+
+	element_context: XT_ELEMENT_CONTEXT
+
+	formal_public_identifier: STRING
+		-- Eg. from DOCTYPE "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
 
 	is_parameter_entity: BOOLEAN
 

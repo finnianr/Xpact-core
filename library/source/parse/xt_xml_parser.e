@@ -41,13 +41,13 @@ feature {NONE} -- Event handlers
 			do_with_content (text_buffer)
 		end
 
-	on_base_commment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_base_commment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
 			on_comment (new_substring (area, start_index, end_index))
 		end
 
 	on_base_content (
-		area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS
+		area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST
 	)
 		-- handle content section in `area' from index `start_index' to `end_index'
 		local
@@ -68,7 +68,7 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_base_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_base_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
 			if attributes.is_empty then
 				on_processing_instruction (new_substring (buf, start_index, end_index), Empty_string)
@@ -77,7 +77,7 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
+	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		do
 			on_tag_start (context.name, context.depth, attributes.as_table (buf, False))
 		end

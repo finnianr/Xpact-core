@@ -49,10 +49,10 @@ feature {NONE} -- Initialisation
 		do
 			create scanned_entity_buffer.make (5)
 			create index_x4_buffer.make_empty (4)
-			create attribute_intervals.make (11)
-			name_cache := attribute_intervals.name_cache
-			entity_cache := attribute_intervals.entity_cache
-			entity_table := attribute_intervals.entity_table
+			create attribute_list.make (11)
+			name_cache := attribute_list.name_cache
+			entity_cache := attribute_list.entity_cache
+			entity_table := attribute_list.entity_table
 		end
 
 feature -- Access
@@ -71,8 +71,8 @@ feature -- Element change
 
 	reset
 		do
-			attribute_intervals.set_permit_undefined_entities (False)
-			attribute_intervals.wipe_out
+			attribute_list.set_permit_undefined_entities (False)
+			attribute_list.wipe_out
 			entity_cache.reset
 			name_cache.reset
 			entity_table.wipe_out
@@ -105,7 +105,7 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
-	attribute_intervals: XT_ATTRIBUTE_BUFFER_INTERVALS
+	attribute_list: XT_ATTRIBUTE_LIST
 		-- collected attribute name-value pair indices into `buffer'
 
 	entity_table: XT_ENTITY_TABLE

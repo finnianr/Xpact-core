@@ -114,7 +114,7 @@ feature -- Status report
 
 feature {NONE} -- Event handlers
 
-	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
 			inspect data_type when Tok_comment then
 				checksum.add_characters (area, start_index, end_index)
@@ -122,7 +122,7 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_content (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_content (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
 			inspect data_type
 				when Tok_cdata then
@@ -137,7 +137,7 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS; token: INTEGER)
+	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		do
 			inspect data_type
 				when Tok_tag then
@@ -157,7 +157,7 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_BUFFER_INTERVALS)
+	on_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
 			inspect data_type
 				when Tok_pi_name then
