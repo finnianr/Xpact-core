@@ -18,14 +18,6 @@ inherit
 			{NONE} all
 		end
 
-	XT_PARSE_CONSTANTS
-		rename
-			Element as Element_,
-			Entity as Entity_
-		export
-			{NONE} all
-		end
-
 	XT_PARSE_ERROR_CONSTANTS
 		export
 			{NONE} all
@@ -42,11 +34,6 @@ inherit
 		end
 
 	XT_STRING_CONSTANTS
-		rename
-			CDATA as CDATA_upper
-		end
-
-	STRING_HANDLER
 
 feature {NONE} -- Initialization
 

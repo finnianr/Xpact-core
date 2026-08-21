@@ -20,8 +20,6 @@ inherit
 		end
 
 	XT_DOCUMENT_SCANNER
-		rename
-			CDATA as CDATA_upper
 		redefine
 			make, reset
 		end
@@ -30,7 +28,10 @@ inherit
 
 	XT_C_PARSE_DATA_STRUCT
 
-	EL_TYPED_POINTER_ROUTINES_I
+	XT_PARSE_CONSTANTS
+		export
+			{NONE} all
+		end
 
 feature {NONE} -- Initialization
 
@@ -122,7 +123,7 @@ feature {NONE} -- Token processing
 								Result := Error_syntax; put_boolean (done, True)
 							end
 
-						when Entity_ then
+						when Entity then
 							if doctype_decl_stack.count = 2 then
 								if is_parameter_entity then
 									on_parameter_entity_declaration_part (buf, index, end_index)
@@ -132,7 +133,7 @@ feature {NONE} -- Token processing
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end
-						when Element_, Notation then
+						when Element, Notation then
 							do_nothing -- for now
 					else
 						put_boolean (default_case, True)
@@ -146,7 +147,7 @@ feature {NONE} -- Token processing
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end
-						when Entity_ then
+						when Entity then
 							if doctype_decl_stack.count = 2 then
 								if is_parameter_entity then
 									on_parameter_entity_declaration_part (buf, index + 1, end_index - 1)
@@ -157,7 +158,7 @@ feature {NONE} -- Token processing
 								Result := Error_syntax; put_boolean (done, True)
 							end
 
-						when Element_, Notation then
+						when Element, Notation then
 							do_nothing -- for now
 					else
 						put_boolean (default_case, True)
@@ -168,7 +169,7 @@ feature {NONE} -- Token processing
 						when Attlist then
 							on_attribute_declaration_part (buf, index, end_index, token, names)
 
-						when Element_, Entity_, Notation then
+						when Element, Entity, Notation then
 							do_nothing -- for now
 					else
 						put_boolean (default_case, True)
@@ -347,13 +348,13 @@ feature {NONE} -- Event handlers
 					declaration_parts_list.extend (names.item (buf, start_index, end_index, colon_index.max (0)))
 
 				when 2 then
-					if same_characters (buf, start_index, end_index, CDATA_upper) then
-						declaration_parts_list.extend (CDATA_upper)
+					if same_characters (buf, start_index, end_index, CDATA) then
+						declaration_parts_list.extend (CDATA)
 					end
 			else
 				inspect token
 					when Tok_literal then
-						if declaration_parts_list.last = CDATA_upper then
+						if declaration_parts_list.last = CDATA then
 							if attached attribute_value_defaults_table [declaration_parts_list.first] as list then
 								default_values_list := list
 							else
