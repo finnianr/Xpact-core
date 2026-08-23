@@ -34,14 +34,20 @@ class
 	XML_CORPUS_TESTER
 
 inherit
-	XT_XML_PARSER
+	XT_XML_PARSER_BASE
 		redefine
 			make, on_finish
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
 		rename
-			on_xml_declaration_ as on_xml_declaration
+			on_cdata_section_close_ as on_cdata_section_close,
+			on_comment_ as on_comment,
+			on_content_ as on_content,
+			on_xml_declaration_ as on_xml_declaration,
+			on_doctype_declaration_start_ as on_doctype_declaration_start,
+			on_processing_instruction_ as on_processing_instruction,
+			on_tag_end_ as on_tag_end
 		end
 
 	FILE_TREE_TESTS_FACTORY
@@ -64,14 +70,6 @@ feature {NONE} -- Initialisation
 
 feature {NONE} -- Event handlers
 
-	on_comment (text: STRING_8)
-		do
-		end
-
-	on_content (text: STRING)
-		do
-		end
-
 	on_finish (a_status: INTEGER)
 		do
 			if a_status = Status_OK and then attached last_tests as tests then
@@ -82,19 +80,12 @@ feature {NONE} -- Event handlers
 			report_file.close
 		end
 
-	on_processing_instruction (a_name, value: STRING)
-		do
-		end
-
-	on_tag_end (a_name: STRING_8)
-		do
-		end
-
-	on_tag_start (a_name: STRING_8; depth: INTEGER; attribute_table: HASH_TABLE [STRING, STRING])
+	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		local
-			directory: DIRECTORY; report_path: PATH
+			directory: DIRECTORY; report_path: PATH; attribute_table: HASH_TABLE [STRING, STRING]
 		do
-			if a_name ~ Name.section then
+			attribute_table := attributes.as_table (buf, False)
+			if context.name ~ Name.section then
 				if attached attribute_table [Name.path] as str then
 					create section_path.make_from_string (str)
 				else
@@ -105,7 +96,8 @@ feature {NONE} -- Event handlers
 				else
 					set_section_name ("<Unspecified>")
 				end
-			elseif a_name ~ Name.directory then
+				
+			elseif context.name ~ Name.directory then
 				if attached attribute_table [Name.path] as relative_path
 					and then attached section_path.extended (relative_path) as path
 				then
@@ -120,7 +112,7 @@ feature {NONE} -- Event handlers
 						put_directory (directory.path, False)
 					end
 				end
-			elseif a_name ~ Name.test_corpus then
+			elseif context.name ~ Name.test_corpus then
 				if attached attribute_table [Name.report_path] as table_item then
 					create report_path.make_from_string (table_item)
 					report_file.reset_path (report_path)

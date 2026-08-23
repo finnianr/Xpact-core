@@ -23,6 +23,7 @@ inherit
 			on_cdata_section_close_ as on_cdata_section_close,
 			on_comment_ as on_comment,
 			on_content_ as on_content,
+			on_doctype_declaration_start_ as on_doctype_declaration_start,
 			on_tag_end_ as on_tag_end,
 			on_processing_instruction_ as on_processing_instruction,
 			on_xml_declaration_ as on_xml_declaration

@@ -2,11 +2,13 @@ note
 	description: "[
 		Generate CRC-32 for one of XML document characteristics
 		
-		1. tag name
-		2. attribute value
-		3. cdata
-		4. text
-		5. comment
+		1. attribute value
+		2. CDATA text
+		3. comment
+		4. PI data
+		5. PI name
+		6. tag name
+		7. text
 	]"
 
 	author: "Finnian Reilly"
@@ -24,13 +26,7 @@ class
 inherit
 	XT_XML_PARSER_BASE
 		rename
-			make as make_parser,
-			Tok_attribute_value_s as Tok_attribute,
-			Tok_data_chars as Tok_text,
-			Tok_cdata_sect_open as Tok_cdata,
-			Tok_end_tag as Tok_tag,
-			Tok_pi as Tok_pi_value,
-			Tok_name as Tok_pi_name
+			make as make_parser
 		redefine
 			make_parser, reset
 		end
@@ -38,13 +34,7 @@ inherit
 	XT_DEFAULT_PARSE_EVENTS
 		rename
 			on_cdata_section_close_ as on_cdata_section_close,
-			on_tag_end_ as on_tag_end,
-			on_xml_declaration_ as on_xml_declaration
-		end
-
-	XT_PARSE_EVENT_CONSTANTS
-		export
-			{NONE} all
+			on_tag_end_ as on_tag_end
 		end
 
 	XT_EXPAT_COMPARABLE_PARSER
@@ -58,6 +48,8 @@ inherit
 		export
 			{NONE} all
 		end
+
+	XT_DATA_TYPES
 
 create
 	make
@@ -116,7 +108,7 @@ feature {NONE} -- Event handlers
 
 	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
-			inspect data_type when Tok_comment then
+			inspect data_type when Type_comment then
 				checksum.add_characters (area, start_index, end_index)
 			else
 			end
@@ -125,11 +117,11 @@ feature {NONE} -- Event handlers
 	on_content (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
 			inspect data_type
-				when Tok_cdata then
+				when Type_cdata then
 					if in_cdata_section then
 						checksum.add_characters (area, start_index, end_index)
 					end
-				when Tok_text then
+				when Type_text then
 					if not in_cdata_section then
 						checksum.add_characters (area, start_index, end_index)
 					end
@@ -137,20 +129,32 @@ feature {NONE} -- Event handlers
 			end
 		end
 
+	on_doctype_declaration_start (declaration_parts: ARRAYED_LIST [STRING]; has_internal_subset: BOOLEAN)
+		local
+			i: INTEGER
+		do
+			if attached checksum as crc then
+				from i := 1 until i > declaration_parts.count loop
+					crc.add_string (declaration_parts [i])
+					i := i + 1
+				end
+				crc.add_boolean (has_internal_subset)
+			end
+		end
+
 	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		do
 			inspect data_type
-				when Tok_tag then
+				when Type_tag then
 					checksum.add_string (context.name)
 
-				when Tok_attribute then
-					inspect token
-						when Tok_start_tag_with_attributes, Tok_empty_element_with_attributes then
-							attributes.append_values_to_crc_32 (checksum, buf, context.default_attribute_values)
+				when Type_attribute, Type_attribute_name then
+					inspect token when Tok_start_tag_with_attributes, Tok_empty_element_with_attributes then
+						attributes.append_to_crc_32 (buf, context.default_attribute_values, data_type, checksum)
 					else
 					-- perhaps there are some default values defined in DTD prolog
 						if context.has_attributes and attributes.count = 0 then
-							attributes.append_values_to_crc_32 (checksum, buf, context.default_attribute_values)
+							attributes.append_to_crc_32 (buf, context.default_attribute_values, data_type, checksum)
 						end
 					end
 			else
@@ -160,18 +164,25 @@ feature {NONE} -- Event handlers
 	on_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
 			inspect data_type
-				when Tok_pi_name then
+				when Type_pi_name then
 					if attributes.is_empty then
 						checksum.add_characters (buf, start_index, end_index)
 					else
 						checksum.add_string (attributes.first_name)
 					end
-				when Tok_pi_value then
+				when Type_pi_data then
 					if attributes.count > 0 then
-						attributes.append_first_value_to_crc_32 (checksum, buf)
+						attributes.append_first_value_to_crc_32 (buf, checksum)
 					end
 			else
 			end
+		end
+
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST)
+		do
+			inspect data_type when Type_xml_declaration then
+				attributes.append_xml_declaration_to_crc_32 (buf, checksum)
+			else end
 		end
 
 feature -- Factory

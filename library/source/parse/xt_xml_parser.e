@@ -125,16 +125,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	put_tabs (n: INTEGER)
-		local
-			i: INTEGER
-		do
-			from i := 1 until i > n loop
-				IO.put_string (Tab_string)
-				i := i + 1
-			end
-		end
-
 feature {NONE} -- Internal attributes
 
 	content_call_count: INTEGER
@@ -142,13 +132,5 @@ feature {NONE} -- Internal attributes
 	is_white_space_skipped: BOOLEAN
 
 	text_buffer: STRING
-
-feature {NONE} -- Constants
-
-	Tab_string: STRING
-		once
-			create Result.make_filled (' ', 3)
-		end
-
 
 end

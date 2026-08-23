@@ -10,7 +10,8 @@ note
 	date: "2026-06-20 20:30:52 GMT (Saturday 20th June 2026)"
 	revision: "1"
 
-deferred class XT_XML_PARSER_BASE
+deferred class
+	XT_XML_PARSER_BASE
 
 inherit
 	XT_XML_PROLOG_PARSER

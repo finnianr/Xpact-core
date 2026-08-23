@@ -98,6 +98,21 @@ feature -- Basic operations
 			area.wipe_out
 		end
 
+feature {NONE} -- Implementation
+
+	choose (i: INTEGER; a_buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]
+		-- `a_buffer' if `overflow_area [i // 2] /= Void' else `overflow_area [i // 2]'
+		-- Needed as consequence of possible call to `shift_buffer_left'
+		require
+			index_at_start_of_group: i.integer_remainder (Interval_count) = 0
+		do
+			if attached overflow_area [i // 2] as buffer then
+				Result := buffer
+			else
+				Result := a_buffer
+			end
+		end
+
 feature {NONE} -- Internal attributes
 
 	attribute_table: HASH_TABLE [STRING, STRING]

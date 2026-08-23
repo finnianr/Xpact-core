@@ -1325,6 +1325,10 @@ feature {NONE} -- Xpact core event handlers
 			end
 		end
 
+	on_doctype_declaration_start (declaration_parts: ARRAYED_LIST [STRING]; has_internal_subset: BOOLEAN)
+		do
+		end
+
 	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		require else
 			null_terminated_name: context.name.area [context.name.count] = '%U'
@@ -1342,7 +1346,7 @@ feature {NONE} -- Xpact core event handlers
 					attributes_c_string_array := c_string_array
 				end
 				c_string_array.wipe_out
-				attributes.append_pointers_to (c_string_array, buf)
+				attributes.append_pointers_to (buf, c_string_array)
 				call_start_element_callback (call_back_ptr, user_data, name_area.base_address, c_string_array.base_address)
 
 				attributes.undo_null_terminated_values (buf)

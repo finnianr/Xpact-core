@@ -40,6 +40,10 @@ feature {NONE} -- Event handlers
 		do
 		end
 
+	on_doctype_declaration_start_ (declaration_parts: ARRAYED_LIST [STRING]; has_internal_subset: BOOLEAN)
+		do
+		end
+
 	on_tag_end_ (name: STRING_8)
 		do
 		end

@@ -251,8 +251,13 @@ feature {NONE} -- Token processing
 					when Tok_decl_close then
 						inspect doctype_decl_stack.count when 1 then
 							doctype_decl_stack.remove_tail (1)
-							if not has_dtd_section and then not valid_doctype_declaration then
+							if has_dtd_section then
+								do_nothing
+
+							elseif not valid_doctype_declaration then
 								Result := Error_syntax; put_boolean (done, True)
+							else
+								on_doctype_declaration_start (declaration_parts_list, False)
 							end
 						else
 							Result := Error_syntax; put_boolean (done, True)
@@ -277,6 +282,7 @@ feature {NONE} -- Token processing
 							if valid_doctype_declaration then
 								set_in_dtd_section (parse_data, True)
 								has_dtd_section := True
+								on_doctype_declaration_start (declaration_parts_list, True)
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end

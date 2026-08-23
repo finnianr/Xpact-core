@@ -541,6 +541,16 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	put_tabs (n: INTEGER)
+		local
+			i: INTEGER
+		do
+			from i := 1 until i > n loop
+				IO.put_string (Tab_spaces)
+				i := i + 1
+			end
+		end
+
 feature {NONE} -- Deferred
 
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER

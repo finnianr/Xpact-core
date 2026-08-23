@@ -34,14 +34,39 @@ inherit
 			copy, is_equal
 		end
 
+	XT_DATA_TYPES
+		export
+			{ANY} Type_attribute, Type_attribute_name
+		undefine
+			copy, is_equal
+		end
+
 create
 	make
 
 feature -- Status query
 
+	has_value (buffer: SPECIAL [CHARACTER_8]; name, value: STRING): BOOLEAN
+		local
+			i, i_final: INTEGER
+		do
+			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
+				and then attached  name_area as l_name_area
+			then
+				from i := 0; i_final := a.count until i = i_final or Result loop
+					if l_name_area [i // 2] ~ name then
+						if area_substring (choose (i, buffer, overflow_area), a [i], a [i + 1], False) ~ value then
+							Result := True
+						end
+					end
+					i := i + Interval_count
+				end
+			end
+		end
+
 	has_valid_encoding (buffer: SPECIAL [CHARACTER_8]): BOOLEAN
 		do
-			if attached item_value (buffer, Encoding_attribute, False) as encoding then
+			if attached item_value (buffer, Xml_declaration.encoding, False) as encoding then
 				Result := across to_list (Valid_encoding_list, ',') as valid_encoding some
 					encoding.is_case_insensitive_equal (valid_encoding)
 				end
@@ -52,7 +77,7 @@ feature -- Status query
 
 	standalone_value (buffer: SPECIAL [CHARACTER_8]): STRING
 		do
-			if attached item_value (buffer, Standalone_attribute, False) as value then
+			if attached item_value (buffer, Xml_declaration.standalone, False) as value then
 				Result := value
 			else
 				Result := Valid_yes_no [2]
@@ -101,6 +126,27 @@ feature -- Access
 			end
 		end
 
+	last_name: STRING
+		do
+			if attached name_area as a and then a.count > 0 then
+				Result := a [a.count - 1]
+			else
+				Result := Empty_string
+			end
+		end
+
+	last_value (buffer: SPECIAL [CHARACTER_8]): STRING
+		local
+			i: INTEGER
+		do
+			if attached area_v2 as a and then a.count > 0 and then attached overflow_buffer_area as overflow_area then
+				i := a.count - Interval_count
+				Result := area_substring (choose (i, buffer, overflow_area), a [i], a [i + 1], False)
+			else
+				Result := Empty_string
+			end
+		end
+
 	upper_plus_1_characters (buffer: SPECIAL [CHARACTER_8]): STRING
 		require
 			swap_area_big_enough: swap_area_big_enough
@@ -111,23 +157,22 @@ feature -- Access
 			if attached area_v2 as a and then attached Result.area as str_area then
 				from i := 0; i_final := a.count until i = i_final loop
 					upper_plus_1 := a [i + 1] + 1
-					str_area [i // 2] := i_th_value (i, buffer, overflow_buffer_area) [upper_plus_1]
+					str_area [i // 2] := choose (i, buffer, overflow_buffer_area) [upper_plus_1]
 					i := i + Interval_count
 				end
 			end
 		end
 
-	item_value (a_buffer: SPECIAL [CHARACTER_8]; name: STRING; keep_ref: BOOLEAN): detachable STRING
+	item_value (buffer: SPECIAL [CHARACTER_8]; name: STRING; keep_ref: BOOLEAN): detachable STRING
 		local
-			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]; found: BOOLEAN
+			i, i_final: INTEGER; found: BOOLEAN
 		do
 			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
 				and then attached name_area as l_name_area
 			then
 				from i := 0; i_final := a.count until i = i_final or found loop
 					if l_name_area [i // 2] ~ name then
-						buffer := i_th_value (i, a_buffer, overflow_area)
-						Result := area_substring (buffer, a [i], a [i + 1], False)
+						Result := area_substring (choose (i, buffer, overflow_area), a [i], a [i + 1], False)
 						if keep_ref then
 							Result := Result.twin
 						end
@@ -225,21 +270,83 @@ feature -- Measurement
 			end
 		end
 
-feature -- Basic operations
+feature -- Appending to CRC-32 checksum
 
-	append_first_value_to_crc_32 (checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8])
+	append_first_value_to_crc_32 (buffer: SPECIAL [CHARACTER_8]; checksum: EL_CRC_32_DIGEST)
 		require
 			not_empty: count > 0
-		local
-			buffer: SPECIAL [CHARACTER_8]
 		do
-			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area then
-				buffer := i_th_value (0, a_buffer, overflow_area)
-				checksum.add_characters (buffer, a [0], a [1])
+			if attached area_v2 as a then
+				checksum.add_characters (choose (0, buffer, overflow_buffer_area), a [0], a [1])
 			end
 		end
 
-	append_pointers_to (c_string_array: SPECIAL [POINTER]; a_buffer: SPECIAL [CHARACTER_8])
+	append_to_crc_32 (
+		buffer: SPECIAL [CHARACTER_8]; default_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
+		data_type: INTEGER; checksum: EL_CRC_32_DIGEST
+	)
+		require
+			valid_data_type: data_type = Type_attribute_name or data_type = Type_attribute
+			all_default_values_unchecked: across default_values as value all not value.checked end
+		local
+			i, i_final, lower_index, upper_index: INTEGER; attribute_: XT_DEFAULT_ATTRIBUTE_VALUE
+			name: STRING
+		do
+			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
+				and then attached name_area as l_name_area
+			then
+				from i := 0; i_final := a.count until i = i_final loop
+					name := l_name_area [i // 2]
+					if default_values.count > 0 then
+						check_value (name, default_values)
+					end
+					lower_index := a [i]; upper_index := a [i + 1]
+					inspect data_type when Type_attribute_name then
+						checksum.add_string (name)
+					else
+						checksum.add_characters (choose (i, buffer, overflow_area), lower_index, upper_index)
+					end
+					i := i + Interval_count
+				end
+			-- Add default values for unchecked
+				from i := 0 until i = default_values.count loop
+					attribute_ := default_values [i]
+					if not attribute_.checked then
+						inspect data_type when Type_attribute_name then
+							checksum.add_string (attribute_.name)
+						else
+							checksum.add_string (attribute_.value)
+						end
+					end
+					i := i + 1
+				end
+			end
+		end
+
+	append_xml_declaration_to_crc_32 (buffer: SPECIAL [CHARACTER_8]; checksum: EL_CRC_32_DIGEST)
+		do
+			across << Xml_declaration.version, Xml_declaration.encoding, Xml_declaration.standalone >> as name loop
+				if attached item_value (buffer, name, False) as value then
+					inspect @ name.cursor_index when 1, 2 then
+						checksum.add_string (value)
+					else
+						if value [1] = 'y' then
+							checksum.add_integer_32 (1)
+						else
+							checksum.add_integer_32 (0)
+						end
+					end
+
+				elseif @ name.cursor_index = 3 then
+				-- standalone not specified
+					checksum.add_integer_32 (-1)
+				end
+			end
+		end
+
+feature -- Basic operations
+
+	append_pointers_to (buffer: SPECIAL [CHARACTER_8]; c_string_array: SPECIAL [POINTER])
 		-- append alternating name and value strings to `c_string_array' as pointers to null terminated C strings
 		-- and terminated with a null pointer
 		require
@@ -247,15 +354,14 @@ feature -- Basic operations
 			empty_c_string_array: c_string_array.count = 0
 			big_enough: c_string_array.capacity >= count * 2 + 1
 		local
-			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			i, i_final: INTEGER
 		do
 			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
 				and then attached name_area as l_name_area and then attached buffer_pool as pool
 			then
 				from i := 0; i_final := a.count until i = i_final loop
 					c_string_array.extend (l_name_area [i // 2].area.base_address)
-					buffer := i_th_value (i, a_buffer, overflow_area)
-					c_string_array.extend (buffer.item_address (a [0])) -- value
+					c_string_array.extend (choose (i, buffer, overflow_area).item_address (a [0])) -- value
 					i := i + Interval_count
 				end
 				c_string_array.extend (default_pointer)
@@ -263,39 +369,6 @@ feature -- Basic operations
 		ensure
 			filled: c_string_array.count = count * 2 + 1
 			same_character_count: sum_c_string_lengths (c_string_array) = character_count
-		end
-
-	append_values_to_crc_32 (
-		checksum: EL_CRC_32_DIGEST; a_buffer: SPECIAL [CHARACTER_8]; default_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
-	)
-		require
-			all_default_values_unchecked: across default_values as value all not value.checked end
-		local
-			i, i_final, lower_index, upper_index: INTEGER; buffer: SPECIAL [CHARACTER_8]
-			attribute_: XT_DEFAULT_ATTRIBUTE_VALUE
-		do
-			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
-				and then attached name_area as l_name_area
-			then
-				from i := 0; i_final := a.count until i = i_final loop
-					if default_values.count > 0 then
-						check_value (l_name_area [i // 2], default_values)
-					end
-					buffer := i_th_value (i, a_buffer, overflow_area)
-
-					lower_index := a [i]; upper_index := a [i + 1]
-					checksum.add_characters (buffer, lower_index, upper_index)
-					i := i + Interval_count
-				end
-			-- Add default values for unchecked
-				from i := 0 until i = default_values.count loop
-					attribute_ := default_values [i]
-					if not attribute_.checked then
-						checksum.add_string (attribute_.value)
-					end
-					i := i + 1
-				end
-			end
 		end
 
 	shift_buffer_left (buffer: SPECIAL [CHARACTER_8]; offset: INTEGER)
@@ -403,47 +476,6 @@ feature -- Basic operations
 
 feature -- Debug helpers
 
-	has_value (a_buffer: SPECIAL [CHARACTER_8]; name, value: STRING): BOOLEAN
-		local
-			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]
-		do
-			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
-				and then attached  name_area as l_name_area
-			then
-				from i := 0; i_final := a.count until i = i_final or Result loop
-					if l_name_area [i // 2] ~ name then
-						buffer := i_th_value (i, a_buffer, overflow_area)
-						if area_substring (buffer, a [i], a [i + 1], False) ~ value then
-							Result := True
-						end
-					end
-					i := i + Interval_count
-				end
-			end
-		end
-
-	last_name: STRING
-		do
-			if attached name_area as a and then a.count > 0 then
-				Result := a [a.count - 1]
-			else
-				Result := Empty_string
-			end
-		end
-
-	last_value (a_buffer: SPECIAL [CHARACTER_8]): STRING
-		local
-			i: INTEGER; buffer: SPECIAL [CHARACTER_8]
-		do
-			if attached area_v2 as a and then a.count > 0 and then attached overflow_buffer_area as overflow_area then
-				i := a.count - Interval_count
-				buffer := i_th_value (i, a_buffer, overflow_area)
-				Result := area_substring (buffer, a [i], a [i + 1], False)
-			else
-				Result := Empty_string
-			end
-		end
-
 	stop_on_criteria (a_buffer: SPECIAL [CHARACTER_8])
 		local
 			name, value: STRING
@@ -499,12 +531,12 @@ feature -- Contract support
 
 feature -- Conversion
 
-	as_table (a_buffer: SPECIAL [CHARACTER_8]; keep_ref: BOOLEAN): like attribute_table
+	as_table (buffer: SPECIAL [CHARACTER_8]; keep_ref: BOOLEAN): like attribute_table
 		-- convert all values to hash table keyed by names
 		require
 			valid_attributes_count: is_valid_count
 		local
-			i, i_final: INTEGER; buffer: SPECIAL [CHARACTER_8]
+			i, i_final: INTEGER
 		do
 			Result := attribute_table
 			Result.wipe_out
@@ -512,8 +544,7 @@ feature -- Conversion
 				and then attached name_area as l_name_area
 			then
 				from i := 0; i_final := a.count until i = i_final loop
-					buffer := i_th_value (i, a_buffer, overflow_area)
-					if attached area_substring (buffer, a [i], a [i + 1], True) as value then
+					if attached area_substring (choose (i, buffer, overflow_area), a [i], a [i + 1], True) as value then
 						Result.put (value.twin, l_name_area [i // 2]) -- must make a twin
 					end
 					check
@@ -556,18 +587,6 @@ feature {NONE} -- Implementation
 				else
 					i := i + 1
 				end
-			end
-		end
-
-	i_th_value (i: INTEGER; a_buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]
-		-- override `buffer' with `overflow_area [i // 2]' if not Void (consequence of `shift_buffer_left' )
-		require
-			index_at_start_of_group: i.integer_remainder (Interval_count) = 0
-		do
-			if attached overflow_area [i // 2] as buffer then
-				Result := buffer
-			else
-				Result := a_buffer
 			end
 		end
 

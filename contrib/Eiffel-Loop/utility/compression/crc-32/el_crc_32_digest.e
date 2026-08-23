@@ -28,6 +28,13 @@ inherit
 			default_create, copy, is_equal, out
 		end
 
+	PLATFORM
+		export
+			{NONE} all
+		undefine
+			default_create, copy, is_equal, out
+		end
+
 	STRING_HANDLER
 		undefine
 			default_create, copy, is_equal, out
@@ -67,6 +74,11 @@ feature -- Access
 
 feature -- Element change
 
+	add_boolean (flag: BOOLEAN)
+		do
+			add_bytes ($flag, Boolean_bytes)
+		end
+
 	add_bytes (byte_array: POINTER; count: INTEGER)
 		local
 			l_value: NATURAL
@@ -87,6 +99,11 @@ feature -- Element change
 			if upper >= lower then
 				set_item (characters_crc_32 (item, area, lower, upper))
 			end
+		end
+
+	add_integer_32 (n: INTEGER_32)
+		do
+			add_bytes ($value, Integer_32_bytes)
 		end
 
 	add_string (str: STRING_8)

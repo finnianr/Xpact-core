@@ -42,7 +42,7 @@ inherit
 
 	XT_PARSE_CONSTANTS
 
-	XT_PARSE_EVENT_CONSTANTS
+	XT_DATA_TYPES
 
 	FILE_TREE_TESTS_FACTORY
 
@@ -102,7 +102,7 @@ feature {NONE} -- Factory
 	new_crc_32_generator (app_option: STRING): detachable XT_CRC_32_GENERATOR
 		do
 			if attached new_argument_8 (0, app_option) as data_type_arg
-				and then attached Parse_data_types [data_type_arg] as data_type
+				and then attached Data_type_table [data_type_arg] as data_type
 			then
 				create Result.make (data_type)
 				if index_of_word_option (Option.trace) > 0 then
@@ -244,7 +244,7 @@ feature {NONE} -- Factory
 						elseif l_option.ends_with ("32") then
 							usage := new_usage_text (l_option, "<data-type> " + Bench_mark_options +
 								"%NOPTIONAL: -trace. Trace all CRC-32 stages step by step for debugging" +
-								"%NValid XML data types: " + s.key_set_string (Parse_data_types.current_keys, False)
+								"%NValid XML data types: " + s.key_set_string (Data_type_table.current_keys, False)
 							)
 						else
 							usage := new_usage_text (l_option, "<corpus-xml-config-path>")

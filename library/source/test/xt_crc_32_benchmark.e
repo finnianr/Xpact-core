@@ -18,7 +18,7 @@ inherit
 			make_default
 		end
 
-	XT_PARSE_EVENT_CONSTANTS
+	XT_DATA_TYPES
 
 create
 	make
@@ -28,7 +28,7 @@ feature {NONE} -- Initialization
 	make_default
 		do
 			Precursor
-			data_type := Tok_tag
+			data_type := Type_tag
 		end
 
 feature -- Element change

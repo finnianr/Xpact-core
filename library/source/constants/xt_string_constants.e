@@ -21,12 +21,17 @@ feature {NONE} -- Standard strings
 			Result := CDATA + "["
 		end
 
-	Xml_lower: STRING = "xml"
-
-	Xml_declaration: STRING = "<?xml"
-
 	Comment_declaration: STRING = "<!--"
 
+	Xml_lower: STRING = "xml"
+
+	Xml_declaration: TUPLE [open, encoding, standalone, version: STRING]
+		local
+			s: XT_STRING_8_ROUTINES
+		once
+			create Result
+			s.fill_tuple (Result, "<?xml, encoding, standalone, version")
+		end
 feature {NONE} -- Document definition strings
 
 	Document_definition_names: LIST [STRING]
@@ -62,10 +67,6 @@ feature {NONE} -- Document definition strings
 		end
 
 feature {NONE} -- XML declaration
-
-	Encoding_attribute: STRING = "encoding"
-
-	Standalone_attribute: STRING = "standalone"
 
 	Valid_yes_no: ARRAY [STRING]
 		once

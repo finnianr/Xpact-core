@@ -20,12 +20,15 @@ typedef enum {
 	TYPE_COMMENT,
 	TYPE_TAG,
 	TYPE_ATTRIBUTE,
+	TYPE_ATTRIB_NAME,
 	TYPE_PI_NAME,
-	TYPE_PI_DATA
+	TYPE_PI_DATA,
+	TYPE_XML_DECL
 } data_type_t;
 
 static const char *data_type_name[] = {
-	"text", "cdata", "comment", "tag", "attribute", "pi-name", "pi-data"
+	"text", "cdata", "comment", "tag", "attribute", "attrib-name",
+	"pi-name", "pi-data", "xml-decl"
 };
 
 typedef struct {
@@ -51,17 +54,35 @@ static void crc32_table_init(void) {
 
 static void println_escaped(const char *s, int len);
 
-static void crc32_update(crc_ctx_t *ctx, const unsigned char *buf, size_t len) {
+static void crc32_bytes(crc_ctx_t *ctx, const unsigned char *buf, size_t len) {
 	uint32_t crc = ctx->crc;
 	for (size_t i = 0; i < len; i++) {
 		crc = crc32_table[(crc ^ buf[i]) & 0xFFu] ^ (crc >> 8);
 	}
 	ctx->crc = crc;
-
 	ctx->event_count++;
+}
+
+static void crc32_update(crc_ctx_t *ctx, const unsigned char *buf, size_t len) {
+	crc32_bytes(ctx, buf, len);
 	if (ctx->trace && ctx->verbose_output) {
 		printf("#%07d (%u): \"", ctx->event_count, ctx->crc ^ 0xFFFFFFFFu);
 		println_escaped ((const char *) buf, len);
+	}
+}
+
+/* Same CRC update as crc32_update, but for a signed 32-bit value fed in as
+ * 4 raw big-endian bytes; traced as a decimal integer rather than an
+ * escaped byte string. Used for the XML declaration's standalone field. */
+static void crc32_update_int32(crc_ctx_t *ctx, int32_t value) {
+	uint32_t sv = (uint32_t) value;
+	unsigned char bytes[4] = {
+		(unsigned char) (sv >> 24), (unsigned char) (sv >> 16),
+		(unsigned char) (sv >> 8),  (unsigned char) (sv)
+	};
+	crc32_bytes(ctx, bytes, sizeof(bytes));
+	if (ctx->trace && ctx->verbose_output) {
+		printf("#%07d (%u): %d\n", ctx->event_count, ctx->crc ^ 0xFFFFFFFFu, value);
 	}
 }
 
@@ -133,7 +154,26 @@ static void XMLCALL on_start_element(void *userData, const XML_Char *name,
 		for (int i = 0; atts[i]; i += 2) {
 			crc32_update(ctx, (const unsigned char *) atts[i + 1], strlen(atts[i + 1]));
 		}
+	} else if (ctx->type == TYPE_ATTRIB_NAME) {
+		for (int i = 0; atts[i]; i += 2) {
+			crc32_update(ctx, (const unsigned char *) atts[i], strlen(atts[i]));
+		}
 	}
+}
+
+/* Combines the XML declaration's version, encoding and standalone fields
+ * (as supplied to XML_XmlDeclHandler) into the running checksum. encoding
+ * is NULL when absent from the declaration; standalone is -1 when absent,
+ * 0 for standalone="no", 1 for standalone="yes". */
+static void XMLCALL on_xml_decl(void *userData, const XML_Char *version,
+                                 const XML_Char *encoding, int standalone) {
+	crc_ctx_t *ctx = (crc_ctx_t *) userData;
+	if (ctx->type != TYPE_XML_DECL) return;
+	if (version)
+		crc32_update(ctx, (const unsigned char *) version, strlen(version));
+	if (encoding)
+		crc32_update(ctx, (const unsigned char *) encoding, strlen(encoding));
+	crc32_update_int32(ctx, standalone);
 }
 
 #define CHUNK_SIZE 4096
@@ -166,6 +206,7 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	XML_SetCommentHandler(parser, on_comment);
 	XML_SetCdataSectionHandler(parser, on_start_cdata, on_end_cdata);
 	XML_SetProcessingInstructionHandler(parser, on_processing_instruction);
+	XML_SetXmlDeclHandler(parser, on_xml_decl);
 
 	char buf[CHUNK_SIZE];
 	int done = 0;
@@ -196,7 +237,8 @@ static long now_ms(void) {
 
 static void usage(const char *prog) {
 	fprintf(stderr,
-			"Usage: %s -type <text|cdata|comment|tag|attribute|pi-name|pi-data> "
+			"Usage: %s -type <text|cdata|comment|tag|attribute|attrib-name|"
+			"pi-name|pi-data|xml-decl> "
 			"[-duration <time-window-ms>] [-trace] <xml-file-path>\n",
 			prog);
 }
@@ -263,8 +305,10 @@ int main(int argc, char **argv) {
 	else if (strcmp(type_arg, "comment") == 0) type = TYPE_COMMENT;
 	else if (strcmp(type_arg, "tag") == 0) type = TYPE_TAG;
 	else if (strcmp(type_arg, "attribute") == 0) type = TYPE_ATTRIBUTE;
+	else if (strcmp(type_arg, "attrib-name") == 0) type = TYPE_ATTRIB_NAME;
 	else if (strcmp(type_arg, "pi-name") == 0) type = TYPE_PI_NAME;
 	else if (strcmp(type_arg, "pi-data") == 0) type = TYPE_PI_DATA;
+	else if (strcmp(type_arg, "xml-decl") == 0) type = TYPE_XML_DECL;
 	else {
 		fprintf(stderr, "Error: invalid -type '%s'\n", type_arg);
 		usage(argv[0]);

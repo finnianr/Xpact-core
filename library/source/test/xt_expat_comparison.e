@@ -21,7 +21,7 @@ inherit
 			{NONE} all
 		end
 
-	XT_PARSE_EVENT_CONSTANTS
+	XT_DATA_TYPES
 
 create
 	make
@@ -51,7 +51,7 @@ feature -- Status report
 				if index_colon > 0 then
 					Result := expat_error.same_caseless_characters (xpact_error, 1, xpact_error.count, index_colon + 2)
 				end
-			elseif pass_count = Parse_data_types.count then
+			elseif pass_count = Data_type_table.count then
 				Result := True
 			end
 		end
@@ -75,7 +75,7 @@ feature -- Basic operations
 		local
 			crc_32: XT_CRC_32_GENERATOR; description: STRING
 		do
-			across Parse_data_types as data_type until values_differ or both_failed loop
+			across Data_type_table as data_type until values_differ or both_failed loop
 				create crc_32.make (data_type)
 				crc_32.parse_file (file_path, 0, True)
 				call_expat_xml_crc_32 (@ data_type.key)

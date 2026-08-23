@@ -167,7 +167,7 @@ feature {NONE} -- Implementation
 				elseif encoding = Unknown_encoding then
 					encoding := Utf_8; assumed_utf_8 := True
 				end
-				if declaration.starts_with (Xml_declaration) and then declaration.has_substring (Encoding_attribute) then
+				if declaration.starts_with (Xml_declaration.open) and then declaration.has_substring (Xml_declaration.encoding) then
 					declaration.to_upper
 					declared_encoding := encoding_id (declaration)
 					if valid_encoding (declared_encoding) and then valid_encoding (encoding)
