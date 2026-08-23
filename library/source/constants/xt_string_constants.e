@@ -32,6 +32,7 @@ feature {NONE} -- Standard strings
 			create Result
 			s.fill_tuple (Result, "<?xml, encoding, standalone, version")
 		end
+
 feature {NONE} -- Document definition strings
 
 	Document_definition_names: LIST [STRING]

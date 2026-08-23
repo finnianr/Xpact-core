@@ -109,6 +109,11 @@ feature {NONE} -- Token processing
 				when Tok_decl_close then
 					inspect doctype_decl_stack.count when 2 then
 						doctype_decl_stack.remove_tail (1)
+						inspect declaration
+							when ATTLIST then
+								on_attribute_list_declaration
+						else
+						end
 						is_parameter_entity := False
 					else
 						Result := Error_syntax; put_boolean (done, True)
@@ -118,7 +123,7 @@ feature {NONE} -- Token processing
 					inspect declaration
 						when Attlist then
 							if doctype_decl_stack.count = 2 then
-								on_attribute_declaration_part (buf, index, end_index, token, names)
+								declaration_parts_list.extend_for (buf, index, end_index, token, names, newline_or_tab_found)
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end
@@ -143,7 +148,7 @@ feature {NONE} -- Token processing
 					inspect declaration
 						when Attlist then
 							if doctype_decl_stack.count = 2 then
-								on_attribute_declaration_part (buf, index + 1, end_index - 1, token, names)
+								declaration_parts_list.extend_for (buf, index + 1, end_index - 1, token, names, newline_or_tab_found)
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end
@@ -167,13 +172,14 @@ feature {NONE} -- Token processing
 				when Tok_pound_name then
 					inspect declaration
 						when Attlist then
-							on_attribute_declaration_part (buf, index, end_index, token, names)
+							declaration_parts_list.extend_for (buf, index, end_index, token, names, newline_or_tab_found)
 
 						when Element, Entity, Notation then
 							do_nothing -- for now
 					else
 						put_boolean (default_case, True)
 					end
+
 				when Tok_percent then
 					is_parameter_entity := True
 
@@ -236,9 +242,8 @@ feature {NONE} -- Token processing
 
 					when Tok_decl_open then
 						decl_type := declaration_type (buf, index + 2)
-						inspect decl_type
-							when 0 then
-								Result := Error_syntax; put_boolean (done, True)
+						inspect decl_type when 0 then
+							Result := Error_syntax; put_boolean (done, True)
 						else
 							inspect doctype_decl_stack.count when 0 then
 								doctype_decl_stack.extend (decl_type)
@@ -344,13 +349,20 @@ feature {NONE} -- Token processing
 
 feature {NONE} -- Event handlers
 
+	on_attribute_list_declaration
+		do
+			if declaration_parts_list.defines_attribute_default then
+				declaration_parts_list.extend_defaults_table (attribute_value_defaults_table)
+			end
+		end
+
 	on_attribute_declaration_part (buf: like buffer; start_index, end_index, token: INTEGER; names: like name_cache)
 		local
-			default_values_list: ARRAYED_LIST [STRING]; colon_index: INTEGER; s8: XT_STRING_8_ROUTINES
+			default_values_list: ARRAYED_LIST [STRING]; colon_index: INTEGER
 		do
 			inspect declaration_parts_list.count
 				when 0, 1 then
-					colon_index := s8.index_of (buf, ':', start_index, end_index)
+					colon_index := index_of (buf, ':', start_index, end_index)
 					declaration_parts_list.extend (names.item (buf, start_index, end_index, colon_index.max (0)))
 
 				when 2 then
@@ -372,7 +384,6 @@ feature {NONE} -- Event handlers
 						end
 					when Tok_pound_name then
 						declaration_parts_list.extend (name_cache.item (buf, start_index, end_index, 0))
-
 				else
 				end
 			end
@@ -619,7 +630,7 @@ feature {NONE} -- Internal attributes
 
 	attribute_value_defaults_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING]
 
-	declaration_parts_list: ARRAYED_LIST [STRING]
+	declaration_parts_list: XT_DECLARATION_PARTS_LIST
 		-- For example <!ATTLIST magic priority CDATA "50">
 		-- would be: << "magic", "priority", "CDATA", "50" >>
 

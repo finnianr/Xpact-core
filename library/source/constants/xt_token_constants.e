@@ -20,7 +20,7 @@ note
 
 class XT_TOKEN_CONSTANTS
 
-feature -- Partial / error sentinels (negative or zero)
+feature {NONE} -- Partial / error sentinels (negative or zero)
 
 	Tok_trailing_rsqb: INTEGER = -5
 			-- ']' or ']]' at end of buffer might start ']]>'.
@@ -40,7 +40,7 @@ feature -- Partial / error sentinels (negative or zero)
 	Tok_invalid: INTEGER = 0
 			-- Ill-formed input detected; `bad_char_index` points at the byte.
 
-feature -- Element content tokens (positive)
+feature {NONE} -- Element content tokens (positive)
 
 	Tok_start_tag_with_attributes: INTEGER = 1
 	Tok_start_tag_no_attributes: INTEGER = 2
@@ -65,7 +65,7 @@ feature -- Element content tokens (positive)
 			>>
 		end
 
-feature -- Prolog / DTD tokens
+feature {NONE} -- Prolog / DTD tokens
 
 	Tok_prolog_whitespace: INTEGER = 15
 	Tok_decl_open: INTEGER = 16
@@ -83,7 +83,7 @@ feature -- Prolog / DTD tokens
 	Tok_param_entity_ref: INTEGER = 28
 	Tok_instance_start: INTEGER = 29
 
-feature -- Extended prolog tokens (occurrenceIndicators, conditionals)
+feature {NONE} -- Extended prolog tokens (occurrenceIndicators, conditionals)
 
 	Tok_name_question: INTEGER = 30
 	Tok_name_asterisk: INTEGER = 31
@@ -95,14 +95,23 @@ feature -- Extended prolog tokens (occurrenceIndicators, conditionals)
 	Tok_close_paren_plus: INTEGER = 37
 	Tok_comma: INTEGER = 38
 
-feature -- Literal / CDATA tokens
+feature {NONE} -- Literal / CDATA tokens
 
 	Tok_attribute_value_s: INTEGER = 39
 	Tok_cdata_sect_close: INTEGER = 40
 	Tok_prefixed_name: INTEGER = 41
 	Tok_ignore_sect: INTEGER = 42
 
-feature -- String names
+feature {NONE} -- String names
+
+	new_token_name (token: INTEGER): STRING
+		do
+			if token > 0 then
+				Result := Token_names.split ('%N') [token]
+			else
+				create Result.make_empty
+			end
+		end
 
 	Token_names: STRING = "[
 		Start tag with attributes

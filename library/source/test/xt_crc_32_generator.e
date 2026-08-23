@@ -133,13 +133,15 @@ feature {NONE} -- Event handlers
 		local
 			i: INTEGER
 		do
-			if attached checksum as crc then
-				from i := 1 until i > declaration_parts.count loop
-					crc.add_string (declaration_parts [i])
-					i := i + 1
+			inspect data_type when Type_doctype then
+				if attached checksum as crc then
+					from i := 1 until i > declaration_parts.count loop
+						crc.add_string (declaration_parts [i])
+						i := i + 1
+					end
+					crc.add_boolean (has_internal_subset)
 				end
-				crc.add_boolean (has_internal_subset)
-			end
+			else end
 		end
 
 	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)

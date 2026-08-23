@@ -101,9 +101,9 @@ feature -- Element change
 			end
 		end
 
-	add_integer_32 (n: INTEGER_32)
+	add_integer_32 (integer: INTEGER_32)
 		do
-			add_bytes ($value, Integer_32_bytes)
+			add_bytes ($integer, Integer_32_bytes)
 		end
 
 	add_string (str: STRING_8)

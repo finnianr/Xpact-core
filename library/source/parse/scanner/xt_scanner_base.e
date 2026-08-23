@@ -32,14 +32,8 @@ inherit
 	XT_UTF_8_VALIDATION
 
 	XT_TOKEN_CONSTANTS
-		export
-			{NONE} all
-		end
 
 	XT_STRING_CONSTANTS
-		export
-			{NONE} all
-		end
 
 	XT_STRING_8_ROUTINES_I
 
@@ -63,7 +57,7 @@ feature -- Access
 		-- Index of the first byte after the token just scanned.
 		-- Invalid if the last call returned Tok_none or Tok_partial.
 
-feature -- Status report
+feature -- Status query
 
 	newline_or_tab_found: BOOLEAN
 

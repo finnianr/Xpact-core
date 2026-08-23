@@ -75,6 +75,15 @@ feature -- Status query
 			end
 		end
 
+	standalone_code (buffer: SPECIAL [CHARACTER_8]): INTEGER
+		do
+			if attached item_value (buffer, Xml_declaration.standalone, False) as value then
+				Result := if value [1] = 'y' then 1 else 0 end
+			else
+				Result := (1).opposite
+			end
+		end
+
 	standalone_value (buffer: SPECIAL [CHARACTER_8]): STRING
 		do
 			if attached item_value (buffer, Xml_declaration.standalone, False) as value then
@@ -325,23 +334,12 @@ feature -- Appending to CRC-32 checksum
 
 	append_xml_declaration_to_crc_32 (buffer: SPECIAL [CHARACTER_8]; checksum: EL_CRC_32_DIGEST)
 		do
-			across << Xml_declaration.version, Xml_declaration.encoding, Xml_declaration.standalone >> as name loop
+			across << Xml_declaration.version, Xml_declaration.encoding >> as name loop
 				if attached item_value (buffer, name, False) as value then
-					inspect @ name.cursor_index when 1, 2 then
-						checksum.add_string (value)
-					else
-						if value [1] = 'y' then
-							checksum.add_integer_32 (1)
-						else
-							checksum.add_integer_32 (0)
-						end
-					end
-
-				elseif @ name.cursor_index = 3 then
-				-- standalone not specified
-					checksum.add_integer_32 (-1)
+					checksum.add_string (value)
 				end
 			end
+			checksum.add_integer_32 (standalone_code (buffer))
 		end
 
 feature -- Basic operations

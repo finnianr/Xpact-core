@@ -29,9 +29,6 @@ inherit
 		end
 
 	XT_TOKEN_CONSTANTS
-		export
-			{NONE} all
-		end
 
 	XT_STRING_CONSTANTS
 
@@ -104,15 +101,6 @@ feature {NONE} -- Factory
 			create Result.make_filled ('%U', n + 1)
 		ensure
 			room_for_null_terminator: Result.count = n + 1
-		end
-
-	new_token_name (token: INTEGER): STRING
-		do
-			if token > 0 then
-				Result := Token_names.split ('%N') [token]
-			else
-				create Result.make_empty
-			end
 		end
 
 feature {NONE} -- Implementation
