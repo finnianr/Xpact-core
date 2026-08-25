@@ -66,7 +66,7 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_doctype_declaration_start (declaration_parts: ARRAYED_LIST [STRING]; has_internal_subset: BOOLEAN)
+	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN)
 		-- typedef void (
 		-- 	XMLCALL *XML_StartDoctypeDeclHandler)(void *userData,
  		-- 	const XML_Char *doctypeName, const XML_Char *sysid, const XML_Char *pubid, int has_internal_subset

@@ -109,10 +109,10 @@ feature {NONE} -- Event handlers
 			IO.put_new_line
 		end
 
-	on_doctype_declaration_start (declaration_parts: ARRAYED_LIST [STRING]; has_internal_subset: BOOLEAN)
+	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN)
 		do
 			IO.put_string ("DOCTYPE:")
-			across declaration_parts as part loop
+			across parts_list as part loop
 				IO.put_character (' ')
 				IO.put_string (part)
 			end

@@ -22,9 +22,6 @@ inherit
 		end
 
 	XT_PARSE_CONSTANTS
-		export
-			{NONE} all
-		end
 
 	XT_ENCODING_TYPE_CONSTANTS
 

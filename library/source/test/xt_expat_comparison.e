@@ -17,9 +17,6 @@ inherit
 	XT_STRING_8_ROUTINES_I
 
 	XT_PARSE_CONSTANTS
-		export
-			{NONE} all
-		end
 
 	XT_DATA_TYPES
 

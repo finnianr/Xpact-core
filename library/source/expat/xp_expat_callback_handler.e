@@ -1325,7 +1325,7 @@ feature {NONE} -- Xpact core event handlers
 			end
 		end
 
-	on_doctype_declaration_start (declaration_parts: ARRAYED_LIST [STRING]; has_internal_subset: BOOLEAN)
+	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN)
 		do
 		end
 

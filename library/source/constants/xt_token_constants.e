@@ -72,11 +72,11 @@ feature {NONE} -- Prolog / DTD tokens
 	Tok_decl_close: INTEGER = 17
 	Tok_name: INTEGER = 18
 	Tok_name_token: INTEGER = 19
-	Tok_pound_name: INTEGER = 20
-	Tok_or: INTEGER = 21
+	Tok_pound_name: INTEGER = 20			-- #
+	Tok_or: INTEGER = 21						-- |
 	Tok_percent: INTEGER = 22
-	Tok_open_paren: INTEGER = 23
-	Tok_close_paren: INTEGER = 24
+	tok_open_parenthesis: INTEGER = 23	-- (
+	tok_close_parenthesis: INTEGER = 24 -- )
 	Tok_open_bracket: INTEGER = 25
 	Tok_close_bracket: INTEGER = 26
 	Tok_literal: INTEGER = 27

@@ -11,7 +11,7 @@ note
 
 class XT_PARSE_CONSTANTS
 
-feature -- Parsing states (XML_Parsing enum)
+feature {NONE} -- Parsing states (XML_Parsing enum)
 
 	Parsing_states: ARRAY [INTEGER]
 		once
@@ -30,7 +30,7 @@ feature -- Parsing states (XML_Parsing enum)
 	State_finished: INTEGER = 3
 	State_suspended: INTEGER = 4
 
-feature -- Parse status (XML_Status enum)
+feature {NONE} -- Parse status (XML_Status enum)
 
 	Status_error: INTEGER = 0
 	Status_ok: INTEGER = 1
@@ -47,7 +47,12 @@ feature -- Parse status (XML_Status enum)
 		Suspended
 	]"
 
-feature -- Declaration types
+feature {XT_STRING_CONSTANTS} -- Declaration types
+
+	Valid_declaration_types: INTEGER_INTERVAL
+		once
+			Result := Attlist |..| Notation
+		end
 
 	Attlist: INTEGER = 1
 

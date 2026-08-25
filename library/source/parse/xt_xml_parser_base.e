@@ -327,7 +327,7 @@ feature {NONE} -- Processor dispatch
 			error, have_now, had_before, available: INTEGER; enough, done: BOOLEAN
 			context: like element_context
 			names: like name_cache; attributes: like attribute_list; buf: like buffer
-			bt_table: like Byte_type_table
+			bt_table: like Byte_type_table; declaration_stack: SPECIAL [INTEGER]
 		do
 			have_now := end_index - start_index
 
@@ -349,12 +349,13 @@ feature {NONE} -- Processor dispatch
 			if enough then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
-				context := element_context; names := name_cache
+				context := element_context; names := name_cache; declaration_stack := doctype_decl_stack
 				bt_table := byte_type_table; attributes := attribute_list; buf := buffer
 
 				from done := False until done loop
 					error := process_content (
-						buf, buffer_index, end_index, bt_table, attributes, names, context, parse_data, Source_content
+						buf, buffer_index, end_index, bt_table, attributes, names, declaration_stack, context, parse_data,
+						Source_content
 					)
 
 					-- Suspended state overrides the reenter request.
@@ -415,7 +416,7 @@ feature {NONE} -- Processor dispatch
 
 	process_content (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
-		attributes: XT_ATTRIBUTE_LIST; names: like name_cache
+		attributes: XT_ATTRIBUTE_LIST; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
 		a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER; a_source_type: NATURAL_8
 	): INTEGER
 		-- Scan tokens from `buf' `start_index .. end_index` and triggers relevant XML events.  Advances `buffer_index'.
@@ -436,7 +437,7 @@ feature {NONE} -- Processor dispatch
 			from until index >= end_index or done loop
 				if c_in_prolog_section (parse_data) then
 					Result := process_prolog (
-						buf, start_index, end_index, bt_table, attributes, names, parse_data, $index, $done
+						buf, start_index, end_index, bt_table, attributes, names, declaration_stack, parse_data, $index, $done
 					)
 					context := element_context
 
@@ -531,7 +532,7 @@ feature {NONE} -- Processor dispatch
 									buffer_index := 0
 									entity_name.open
 									error := process_content (
-										entity_value.area, 0, entity_value.count, bt_table, attributes, names, context,
+										entity_value.area, 0, entity_value.count, bt_table, attributes, names, declaration_stack, context,
 										parse_data, source_type (parse_data, a_source_type)
 									) -- Recurse
 									entity_name.close

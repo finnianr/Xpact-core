@@ -2,13 +2,16 @@ note
 	description: "[
 		Generate CRC-32 for one of XML document characteristics
 		
-		1. attribute value
-		2. CDATA text
-		3. comment
-		4. PI data
-		5. PI name
-		6. tag name
-		7. text
+		1. attribute name
+		2. attribute value
+		3. CDATA text
+		4. comment
+		5. doctype
+		6. PI data
+		7. PI name
+		8. tag name
+		9. text
+		10. xml-decl
 	]"
 
 	author: "Finnian Reilly"
@@ -129,14 +132,14 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_doctype_declaration_start (declaration_parts: ARRAYED_LIST [STRING]; has_internal_subset: BOOLEAN)
+	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN)
 		local
 			i: INTEGER
 		do
 			inspect data_type when Type_doctype then
 				if attached checksum as crc then
-					from i := 1 until i > declaration_parts.count loop
-						crc.add_string (declaration_parts [i])
+					from i := 1 until i > parts_list.count loop
+						crc.add_string (parts_list [i])
 						i := i + 1
 					end
 					crc.add_boolean (has_internal_subset)

@@ -22,6 +22,9 @@ note
 class
 	XT_PARAMETER_ENTITY
 
+inherit
+	XT_STRING_CONSTANTS
+
 create
 	make
 
@@ -30,8 +33,15 @@ feature {NONE} -- Initialization
 	make (parts_list: LIST [STRING]; a_value: STRING)
 		require
 			valid_parts: parts_list.count >= 2
+		local
+			s: XT_STRING_8_ROUTINES
 		do
-			name := parts_list [1]; external_id := parts_list [2]
+			name := parts_list.first; external_id := s.Empty_string
+			if parts_list.count = 3 and then attached parts_list [2] as id
+				and then Valid_external_id_list.has (id)
+			then
+				external_id := id
+			end
 			value := a_value
 		end
 

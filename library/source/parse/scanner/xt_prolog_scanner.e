@@ -105,11 +105,11 @@ feature -- Prolog tokenization
 							next_token_index := index; Result := Tok_close_bracket
 						end
 					when BT_left_parenthesis then
-						next_token_index := index + 1; Result := Tok_open_paren
+						next_token_index := index + 1; Result := tok_open_parenthesis
 					when BT_right_parenthesis then
 						index := index + 1
 						if index >= end_index then
-							next_token_index := index; Result := -Tok_close_paren
+							next_token_index := index; Result := -tok_close_parenthesis
 						else
 							inspect bt_table [buf [index].code]
 								when BT_asterisk then
@@ -119,7 +119,7 @@ feature -- Prolog tokenization
 								when BT_plus then
 									next_token_index := index + 1; Result := Tok_close_paren_plus
 								when BT_CR, BT_LF, BT_whitespace, BT_gt, BT_comma, BT_pipe_symbol, BT_right_parenthesis then
-									next_token_index := index; Result := Tok_close_paren
+									next_token_index := index; Result := tok_close_parenthesis
 							else
 								next_token_index := index; Result := Tok_invalid
 							end
