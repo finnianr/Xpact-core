@@ -379,10 +379,13 @@ feature {NONE} -- Event handlers
 		end
 
 	on_entity_declaration (in_parameter_entity: BOOLEAN)
+		local
+			parameter_entity: XT_PARAMETER_ENTITY
 		do
 			if in_parameter_entity and then attached parameter_entity_parts_list as parts_list then
 				if parts_list.is_valid then
-					parts_list.extend_table (parameter_entity_table)
+					create parameter_entity.make (parts_list)
+					parameter_entity_table.put (parameter_entity, parts_list.first)
 				end
 				parts_list.wipe_out
 
@@ -503,8 +506,9 @@ feature {NONE} -- Implementation
 			else
 				element_context.reset
 			end
-			parameter_entity_table.wipe_out
 			parameter_name_cache.reset
+
+			parameter_entity_table.wipe_out
 			declaration_parts_list.wipe_out
 			entity_parts_list.wipe_out
 			parameter_entity_parts_list.wipe_out
@@ -545,7 +549,7 @@ feature {NONE} -- Declaration parts
 
 	entity_parts_list: XT_ENTITY_PARTS_LIST
 
-	parameter_entity_parts_list: XT_PARAMETER_ENTITY_PARTS_LIST
+	parameter_entity_parts_list: XT_DECLARATION_PARTS_LIST
 
 feature {NONE} -- Internal attributes
 

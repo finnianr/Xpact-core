@@ -129,7 +129,7 @@ feature -- Element change
 			valid_range: start_index <= end_index + 1
 		local
 			i, colon_index: INTEGER; l_area: like area_v2; l_token_area: like token_area
-			name: STRING; name_array: SPECIAL [STRING]
+			name: STRING
 		do
 			i := count + 1
 			l_area := area_v2; l_token_area := token_area
@@ -140,8 +140,7 @@ feature -- Element change
 			end
 			inspect token
 				when Tok_name, Tok_pound_name then
-					name_array := if token = Tok_name then Reserved_names else Hash_names end
-					if attached name_constant (buffer, start_index, end_index, name_array) as l_name then
+					if attached name_constant (buffer, start_index, end_index, token) as l_name then
 						name := l_name
 					else
 						colon_index := index_of (buffer, ':', start_index, end_index)
@@ -186,15 +185,18 @@ feature -- Element change
 
 feature {NONE} -- Implementation
 
-	name_constant (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; name_array: SPECIAL [STRING]): detachable STRING
+	name_constant (buffer: SPECIAL [CHARACTER_8]; start_index, end_index, token: INTEGER): detachable STRING
 		local
-			i, i_final: INTEGER; name: STRING
+			i, i_final: INTEGER; name_array: SPECIAL [STRING]
 		do
-			name := Empty_string
+			inspect token when Tok_pound_name then
+				name_array := Hash_names
+			else
+				name_array := Reserved_names
+			end
 			from i := 0; i_final := name_array.count until i = i_final or Result /= Void loop
-				name := name_array [i]
-				if same_characters (buffer, start_index, end_index, name) then
-					Result := name
+				if same_characters (buffer, start_index, end_index, name_array [i]) then
+					Result := name_array [i]
 				else
 					i := i + 1
 				end

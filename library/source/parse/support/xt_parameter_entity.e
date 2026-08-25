@@ -30,7 +30,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (parts_list: LIST [STRING]; a_value: STRING)
+	make (parts_list: LIST [STRING])
 		require
 			valid_parts: parts_list.count >= 2
 		local
@@ -42,7 +42,7 @@ feature {NONE} -- Initialization
 			then
 				external_id := id
 			end
-			value := a_value
+			value := parts_list.last
 		end
 
 feature -- Access
