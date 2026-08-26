@@ -28,6 +28,16 @@ deferred class
 
 feature {NONE} -- Event handlers
 
+	on_attribute_list_declaration_ (
+		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
+		is_required: BOOLEAN
+	)
+		-- typedef void(XMLCALL *XML_AttlistDeclHandler)(
+		--   void *userData, const XML_Char *elname, const XML_Char *attname,
+		--   const XML_Char *att_type, const XML_Char *dflt, int isrequired);
+		do
+		end
+
 	on_cdata_section_close_
 		do
 		end

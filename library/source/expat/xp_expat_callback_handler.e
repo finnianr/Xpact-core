@@ -1284,6 +1284,16 @@ feature -- External entity resolution
 
 feature {NONE} -- Xpact core event handlers
 
+	on_attribute_list_declaration (
+		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
+		is_required: BOOLEAN
+	)
+		-- typedef void(XMLCALL *XML_AttlistDeclHandler)(
+		--   void *userData, const XML_Char *elname, const XML_Char *attname,
+		--   const XML_Char *att_type, const XML_Char *dflt, int isrequired);
+		do
+		end
+
 	on_comment (buf: like buffer; lower, upper: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		local
 			null_index: INTEGER; c, null: CHARACTER; call_back_ptr: POINTER

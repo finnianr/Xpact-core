@@ -25,6 +25,7 @@ deferred class
 inherit
 	ARRAYED_LIST [STRING]
 		rename
+			extend as extend_list,
 			make as make_sized,
 			index_of as index_of_item
 		export
@@ -80,14 +81,12 @@ feature -- Status query
 
 feature -- Element change
 
-	extend_for (
-		buffer: SPECIAL [CHARACTER_8]; start_index, end_index, token: INTEGER; newline_or_tab_found: BOOLEAN
-	)
+	extend (buffer: SPECIAL [CHARACTER_8]; start_index, end_index, token: INTEGER; newline_or_tab_found: BOOLEAN)
 		require
 			valid_range: start_index <= end_index + 1
 		local
 			i, colon_index: INTEGER; l_area: like area_v2; l_token_area: like token_area
-			name: STRING
+			name: STRING; check_for_name: BOOLEAN
 		do
 			i := count + 1
 			l_area := area_v2; l_token_area := token_area
@@ -107,9 +106,14 @@ feature -- Element change
 							type.append_character ('|'); append_area (type, buffer, start_index, end_index)
 
 						when Tok_close_parenthesis then
-							append_area (type, buffer, start_index, end_index); type.append_character (')')
+							type.append_character (')')
+							last_token := Tok_none
+							check_for_name := True
 
 					else
+						check_for_name := True
+					end
+					if check_for_name then
 						if attached name_constant (buffer, start_index, end_index, token) as l_name then
 							name := l_name
 						else
@@ -126,8 +130,10 @@ feature -- Element change
 			end
 			last_token := token
 		ensure
-			OR_token_inserted: type.count = old type.count + 1 implies token_area [count - 1] = Tok_or
-			value_options_incremented: token_area [count - 1] = Tok_or implies type.count = old type.count + 1
+			OR_token_inserted:
+				(type.count > old type.count and type [type.count] /= ')') implies token_area [count - 1] = Tok_or
+			valid_type_string: (token_area [count - 1] = Tok_or and then old last_token /= Tok_close_parenthesis)
+					implies valid_type_ending (buffer, start_index, end_index, type.substring (old type.count + 1, type.count))
 		end
 
 	set_last_token (token: INTEGER)
@@ -141,7 +147,7 @@ feature -- Element change
 			Precursor
 			token_area.wipe_out
 			type.wipe_out
-			last_token := 0
+			last_token := Tok_none
 		end
 
 feature {NONE} -- Implementation
@@ -167,6 +173,17 @@ feature {NONE} -- Implementation
 	new_value (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; newline_or_tab_found: BOOLEAN): STRING_8
 		do
 			Result := new_attribute_value (buffer, start_index, end_index, newline_or_tab_found)
+		end
+
+	valid_type_ending (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; ending: STRING): BOOLEAN
+		do
+			if ending.count > 2 then
+				inspect ending [1] when '(', '|' then
+					ending.remove_head (1)
+					Result := same_characters (buffer, start_index, end_index, ending)
+				else
+				end
+			end
 		end
 
 feature {NONE} -- Internal attributes
@@ -200,28 +217,29 @@ note
 
 		Values that `att_type` (from XML_AttlistDeclHandler) can take, per the
 		DTD AttType grammar (XML 1.0 S3.3.1):
-		  DTD declaration           | att_type string
-		  --------------------------+----------------------------
-		  CDATA                     | "CDATA"
-		  ID                        | "ID"
-		  IDREF                     | "IDREF"
-		  IDREFS                    | "IDREFS"
-		  ENTITY                    | "ENTITY"
-		  ENTITIES                  | "ENTITIES"
-		  NMTOKEN                   | "NMTOKEN"
-		  NMTOKENS                  | "NMTOKENS"
-		  (v1|v2|...)  (enumeration)| "(v1|v2|...)"
-		  NOTATION (n1|n2|...)      | "NOTATION(n1|n2|...)"
 
-		  * The 8 fixed-keyword forms above are exact, case-sensitive constants
-		    - that is the complete set; there is no "NOTATIONS" or other variant.
-		  * "NOTATION(...)" has NO space between "NOTATION" and "(" in the
-		    string expat delivers, even though the XML source usually writes
-		    "NOTATION (a|b)" with a space.
-		  * Enumeration and NOTATION are the only two variable-content forms;
-		    check att_type.item (1) = '(' for a plain enumeration, or
-		    att_type.starts_with ("NOTATION(") for a notation list; otherwise
-		    it is one of the 8 fixed keywords above.
+			DTD declaration           | att_type string
+			--------------------------+----------------------------
+			CDATA                     | "CDATA"
+			ID                        | "ID"
+			IDREF                     | "IDREF"
+			IDREFS                    | "IDREFS"
+			ENTITY                    | "ENTITY"
+			ENTITIES                  | "ENTITIES"
+			NMTOKEN                   | "NMTOKEN"
+			NMTOKENS                  | "NMTOKENS"
+			(v1|v2|...)  (enumeration)| "(v1|v2|...)"
+			NOTATION (n1|n2|...)      | "NOTATION(n1|n2|...)"
+
+		* The 8 fixed-keyword forms above are exact, case-sensitive constants
+			- that is the complete set; there is no "NOTATIONS" or other variant.
+		* "NOTATION(...)" has NO space between "NOTATION" and "(" in the
+			string expat delivers, even though the XML source usually writes
+			"NOTATION (a|b)" with a space.
+		* Enumeration and NOTATION are the only two variable-content forms;
+			check att_type.item (1) = '(' for a plain enumeration, or
+			att_type.starts_with ("NOTATION(") for a notation list; otherwise
+			it is one of the 8 fixed keywords above.
 	]"
 
 end

@@ -54,6 +54,16 @@ create
 
 feature {NONE} -- Event handlers
 
+	on_attribute_list_declaration (
+		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
+		is_required: BOOLEAN
+	)
+		-- typedef void(XMLCALL *XML_AttlistDeclHandler)(
+		--   void *userData, const XML_Char *elname, const XML_Char *attname,
+		--   const XML_Char *att_type, const XML_Char *dflt, int isrequired);
+		do
+		end
+
 	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		do
 			if attributes.index_count > 0 then

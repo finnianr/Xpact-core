@@ -19,6 +19,31 @@ inherit
 create
 	make
 
+feature -- Access
+
+	default_value: detachable STRING
+		local
+			last_index: INTEGER
+		do
+			if attached token_area as tokens and then tokens.count >= 4 then
+				last_index := tokens.count - 1
+				if tokens [last_index] = Tok_literal then
+					inspect tokens [last_index - 1]
+						when Tok_name, Tok_or then
+						-- Eg. <!ATTLIST glob weight CDATA "50">
+							Result := area_v2 [last_index]
+						when Tok_pound_name then
+							if area_v2 [last_index - 1] = Hash_fixed then
+							-- Eg. <!ATTLIST mime-info xmlns CDATA
+							-- 	#FIXED "http://www.freedesktop.org/standards/shared-mime-info">
+								Result := area_v2 [last_index]
+							end
+					else
+					end
+				end
+			end
+		end
+
 feature -- Status query
 
 	defines_attribute_default: BOOLEAN
@@ -35,11 +60,18 @@ feature -- Status query
 			end
 		end
 
-feature -- Status query
-
 	is_valid: BOOLEAN
 		do
-			Result := count >= 2
+			Result := count >= 4
+		end
+
+	is_required: BOOLEAN
+		require
+			valid_list: is_valid
+		do
+			if attached area_v2 [3] as name then
+				Result := name = Hash_fixed or else name = Hash_required
+			end
 		end
 
 feature -- Basic operations

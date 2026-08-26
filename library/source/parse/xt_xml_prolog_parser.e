@@ -96,7 +96,6 @@ feature {NONE} -- Token processing
 			else
 				declaration := declaration_stack [declaration_stack.count - 1]
 				parts_list := declaration_parts [declaration - 1]
-				parts_list.set_last_token (token)
 			end
 			inspect token
 				when Tok_close_bracket then
@@ -120,17 +119,7 @@ feature {NONE} -- Token processing
 
 				when Tok_decl_close then
 					inspect declaration_stack.count when 2 then
-						inspect declaration
-							when ATTLIST then
-								on_attribute_list_declaration
-
-							when ENTITY then
-								on_entity_declaration (False)
-
-							when PARAMETER_ENTITY then
-								on_entity_declaration (True)
-						else
-						end
+						on_close_declaration (declaration)
 						declaration_stack.remove_tail (1)
 					else
 						Result := Error_syntax; put_boolean (done, True)
@@ -140,7 +129,7 @@ feature {NONE} -- Token processing
 					inspect declaration
 						when ATTLIST, ENTITY, PARAMETER_ENTITY then
 							if declaration_stack.count = 2 then
-								parts_list.extend_for (buf, index, end_index, token, newline_or_tab_found)
+								parts_list.extend (buf, index, end_index, token, newline_or_tab_found)
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end
@@ -155,7 +144,7 @@ feature {NONE} -- Token processing
 					inspect declaration
 						when ATTLIST, ENTITY, PARAMETER_ENTITY then
 							if declaration_stack.count = 2 then
-								parts_list.extend_for (buf, index + 1, end_index - 1, token, newline_or_tab_found)
+								parts_list.extend (buf, index + 1, end_index - 1, token, newline_or_tab_found)
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end
@@ -169,7 +158,7 @@ feature {NONE} -- Token processing
 				when Tok_pound_name then
 					inspect declaration
 						when ATTLIST, ENTITY, PARAMETER_ENTITY then
-							parts_list.extend_for (buf, index, end_index, token, newline_or_tab_found)
+							parts_list.extend (buf, index, end_index, token, newline_or_tab_found)
 
 						when ELEMENT, NOTATION then
 							do_nothing -- for now
@@ -192,7 +181,7 @@ feature {NONE} -- Token processing
 					end
 
 				when Tok_open_parenthesis, Tok_close_parenthesis, Tok_or then
-					attribute_parts_list.set_last_token (token)
+					parts_list.set_last_token (token)
 
 			else
 				put_boolean (common_case, True)
@@ -277,14 +266,14 @@ feature {NONE} -- Token processing
 
 					when Tok_literal then
 						if declaration_stack.count = 1 and then declaration_stack [0] = Doctype then
-							document_type_parts_list.extend_for (buf, index + 1, tok_end - 2, token, newline_or_tab_found)
+							document_type_parts_list.extend (buf, index + 1, tok_end - 2, token, newline_or_tab_found)
 						else
 							Result := name_error (buf, index, end_index, bt_table); put_boolean (done, True)
 						end
 
 					when Tok_name then
 						if declaration_stack.count = 1 and then declaration_stack [0] = Doctype then
-							document_type_parts_list.extend_for (buf, index, tok_end - 1, token, newline_or_tab_found)
+							document_type_parts_list.extend (buf, index, tok_end - 1, token, newline_or_tab_found)
 						else
 							Result := name_error (buf, index, end_index, bt_table); put_boolean (done, True)
 						end
@@ -357,32 +346,41 @@ feature {NONE} -- Token processing
 
 feature {NONE} -- Event handlers
 
-	on_attribute_list_declaration
+	on_close_declaration (declaration: INTEGER)
 		do
-			if attribute_parts_list.defines_attribute_default then
-				attribute_parts_list.extend_table (attribute_value_defaults_table)
+			inspect declaration
+				when ATTLIST then
+					if attached attribute_parts_list as parts_list and then parts_list.is_valid then
+						if parts_list.defines_attribute_default then
+							parts_list.extend_table (attribute_value_defaults_table)
+						end
+						on_attribute_list_declaration (
+							parts_list [1], parts_list [2], parts_list [3], parts_list.default_value, parts_list.is_required
+						)
+						parts_list.wipe_out
+					end
+
+				when ENTITY then
+					if attached entity_parts_list as parts_list and then parts_list.is_valid then
+						parts_list.extend_table (entity_table)
+						parts_list.wipe_out
+					end
+
+				when PARAMETER_ENTITY then
+					if attached parameter_entity_parts_list as parts_list then
+						if parts_list.is_valid then
+							parameter_entity_table.put (parts_list.new_parameter, parts_list.first)
+						end
+						parts_list.wipe_out
+					end
+			else
 			end
-			attribute_parts_list.wipe_out
 		end
 
 	on_doctype_declaration (parts_list: XT_DOCUMENT_TYPE_PARTS_LIST; has_internal_subset: BOOLEAN)
 		do
 			on_doctype_declaration_start (parts_list, has_internal_subset)
 			parts_list.wipe_out
-		end
-
-	on_entity_declaration (in_parameter_entity: BOOLEAN)
-		do
-			if in_parameter_entity and then attached parameter_entity_parts_list as parts_list then
-				if parts_list.is_valid then
-					parameter_entity_table.put (parts_list.new_parameter, parts_list.first)
-				end
-				parts_list.wipe_out
-
-			elseif attached entity_parts_list as parts_list and then parts_list.is_valid then
-				parts_list.extend_table (entity_table)
-				parts_list.wipe_out
-			end
 		end
 
 feature {NONE} -- Implementation

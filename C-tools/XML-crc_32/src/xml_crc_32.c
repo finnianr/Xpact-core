@@ -24,12 +24,13 @@ typedef enum {
 	TYPE_PI_NAME,
 	TYPE_PI_DATA,
 	TYPE_XML_DECL,
-	TYPE_DOCTYPE
+	TYPE_DOCTYPE,
+	TYPE_ATTLIST
 } data_type_t;
 
 static const char *data_type_name[] = {
 	"text", "cdata", "comment", "tag", "attribute", "attrib-name",
-	"pi-name", "pi-data", "xml-decl", "doctype"
+	"pi-name", "pi-data", "xml-decl", "doctype", "attlist"
 };
 
 typedef struct {
@@ -206,6 +207,22 @@ static void XMLCALL on_start_doctype_decl(void *userData, const XML_Char *doctyp
 	crc32_update_bool(ctx, has_internal_subset);
 }
 
+/* Combines the ATTLIST declaration's fields, left to right as supplied to
+ * XML_AttlistDeclHandler, into the running checksum: elname, attname,
+ * att_type, dflt (skipped when NULL), isrequired. */
+static void XMLCALL on_attlist_decl(void *userData, const XML_Char *elname,
+                                     const XML_Char *attname, const XML_Char *att_type,
+                                     const XML_Char *dflt, int isrequired) {
+	crc_ctx_t *ctx = (crc_ctx_t *) userData;
+	if (ctx->type != TYPE_ATTLIST) return;
+	crc32_update(ctx, (const unsigned char *) elname, strlen(elname));
+	crc32_update(ctx, (const unsigned char *) attname, strlen(attname));
+	crc32_update(ctx, (const unsigned char *) att_type, strlen(att_type));
+	if (dflt)
+		crc32_update(ctx, (const unsigned char *) dflt, strlen(dflt));
+	crc32_update_bool(ctx, isrequired);
+}
+
 #define CHUNK_SIZE 4096
 
 /* Parses the file incrementally in 4096-byte chunks, feeding events into ctx.
@@ -238,6 +255,7 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	XML_SetProcessingInstructionHandler(parser, on_processing_instruction);
 	XML_SetXmlDeclHandler(parser, on_xml_decl);
 	XML_SetStartDoctypeDeclHandler(parser, on_start_doctype_decl);
+	XML_SetAttlistDeclHandler(parser, on_attlist_decl);
 
 	char buf[CHUNK_SIZE];
 	int done = 0;
@@ -269,7 +287,7 @@ static long now_ms(void) {
 static void usage(const char *prog) {
 	fprintf(stderr,
 			"Usage: %s -type <text|cdata|comment|tag|attribute|attrib-name|"
-			"pi-name|pi-data|xml-decl|doctype> "
+			"pi-name|pi-data|xml-decl|doctype|attlist> "
 			"[-duration <time-window-ms>] [-trace] <xml-file-path>\n",
 			prog);
 }
@@ -341,6 +359,7 @@ int main(int argc, char **argv) {
 	else if (strcmp(type_arg, "pi-data") == 0) type = TYPE_PI_DATA;
 	else if (strcmp(type_arg, "xml-decl") == 0) type = TYPE_XML_DECL;
 	else if (strcmp(type_arg, "doctype") == 0) type = TYPE_DOCTYPE;
+	else if (strcmp(type_arg, "attlist") == 0) type = TYPE_ATTLIST;
 	else {
 		fprintf(stderr, "Error: invalid -type '%s'\n", type_arg);
 		usage(argv[0]);

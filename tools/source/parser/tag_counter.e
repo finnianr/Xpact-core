@@ -20,6 +20,7 @@ inherit
 
 	XT_DEFAULT_PARSE_EVENTS
 		rename
+			on_attribute_list_declaration_ as on_attribute_list_declaration,
 			on_cdata_section_close_ as on_cdata_section_close,
 			on_comment_ as on_comment,
 			on_content_ as on_content,

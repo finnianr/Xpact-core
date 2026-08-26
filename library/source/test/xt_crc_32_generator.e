@@ -1,17 +1,6 @@
 note
 	description: "[
-		Generate CRC-32 for one of XML document characteristics
-		
-		1. attribute name
-		2. attribute value
-		3. CDATA text
-		4. comment
-		5. doctype
-		6. PI data
-		7. PI name
-		8. tag name
-		9. text
-		10. xml-decl
+		Generate CRC-32 for one of XML document data types listed in ${XT_DATA_TYPES}.Data_type_table
 	]"
 
 	author: "Finnian Reilly"
@@ -109,6 +98,25 @@ feature -- Status report
 
 feature {NONE} -- Event handlers
 
+	on_attribute_list_declaration (
+		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
+		is_required: BOOLEAN
+	)
+		do
+			inspect data_type when Type_decl_attribute_list then
+				if attached checksum as crc then
+					crc.add_string (element_name)
+					crc.add_string (attribute_name)
+					crc.add_string (attribute_type)
+					if attached default_value as value then
+						crc.add_string (value)
+					end
+					crc.add_boolean (is_required)
+				end
+			else
+			end
+		end
+
 	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
 			inspect data_type when Type_comment then
@@ -136,7 +144,7 @@ feature {NONE} -- Event handlers
 		local
 			i: INTEGER
 		do
-			inspect data_type when Type_doctype then
+			inspect data_type when Type_decl_doctype then
 				if attached checksum as crc then
 					from i := 1 until i > parts_list.count loop
 						crc.add_string (parts_list [i])
