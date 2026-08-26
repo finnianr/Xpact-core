@@ -36,7 +36,7 @@ feature {NONE} -- Initialization
 		do
 			create attribute_value_defaults_table.make (37)
 			create parse_data_memory.make (size_of_parse_data)
-			create doctype_decl_stack.make_empty (2)
+			create doctype_declaration_stack.make_empty (2)
 			create formal_public_identifier.make (40)
 			create DTD_uri.make (60)
 			create element_context.make (parse_data_memory.item)
@@ -45,9 +45,16 @@ feature {NONE} -- Initialization
 			Precursor {XT_PARSING_BUFFERS}
 			Precursor {XT_DOCUMENT_SCANNER}
 
-			create declaration_parts_list.make (name_cache)
+			create attribute_parts_list.make (name_cache)
+			create document_type_parts_list.make (name_cache)
 			create entity_parts_list.make (entity_cache)
 			create parameter_entity_parts_list.make (parameter_name_cache)
+
+			create declaration_parts.make_filled (document_type_parts_list, PARAMETER_ENTITY)
+			declaration_parts [ATTLIST - 1] := attribute_parts_list
+			declaration_parts [ENTITY - 1] := entity_parts_list
+			declaration_parts [PARAMETER_ENTITY - 1] := parameter_entity_parts_list
+
 		ensure then
 			in_prolog_section: in_prolog_section
 			content_count_is_one: c_content_count (parse_data_memory.item) = 1
@@ -66,7 +73,6 @@ feature {NONE} -- Initialization
 				set_in_prolog_section (ptr, True)
 				set_in_cdata_section (ptr, False)
 				set_in_dtd_section (ptr, False)
-				set_in_parameter_entity (ptr, False)
 				set_content_count (ptr, 1) -- prevent divide by zero error
 				set_entity_expansion_count (ptr, 0)
 			end
@@ -83,12 +89,14 @@ feature {NONE} -- Token processing
 		parse_data: POINTER; done, default_case, common_case: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
-			decl_type, declaration: INTEGER; name: STRING
+			decl_type, declaration: INTEGER; name: STRING; parts_list: XT_DECLARATION_PARTS_LIST
 		do
 			inspect declaration_stack.count when 0 then
-				do_nothing
+				parts_list := document_type_parts_list
 			else
 				declaration := declaration_stack [declaration_stack.count - 1]
+				parts_list := declaration_parts [declaration - 1]
+				parts_list.set_last_token (token)
 			end
 			inspect token
 				when Tok_close_bracket then
@@ -105,7 +113,6 @@ feature {NONE} -- Token processing
 					else
 						inspect declaration_stack.count when 1 then
 							declaration_stack.extend (decl_type)
-							declaration_parts_list.wipe_out
 						else
 							Result := Error_syntax; put_boolean (done, True)
 						end
@@ -118,35 +125,27 @@ feature {NONE} -- Token processing
 								on_attribute_list_declaration
 
 							when ENTITY then
-								on_entity_declaration (c_in_parameter_entity (parse_data))
+								on_entity_declaration (False)
+
+							when PARAMETER_ENTITY then
+								on_entity_declaration (True)
 						else
 						end
 						declaration_stack.remove_tail (1)
-						set_in_parameter_entity (parse_data, False)
 					else
 						Result := Error_syntax; put_boolean (done, True)
 					end
 
 				when Tok_name then
 					inspect declaration
-						when Attlist then
+						when ATTLIST, ENTITY, PARAMETER_ENTITY then
 							if declaration_stack.count = 2 then
-								declaration_parts_list.extend_for (buf, index, end_index, token, newline_or_tab_found)
+								parts_list.extend_for (buf, index, end_index, token, newline_or_tab_found)
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end
 
-						when Entity then
-							if declaration_stack.count = 2 then
-								if c_in_parameter_entity (parse_data) then
-									parameter_entity_parts_list.extend_for (buf, index, end_index, token, newline_or_tab_found)
-								else
-									entity_parts_list.extend_for (buf, index, end_index, token, newline_or_tab_found)
-								end
-							else
-								Result := Error_syntax; put_boolean (done, True)
-							end
-						when Element, Notation then
+						when ELEMENT, NOTATION then
 							do_nothing -- for now
 					else
 						put_boolean (default_case, True)
@@ -154,24 +153,14 @@ feature {NONE} -- Token processing
 
 				when Tok_literal then
 					inspect declaration
-						when Attlist then
+						when ATTLIST, ENTITY, PARAMETER_ENTITY then
 							if declaration_stack.count = 2 then
-								declaration_parts_list.extend_for (buf, index + 1, end_index - 1, token, newline_or_tab_found)
-							else
-								Result := Error_syntax; put_boolean (done, True)
-							end
-						when Entity then
-							if declaration_stack.count = 2 then
-								if c_in_parameter_entity (parse_data) then
-									parameter_entity_parts_list.extend_for (buf, index + 1, end_index - 1, token, newline_or_tab_found)
-								else
-									entity_parts_list.extend_for (buf, index + 1, end_index - 1, token, newline_or_tab_found)
-								end
+								parts_list.extend_for (buf, index + 1, end_index - 1, token, newline_or_tab_found)
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end
 
-						when Element, Notation then
+						when ELEMENT, NOTATION then
 							do_nothing -- for now
 					else
 						put_boolean (default_case, True)
@@ -179,18 +168,22 @@ feature {NONE} -- Token processing
 
 				when Tok_pound_name then
 					inspect declaration
-						when Attlist then
-							declaration_parts_list.extend_for (buf, index, end_index, token, newline_or_tab_found)
+						when ATTLIST, ENTITY, PARAMETER_ENTITY then
+							parts_list.extend_for (buf, index, end_index, token, newline_or_tab_found)
 
-						when Element, Entity, Notation then
+						when ELEMENT, NOTATION then
 							do_nothing -- for now
 					else
 						put_boolean (default_case, True)
 					end
 
 				when Tok_percent then
-					declaration_parts_list.set_last_token (token)
-					set_in_parameter_entity (parse_data, True)
+					inspect declaration when ENTITY then
+						inspect declaration_stack.count when 2 then
+							declaration := PARAMETER_ENTITY
+							declaration_stack [1] := declaration
+						else end
+					else end
 
 				when Tok_param_entity_ref then
 					name := parameter_name_cache.item (buf, index + 1, end_index - 1, 0)
@@ -199,7 +192,7 @@ feature {NONE} -- Token processing
 					end
 
 				when Tok_open_parenthesis, Tok_close_parenthesis, Tok_or then
-					declaration_parts_list.set_last_token (token)
+					attribute_parts_list.set_last_token (token)
 
 			else
 				put_boolean (common_case, True)
@@ -274,7 +267,7 @@ feature {NONE} -- Token processing
 							elseif not valid_doctype_declaration then
 								Result := Error_syntax; put_boolean (done, True)
 
-							elseif attached declaration_parts_list as parts_list then
+							elseif attached document_type_parts_list as parts_list then
 								parts_list.set_document_type (formal_public_identifier, DTD_uri)
 								on_doctype_declaration (parts_list, False)
 							end
@@ -284,21 +277,21 @@ feature {NONE} -- Token processing
 
 					when Tok_literal then
 						if declaration_stack.count = 1 and then declaration_stack [0] = Doctype then
-							declaration_parts_list.extend_for (buf, index + 1, tok_end - 2, token, newline_or_tab_found)
+							document_type_parts_list.extend_for (buf, index + 1, tok_end - 2, token, newline_or_tab_found)
 						else
 							Result := name_error (buf, index, end_index, bt_table); put_boolean (done, True)
 						end
 
 					when Tok_name then
 						if declaration_stack.count = 1 and then declaration_stack [0] = Doctype then
-							declaration_parts_list.extend_for (buf, index, tok_end - 1, token, newline_or_tab_found)
+							document_type_parts_list.extend_for (buf, index, tok_end - 1, token, newline_or_tab_found)
 						else
 							Result := name_error (buf, index, end_index, bt_table); put_boolean (done, True)
 						end
 
 					when Tok_open_bracket then
 						if declaration_stack.count = 1 then
-							if valid_doctype_declaration and then attached declaration_parts_list as parts_list then
+							if valid_doctype_declaration and then attached document_type_parts_list as parts_list then
 								set_in_dtd_section (parse_data, True)
 								has_dtd_section := True
 								parts_list.set_document_type (formal_public_identifier, DTD_uri)
@@ -366,26 +359,23 @@ feature {NONE} -- Event handlers
 
 	on_attribute_list_declaration
 		do
-			if declaration_parts_list.defines_attribute_default then
-				declaration_parts_list.extend_defaults_table (attribute_value_defaults_table)
+			if attribute_parts_list.defines_attribute_default then
+				attribute_parts_list.extend_table (attribute_value_defaults_table)
 			end
-			declaration_parts_list.wipe_out
+			attribute_parts_list.wipe_out
 		end
 
-	on_doctype_declaration (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN)
+	on_doctype_declaration (parts_list: XT_DOCUMENT_TYPE_PARTS_LIST; has_internal_subset: BOOLEAN)
 		do
 			on_doctype_declaration_start (parts_list, has_internal_subset)
 			parts_list.wipe_out
 		end
 
 	on_entity_declaration (in_parameter_entity: BOOLEAN)
-		local
-			parameter_entity: XT_PARAMETER_ENTITY
 		do
 			if in_parameter_entity and then attached parameter_entity_parts_list as parts_list then
 				if parts_list.is_valid then
-					create parameter_entity.make (parts_list)
-					parameter_entity_table.put (parameter_entity, parts_list.first)
+					parameter_entity_table.put (parts_list.new_parameter, parts_list.first)
 				end
 				parts_list.wipe_out
 
@@ -404,7 +394,7 @@ feature {NONE} -- Implementation
 
 	in_doctype_definition: BOOLEAN
 		do
-			Result := doctype_decl_stack.count > 0
+			Result := doctype_declaration_stack.count > 0
 		end
 
 	declaration_type (buf: like buffer; offset: INTEGER): INTEGER
@@ -496,6 +486,8 @@ feature {NONE} -- Implementation
 		end
 
 	reset
+		local
+			i: INTEGER
 		do
 			Precursor {XT_PARSING_BUFFERS}
 			Precursor {XT_DOCUMENT_SCANNER}
@@ -508,30 +500,32 @@ feature {NONE} -- Implementation
 			end
 			parameter_name_cache.reset
 
+			from i := 0 until i = declaration_parts.count loop
+				declaration_parts [i].wipe_out
+				i := i + 1
+			end
+			doctype_declaration_stack.wipe_out
 			parameter_entity_table.wipe_out
-			declaration_parts_list.wipe_out
-			entity_parts_list.wipe_out
-			parameter_entity_parts_list.wipe_out
 			DTD_uri.wipe_out
 			formal_public_identifier.wipe_out
 		end
 
 	valid_doctype_declaration: BOOLEAN
 		do
-			inspect declaration_parts_list.count
+			inspect document_type_parts_list.count
 				when 0 then
 					Result := False
 
 				when 1 then
-					Result := not Valid_external_id_list.has (declaration_parts_list [1])
+					Result := not Valid_external_id_list.has (document_type_parts_list [1])
 
 				when 2, 3, 4 then
-					if Valid_external_id_list.has (declaration_parts_list [2]) then
-						if declaration_parts_list [2] = PUBLIC then
-							Result := declaration_parts_list.count = 4
+					if Valid_external_id_list.has (document_type_parts_list [2]) then
+						if document_type_parts_list [2] = PUBLIC then
+							Result := document_type_parts_list.count = 4
 
-						elseif declaration_parts_list [2] = SYSTEM then
-							Result := declaration_parts_list.count = 3
+						elseif document_type_parts_list [2] = SYSTEM then
+							Result := document_type_parts_list.count = 3
 						end
 					else
 						Result := False
@@ -543,13 +537,16 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Declaration parts
 
-	declaration_parts_list: XT_DECLARATION_PARTS_LIST
+	declaration_parts: SPECIAL [XT_DECLARATION_PARTS_LIST]
+
+	attribute_parts_list: XT_ATTRIBUTE_PARTS_LIST
 		-- For example <!ATTLIST magic priority CDATA "50">
-		-- would be: << "magic", "priority", "CDATA", "50" >>
+
+	document_type_parts_list: XT_DOCUMENT_TYPE_PARTS_LIST
 
 	entity_parts_list: XT_ENTITY_PARTS_LIST
 
-	parameter_entity_parts_list: XT_DECLARATION_PARTS_LIST
+	parameter_entity_parts_list: XT_PARAMETER_ENTITY_PARTS_LIST
 
 feature {NONE} -- Internal attributes
 
@@ -558,7 +555,7 @@ feature {NONE} -- Internal attributes
 	DTD_uri: STRING
 		-- DOCTYPE eg.: http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd
 
-	doctype_decl_stack: SPECIAL [INTEGER]
+	doctype_declaration_stack: SPECIAL [INTEGER]
 		-- DOCTYPE declaration type stack
 
 	element_context: XT_ELEMENT_CONTEXT

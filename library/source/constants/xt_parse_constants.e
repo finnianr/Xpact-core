@@ -64,4 +64,6 @@ feature {XT_STRING_CONSTANTS} -- Declaration types
 
 	Notation: INTEGER = 5
 
+	Parameter_entity: INTEGER = 6
+
 end

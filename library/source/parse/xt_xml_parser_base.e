@@ -349,7 +349,7 @@ feature {NONE} -- Processor dispatch
 			if enough then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
-				context := element_context; names := name_cache; declaration_stack := doctype_decl_stack
+				context := element_context; names := name_cache; declaration_stack := doctype_declaration_stack
 				bt_table := byte_type_table; attributes := attribute_list; buf := buffer
 
 				from done := False until done loop

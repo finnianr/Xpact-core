@@ -1,5 +1,5 @@
 note
-	description: "${XT_DECLARATION_PARTS_LIST} for document ENTITY declarations"
+	description: "${XT_DECLARATION_PARTS_LIST} for `<!ENTITY ..>' declarations"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -21,6 +21,13 @@ inherit
 
 create
 	make
+
+feature -- Status query
+
+	is_valid: BOOLEAN
+		do
+			Result := count >= 2
+		end
 
 feature -- Basic operations
 
@@ -47,6 +54,11 @@ feature {NONE} -- Implementation
 			else
 				Result := new_attribute_value (buffer, start_index, end_index, newline_or_tab_found)
 			end
+		end
+
+	new_filled_list (n: INTEGER): like Current
+		do
+			create Result.make (create {like name_cache}.make)
 		end
 
 feature {NONE} -- Internal attributes

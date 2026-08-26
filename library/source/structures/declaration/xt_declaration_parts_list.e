@@ -19,7 +19,7 @@ note
 	date: "2026-08-23 17:50:00 GMT (Sunday 23rd August 2026)"
 	revision: "1"
 
-class
+deferred class
 	XT_DECLARATION_PARTS_LIST
 
 inherit
@@ -29,8 +29,10 @@ inherit
 			index_of as index_of_item
 		export
 			{NONE} all
+		undefine
+			new_filled_list
 		redefine
-			new_filled_list, wipe_out
+			wipe_out
 		end
 
 	XT_TOKEN_CONSTANTS
@@ -55,9 +57,6 @@ inherit
 			copy, is_equal
 		end
 
-create
-	make
-
 feature -- Initialization
 
 	make (a_name_cache: like name_cache)
@@ -65,59 +64,18 @@ feature -- Initialization
 			make_sized (11)
 			name_cache := a_name_cache
 			create token_area.make_empty (area.capacity)
-			create value_options.make (0)
+			create type.make (50)
 		end
+
+feature -- Access
+
+	type: STRING
+		-- see attribute_types note at end of class
 
 feature -- Status query
 
-	defines_attribute_default: BOOLEAN
-		-- `True' if parts list defines a default value for an attribute
-		local
-			i, i_final: INTEGER
-		do
-			if count >= 3 and then token_area [count - 1] = Tok_literal and then area_v2 [count - 2] = CDATA then
-				Result := True
-				from i := 0; i_final := count - 3 until i = i_final or not Result loop
-					Result := token_area [i] = Tok_name
-					i := i + 1
-				end
-			end
-		end
-
 	is_valid: BOOLEAN
-		do
-			Result := count >= 2
-		end
-
-feature -- Basic operations
-
-	extend_defaults_table (default_value_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING])
-		local
-			default_values_list: ARRAYED_LIST [STRING]
-		do
-			if attached default_value_table [first] as list then
-				default_values_list := list
-			else
-				create default_values_list.make (5)
-				default_value_table.extend (default_values_list, first)
-			end
-			default_values_list.extend (i_th (2))
-			default_values_list.extend (last)
-		end
-
-	set_document_type (formal_public_identifier, DTD_uri: STRING)
-		local
-			second: STRING
-		do
-			if count >= 3 then
-				second := i_th (2)
-				if Valid_external_id_list.has (second) then
-					formal_public_identifier.share (i_th (3))
-					if count = 4 and then second = PUBLIC then
-						DTD_uri.share (last)
-					end
-				end
-			end
+		deferred
 		end
 
 feature -- Element change
@@ -140,21 +98,24 @@ feature -- Element change
 			end
 			inspect token
 				when Tok_name, Tok_pound_name then
-					if attached name_constant (buffer, start_index, end_index, token) as l_name then
-						name := l_name
-					else
-						colon_index := index_of (buffer, ':', start_index, end_index)
-						name := name_cache.item (buffer, start_index, end_index, colon_index.max (0))
-					end
 					inspect last_token
 						when Tok_open_parenthesis then
-							l_area.extend (name); l_token_area.extend (Tok_or)
-							value_options.extend (name)
+							l_area.extend (type); l_token_area.extend (Tok_or)
+							type.append_character ('('); append_area (type, buffer, start_index, end_index)
 
 						when Tok_or then
-							value_options.extend (name)
+							type.append_character ('|'); append_area (type, buffer, start_index, end_index)
+
+						when Tok_close_parenthesis then
+							append_area (type, buffer, start_index, end_index); type.append_character (')')
 
 					else
+						if attached name_constant (buffer, start_index, end_index, token) as l_name then
+							name := l_name
+						else
+							colon_index := index_of (buffer, ':', start_index, end_index)
+							name := name_cache.item (buffer, start_index, end_index, colon_index.max (0))
+						end
 						l_area.extend (name); l_token_area.extend (token)
 					end
 
@@ -165,8 +126,8 @@ feature -- Element change
 			end
 			last_token := token
 		ensure
-			OR_token_inserted: value_options.count = old value_options.count + 1 implies token_area [count - 1] = Tok_or
-			value_options_incremented: token_area [count - 1] = Tok_or implies value_options.count = old value_options.count + 1
+			OR_token_inserted: type.count = old type.count + 1 implies token_area [count - 1] = Tok_or
+			value_options_incremented: token_area [count - 1] = Tok_or implies type.count = old type.count + 1
 		end
 
 	set_last_token (token: INTEGER)
@@ -179,7 +140,7 @@ feature -- Element change
 		do
 			Precursor
 			token_area.wipe_out
-			value_options.wipe_out
+			type.wipe_out
 			last_token := 0
 		end
 
@@ -203,11 +164,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	new_filled_list (n: INTEGER): like Current
-		do
-			create Result.make (create {like name_cache}.make)
-		end
-
 	new_value (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; newline_or_tab_found: BOOLEAN): STRING_8
 		do
 			Result := new_attribute_value (buffer, start_index, end_index, newline_or_tab_found)
@@ -220,10 +176,6 @@ feature {NONE} -- Internal attributes
 	name_cache: XT_NAME_CACHE
 
 	token_area: SPECIAL [INTEGER]
-
-	value_options: ARRAYED_LIST [STRING]
-		-- values in brackets separated by OR symbol |
-		-- Eg. <!ATTLIST generic-icon name (application-x-executable | audio-x-generic)>
 
 feature {NONE} -- Constants
 
@@ -242,5 +194,34 @@ feature {NONE} -- Constants
 	Hash_implied: STRING = "#IMPLIED"
 
 	Hash_required: STRING = "#REQUIRED"
+
+note
+	attribute_types: "[
+
+		Values that `att_type` (from XML_AttlistDeclHandler) can take, per the
+		DTD AttType grammar (XML 1.0 S3.3.1):
+		  DTD declaration           | att_type string
+		  --------------------------+----------------------------
+		  CDATA                     | "CDATA"
+		  ID                        | "ID"
+		  IDREF                     | "IDREF"
+		  IDREFS                    | "IDREFS"
+		  ENTITY                    | "ENTITY"
+		  ENTITIES                  | "ENTITIES"
+		  NMTOKEN                   | "NMTOKEN"
+		  NMTOKENS                  | "NMTOKENS"
+		  (v1|v2|...)  (enumeration)| "(v1|v2|...)"
+		  NOTATION (n1|n2|...)      | "NOTATION(n1|n2|...)"
+
+		  * The 8 fixed-keyword forms above are exact, case-sensitive constants
+		    - that is the complete set; there is no "NOTATIONS" or other variant.
+		  * "NOTATION(...)" has NO space between "NOTATION" and "(" in the
+		    string expat delivers, even though the XML source usually writes
+		    "NOTATION (a|b)" with a space.
+		  * Enumeration and NOTATION are the only two variable-content forms;
+		    check att_type.item (1) = '(' for a plain enumeration, or
+		    att_type.starts_with ("NOTATION(") for a notation list; otherwise
+		    it is one of the 8 fixed keywords above.
+	]"
 
 end

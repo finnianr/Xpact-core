@@ -30,7 +30,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (parts_list: LIST [STRING])
+	make (parts_list: XT_PARAMETER_ENTITY_PARTS_LIST)
 		require
 			valid_parts: parts_list.count >= 2
 		local

@@ -58,15 +58,6 @@ feature {NONE} -- Parse section state
 			"return ((XT_parse_data*) $data_ptr)->in_CDATA_section;"
 		end
 
-	frozen c_in_parameter_entity (data_ptr: POINTER): BOOLEAN
-		-- `True' when parsing ENTITY with percent symbol
-		-- Eg. <!ENTITY % selectors SYSTEM "../common/db-selectors.mod">
-		external
-			"C inline use <xt_structs.h>"
-		alias
-			"return ((XT_parse_data*) $data_ptr)->in_parameter_entity;"
-		end
-
 feature {NONE} -- Measurement
 
 	frozen c_content_count (data_ptr: POINTER): NATURAL_64
@@ -104,13 +95,6 @@ feature {NONE} -- Status change
 			"C inline use <xt_structs.h>"
 		alias
 			"((XT_parse_data*) $data_ptr)->in_CDATA_section = $flag;"
-		end
-
-	frozen set_in_parameter_entity (data_ptr: POINTER; flag: BOOLEAN)
-		external
-			"C inline use <xt_structs.h>"
-		alias
-			"((XT_parse_data*) $data_ptr)->in_parameter_entity = $flag;"
 		end
 
 feature {NONE} -- Initialization
