@@ -444,7 +444,7 @@ feature -- Basic operations
 			else
 				l_name_area.extend (name)
 				if entity_list.count > 0 then
-					expanded_value := entity_table.expanded_value (buffer, additions [2], additions [3], entity_list.area, False)
+					expanded_value := entity_table.expanded_value (buffer, additions [2], additions [3], entity_list.area, False, False)
 					value_count := expanded_value.count
 
 					if entity_table.undefined_entity_found and then not permit_undefined_entities then

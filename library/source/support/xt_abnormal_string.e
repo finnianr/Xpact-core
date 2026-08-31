@@ -1,6 +1,9 @@
 note
 	description: "[
-		${STRING_8} that has '%T', '%R' or '%N' characters that must be normalized for text or attribute values
+		A ${STRING_8} instance that has '%T', '%R' or '%N' characters that must be normalized when
+		substituted into attribute values as per specification:
+		
+			§3.3.3 attribute-value normalisation: replace %N %T with space
 	]"
 
 	author: "Finnian Reilly"
@@ -9,65 +12,16 @@ note
 
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
 
-	date: "2026-08-01 13:05:00 GMT (Saturday 1th August 2026)"
-	revision: "1"
+	date: "2026-08-30 13:05:00 GMT (Sunday 30th August 2026)"
+	revision: "2"
 
 class
 	XT_ABNORMAL_STRING
 
 inherit
 	STRING
-		rename
-			make as make_sized
-		redefine
-			new_string
-		end
 
 create
-	make, make_sized
+	make
 
-feature {NONE} -- Initialization
-
-	make (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; a_newline_or_tab_found: BOOLEAN)
-		local
-			s: XT_STRING_8_ROUTINES
-		do
-			make_sized (end_index - start_index + 1)
-			newline_or_tab_found := a_newline_or_tab_found
-			s.append_area (Current, buffer, start_index, end_index)
-		end
-
-feature -- Conversion
-
-	to_attribute: STRING
-		-- normalized version of `Current' for placing in an attribute value
-		-- (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
-		local
-			s: XT_STRING_8_ROUTINES
-		do
-			if attached internal_attribute as l_attribute then
-				Result := l_attribute
-			else
-				create Result.make (count + 1)
-				Result.append (Current)
-				s.normalize_whitespace (Result.area, 0, Result.count - 1)
-				internal_attribute := Result
-			end
-		end
-
-feature -- Status report
-
-	newline_or_tab_found: BOOLEAN
-
-feature {NONE} -- Implementation
-
-	new_string (n: INTEGER): like Current
-			-- New instance of current with space for at least `n' characters.
-		do
-			create Result.make_sized (n)
-		end
-
-feature {NONE} -- Internal attributes
-
-	internal_attribute: detachable STRING
 end

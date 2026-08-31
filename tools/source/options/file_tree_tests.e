@@ -202,7 +202,9 @@ feature {NONE} -- Factory
 		do
 			Result := new_base_log_path
 			name := wild_card + ".log"
-			name.replace_substring ("dot", 1, 1)
+			if name [1] = '*' then
+				name.replace_substring ("dot", 1, 1)
+			end
 			Result := Result.extended (name)
 		end
 

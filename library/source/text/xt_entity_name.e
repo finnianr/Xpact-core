@@ -24,7 +24,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make_from_buffer (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER)
+	make_from_buffer (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; delimiter: CHARACTER)
 		-- take buffer segment from `start_index' to `end_index' and insert into "&;" at position 2
 		local
 			l_count, full_count: INTEGER
@@ -34,10 +34,11 @@ feature {NONE} -- Initialization
 			make_filled ('%U', full_count)
 
 			if attached area as a then
-				a [0] := '&'
+				a [0] := delimiter -- '&' OR '%'
 				a.copy_data (buffer, start_index, 1, l_count)
 				a [full_count - 1] := ';'
 			end
+			is_dtd_expandable := delimiter = '%%' or buffer [start_index] = '#'
 		end
 
 	make_shared (s: STRING)
@@ -50,6 +51,9 @@ feature {NONE} -- Initialization
 feature -- Status query
 
 	is_open: BOOLEAN
+
+	is_dtd_expandable: BOOLEAN
+		-- `True' if entity should be expanded in literal values referenced in document type definition
 
 feature -- Status change
 

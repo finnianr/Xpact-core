@@ -130,7 +130,7 @@ feature {NONE} -- Implementation
 			l_chunk.make_shared (chunk.area, byte_count)
 		-- check for byte order mark if any and remove
 			across << u.utf_8_bom_to_string_8, u.utf_16le_bom_to_string_8 >> as bom until found loop
-				if l_chunk.starts_with (bom) then
+				if l_chunk.starts_with_string (0, bom) then
 					l_chunk.remove_head (bom.count)
 					inspect @ bom.cursor_index
 						when 1 then

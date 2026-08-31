@@ -9,14 +9,18 @@ note
 
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
 
-	date: "2026-08-26 10:28:00 GMT (Wednesday 26th August 2026)"
+	date: "2026-08-16 13:40:00 GMT (Saturday 16th August 2026)"
 	revision: "1"
+
 
 class
 	XT_PARAMETER_ENTITY_PARTS_LIST
 
 inherit
 	XT_DECLARATION_PARTS_LIST
+		redefine
+			name_cache, new_name
+		end
 
 create
 	make
@@ -42,5 +46,13 @@ feature {NONE} -- Implementation
 			create Result.make (create {like name_cache}.make)
 		end
 
+	new_name (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): STRING_8
+		do
+			Result := name_cache.item (buffer, start_index, end_index)
+		end
+
+feature {NONE} -- Internal attributes
+
+	name_cache: XT_PARAMETER_ENTITY_NAME_CACHE
 
 end

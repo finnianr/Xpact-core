@@ -25,12 +25,13 @@ typedef enum {
 	TYPE_PI_DATA,
 	TYPE_XML_DECL,
 	TYPE_DOCTYPE,
-	TYPE_ATTLIST
+	TYPE_ATTLIST,
+	TYPE_ENTITY
 } data_type_t;
 
 static const char *data_type_name[] = {
 	"text", "cdata", "comment", "tag", "attribute", "attrib-name",
-	"pi-name", "pi-data", "xml-decl", "doctype", "attlist"
+	"pi-name", "pi-data", "xml-decl", "doctype", "attlist", "entity"
 };
 
 typedef struct {
@@ -182,7 +183,7 @@ static void XMLCALL on_xml_decl(void *userData, const XML_Char *version,
 		crc32_update(ctx, (const unsigned char *) version, strlen(version));
 	if (encoding)
 		crc32_update(ctx, (const unsigned char *) encoding, strlen(encoding));
-	crc32_update_int32(ctx, standalone);
+	crc32_update_int32 (ctx, standalone); // can have -1 as value, so not a boolean
 }
 
 /* Combines the DOCTYPE declaration's name, external ID keyword ("PUBLIC" or
@@ -223,6 +224,35 @@ static void XMLCALL on_attlist_decl(void *userData, const XML_Char *elname,
 	crc32_update_bool(ctx, isrequired);
 }
 
+/* Combines the ENTITY declaration's fields, left to right as supplied to
+ * XML_EntityDeclHandler, into the running checksum: entityName,
+ * is_parameter_entity, value, base, systemId, publicId, notationName.
+ * value is not NUL-terminated, so value_length is used directly rather
+ * than strlen; value/base/systemId/publicId/notationName are skipped
+ * when NULL. */
+static void XMLCALL on_entity_decl(void *userData, const XML_Char *entityName,
+                                    int is_parameter_entity, const XML_Char *value,
+                                    int value_length, const XML_Char *base,
+                                    const XML_Char *systemId, const XML_Char *publicId,
+                                    const XML_Char *notationName) {
+	crc_ctx_t *ctx = (crc_ctx_t *) userData;
+	if (ctx->type != TYPE_ENTITY) return;
+	crc32_update(ctx, (const unsigned char *) entityName, strlen(entityName));
+	crc32_update_bool(ctx, is_parameter_entity);
+	if (value){
+		crc32_update(ctx, (const unsigned char *) value, (size_t) value_length);
+		crc32_update_int32(ctx, value_length);
+	}
+	if (base)
+		crc32_update(ctx, (const unsigned char *) base, strlen(base));
+	if (systemId)
+		crc32_update(ctx, (const unsigned char *) systemId, strlen(systemId));
+	if (publicId)
+		crc32_update(ctx, (const unsigned char *) publicId, strlen(publicId));
+	if (notationName)
+		crc32_update(ctx, (const unsigned char *) notationName, strlen(notationName));
+}
+
 #define CHUNK_SIZE 4096
 
 /* Parses the file incrementally in 4096-byte chunks, feeding events into ctx.
@@ -256,6 +286,7 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	XML_SetXmlDeclHandler(parser, on_xml_decl);
 	XML_SetStartDoctypeDeclHandler(parser, on_start_doctype_decl);
 	XML_SetAttlistDeclHandler(parser, on_attlist_decl);
+	XML_SetEntityDeclHandler(parser, on_entity_decl);
 
 	char buf[CHUNK_SIZE];
 	int done = 0;
@@ -287,7 +318,7 @@ static long now_ms(void) {
 static void usage(const char *prog) {
 	fprintf(stderr,
 			"Usage: %s -type <text|cdata|comment|tag|attribute|attrib-name|"
-			"pi-name|pi-data|xml-decl|doctype|attlist> "
+			"pi-name|pi-data|xml-decl|doctype|attlist|entity> "
 			"[-duration <time-window-ms>] [-trace] <xml-file-path>\n",
 			prog);
 }
@@ -360,6 +391,7 @@ int main(int argc, char **argv) {
 	else if (strcmp(type_arg, "xml-decl") == 0) type = TYPE_XML_DECL;
 	else if (strcmp(type_arg, "doctype") == 0) type = TYPE_DOCTYPE;
 	else if (strcmp(type_arg, "attlist") == 0) type = TYPE_ATTLIST;
+	else if (strcmp(type_arg, "entity") == 0) type = TYPE_ENTITY;
 	else {
 		fprintf(stderr, "Error: invalid -type '%s'\n", type_arg);
 		usage(argv[0]);

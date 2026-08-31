@@ -65,3 +65,37 @@ nes96.xml: eXpat passes = 246; Xpact-core passes = 319 (x1.30 to eXpat)
 
 2026 20 AUG 19:29
 nes96.xml: eXpat passes = 246; Xpact-core passes = 320 (x1.30 to eXpat)
+
+2026 27 AUG 10:40
+nes96.xml: eXpat passes = 245; Xpact-core passes = 324 (x1.32 to eXpat)
+
+2026 29 AUG 16:49
+nes96.xml: eXpat passes = 244; Xpact-core passes = 242 (x0.99 to eXpat)
+
+2026 29 AUG 23:22
+nes96.xml: eXpat passes = 244; Xpact-core passes = 305 (x1.25 to eXpat)
+
+2026 30 AUG 8:17
+nes96.xml: eXpat passes = 244; Xpact-core passes = 304 (x1.25 to eXpat)
+
+2026 30 AUG 9:57
+nes96.xml: eXpat passes = 243; Xpact-core passes = 325 (x1.34 to eXpat)
+
+2026 30 AUG 10:54
+nes96.xml: eXpat passes = 243; Xpact-core passes = 321 (x1.32 to eXpat)
+
+2026 30 AUG 11:15
+nes96.xml: eXpat passes = 244; Xpact-core passes = 331 (x1.36 to eXpat)
+
+2026 30 AUG 11:27
+c_byte_type (buffer, byte_types: POINTER; i: INTEGER): INTEGER is slower, not faster
+nes96.xml: eXpat passes = 243; Xpact-core passes = 311 (x1.28 to eXpat)
+
+2026 30 AUG 11:41
+nes96.xml: eXpat passes = 239; Xpact-core passes = 323 (x1.35 to eXpat)
+
+2026 30 AUG 15:59
+nes96.xml: eXpat passes = 243; Xpact-core passes = 330 (x1.36 to eXpat)
+
+2026 30 AUG 16:17
+nes96.xml: eXpat passes = 243; Xpact-core passes = 323 (x1.33 to eXpat)

@@ -30,7 +30,7 @@ inherit
 feature {NONE} -- Reference scanning
 
 	scan_ref (
-		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]
 		entity_buffer: LIST [XT_ENTITY_NAME]
 	): INTEGER
 			-- Scan entity or character reference after '&'.
@@ -44,14 +44,14 @@ feature {NONE} -- Reference scanning
 			if index >= end_index then
 				Result := Tok_partial
 			else
-				bt_code := bt_table [buf [index].code]
+				bt_code := BT_table [buf [index].code]
 				inspect bt_code
 					when BT_hash then
-						Result := scan_char_ref (buf, token, index + 1, end_index, bt_table, entity_buffer)
+						Result := scan_char_ref (buf, token, index + 1, end_index, BT_table, entity_buffer)
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
 						from until index >= end_index or done loop
-							inspect bt_table [buf [index].code]
+							inspect BT_table [buf [index].code]
 								when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 									index := index + 1
 								when BT_semicolon then
@@ -76,7 +76,7 @@ feature {NONE} -- Reference scanning
 							and then is_name_start_character (buf, index, byte_count)
 						then
 							index := index + byte_count
-							Result := scan_ref_name_tail (buf, index, end_index, bt_table)
+							Result := scan_ref_name_tail (buf, index, end_index, BT_table)
 						else
 							next_token_index := index
 							Result := Tok_invalid
@@ -89,7 +89,7 @@ feature {NONE} -- Reference scanning
 		end
 
 	scan_char_ref (
-		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]
 		entity_buffer: LIST [XT_ENTITY_NAME]
 	): INTEGER
 			-- Scan character reference after '&#'.  Returns Tok_char_ref or error.
@@ -102,14 +102,14 @@ feature {NONE} -- Reference scanning
 			if index >= end_index then
 				Result := Tok_partial
 			elseif buf [index] = 'x' then
-				Result := scan_hex_char_ref (buf, token, index + 1, end_index, bt_table, entity_buffer)
+				Result := scan_hex_char_ref (buf, token, index + 1, end_index, BT_table, entity_buffer)
 
 			else
-				inspect bt_table [buf [index].code]
+				inspect BT_table [buf [index].code]
 					when BT_digit then
 						index := index + 1
 						from until index >= end_index or done loop
-							inspect bt_table [buf [index].code]
+							inspect BT_table [buf [index].code]
 								when BT_digit then
 									index := index + 1
 								when BT_semicolon then
@@ -134,7 +134,7 @@ feature {NONE} -- Reference scanning
 		end
 
 	scan_hex_char_ref (
-		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		buf: SPECIAL [CHARACTER]; token, start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]
 		entity_buffer: LIST [STRING]
 	): INTEGER
 			-- Scan hex character reference after '&#x'.  Returns Tok_char_ref or error.
@@ -147,11 +147,11 @@ feature {NONE} -- Reference scanning
 				Result := Tok_partial
 
 			else
-				bt := bt_table [buf [index].code]
+				bt := BT_table [buf [index].code]
 				if bt = BT_digit or bt = BT_hex_digit then
 					index := index + 1
 					from until index >= end_index or done loop
-						bt := bt_table [buf [index].code]
+						bt := BT_table [buf [index].code]
 						if bt = BT_digit or bt = BT_hex_digit then
 							index := index + 1
 						elseif bt = BT_semicolon then
@@ -177,14 +177,14 @@ feature {NONE} -- Reference scanning
 
 feature {NONE} -- Reference sub-helper
 
-	scan_ref_name_tail (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
+	scan_ref_name_tail (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
 			-- Continue scanning after a valid nmstrt multi-byte start.
 		local
 			index: INTEGER; done: BOOLEAN
 		do
 			index := start_index
 			from until index >= end_index or done loop
-				inspect bt_table [buf [index].code]
+				inspect BT_table [buf [index].code]
 					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 						index := index + 1
 					when BT_semicolon then

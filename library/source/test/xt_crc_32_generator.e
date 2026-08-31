@@ -155,6 +155,40 @@ feature {NONE} -- Event handlers
 			else end
 		end
 
+	on_entity_declaration (
+		entity_name: STRING; value, base, system_id, public_id, notation_name: detachable STRING
+		is_parameter_entity: BOOLEAN
+	)
+		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
+		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity,
+		-- 	const XML_Char *value, int value_length, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId,
+		-- 	const XML_Char *notationName);
+		do
+			inspect data_type when Type_decl_entity then
+				if attached checksum as crc then
+					crc.add_characters (entity_name.area, 1, entity_name.count - 2)
+					crc.add_boolean (is_parameter_entity)
+					if attached value as str then
+						crc.add_string (str)
+						crc.add_integer_32 (str.count)
+					end
+					if attached base as str then
+						crc.add_string (str)
+					end
+					if attached system_id as str then
+						crc.add_string (str)
+					end
+					if attached public_id as str then
+						crc.add_string (str)
+					end
+					if attached notation_name as str then
+						crc.add_string (str)
+					end
+				end
+			else end
+		end
+
 	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		do
 			inspect data_type
@@ -166,9 +200,11 @@ feature {NONE} -- Event handlers
 						attributes.append_to_crc_32 (buf, context.default_attribute_values, data_type, checksum)
 					else
 					-- perhaps there are some default values defined in DTD prolog
-						if context.has_attributes and attributes.count = 0 then
-							attributes.append_to_crc_32 (buf, context.default_attribute_values, data_type, checksum)
-						end
+						inspect attributes.count when 0 then
+							if context.has_attributes then
+								attributes.append_to_crc_32 (buf, context.default_attribute_values, data_type, checksum)
+							end
+						else end
 					end
 			else
 			end

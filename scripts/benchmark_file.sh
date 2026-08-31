@@ -5,7 +5,7 @@ export BENCHMARKS_DIR=$EIFFEL/library/Xpact-core/benchmarks
 
 DURATION_MS=2000
 
-type_list="attribute cdata comment pi-name pi-data tag text"
+type_list="attribute cdata comment tag text"
 
 path=$1
 
@@ -18,8 +18,6 @@ fi
 echo
 echo Benchmarking Eiffel Xpact-core and C eXpat for $name
 echo
-
-xml_reader -count_tags -compare_to_expat -duration $DURATION_MS ""$path""
 
 for type in $type_list; do
 	echo Type\: $type in $name

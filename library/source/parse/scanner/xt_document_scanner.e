@@ -35,37 +35,37 @@ inherit
 
 feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 
-	scan_content (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
+	scan_content (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
 			-- Scan the next token in element content.
 			-- Sets `next_token_index'.  Corresponds to scanners[XML_CONTENT_STATE].
 		require
 			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		do
-			Result := content_tok (buf, start_index, end_index, bt_table, scanned_entity_buffer)
+			Result := content_tok (buf, start_index, end_index, BT_table, scanned_entity_buffer)
 		ensure
 			result_in_range: Result >= Tok_trailing_rsqb and Result <= Tok_ignore_sect
 		end
 
-	scan_prolog (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
+	scan_prolog (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
 			-- Scan the next token in the document prolog or DTD.
 			-- Corresponds to scanners[XML_PROLOG_STATE].
 		require
 			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		do
-			Result := prolog_tok (buf, start_index, end_index, bt_table)
+			Result := prolog_tok (buf, start_index, end_index, BT_table)
 		end
 
-	scan_cdata_section (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
+	scan_cdata_section (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
 			-- Scan the next token inside a CDATA section.
 			-- Corresponds to scanners[XML_CDATA_SECTION_STATE].
 		require
 			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		do
-			Result := cdata_section_tok (buf, start_index, end_index, bt_table)
+			Result := cdata_section_tok (buf, start_index, end_index, BT_table)
 		end
 
 	scan_entity_value (
-		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]
 		entity_buffer: LIST [XT_ENTITY_NAME]
 	): INTEGER
 			-- Scan the next token inside an entity value literal.
@@ -73,13 +73,13 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 		require
 			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
 		do
-			Result := entity_value_tok (buf, start_index, end_index, bt_table, entity_buffer)
+			Result := entity_value_tok (buf, start_index, end_index, BT_table, entity_buffer)
 		end
 
 feature -- Name utilities (implements XT_ENCODING deferred features)
 
 	entity_value_tok (
-		buf: SPECIAL [CHARACTER] start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		buf: SPECIAL [CHARACTER] start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]
 		entity_buffer: LIST [XT_ENTITY_NAME]
 	): INTEGER
 			-- Tokenize inside an entity value literal.
@@ -95,7 +95,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 
 			else
 				from until index >= end_index or done loop
-					bt_code := bt_table [buf [index].code]
+					bt_code := BT_table [buf [index].code]
 					inspect bt_code
 						when BT_non_xml, BT_malform, BT_continuation_byte then
 							next_token_index := index; Result := Tok_invalid; done := True
@@ -113,7 +113,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 							end
 						when BT_ampersand then
 							if index = start then
-								Result := scan_ref (buf, Tok_literal, index + 1, end_index, bt_table, entity_buffer)
+								Result := scan_ref (buf, Tok_literal, index + 1, end_index, BT_table, entity_buffer)
 							else
 								next_token_index := index; Result := Tok_data_chars
 							end
@@ -141,7 +141,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 								if index >= end_index then
 									Result := Tok_trailing_CR
 								else
-									inspect bt_table [buf [index].code] when BT_LF then
+									inspect BT_table [buf [index].code] when BT_LF then
 										index := index + 1
 									end
 									next_token_index := index; Result := Tok_data_newline
@@ -160,7 +160,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 			end
 		end
 
-	skip_whitespace (buf: SPECIAL [CHARACTER]; start_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
+	skip_whitespace (buf: SPECIAL [CHARACTER]; start_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
 			-- Index of first non-whitespace byte at or after start_index.
 		require
 			valid_start_index: start_index >= 0
@@ -168,7 +168,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 			done: BOOLEAN
 		do
 			from Result := start_index until Result >= buf.count or done loop
-				inspect bt_table [buf [Result].code]
+				inspect BT_table [buf [Result].code]
 					when BT_whitespace, BT_CR, BT_LF then
 						Result := Result + 1
 				else
@@ -232,7 +232,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 
 feature -- Status query
 
-	is_public_id (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): BOOLEAN
+	is_public_id (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): BOOLEAN
 			-- True when `buf [start_index] .. buf [end_index]' is a valid PUBLIC identifier literal.
 			-- On False, `bad_char_index' is set to the invalid character's index.
 		local
@@ -240,7 +240,7 @@ feature -- Status query
 		do
 			ok := True
 			from index := start_index until index >= end_index or not ok loop
-				inspect bt_table [buf [index].code]
+				inspect BT_table [buf [index].code]
 					when	BT_digit, BT_hex_digit, BT_minus, BT_apostrophe, BT_left_parenthesis, BT_right_parenthesis,
 							BT_plus, BT_comma, BT_forward_slash, BT_equals, BT_question, BT_CR, BT_LF, BT_semicolon,
 							BT_exclamation, BT_asterisk, BT_percent, BT_hash, BT_colon, BT_whitespace,
@@ -254,9 +254,16 @@ feature -- Status query
 			Result := ok
 		end
 
+	is_predefined_entity (name: STRING): BOOLEAN
+		do
+			if attached name.area as area then
+				Result := area [0] = '&' and then predefined_entity_code (area, 1, name.count - 2) > 0
+			end
+		end
+
 feature -- Position tracking
 
-	update_position (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; pos: XT_POSITION; bt_table: SPECIAL [INTEGER])
+	update_position (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; pos: XT_POSITION; BT_table: SPECIAL [INTEGER])
 			-- Update line and column numbers by scanning `buf [start_index] .. buf [end_index - 1]'
 		require
 			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
@@ -264,7 +271,7 @@ feature -- Position tracking
 			index: INTEGER
 		do
 			from index := start_index until index >= end_index loop
-				inspect bt_table [buf [index].code]
+				inspect BT_table [buf [index].code]
 					when BT_CR then
 						pos.advance_line
 						if index + 1 < end_index and buf [index + 1] = '%N' then

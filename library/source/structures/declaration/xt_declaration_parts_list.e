@@ -75,6 +75,21 @@ feature -- Access
 
 feature -- Status query
 
+	has_notation_data: BOOLEAN
+		do
+			Result := count >= 2 and then i_th (count - 1) = NDATA
+		end
+
+	is_public: BOOLEAN
+		do
+			Result := count >= 2 and then i_th (2) = PUBLIC
+		end
+
+	is_system: BOOLEAN
+		do
+			Result := count >= 2 and then i_th (2) = SYSTEM
+		end
+
 	is_valid: BOOLEAN
 		deferred
 		end
@@ -85,7 +100,7 @@ feature -- Element change
 		require
 			valid_range: start_index <= end_index + 1
 		local
-			i, colon_index: INTEGER; l_area: like area_v2; l_token_area: like token_area
+			i: INTEGER; l_area: like area_v2; l_token_area: like token_area
 			name: STRING; check_for_name: BOOLEAN
 		do
 			i := count + 1
@@ -117,8 +132,7 @@ feature -- Element change
 						if attached name_constant (buffer, start_index, end_index, token) as l_name then
 							name := l_name
 						else
-							colon_index := index_of (buffer, ':', start_index, end_index)
-							name := name_cache.item (buffer, start_index, end_index, colon_index.max (0))
+							name := new_name (buffer, start_index, end_index)
 						end
 						l_area.extend (name); l_token_area.extend (token)
 					end
@@ -170,6 +184,14 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	new_name (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): STRING_8
+		local
+			colon_index: INTEGER
+		do
+			colon_index := index_of (buffer, ':', start_index, end_index)
+			Result := name_cache.item (buffer, start_index, end_index, colon_index.max (0))
+		end
+
 	new_value (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; newline_or_tab_found: BOOLEAN): STRING_8
 		do
 			Result := new_attribute_value (buffer, start_index, end_index, newline_or_tab_found)
@@ -203,7 +225,7 @@ feature {NONE} -- Constants
 
 	Reserved_names: SPECIAL [STRING]
 		once
-			Result := (<< CDATA, PUBLIC, SYSTEM >>).area
+			Result := (<< CDATA, NDATA, PUBLIC, SYSTEM >>).area
 		end
 
 	Hash_fixed: STRING = "#FIXED"

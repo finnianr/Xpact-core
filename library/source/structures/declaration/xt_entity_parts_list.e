@@ -50,9 +50,9 @@ feature {NONE} -- Implementation
 	new_value (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; newline_or_tab_found: BOOLEAN): STRING_8
 		do
 			if newline_or_tab_found then
-				create {XT_ABNORMAL_STRING} Result.make (buffer, start_index, end_index, newline_or_tab_found)
+				Result := new_abnormal_string (buffer, start_index, end_index)
 			else
-				Result := new_attribute_value (buffer, start_index, end_index, newline_or_tab_found)
+				Result := new_substring (buffer, start_index, end_index)
 			end
 		end
 

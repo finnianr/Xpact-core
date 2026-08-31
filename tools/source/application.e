@@ -151,6 +151,30 @@ feature {NONE} -- Application options
 			end
 		end
 
+	do_expat_compare (app_option: STRING)
+		local
+			comparison: XT_EXPAT_COMPARISON; file_path: PATH
+		do
+			file_path := last_path_argument
+			if Environment.file_exists (file_path, IO.Output) then
+				create comparison.make (file_path, IO.Output)
+				comparison.execute
+				if comparison.both_agree then
+					if comparison.both_failed then
+						IO.put_string ("Both failed for same reason OK")
+					else
+						IO.put_integer (comparison.pass_count)
+						IO.put_character ('/')
+						IO.put_integer (comparison.pass_count)
+						IO.put_string (" tests agree OK")
+					end
+					IO.put_new_line
+				end
+			else
+				put_usage (app_option)
+			end
+		end
+
 	do_print (app_option: STRING)
 		local
 			file_path: PATH
@@ -220,6 +244,7 @@ feature {NONE} -- Factory
 				[agent do_count_tags,		"-count_tags"],
 				[agent do_corpus_test,		"-corpus_test"],
 				[agent do_crc_32,				"-crc_32"],
+				[agent do_expat_compare,	"-expat_compare"],
 				[agent do_print,				"-print"],
 				[agent do_test,				"-test"],
 				[agent do_test_files,		"-test_files"],
@@ -229,39 +254,41 @@ feature {NONE} -- Factory
 
 	new_usage_table: HASH_TABLE [STRING, STRING]
 		local
-			usage: STRING; s: XT_STRING_8_ROUTINES
+			usage, word: STRING; s: XT_STRING_8_ROUTINES
 		do
 			create Result.make (11)
 			usage := s.Empty_string
 			across new_application_table.current_keys as l_option loop
-				inspect l_option [2]
-					when 'b' then
-						usage := new_usage_text (l_option, "<benchmark-dir-path>")
-					when 'c' then
-						if l_option.ends_with ("tags") then
-							usage := new_usage_text (l_option, Bench_mark_options)
+				word := l_option.split ('_').first; word.remove_head (1)
+				if word ~ "benchmark" then
+					usage := new_usage_text (l_option, "<benchmark-dir-path>")
+				elseif word ~ "crc" then
+					usage := new_usage_text (l_option, "<data-type> " + Bench_mark_options +
+						"%NOPTIONAL: -trace. Trace all CRC-32 stages step by step for debugging" +
+						"%NValid XML data types: " + s.key_set_string (Data_type_table.current_keys, False)
+					)
+				elseif word ~ "count" then
+					usage := new_usage_text (l_option, Bench_mark_options)
 
-						elseif l_option.ends_with ("32") then
-							usage := new_usage_text (l_option, "<data-type> " + Bench_mark_options +
-								"%NOPTIONAL: -trace. Trace all CRC-32 stages step by step for debugging" +
-								"%NValid XML data types: " + s.key_set_string (Data_type_table.current_keys, False)
-							)
-						else
-							usage := new_usage_text (l_option, "<corpus-xml-config-path>")
-						end
-					when 'p' then
-						usage := new_usage_text (l_option, "<xml-file-path>")
-					when 't' then
-						if l_option.ends_with ("files") then
-							usage := new_usage_text (l_option, "[-keep_logs] (<XML-file-path> | <dir-pattern>)" +
-								"%N eg. %"~/Documents/*.docx%""
-							)
-						else
-							usage := new_usage_text (l_option, "<test-name>")
-						end
-					when 'x' then
-						usage := new_usage_text (l_option, "[-resume_at <file-count>] <dir-path>")
+				elseif word ~ "corpus" then
+					usage := new_usage_text (l_option, "<corpus-xml-config-path>")
 
+				elseif word ~ "expat" then
+					usage := new_usage_text (l_option, "<xml-path>")
+
+				elseif word ~ "print" then
+					usage := new_usage_text (l_option, "<xml-file-path>")
+
+				elseif l_option ~ ("test_files") then
+					usage := new_usage_text (l_option, "[-keep_logs] (<XML-file-path> | <dir-pattern>)" +
+						"%N eg. %"~/Documents/*.docx%""
+					)
+
+				elseif word ~ ("test") then
+					usage := new_usage_text (l_option, "<test-name>")
+
+				elseif word ~ ("xml") then
+					usage := new_usage_text (l_option, "[-resume_at <file-count>] <dir-path>")
 				else
 					usage := new_usage_text (l_option, "<dir-path>")
 				end

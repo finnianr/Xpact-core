@@ -119,7 +119,7 @@ feature {NONE} -- Token processing
 
 				when Tok_decl_close then
 					inspect declaration_stack.count when 2 then
-						on_close_declaration (declaration)
+						Result := on_close_declaration (declaration)
 						declaration_stack.remove_tail (1)
 					else
 						Result := Error_syntax; put_boolean (done, True)
@@ -144,7 +144,13 @@ feature {NONE} -- Token processing
 					inspect declaration
 						when ATTLIST, ENTITY, PARAMETER_ENTITY then
 							if declaration_stack.count = 2 then
-								parts_list.extend (buf, index + 1, end_index - 1, token, newline_or_tab_found)
+								if attached expanded_dtd_literal (buf, index, end_index) as str
+									and then attached str.area as area
+								then
+									parts_list.extend (area, 0, str.count - 1, token, newline_or_tab_found)
+								else
+									parts_list.extend (buf, index + 1, end_index - 1, token, newline_or_tab_found)
+								end
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end
@@ -175,12 +181,12 @@ feature {NONE} -- Token processing
 					else end
 
 				when Tok_param_entity_ref then
-					name := parameter_name_cache.item (buf, index + 1, end_index - 1, 0)
+					name := parameter_name_cache.item (buf, index + 1, end_index - 1)
 					if attached parameter_entity_table [name] as parameter then
 						parameter.set_referenced
 					end
 
-				when Tok_open_parenthesis, Tok_close_parenthesis, Tok_or then
+				when Tok_open_parenthesis, Tok_close_parenthesis, Tok_or, Tok_char_ref then
 					parts_list.set_last_token (token)
 
 			else
@@ -346,7 +352,7 @@ feature {NONE} -- Token processing
 
 feature {NONE} -- Event handlers
 
-	on_close_declaration (declaration: INTEGER)
+	on_close_declaration (declaration: INTEGER): INTEGER
 		do
 			inspect declaration
 				when ATTLIST then
@@ -363,6 +369,7 @@ feature {NONE} -- Event handlers
 				when ENTITY then
 					if attached entity_parts_list as parts_list and then parts_list.is_valid then
 						parts_list.extend_table (entity_table)
+						Result := on_entity (parts_list, False)
 						parts_list.wipe_out
 					end
 
@@ -371,10 +378,61 @@ feature {NONE} -- Event handlers
 						if parts_list.is_valid then
 							parameter_entity_table.put (parts_list.new_parameter, parts_list.first)
 						end
+						Result := on_entity (parts_list, True)
 						parts_list.wipe_out
 					end
 			else
 			end
+		end
+
+	on_entity (parts_list: XT_DECLARATION_PARTS_LIST; is_parameter_entity: BOOLEAN): INTEGER
+		local
+			value, base, system_id, public_id, notation_name: detachable STRING
+			name: STRING
+		do
+			if parts_list.count > 1 then
+				name := parts_list.first
+				if parts_list.is_public then
+					inspect parts_list.count when 4 .. 6 then
+						public_id := parts_list [3]; system_id := parts_list [4]
+						if parts_list.count > 4 then
+							if parts_list.count = 6 and parts_list [5] = NDATA then
+								notation_name := parts_list [6]
+							else
+								Result := Error_syntax
+							end
+						end
+					else
+						Result := Error_syntax
+					end
+				elseif parts_list.is_system then
+					inspect parts_list.count when 3 .. 5 then
+						system_id := parts_list [3]
+						if parts_list.count > 3 then
+							if parts_list.count = 5 and parts_list [4] = NDATA then
+								notation_name := parts_list [5]
+							else
+								Result := Error_syntax
+							end
+						end
+					else
+						Result := Error_syntax
+					end
+
+				elseif parts_list.count = 2 then
+					value := parts_list [2]
+				else
+					Result := Error_syntax
+				end
+			else
+				Result := Error_syntax
+				name := Empty_string
+			end
+			inspect Result when Error_none then
+				if not is_predefined_entity (name) then
+					on_entity_declaration (name, value, base, system_id, public_id, notation_name, is_parameter_entity)
+				end
+			else end
 		end
 
 	on_doctype_declaration (parts_list: XT_DOCUMENT_TYPE_PARTS_LIST; has_internal_subset: BOOLEAN)
@@ -402,6 +460,40 @@ feature {NONE} -- Implementation
 				if same_characters (buf, offset, offset + name.count - 1, name) then
 					Result := @ name.cursor_index
 				end
+			end
+		end
+
+	expanded_dtd_literal (buf: like buffer; start_index, end_index: INTEGER): detachable STRING
+		-- a string with expanded entities or `Void' if nothing expandable in document
+		-- type definition
+		require
+			valid_start_character: Quote_marks.has (buf [start_index])
+			valid_end_character: Quote_marks.has (buf [end_index])
+		local
+			index_buffer: SPECIAL [INTEGER]; entity_buffer: ARRAYED_LIST [XT_ENTITY_NAME]
+			amp_index, tok, i: INTEGER; found: BOOLEAN
+		do
+			amp_index := index_of (buf, '&', start_index, end_index)
+			index_buffer := scanned_index_x4_buffer; entity_buffer := scanned_entity_buffer
+			if amp_index > -1 then
+				entity_buffer.wipe_out
+				index_buffer.wipe_out
+				inspect scan_attribute_value (buf, start_index, end_index + 1, Byte_type_table, index_buffer, entity_buffer)
+					when 0 then
+						if attached entity_buffer.area as area then
+							from i := 0 until i = area.count or found loop
+								if area [i].is_dtd_expandable then
+									found := True
+								else
+									i := i + 1
+								end
+							end
+							if found then
+								Result := entity_table.expanded_value (buf, start_index + 1, end_index - 1, area, True, False)
+							end
+						end
+				else end
+				index_buffer.wipe_out
 			end
 		end
 
@@ -564,7 +656,7 @@ feature {NONE} -- Internal attributes
 	has_dtd_section: BOOLEAN
 		-- True if prolog has document type definition (DTD) after DOCTYPE x [
 
-	parameter_name_cache: XT_NAME_CACHE
+	parameter_name_cache: XT_PARAMETER_ENTITY_NAME_CACHE
 		-- efficient lookup of parameter entity names
 
 	parameter_entity_table: HASH_TABLE [XT_PARAMETER_ENTITY, STRING]

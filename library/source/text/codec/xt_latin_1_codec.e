@@ -23,7 +23,7 @@ inherit
 		end
 
 create
-	make_shared, make_from_string, make_empty, make_filled
+	make, make_shared, make_from_string, make_empty, make_filled
 
 feature -- Basic operations
 

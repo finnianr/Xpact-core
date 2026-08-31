@@ -1,6 +1,6 @@
 note
 	description: "[
-		${XT_NAME_CACHE} specialized for entity names like: `&rdf; &#10; &#x20AC;' etc
+		${XT_PARAMETER_ENTITY_NAME_CACHE} repurposed for entity names like: `&rdf; &#10; &#x20AC;' etc
 	]"
 
 	author: "Finnian Reilly"
@@ -15,12 +15,11 @@ class
 	XT_ENTITY_NAME_CACHE
 
 inherit
-	XT_NAME_CACHE
+	XT_PARAMETER_ENTITY_NAME_CACHE
 		rename
-			item as name_item
+			Percent as Ampersand
 		redefine
-			buffer_string_8, bucket_index, name_item, make, same_string, reset,
-			Default_string
+			Ampersand, bucket_index, make, reset
 		end
 
 	XT_STRING_CONSTANTS
@@ -50,11 +49,6 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): like Default_string
-		do
-			Result := name_item (buffer, start_index, end_index, 0)
-		end
-
 	predefined_table: HASH_TABLE [STRING, XT_ENTITY_NAME]
 
 feature -- Element change
@@ -72,14 +66,6 @@ feature -- Element change
 				end
 				table.forth
 			end
-		end
-
-feature {XT_PARSING_BUFFERS} -- Implementation
-
-	buffer_string_8 (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): like Default_string
-		-- take buffer segment from `start_index' to `end_index' and insert into "&;" at position 2
-		do
-			create Result.make_from_buffer (buffer, start_index, end_index)
 		end
 
 feature {NONE} -- Implementation
@@ -101,31 +87,7 @@ feature {NONE} -- Implementation
 			Result := hash_index (buffer, start_index, end_index)
 		end
 
-	name_item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like Default_string
-		-- "abc" where `buffer [start_index] = 'a'' and `buffer [end_index] = 'c''
-		-- results in "&abc;"
-		require else
-			ampersand_and_semicolon_excluded:
-				buffer [start_index] /= '&' and buffer [end_index] /= ';'
-		do
-			Result := Precursor (buffer, start_index, end_index, colon_index)
-		end
-
-	same_string (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; name: STRING_8): BOOLEAN
-		local
-			i: INTEGER
-		do
-			if end_index - start_index + 1 = name.count - 2 and then attached name.area as l_area then
-				Result := True
-				from i := start_index until i > end_index or not Result loop
-					if buffer [i] = l_area [i - start_index + 1] then
-						i := i + 1
-					else
-						Result := False
-					end
-				end
-			end
-		end
+feature {NONE} -- Factory
 
 	new_predefined_table: HASH_TABLE [CHARACTER, STRING]
 		do
@@ -137,9 +99,6 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Constants
 
-	Default_string: XT_ENTITY_NAME
-		once
-			create Result.make_empty
-		end
+	Ampersand: CHARACTER = '&'
 
 end

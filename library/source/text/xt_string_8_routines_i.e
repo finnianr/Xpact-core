@@ -34,9 +34,9 @@ feature {NONE} -- Access
 		end
 
 	frozen char_ref_number (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
-			-- Parse &#N; or &#xH; starting at '&'
-			-- Unicode code point of the character reference starting at start_index ('&').
-			-- Returns -1 if the value is not a legal XML character.
+		-- Parse &#N; or &#xH; starting at '&'
+		-- Unicode code point of the character reference starting at start_index ('&').
+		-- Returns -1 if the value is not a legal XML character.
 		local
 			index: INTEGER; is_hex: BOOLEAN; c: CHARACTER
 		do
@@ -78,6 +78,15 @@ feature {NONE} -- Access
 			else
 				Result := area_substring (area, lower, upper, True)
 			end
+		end
+
+	frozen new_abnormal_string (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): XT_ABNORMAL_STRING
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		require
+			valid_upper: area.valid_index (upper)
+		do
+			create Result.make (upper - lower + 1)
+			append_area (Result, area, lower, upper)
 		end
 
 	frozen new_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_8

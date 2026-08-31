@@ -1325,6 +1325,18 @@ feature {NONE} -- Xpact core event handlers
 			end
 		end
 
+	on_entity_declaration (
+		entity_name: STRING; value, base, system_id, public_id, notation_name: detachable STRING
+		is_parameter_entity: BOOLEAN
+	)
+		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
+		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity,
+		-- 	const XML_Char *value, int value_length, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId,
+		-- 	const XML_Char *notationName);
+		do
+		end
+		
 	on_tag_end (name: STRING_8)
 		local
 			call_back_ptr: POINTER

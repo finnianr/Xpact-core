@@ -95,6 +95,15 @@ feature -- Tests
 			IO.put_new_line
 		end
 
+	test_date_formatting
+		local
+			now: DATE_TIME
+		do
+			create now.make_now
+			IO.put_string (now.formatted_out ("mmm-[0]dd.[0]hh"))
+			IO.put_new_line
+		end
+
 	test_file_info
 		local
 			info: FILE_INFO
@@ -178,6 +187,7 @@ feature {NONE} -- Implementation
 			create Result.make_from_iterable_tuples (<<
 				[agent test_buffer_pool, "buffer_pool"],
 				[agent test_chunk_reading, "chunk_reading"],
+				[agent test_date_formatting, "date_formatting"],
 				[agent test_file_info, "file_info"],
 				[agent test_ntfs_link_detection, "ntfs_link_detection"],
 				[agent test_mount_driver_name, "mount_driver_name"]

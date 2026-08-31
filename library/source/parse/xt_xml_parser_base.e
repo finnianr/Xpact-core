@@ -527,7 +527,7 @@ feature {NONE} -- Processor dispatch
 								if entity_name.is_open then
 									Result := Error_recursive_entity_ref; done := True
 
-								elseif attached entity_table.item (entity_name, False) as entity_value then
+								elseif attached entity_table.item (entity_name) as entity_value then
 									buffer_index_copy := buffer_index -- save field
 									buffer_index := 0
 									entity_name.open

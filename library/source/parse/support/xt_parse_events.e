@@ -85,6 +85,21 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
+	on_entity_declaration (
+		entity_name: STRING; value, base, system_id, public_id, notation_name: detachable STRING
+		is_parameter_entity: BOOLEAN
+	)
+		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
+		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity,
+		-- 	const XML_Char *value, int value_length, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId,
+		-- 	const XML_Char *notationName);
+		require
+			entity_name_has_delimiters: entity_name.count >= 3
+				and then (once "&%%").has (entity_name [1]) and then entity_name [entity_name.count] = ';'
+		deferred
+		end
+
 	on_tag_end (name: STRING_8)
 		deferred
 		end

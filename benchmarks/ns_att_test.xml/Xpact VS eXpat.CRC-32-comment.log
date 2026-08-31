@@ -77,3 +77,30 @@ ns_att_test.xml: eXpat passes = 16; Xpact-core passes = 20 (x1.25 to eXpat)
 
 2026 20 AUG 19:30
 ns_att_test.xml: eXpat passes = 15; Xpact-core passes = 20 (x1.33 to eXpat)
+
+2026 27 AUG 10:41
+ns_att_test.xml: eXpat passes = 15; Xpact-core passes = 20 (x1.33 to eXpat)
+
+2026 29 AUG 16:50
+ns_att_test.xml: eXpat passes = 16; Xpact-core passes = 17 (x1.06 to eXpat)
+
+2026 29 AUG 23:23
+ns_att_test.xml: eXpat passes = 16; Xpact-core passes = 19 (x1.19 to eXpat)
+
+2026 30 AUG 8:18
+ns_att_test.xml: eXpat passes = 16; Xpact-core passes = 19 (x1.19 to eXpat)
+
+2026 30 AUG 9:57
+ns_att_test.xml: eXpat passes = 16; Xpact-core passes = 20 (x1.25 to eXpat)
+
+2026 30 AUG 11:15
+ns_att_test.xml: eXpat passes = 16; Xpact-core passes = 20 (x1.25 to eXpat)
+
+2026 30 AUG 11:41
+ns_att_test.xml: eXpat passes = 15; Xpact-core passes = 20 (x1.33 to eXpat)
+
+2026 30 AUG 15:59
+ns_att_test.xml: eXpat passes = 15; Xpact-core passes = 20 (x1.33 to eXpat)
+
+2026 30 AUG 16:18
+ns_att_test.xml: eXpat passes = 15; Xpact-core passes = 20 (x1.33 to eXpat)

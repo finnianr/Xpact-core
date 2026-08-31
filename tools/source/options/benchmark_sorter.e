@@ -44,7 +44,7 @@ feature -- Basic operations
 
 	execute
 		local
-			path: PATH; log_tail: XT_COMMAND_OUTPUT_FILE; index: INTEGER
+			path: PATH; log_tail: XT_COMMAND_OUTPUT_FILE; index: INTEGER; date_time: DATE_TIME
 			metric_lines: ARRAYED_LIST [STRING]; array: SORTABLE_ARRAY [STRING]
 			report_file: PLAIN_TEXT_FILE; report_path: PATH; relative_performance: DOUBLE
 		do
@@ -78,7 +78,8 @@ feature -- Basic operations
 			end
 			create array.make_from_array (metric_lines.to_array)
 			array.sort
-			report_path := dir_path.extended ("benchmark-report.txt")
+			create date_time.make_now
+			report_path := dir_path.extended ("benchmark-report-" + date_time.formatted_out ("mmm-[0]dd.[0]hh") + ".txt")
 			create report_file.make_with_path (report_path)
 			if attached report_file as f and then attached {ARRAY [PLAIN_TEXT_FILE]} << f, IO.Output >> as output_list then
 				f.open_write

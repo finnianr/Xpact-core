@@ -12,9 +12,17 @@ note
 class
 	XT_STRING_CONSTANTS
 
-feature {NONE} -- Standard strings
+feature {NONE} -- Declaration qualifiers
 
 	CDATA: STRING = "CDATA"
+
+	NDATA: STRING = "NDATA"
+
+	PUBLIC: STRING = "PUBLIC"
+
+	SYSTEM: STRING = "SYSTEM"
+
+feature {NONE} -- Standard strings
 
 	Cdata_lsqb: STRING
 		once
@@ -22,6 +30,8 @@ feature {NONE} -- Standard strings
 		end
 
 	Comment_declaration: STRING = "<!--"
+
+	Quote_marks: STRING = "'%""
 
 	Xml_lower: STRING = "xml"
 
@@ -55,10 +65,6 @@ feature {NONE} -- Document definition strings
 		end
 
 	Http: STRING = "http"
-
-	PUBLIC: STRING = "PUBLIC"
-
-	SYSTEM: STRING = "SYSTEM"
 
 	Unknown_id: STRING = "Unknown"
 

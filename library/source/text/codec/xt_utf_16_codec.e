@@ -39,7 +39,7 @@ inherit
 			make_shared
 		end
 
-	EL_STRING_H_C_API
+	EL_EIFFEL_C_API
 		undefine
 			copy, is_equal
 		end
@@ -246,7 +246,7 @@ feature {NONE} -- Implementation
 		require
 			valid_index: i < byte_count - 1
 		do
-			Result := c_read_natural_16 (a_area, i)
+			Result := eif_read_natural_16 (a_area, i)
 		end
 
 end

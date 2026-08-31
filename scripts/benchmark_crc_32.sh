@@ -9,7 +9,7 @@ echo
 echo Benchmarking Eiffel Xpact-core and C eXpat
 echo
 
-type_list="attribute cdata comment pi-name pi-data tag text"
+type_list="attribute cdata comment tag text"
 
 echo vision2.ecf
 for type in $type_list; do

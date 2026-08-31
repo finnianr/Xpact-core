@@ -21,7 +21,7 @@ inherit
 		end
 
 create
-	make_shared, make_empty, make_from_string
+	make, make_shared, make_empty, make_from_string
 
 feature -- Status query
 

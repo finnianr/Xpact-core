@@ -23,3 +23,34 @@ mandarin-names-and-text.xsl: eXpat passes = 1992; Xpact-core passes = 2640 (x1.3
 
 2026 20 AUG 19:28
 mandarin-names-and-text.xsl: eXpat passes = 1986; Xpact-core passes = 2723 (x1.37 to eXpat)
+
+2026 27 AUG 10:39
+mandarin-names-and-text.xsl: eXpat passes = 1981; Xpact-core passes = 2787 (x1.41 to eXpat)
+
+2026 29 AUG 16:48
+mandarin-names-and-text.xsl: eXpat passes = 1983; Xpact-core passes = 2305 (x1.16 to eXpat)
+
+2026 29 AUG 23:21
+mandarin-names-and-text.xsl: eXpat passes = 1985; Xpact-core passes = 2687 (x1.35 to eXpat)
+
+2026 29 AUG 23:56
+Moved is_invalid_character from to XT_BUFFER_STRING_8 XT_UTF_8_VALIDATION
+mandarin-names-and-text.xsl: eXpat passes = 1991; Xpact-core passes = 2662 (x1.34 to eXpat)
+
+2026 30 AUG 8:16
+mandarin-names-and-text.xsl: eXpat passes = 1977; Xpact-core passes = 2670 (x1.35 to eXpat)
+
+2026 30 AUG 9:56
+mandarin-names-and-text.xsl: eXpat passes = 1983; Xpact-core passes = 2817 (x1.42 to eXpat)
+
+2026 30 AUG 11:14
+mandarin-names-and-text.xsl: eXpat passes = 1992; Xpact-core passes = 2868 (x1.44 to eXpat)
+
+2026 30 AUG 11:40
+mandarin-names-and-text.xsl: eXpat passes = 1950; Xpact-core passes = 2795 (x1.43 to eXpat)
+
+2026 30 AUG 15:57
+mandarin-names-and-text.xsl: eXpat passes = 1984; Xpact-core passes = 2852 (x1.44 to eXpat)
+
+2026 30 AUG 16:16
+mandarin-names-and-text.xsl: eXpat passes = 1991; Xpact-core passes = 2854 (x1.43 to eXpat)

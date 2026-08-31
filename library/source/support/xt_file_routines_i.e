@@ -168,6 +168,9 @@ feature {NONE} -- Constants
 			>>)
 		end
 
-	PK_string: STRING = "PK"
+	PK_string: EL_CHARACTER_8_BUFFER
+		once
+			create Result.make_from_string ("PK")
+		end
 
 end

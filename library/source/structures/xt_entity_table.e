@@ -53,7 +53,7 @@ feature -- Status report
 
 feature -- Access
 
-	item (key: XT_ENTITY_NAME; as_attribute_value: BOOLEAN): detachable STRING
+	item (key: XT_ENTITY_NAME): detachable STRING
 		-- if `as_attribute_value' is `True' normalize Result for attribute values
 		--  (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
 		require
@@ -72,22 +72,13 @@ feature -- Access
 					end
 				end
 			else
-				if attached table_item (key) as value then
-					if value.same_type (Empty_string) then
-						Result := value
-
-					elseif as_attribute_value and then attached {XT_ABNORMAL_STRING} value as abnormal then
-						Result := abnormal.to_attribute
-					else
-						Result := value
-					end
-				end
+				Result := table_item (key)
 			end
 		end
 
 	expanded_value (
 		buffer: SPECIAL [CHARACTER_8]; lower_index, upper_index: INTEGER; entity: SPECIAL [XT_ENTITY_NAME]
-		keep_ref: BOOLEAN
+		is_dtd_literal, keep_ref: BOOLEAN
 	): STRING
 		-- copy of `value' with any entities like &amp; expanded.
 		-- `undefined_entity_found' set to true if any were undefined
@@ -106,10 +97,20 @@ feature -- Access
 					elseif attached entity [i] as name
 						and then same_characters (buffer, amp_index, amp_index + name.count - 1, name)
 					then
-						if attached item (name, True) as entity_value then
-							Result.append (entity_value)
+						if is_dtd_literal implies name.is_dtd_expandable then
+							if attached item (name) as entity_value then
+								Result.append (entity_value)
+								if entity_value.same_type (Abnormal_string) then
+								-- appended tail requires normalization as per specification
+								-- (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
+									normalize_whitespace (Result.area, Result.count - entity_value.count, Result.count - 1)
+								end
+							else
+								undefined_found := True
+							end
 						else
-							undefined_found := True
+						-- output non expanded-entity for DTD
+							Result.append (name)
 						end
 						start_index := amp_index + name.count
 						i := i + 1
@@ -140,8 +141,6 @@ feature -- Element change
 			merge (entity_cache.predefined_table)
 		end
 
-feature -- Element change
-
 	put (new: STRING; a_name: STRING)
 		do
 			if attached {XT_ENTITY_NAME} a_name as name then
@@ -154,5 +153,10 @@ feature -- Element change
 feature {NONE} -- Internal attributes
 
 	output_buffer: STRING_8
+
+	Abnormal_string: XT_ABNORMAL_STRING
+		once
+			create Result.make (0)
+		end
 
 end

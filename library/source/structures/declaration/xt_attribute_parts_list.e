@@ -32,6 +32,7 @@ feature -- Access
 						when Tok_name, Tok_or then
 						-- Eg. <!ATTLIST glob weight CDATA "50">
 							Result := area_v2 [last_index]
+							
 						when Tok_pound_name then
 							if area_v2 [last_index - 1] = Hash_fixed then
 							-- Eg. <!ATTLIST mime-info xmlns CDATA

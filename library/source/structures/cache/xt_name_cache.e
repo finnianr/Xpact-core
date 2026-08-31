@@ -107,9 +107,7 @@ feature -- Access
 			bucket := area [i]
 			if bucket = Default_bucket then
 				create bucket.make_empty (5)
-
 				area [i] := bucket
-
 			else
 			-- search for match
 				bucket_count := bucket.count
@@ -242,17 +240,20 @@ feature {NONE} -- Implementation
 			i, count: INTEGER
 		do
 			count := end_index - start_index + 1
-			if count = name.count and then attached name.area as l_area
-				and then buffer [start_index] = l_area [0]
-				and then buffer [end_index] = l_area [count - 1]
-			then
-				Result := True
-				from i := 1 until i = count loop
-					if l_area [i] = buffer [start_index + i] then
-						i := i + 1
-					else
-						i := count -- break
-						Result := False
+			if count = name.count and then attached name.area as l_area then
+				inspect count
+					when 1 .. 4 then
+						Result := buffer.same_items (l_area, 0, start_index, count)
+				else
+					if buffer [start_index] = l_area [0] and then buffer [end_index] = l_area [count - 1] then
+						from i := 1; Result := True until i = count loop
+							if l_area [i] = buffer [start_index + i] then
+								i := i + 1
+							else
+								i := count -- break
+								Result := False
+							end
+						end
 					end
 				end
 			end

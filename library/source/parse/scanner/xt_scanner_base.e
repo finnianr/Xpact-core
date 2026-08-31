@@ -37,12 +37,14 @@ inherit
 
 	XT_STRING_8_ROUTINES_I
 
+	EL_STRING_H_C_API
+
 feature {NONE} -- Initialisation
 
 	make
 		do
 			create scanned_entity_buffer.make (5)
-			create index_x4_buffer.make_empty (4)
+			create scanned_index_x4_buffer.make_empty (4)
 			create attribute_list.make (11)
 			name_cache := attribute_list.name_cache
 			entity_cache := attribute_list.entity_cache
@@ -111,7 +113,7 @@ feature {NONE} -- Internal attributes
 	name_cache: XT_NAME_CACHE
 		-- efficient lookup of tag names
 
-	index_x4_buffer: SPECIAL [INTEGER]
+	scanned_index_x4_buffer: SPECIAL [INTEGER]
 
 	scanned_entity_buffer: ARRAYED_LIST [XT_ENTITY_NAME]
 
