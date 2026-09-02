@@ -15,6 +15,7 @@ deferred class
 inherit
 	XT_XML_PARSER_BASE
 		rename
+			on_attribute_list_declaration as on_base_attribute_list_declaration,
 			on_content as on_base_content,
 			on_comment as on_base_commment,
 			on_tag_start as on_base_tag_start,
@@ -34,11 +35,21 @@ feature {NONE} -- Initialisation
 			create text_buffer.make (0)
 		end
 
-feature {NONE} -- Event handlers
+feature {NONE} -- Base event handlers
 
 	on_cdata_section_close
 		do
 			do_with_content (text_buffer)
+		end
+
+	on_base_attribute_list_declaration (
+		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
+		is_required: BOOLEAN
+	)
+		-- typedef void(XMLCALL *XML_AttlistDeclHandler)(
+		--   void *userData, const XML_Char *elname, const XML_Char *attname,
+		--   const XML_Char *att_type, const XML_Char *dflt, int isrequired);
+		do
 		end
 
 	on_base_commment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
@@ -87,6 +98,8 @@ feature {NONE} -- Event handlers
 			do_with_content (text_buffer)
 			on_tag_end (name)
 		end
+
+feature {NONE} -- Event handlers
 
 	on_comment (text: STRING)
 		deferred

@@ -15,6 +15,9 @@ class
 
 inherit
 	XT_DECLARATION_PARTS_LIST
+		redefine
+			is_valid
+		end
 
 create
 	make
@@ -32,7 +35,7 @@ feature -- Access
 						when Tok_name, Tok_or then
 						-- Eg. <!ATTLIST glob weight CDATA "50">
 							Result := area_v2 [last_index]
-							
+
 						when Tok_pound_name then
 							if area_v2 [last_index - 1] = Hash_fixed then
 							-- Eg. <!ATTLIST mime-info xmlns CDATA
@@ -70,8 +73,8 @@ feature -- Status query
 		require
 			valid_list: is_valid
 		do
-			if attached area_v2 [3] as name then
-				Result := name = Hash_fixed or else name = Hash_required
+			if attached area_v2 [3] as l_name then
+				Result := l_name = Hash_fixed or else l_name = Hash_required
 			end
 		end
 
@@ -81,21 +84,14 @@ feature -- Basic operations
 		local
 			default_values_list: ARRAYED_LIST [STRING]
 		do
-			if attached default_value_table [first] as list then
+			if attached default_value_table [name] as list then
 				default_values_list := list
 			else
 				create default_values_list.make (5)
-				default_value_table.extend (default_values_list, first)
+				default_value_table.extend (default_values_list, name)
 			end
 			default_values_list.extend (i_th (2))
 			default_values_list.extend (last)
-		end
-
-feature {NONE} -- Implementation
-
-	new_filled_list (n: INTEGER): like Current
-		do
-			create Result.make (create {like name_cache}.make)
 		end
 
 end

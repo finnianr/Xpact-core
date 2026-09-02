@@ -100,6 +100,13 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
+
+	on_notation_declaration (name: STRING; base, system_id, public_id: detachable STRING)
+		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
+		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
+		deferred
+		end
+
 	on_tag_end (name: STRING_8)
 		deferred
 		end

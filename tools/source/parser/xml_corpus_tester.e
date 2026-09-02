@@ -47,6 +47,7 @@ inherit
 			on_content_ as on_content,
 			on_doctype_declaration_start_ as on_doctype_declaration_start,
 			on_entity_declaration_ as on_entity_declaration,
+			on_notation_declaration_ as on_notation_declaration,
 			on_processing_instruction_ as on_processing_instruction,
 			on_tag_end_ as on_tag_end,
 			on_xml_declaration_ as on_xml_declaration

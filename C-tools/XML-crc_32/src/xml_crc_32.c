@@ -26,12 +26,13 @@ typedef enum {
 	TYPE_XML_DECL,
 	TYPE_DOCTYPE,
 	TYPE_ATTLIST,
-	TYPE_ENTITY
+	TYPE_ENTITY,
+	TYPE_NOTATION
 } data_type_t;
 
 static const char *data_type_name[] = {
 	"text", "cdata", "comment", "tag", "attribute", "attrib-name",
-	"pi-name", "pi-data", "xml-decl", "doctype", "attlist", "entity"
+	"pi-name", "pi-data", "xml-decl", "doctype", "attlist", "entity", "notation"
 };
 
 typedef struct {
@@ -253,6 +254,24 @@ static void XMLCALL on_entity_decl(void *userData, const XML_Char *entityName,
 		crc32_update(ctx, (const unsigned char *) notationName, strlen(notationName));
 }
 
+/* Combines the NOTATION declaration's fields, left to right as supplied to
+ * XML_NotationDeclHandler, into the running checksum: notationName, base,
+ * systemId, publicId. notationName is never NULL; base/systemId/publicId
+ * are skipped when NULL. */
+static void XMLCALL on_notation_decl(void *userData, const XML_Char *notationName,
+                                      const XML_Char *base, const XML_Char *systemId,
+                                      const XML_Char *publicId) {
+	crc_ctx_t *ctx = (crc_ctx_t *) userData;
+	if (ctx->type != TYPE_NOTATION) return;
+	crc32_update(ctx, (const unsigned char *) notationName, strlen(notationName));
+	if (base)
+		crc32_update(ctx, (const unsigned char *) base, strlen(base));
+	if (systemId)
+		crc32_update(ctx, (const unsigned char *) systemId, strlen(systemId));
+	if (publicId)
+		crc32_update(ctx, (const unsigned char *) publicId, strlen(publicId));
+}
+
 #define CHUNK_SIZE 4096
 
 /* Parses the file incrementally in 4096-byte chunks, feeding events into ctx.
@@ -287,6 +306,7 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	XML_SetStartDoctypeDeclHandler(parser, on_start_doctype_decl);
 	XML_SetAttlistDeclHandler(parser, on_attlist_decl);
 	XML_SetEntityDeclHandler(parser, on_entity_decl);
+	XML_SetNotationDeclHandler(parser, on_notation_decl);
 
 	char buf[CHUNK_SIZE];
 	int done = 0;
@@ -318,7 +338,7 @@ static long now_ms(void) {
 static void usage(const char *prog) {
 	fprintf(stderr,
 			"Usage: %s -type <text|cdata|comment|tag|attribute|attrib-name|"
-			"pi-name|pi-data|xml-decl|doctype|attlist|entity> "
+			"pi-name|pi-data|xml-decl|doctype|attlist|entity|notation> "
 			"[-duration <time-window-ms>] [-trace] <xml-file-path>\n",
 			prog);
 }
@@ -392,6 +412,7 @@ int main(int argc, char **argv) {
 	else if (strcmp(type_arg, "doctype") == 0) type = TYPE_DOCTYPE;
 	else if (strcmp(type_arg, "attlist") == 0) type = TYPE_ATTLIST;
 	else if (strcmp(type_arg, "entity") == 0) type = TYPE_ENTITY;
+	else if (strcmp(type_arg, "notation") == 0) type = TYPE_NOTATION;
 	else {
 		fprintf(stderr, "Error: invalid -type '%s'\n", type_arg);
 		usage(argv[0]);

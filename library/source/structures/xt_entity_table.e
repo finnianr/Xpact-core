@@ -76,6 +76,8 @@ feature -- Access
 			end
 		end
 
+	inserted_name: detachable XT_ENTITY_NAME
+
 	expanded_value (
 		buffer: SPECIAL [CHARACTER_8]; lower_index, upper_index: INTEGER; entity: SPECIAL [XT_ENTITY_NAME]
 		is_dtd_literal, keep_ref: BOOLEAN
@@ -125,15 +127,6 @@ feature -- Access
 			undefined_entity_found := undefined_found
 		end
 
-feature -- Comparison
-
-	same_keys (a_search_key, a_key: XT_ENTITY_NAME): BOOLEAN
-			-- Does `a_search_key' equal to `a_key'?
-			--| Default implementation is using ~.
-		do
-			Result := a_search_key = a_key
-		end
-
 feature -- Element change
 
 	set_predefined (entity_cache: XT_ENTITY_NAME_CACHE)
@@ -142,12 +135,25 @@ feature -- Element change
 		end
 
 	put (new: STRING; a_name: STRING)
+		local
+			l_name: XT_ENTITY_NAME
 		do
 			if attached {XT_ENTITY_NAME} a_name as name then
-				put_name (new, name)
+				l_name := name
 			else
-				put_name (new, create {XT_ENTITY_NAME}.make_shared (a_name))
+				create l_name.make_shared (a_name)
 			end
+			put_name (new, l_name)
+			inserted_name := if inserted then l_name else Void end
+		end
+
+feature {NONE} -- Implementation
+
+	same_keys (a_search_key, a_key: XT_ENTITY_NAME): BOOLEAN
+			-- Does `a_search_key' equal to `a_key'?
+			--| Default implementation is using ~.
+		do
+			Result := a_search_key = a_key
 		end
 
 feature {NONE} -- Internal attributes

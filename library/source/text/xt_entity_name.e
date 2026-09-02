@@ -55,6 +55,11 @@ feature -- Status query
 	is_dtd_expandable: BOOLEAN
 		-- `True' if entity should be expanded in literal values referenced in document type definition
 
+	has_notation_tag: BOOLEAN
+		-- `True' if entity was assigned with an NDATA type
+		-- <!ENTITY img_gif SYSTEM "photo.gif" NDATA gif>
+		-- It is not permissible to reference this entity anywhere if `True'
+
 feature -- Status change
 
 	close
@@ -65,6 +70,11 @@ feature -- Status change
 	open
 		do
 			is_open := True
+		end
+
+	set_has_notation_tag
+		do
+			has_notation_tag := True
 		end
 
 end

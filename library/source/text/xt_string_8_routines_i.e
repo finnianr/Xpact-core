@@ -67,72 +67,10 @@ feature {NONE} -- Access
 			end
 		end
 
-	frozen new_attribute_value (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; has_newline_or_tab: BOOLEAN): STRING_8
-		-- `lower .. upper' substring of `area' placed in `output_area'
-		require
-			valid_upper: area.valid_index (upper)
-		do
-			if has_newline_or_tab then
-				Result := area_substring (area, lower, upper, True)
-				normalize_whitespace (Result.area, 0, Result.count - 1)
-			else
-				Result := area_substring (area, lower, upper, True)
-			end
-		end
-
-	frozen new_abnormal_string (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): XT_ABNORMAL_STRING
-		-- `lower .. upper' substring of `area' placed in `output_area'
-		require
-			valid_upper: area.valid_index (upper)
-		do
-			create Result.make (upper - lower + 1)
-			append_area (Result, area, lower, upper)
-		end
-
-	frozen new_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_8
-		-- `lower .. upper' substring of `area' placed in `output_area'
-		do
-			Result := area_substring (area, lower, upper, True)
-		end
-
-	frozen new_unicode_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_32
-		-- `lower .. upper' substring of `area' placed in `output_area'
-		local
-			u: UTF_CONVERTER
-		do
-			Result := u.utf_8_string_8_to_string_32 (area_substring (area, lower, upper, False))
-		end
-
-	frozen area_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; keep_ref: BOOLEAN): STRING_8
-		-- `lower .. upper' substring of `area' placed in `output_area'
+	frozen empty_buffer: STRING
 		do
 			Result := Output_buffer
 			Result.wipe_out
-			append_area (Result, area, lower, upper)
-			if keep_ref then
-				Result := Result.twin
-			end
-		ensure
-			null_terminated: Result.area [Result.count] = '%U'
-			not_keeping_definition: not keep_ref implies Result = Output_buffer
-		end
-
-	frozen key_set_string (key_list: ITERABLE [STRING]; keep_ref: BOOLEAN): STRING
-		-- << "a", "b" >> -> "{a, b}"
-		do
-			Result := Output_buffer
-			Result.wipe_out
-			Result.append_character ('{')
-			across key_list as key loop
-				if Result.count > 2 then
-					Result.append_string (", ")
-				end
-				Result.append_string (key)
-			end
-			Result.append_character ('}')
-			if keep_ref then
-				Result := Result.twin
-			end
 		end
 
 	frozen substitute (template: STRING; insertions: ARRAY [STRING]): STRING
@@ -210,6 +148,75 @@ feature {NONE} -- Access
 				Result := -1  -- beyond Unicode range
 			else
 				Result := code
+			end
+		end
+
+feature {NONE} -- Factory
+
+	frozen new_attribute_value (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; has_newline_or_tab: BOOLEAN): STRING_8
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		require
+			valid_upper: area.valid_index (upper)
+		do
+			if has_newline_or_tab then
+				Result := area_substring (area, lower, upper, True)
+				normalize_whitespace (Result.area, 0, Result.count - 1)
+			else
+				Result := area_substring (area, lower, upper, True)
+			end
+		end
+
+	frozen new_abnormal_string (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): XT_ABNORMAL_STRING
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		require
+			valid_upper: area.valid_index (upper)
+		do
+			create Result.make (upper - lower + 1)
+			append_area (Result, area, lower, upper)
+		end
+
+	frozen new_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_8
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		do
+			Result := area_substring (area, lower, upper, True)
+		end
+
+	frozen new_unicode_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_32
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		local
+			u: UTF_CONVERTER
+		do
+			Result := u.utf_8_string_8_to_string_32 (area_substring (area, lower, upper, False))
+		end
+
+	frozen area_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; keep_ref: BOOLEAN): STRING_8
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		do
+			Result := empty_buffer
+			append_area (Result, area, lower, upper)
+			if keep_ref then
+				Result := Result.twin
+			end
+		ensure
+			null_terminated: Result.area [Result.count] = '%U'
+			not_keeping_definition: not keep_ref implies Result = Output_buffer
+		end
+
+	frozen key_set_string (key_list: ITERABLE [STRING]; keep_ref: BOOLEAN): STRING
+		-- << "a", "b" >> -> "{a, b}"
+		do
+			Result := Output_buffer
+			Result.wipe_out
+			Result.append_character ('{')
+			across key_list as key loop
+				if Result.count > 2 then
+					Result.append_string (", ")
+				end
+				Result.append_string (key)
+			end
+			Result.append_character ('}')
+			if keep_ref then
+				Result := Result.twin
 			end
 		end
 

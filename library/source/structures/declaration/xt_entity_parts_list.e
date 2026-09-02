@@ -15,8 +15,15 @@ class
 
 inherit
 	XT_DECLARATION_PARTS_LIST
+		undefine
+			is_valid
 		redefine
 			name_cache, new_value
+		end
+
+	XT_ENTITY_PARTS_I
+		undefine
+			copy, is_equal
 		end
 
 create
@@ -24,10 +31,7 @@ create
 
 feature -- Status query
 
-	is_valid: BOOLEAN
-		do
-			Result := count >= 2
-		end
+	is_parameter: BOOLEAN = False
 
 feature -- Basic operations
 
@@ -35,12 +39,22 @@ feature -- Basic operations
 		do
 			inspect count
 				when 2 then
-					entity_table.put (last, first)
+					entity_table.put (last, name)
 				when 3 then
 				-- &legal; referenced near end of document /usr/share/gnome/help/synaptic/C/synaptic.xml
 				-- Defined as external: <!ENTITY legal SYSTEM "gpl.xml">
 				-- Without putting into table there will be a %N missing in output compared to eXpat
-					entity_table.put (Empty_string, first)
+					entity_table.put (Empty_string, name)
+				when 4 .. 6 then
+					entity_table.put (Empty_string, name)
+					
+					if  i_th (count - 1) = NDATA and i_th_token (count) = Tok_name
+						and then attached entity_table.inserted_name as entity_name
+					then
+					-- attempting to reference this name in document returns the `Error_binary_entity_ref' error
+						entity_name.set_has_notation_tag
+					end
+
 			else
 			end
 		end
@@ -56,13 +70,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	new_filled_list (n: INTEGER): like Current
-		do
-			create Result.make (create {like name_cache}.make)
-		end
-
 feature {NONE} -- Internal attributes
 
 	name_cache: XT_ENTITY_NAME_CACHE
-
 end

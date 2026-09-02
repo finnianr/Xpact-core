@@ -1326,7 +1326,7 @@ feature {NONE} -- Xpact core event handlers
 		end
 
 	on_entity_declaration (
-		entity_name: STRING; value, base, system_id, public_id, notation_name: detachable STRING
+		entity_name: STRING; value, a_base, system_id, public_id, notation_name: detachable STRING
 		is_parameter_entity: BOOLEAN
 	)
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
@@ -1336,7 +1336,13 @@ feature {NONE} -- Xpact core event handlers
 		-- 	const XML_Char *notationName);
 		do
 		end
-		
+
+	on_notation_declaration (name: STRING; a_base, system_id, public_id: detachable STRING)
+		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
+		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
+		do
+		end
+
 	on_tag_end (name: STRING_8)
 		local
 			call_back_ptr: POINTER

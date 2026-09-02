@@ -19,21 +19,20 @@ note
 	date: "2026-08-23 17:50:00 GMT (Sunday 23rd August 2026)"
 	revision: "1"
 
-deferred class
+class
 	XT_DECLARATION_PARTS_LIST
 
 inherit
 	ARRAYED_LIST [STRING]
 		rename
+			first as name,
 			extend as extend_list,
 			make as make_sized,
 			index_of as index_of_item
 		export
 			{NONE} all
-		undefine
-			new_filled_list
 		redefine
-			wipe_out
+			new_filled_list, wipe_out
 		end
 
 	XT_TOKEN_CONSTANTS
@@ -47,6 +46,8 @@ inherit
 		end
 
 	XT_PARSE_CONSTANTS
+		rename
+			NOTATION as NOTATION_
 		export
 			{ANY} Valid_declaration_types
 		undefine
@@ -58,7 +59,10 @@ inherit
 			copy, is_equal
 		end
 
-feature -- Initialization
+create
+	make
+
+feature {NONE} -- Initialization
 
 	make (a_name_cache: like name_cache)
 		do
@@ -73,6 +77,13 @@ feature -- Access
 	type: STRING
 		-- see attribute_types note at end of class
 
+	i_th_token (i: INTEGER): INTEGER
+		require
+			valid_index: valid_index (i)
+		do
+			Result := token_area [i - 1]
+		end
+
 feature -- Status query
 
 	has_notation_data: BOOLEAN
@@ -85,13 +96,9 @@ feature -- Status query
 			Result := count >= 2 and then i_th (2) = PUBLIC
 		end
 
-	is_system: BOOLEAN
-		do
-			Result := count >= 2 and then i_th (2) = SYSTEM
-		end
-
 	is_valid: BOOLEAN
-		deferred
+		do
+			Result := count >= 2
 		end
 
 feature -- Element change
@@ -101,7 +108,7 @@ feature -- Element change
 			valid_range: start_index <= end_index + 1
 		local
 			i: INTEGER; l_area: like area_v2; l_token_area: like token_area
-			name: STRING; check_for_name: BOOLEAN
+			l_name: STRING; check_for_name: BOOLEAN
 		do
 			i := count + 1
 			l_area := area_v2; l_token_area := token_area
@@ -114,7 +121,14 @@ feature -- Element change
 				when Tok_name, Tok_pound_name then
 					inspect last_token
 						when Tok_open_parenthesis then
-							l_area.extend (type); l_token_area.extend (Tok_or)
+							if l_area.count > 1 and l_area [l_area.count - 1] = NOTATION then
+								type.append (NOTATION)
+								i := l_area.count - 1
+								l_area [i] := type
+								l_token_area [i] := Tok_or
+							else
+								l_area.extend (type); l_token_area.extend (Tok_or)
+							end
 							type.append_character ('('); append_area (type, buffer, start_index, end_index)
 
 						when Tok_or then
@@ -129,12 +143,15 @@ feature -- Element change
 						check_for_name := True
 					end
 					if check_for_name then
-						if attached name_constant (buffer, start_index, end_index, token) as l_name then
-							name := l_name
+						if attached name_constant (buffer, start_index, end_index, token) as constant then
+							l_name := constant
+
+						elseif count > 1 and l_area [count - 1] = NDATA then
+							l_name := new_notation_name (buffer, start_index, end_index)
 						else
-							name := new_name (buffer, start_index, end_index)
+							l_name := new_name (buffer, start_index, end_index)
 						end
-						l_area.extend (name); l_token_area.extend (token)
+						l_area.extend (l_name); l_token_area.extend (token)
 					end
 
 				when Tok_literal then
@@ -147,7 +164,7 @@ feature -- Element change
 			OR_token_inserted:
 				(type.count > old type.count and type [type.count] /= ')') implies token_area [count - 1] = Tok_or
 			valid_type_string: (token_area [count - 1] = Tok_or and then old last_token /= Tok_close_parenthesis)
-					implies valid_type_ending (buffer, start_index, end_index, type.substring (old type.count + 1, type.count))
+					implies valid_type_ending (buffer, start_index, end_index, old type.count + 1)
 		end
 
 	set_last_token (token: INTEGER)
@@ -184,6 +201,22 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	valid_type_ending (buffer: SPECIAL [CHARACTER_8]; start_index, end_index, type_start_index: INTEGER): BOOLEAN
+		local
+			ending: STRING; delimiter_index: INTEGER
+		do
+			ending := type.substring (type_start_index, type.count)
+			if ending.count > 2 then
+				delimiter_index := ending.last_index_of ('(', ending.count)
+				delimiter_index := ending.last_index_of ('|', ending.count).max (delimiter_index)
+				ending.remove_head (delimiter_index)
+
+				Result := same_characters (buffer, start_index, end_index, ending)
+			end
+		end
+
+feature {NONE} -- Factory
+
 	new_name (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): STRING_8
 		local
 			colon_index: INTEGER
@@ -192,20 +225,19 @@ feature {NONE} -- Implementation
 			Result := name_cache.item (buffer, start_index, end_index, colon_index.max (0))
 		end
 
+	new_notation_name (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): STRING_8
+		do
+			Result := new_substring (buffer, start_index, end_index)
+		end
+
 	new_value (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; newline_or_tab_found: BOOLEAN): STRING_8
 		do
 			Result := new_attribute_value (buffer, start_index, end_index, newline_or_tab_found)
 		end
 
-	valid_type_ending (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; ending: STRING): BOOLEAN
+	new_filled_list (n: INTEGER): like Current
 		do
-			if ending.count > 2 then
-				inspect ending [1] when '(', '|' then
-					ending.remove_head (1)
-					Result := same_characters (buffer, start_index, end_index, ending)
-				else
-				end
-			end
+			create Result.make (create {like name_cache}.make)
 		end
 
 feature {NONE} -- Internal attributes
@@ -225,7 +257,7 @@ feature {NONE} -- Constants
 
 	Reserved_names: SPECIAL [STRING]
 		once
-			Result := (<< CDATA, NDATA, PUBLIC, SYSTEM >>).area
+			Result := (<< CDATA, NDATA, NOTATION, PUBLIC, SYSTEM >>).area
 		end
 
 	Hash_fixed: STRING = "#FIXED"

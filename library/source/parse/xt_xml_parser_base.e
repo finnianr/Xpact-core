@@ -429,9 +429,8 @@ feature {NONE} -- Processor dispatch
 			end_in_buffer: buf = buffer implies end_index <= buffer_end
 			buffer_index_at_start: buffer_index = start_index
 		local
-			index, token, tok_end, code, error, buffer_index_copy, lower, upper: INTEGER
-			context: XT_ELEMENT_CONTEXT; tag_name: STRING; entity_name: XT_ENTITY_NAME; done: BOOLEAN
-			content_plus_expansion_count: NATURAL_64
+			code, index, token, tok_end: INTEGER; content_plus_expansion_count: NATURAL_64
+			context: XT_ELEMENT_CONTEXT; tag_name: STRING; done: BOOLEAN
 		do
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
@@ -520,40 +519,10 @@ feature {NONE} -- Processor dispatch
 							attributes.wipe_out
 
 						when Tok_entity_ref then
-							lower := index + 1; upper := tok_end - 2
-							code := predefined_entity_code (buf, lower, upper)
-							inspect code when -1 then
-								entity_name := entity_cache.item (buf, lower, upper)
-								if entity_name.is_open then
-									Result := Error_recursive_entity_ref; done := True
-
-								elseif attached entity_table.item (entity_name) as entity_value then
-									buffer_index_copy := buffer_index -- save field
-									buffer_index := 0
-									entity_name.open
-									error := process_content (
-										entity_value.area, 0, entity_value.count, bt_table, attributes, names, declaration_stack, context,
-										parse_data, source_type (parse_data, a_source_type)
-									) -- Recurse
-									entity_name.close
-									buffer_index := buffer_index_copy -- restore field
-									set_in_cdata_section (parse_data, False) -- restore state
-
-									inspect error when Error_none then
-										do_nothing
-									else
-										done := True
-									end
-									Result := error
-
-								elseif attributes.permit_undefined_entities then
-									do_nothing
-								else
-									Result := Error_undefined_entity; done := True
-								end
-							else
-								on_content (unescaped (code), 0, 0, attributes)
-							end
+							Result := process_entity (
+								buf, index + 1, tok_end - 2, bt_table, attributes, names, declaration_stack,
+								context, parse_data, a_source_type, $done
+							)
 
 						when Tok_char_ref then
 							-- index is '&'; tok_end is exclusive end past ';'
@@ -596,6 +565,54 @@ feature {NONE} -- Processor dispatch
 			buffer_index := index
 		ensure
 			buffer_index_advanced: buffer_index >= start_index and buffer_index <= end_index
+		end
+
+	process_entity (
+		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		attributes: XT_ATTRIBUTE_LIST; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
+		context: XT_ELEMENT_CONTEXT; parse_data: POINTER; a_source_type: NATURAL_8
+		done: TYPED_POINTER [BOOLEAN]
+	): INTEGER
+		local
+			buffer_index_copy, code, error: INTEGER; entity_name: XT_ENTITY_NAME
+		do
+			code := predefined_entity_code (buf, start_index, end_index)
+			inspect code when -1 then
+				entity_name := entity_cache.item (buf, start_index, end_index)
+				if entity_name.has_notation_tag then
+					Result := Error_binary_entity_ref; put_boolean (done, True)
+
+				elseif entity_name.is_open then
+					Result := Error_recursive_entity_ref; put_boolean (done, True)
+
+				elseif attached entity_table.item (entity_name) as entity_value then
+					buffer_index_copy := buffer_index -- save field
+					buffer_index := 0
+					entity_name.open
+					error := process_content (
+						entity_value.area, 0, entity_value.count, bt_table, attributes, names, declaration_stack,
+						context, parse_data, source_type (parse_data, a_source_type)
+					)  -- Recurse
+					
+					entity_name.close
+					buffer_index := buffer_index_copy -- restore field
+					set_in_cdata_section (parse_data, False) -- restore state
+
+					inspect error when Error_none then
+						do_nothing
+					else
+						put_boolean (done, True)
+					end
+					Result := error
+
+				elseif attributes.permit_undefined_entities then
+					do_nothing
+				else
+					Result := Error_undefined_entity; put_boolean (done, True)
+				end
+			else
+				on_content (unescaped (code), 0, 0, attributes)
+			end
 		end
 
 feature {NONE} -- Implementation

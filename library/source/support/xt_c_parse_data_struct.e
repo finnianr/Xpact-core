@@ -34,6 +34,14 @@ feature {NONE} -- Measurement
 
 feature {NONE} -- Parse section state
 
+	frozen c_has_dtd_section (data_ptr: POINTER): BOOLEAN
+		-- True if prolog has document type definition (DTD) after DOCTYPE x [
+		external
+			"C inline use <xt_structs.h>"
+		alias
+			"return ((XT_parse_data*) $data_ptr)->has_dtd_section;"
+		end
+
 	frozen c_in_prolog_section (data_ptr: POINTER): BOOLEAN
 		-- `True' when parsing prolog section
 		external
@@ -75,6 +83,13 @@ feature {NONE} -- Measurement
 		end
 
 feature {NONE} -- Status change
+
+	frozen set_has_dtd_section (data_ptr: POINTER; flag: BOOLEAN)
+		external
+			"C inline use <xt_structs.h>"
+		alias
+			"((XT_parse_data*) $data_ptr)->has_dtd_section = $flag;"
+		end
 
 	frozen set_in_prolog_section (data_ptr: POINTER; flag: BOOLEAN)
 		external

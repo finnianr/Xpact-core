@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!DOCTYPE doc [
+<!NOTATION gif SYSTEM "viewer.exe">
+<!ENTITY img_gif SYSTEM "photo.gif" NDATA gif>
+<!ELEMENT doc (#PCDATA)>
+]>
+<!-- G2: illegal — unparsed entities cannot be referenced with &name;
+     in content. Expect "reference to binary entity". -->
+<doc>&img_gif;</doc>

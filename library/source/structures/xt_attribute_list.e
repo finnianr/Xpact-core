@@ -567,8 +567,12 @@ feature {NONE} -- Implementation
 			from i := 0; i_final := a_name_area.count until i = i_final or Result loop
 				if a_name_area [i] = name then
 					Result := True
+				else
+					check
+						comparing_by_reference: not a_name_area [i].is_equal (name)
+					end
+					i := i + 1
 				end
-				i := i + 1
 			end
 		end
 
@@ -583,6 +587,9 @@ feature {NONE} -- Implementation
 					value.check_
 					i := default_values.count -- break
 				else
+					check
+						comparing_by_reference: not name.is_equal (value.name)
+					end
 					i := i + 1
 				end
 			end

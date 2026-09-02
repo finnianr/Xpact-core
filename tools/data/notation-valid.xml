@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<!DOCTYPE doc [
+
+<!-- ============================================================
+     NOTATION test matrix — internal subset
+     Exercises every declaration form and every reference context.
+     ============================================================ -->
+
+<!-- A. The three legal NOTATION declaration forms -->
+
+<!-- A1: SYSTEM only -->
+<!NOTATION gif SYSTEM "viewer.exe">
+
+<!-- A2: PUBLIC only, no system id (PublicID production — legal for
+     notations, NOT legal for entities: entities require sysid with PUBLIC) -->
+<!NOTATION jpg PUBLIC "-//Example//NOTATION JPEG//EN">
+
+<!-- A3: PUBLIC with both pubid and sysid (ExternalID production) -->
+<!NOTATION png PUBLIC "-//Example//NOTATION PNG//EN" "png_viewer.exe">
+
+<!-- B. Duplicate declaration — unlike entities (first wins, second
+     suppressed), BOTH notation declarations fire the handler -->
+<!NOTATION dup SYSTEM "first.exe">
+<!NOTATION dup SYSTEM "second.exe">
+
+<!-- C. Unparsed entities referencing each notation form above -->
+
+<!-- C1: NDATA -> SYSTEM-declared notation -->
+<!ENTITY img_gif SYSTEM "photo.gif" NDATA gif>
+
+<!-- C2: NDATA -> PUBLIC-only-declared notation -->
+<!ENTITY img_jpg SYSTEM "photo.jpg" NDATA jpg>
+
+<!-- C3: NDATA -> PUBLIC+SYSID-declared notation -->
+<!ENTITY img_png SYSTEM "photo.png" NDATA png>
+
+<!-- C4: NDATA on an entity that is itself PUBLIC-declared -->
+<!ENTITY img_pub PUBLIC "-//Example//IMG//EN" "photo2.gif" NDATA gif>
+
+<!-- D. Forward reference: entity declared BEFORE its notation exists.
+     Non-validating parser accepts this with no error. -->
+<!ENTITY img_fwd SYSTEM "photo.bmp" NDATA bmp>
+<!NOTATION bmp SYSTEM "bmp_viewer.exe">
+
+<!-- E. NDATA referencing a notation that is NEVER declared at all.
+     Non-validating parser: no error (this is a VC, not a WFC). -->
+<!ENTITY img_missing SYSTEM "photo.tiff" NDATA nonexistent_notation>
+
+<!-- F. Element + ATTLIST wiring so notations are actually *referenced*
+     in the document body, not just declared -->
+<!ELEMENT doc (#PCDATA)>
+
+<!-- F1: NOTATION-typed attribute — enumerated list of declared names.
+     This is a direct in-content reference to notations. -->
+<!ATTLIST doc format NOTATION (gif|jpg|png) #IMPLIED>
+
+<!-- F2: ENTITY-typed attribute — the correct/only way to "invoke" an
+     unparsed entity from document content -->
+<!ATTLIST doc src ENTITY #IMPLIED>
+
+<!-- F3: ENTITIES-typed attribute — space-separated list of unparsed
+     entity names, same resolution rules as ENTITY but plural -->
+<!ATTLIST doc alt_srcs ENTITIES #IMPLIED>
+
+]>
+<!-- G1: NOTATION-typed attribute referencing a validly-declared name,
+     ENTITY-typed attribute referencing a validly-declared unparsed entity,
+     ENTITIES-typed attribute referencing two unparsed entities -->
+<doc format="gif" src="img_gif" alt_srcs="img_jpg img_png"/>

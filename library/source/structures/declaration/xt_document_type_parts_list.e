@@ -15,6 +15,9 @@ class
 
 inherit
 	XT_DECLARATION_PARTS_LIST
+		redefine
+			is_valid
+		end
 
 create
 	make
@@ -23,31 +26,39 @@ feature -- Status query
 
 	is_valid: BOOLEAN
 		do
-			Result := count >= 2
+			inspect count
+				when 1 then
+					Result := not Valid_external_id_list.has (name)
+
+				when 3 then
+					if i_th (2) = SYSTEM then
+						Result := token_area [2] = Tok_literal
+					end
+
+				when 4 then
+					if i_th (2) = PUBLIC then
+						Result :=  token_area [2] = Tok_literal and token_area [3] = Tok_literal
+					end
+			else end
 		end
 
 feature -- Basic operations
 
-	set_document_type (formal_public_identifier, DTD_uri: STRING)
+	set_document_type (doctype_identifiers: TUPLE [formal_public, uri: STRING])
+		require
+			valid_list: is_valid
 		local
 			second: STRING
 		do
 			if count >= 3 then
 				second := i_th (2)
 				if Valid_external_id_list.has (second) then
-					formal_public_identifier.share (i_th (3))
+					doctype_identifiers.formal_public := i_th (3)
 					if count = 4 and then second = PUBLIC then
-						DTD_uri.share (last)
+						doctype_identifiers.uri := last
 					end
 				end
 			end
-		end
-
-feature {NONE} -- Implementation
-
-	new_filled_list (n: INTEGER): like Current
-		do
-			create Result.make (create {like name_cache}.make)
 		end
 
 end

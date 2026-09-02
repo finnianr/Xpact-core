@@ -38,6 +38,7 @@ feature {NONE} -- Constants
 				[Type_decl_attribute_list,	"attlist"],		-- ATTLIST declaration
 				[Type_decl_doctype,			"doctype"],		-- DOCTYPE declaration
 				[Type_decl_entity,			"entity"],		-- ENTITY declaration
+				[Type_decl_notation,			"notation"],	-- NOTATION declaration
 				[Type_pi_name,					"pi-name"],		-- processing instruction name
 				[Type_pi_data,					"pi-data"],		-- processing instruction data
 				[Type_tag,						"tag"],			-- tag name (open element)
@@ -70,14 +71,16 @@ feature {NONE}	-- Constants
 
 	Type_decl_entity: INTEGER = 7
 
-	Type_pi_name: INTEGER = 8
+	Type_decl_notation: INTEGER = 8
 
-	Type_pi_data: INTEGER = 9
+	Type_pi_name: INTEGER = 9
 
-	Type_tag: INTEGER = 10
+	Type_pi_data: INTEGER = 10
 
-	Type_text: INTEGER = 11
+	Type_tag: INTEGER = 11
 
-	Type_xml_declaration: INTEGER = 12
+	Type_text: INTEGER = 12
+
+	Type_xml_declaration: INTEGER = 13
 
 end

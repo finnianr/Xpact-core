@@ -18,8 +18,15 @@ class
 
 inherit
 	XT_DECLARATION_PARTS_LIST
+		undefine
+			is_valid
 		redefine
 			name_cache, new_name
+		end
+
+	XT_ENTITY_PARTS_I
+		undefine
+			copy, is_equal
 		end
 
 create
@@ -27,10 +34,7 @@ create
 
 feature -- Status query
 
-	is_valid: BOOLEAN
-		do
-			Result := count >= 2
-		end
+	is_parameter: BOOLEAN = True
 
 feature -- Factory
 
@@ -40,11 +44,6 @@ feature -- Factory
 		end
 
 feature {NONE} -- Implementation
-
-	new_filled_list (n: INTEGER): like Current
-		do
-			create Result.make (create {like name_cache}.make)
-		end
 
 	new_name (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): STRING_8
 		do

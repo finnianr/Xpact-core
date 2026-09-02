@@ -36,7 +36,7 @@ feature {NONE} -- Initialization
 		local
 			s: XT_STRING_8_ROUTINES
 		do
-			name := parts_list.first; external_id := s.Empty_string
+			name := parts_list.name; external_id := s.Empty_string
 			if parts_list.count = 3 and then attached parts_list [2] as id
 				and then Valid_external_id_list.has (id)
 			then

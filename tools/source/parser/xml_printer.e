@@ -54,16 +54,6 @@ create
 
 feature {NONE} -- Event handlers
 
-	on_attribute_list_declaration (
-		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
-		is_required: BOOLEAN
-	)
-		-- typedef void(XMLCALL *XML_AttlistDeclHandler)(
-		--   void *userData, const XML_Char *elname, const XML_Char *attname,
-		--   const XML_Char *att_type, const XML_Char *dflt, int isrequired);
-		do
-		end
-
 	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
 		do
 			if attributes.index_count > 0 then
@@ -130,7 +120,7 @@ feature {NONE} -- Event handlers
 		end
 
 	on_entity_declaration (
-		entity_name: STRING; value, base, system_id, public_id, notation_name: detachable STRING
+		entity_name: STRING; value, a_base, system_id, public_id, notation_name: detachable STRING
 		is_parameter_entity: BOOLEAN
 	)
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
@@ -138,6 +128,12 @@ feature {NONE} -- Event handlers
 		-- 	const XML_Char *value, int value_length, const XML_Char *base,
 		-- 	const XML_Char *systemId, const XML_Char *publicId,
 		-- 	const XML_Char *notationName);
+		do
+		end
+
+	on_notation_declaration (name: STRING; a_base, system_id, public_id: detachable STRING)
+		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
+		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
 		do
 		end
 

@@ -18,6 +18,8 @@ feature {NONE} -- Declaration qualifiers
 
 	NDATA: STRING = "NDATA"
 
+	NOTATION: STRING = "NOTATION"
+
 	PUBLIC: STRING = "PUBLIC"
 
 	SYSTEM: STRING = "SYSTEM"
