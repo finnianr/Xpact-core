@@ -155,6 +155,17 @@ feature {NONE} -- Event handlers
 			else end
 		end
 
+	on_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE)
+		-- typedef void(XMLCALL *XML_ElementDeclHandler)(void *userData, const XML_Char *name, XML_Content *model);
+		do
+			inspect data_type when Type_decl_element then
+				if attached checksum as crc then
+					crc.add_string (name)
+					model.append_to_crc_32 (crc)
+				end
+			else end
+		end
+
 	on_entity_declaration (
 		entity_name: STRING; value, a_base, system_id, public_id, notation_name: detachable STRING
 		is_parameter_entity: BOOLEAN

@@ -12,4 +12,14 @@ typedef struct {
 	EIF_NATURAL_64 entity_expansion_count;
 } XT_parse_data;
 
+typedef struct XT_particle XT_element_particle;
+
+typedef struct XT_particle {
+	EIF_INTEGER type;
+	EIF_INTEGER quantity;
+	EIF_CHARACTER *name;
+	EIF_NATURAL list_count;
+	XT_element_particle *particle_list;
+} XT_particle ;
+
 #endif

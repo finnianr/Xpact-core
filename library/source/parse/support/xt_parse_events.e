@@ -85,6 +85,11 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
+	on_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE)
+		-- typedef void(XMLCALL *XML_ElementDeclHandler)(void *userData, const XML_Char *name, XML_Content *model);
+		deferred
+		end
+
 	on_entity_declaration (
 		entity_name: STRING; value, base, system_id, public_id, notation_name: detachable STRING
 		is_parameter_entity: BOOLEAN

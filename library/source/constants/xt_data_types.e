@@ -37,6 +37,7 @@ feature {NONE} -- Constants
 				[Type_comment,					"comment"],		-- comment
 				[Type_decl_attribute_list,	"attlist"],		-- ATTLIST declaration
 				[Type_decl_doctype,			"doctype"],		-- DOCTYPE declaration
+				[Type_decl_element,			"element"],		-- ELEMENT declaration
 				[Type_decl_entity,			"entity"],		-- ENTITY declaration
 				[Type_decl_notation,			"notation"],	-- NOTATION declaration
 				[Type_pi_name,					"pi-name"],		-- processing instruction name
@@ -69,18 +70,20 @@ feature {NONE}	-- Constants
 
 	Type_decl_doctype: INTEGER = 6
 
-	Type_decl_entity: INTEGER = 7
+	Type_decl_element: INTEGER = 7
 
-	Type_decl_notation: INTEGER = 8
+	Type_decl_entity: INTEGER = 8
 
-	Type_pi_name: INTEGER = 9
+	Type_decl_notation: INTEGER = 9
 
-	Type_pi_data: INTEGER = 10
+	Type_pi_name: INTEGER = 10
 
-	Type_tag: INTEGER = 11
+	Type_pi_data: INTEGER = 11
 
-	Type_text: INTEGER = 12
+	Type_tag: INTEGER = 12
 
-	Type_xml_declaration: INTEGER = 13
+	Type_text: INTEGER = 13
+
+	Type_xml_declaration: INTEGER = 14
 
 end

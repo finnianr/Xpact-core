@@ -14,7 +14,7 @@ note
 
 class XT_BUFFER_CONSTANTS
 
-feature -- Buffer parameters
+feature {NONE} -- Buffer parameters
 
 	Context_bytes: INTEGER = 1024
 		-- Bytes of parsed context retained before buffer_ptr for error reporting.

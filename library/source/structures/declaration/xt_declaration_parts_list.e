@@ -36,6 +36,8 @@ inherit
 		end
 
 	XT_TOKEN_CONSTANTS
+		export
+			{ANY} Tok_close_parenthesis
 		undefine
 			copy, is_equal
 		end
@@ -68,14 +70,13 @@ feature {NONE} -- Initialization
 		do
 			make_sized (11)
 			name_cache := a_name_cache
+			last_name := Empty_string
+			state := State_extending
 			create token_area.make_empty (area.capacity)
-			create type.make (50)
+			create complex_type.make (50)
 		end
 
 feature -- Access
-
-	type: STRING
-		-- see attribute_types note at end of class
 
 	i_th_token (i: INTEGER): INTEGER
 		require
@@ -107,8 +108,7 @@ feature -- Element change
 		require
 			valid_range: start_index <= end_index + 1
 		local
-			i: INTEGER; l_area: like area_v2; l_token_area: like token_area
-			l_name: STRING; check_for_name: BOOLEAN
+			i: INTEGER; l_area: like area_v2; l_token_area: like token_area; l_name: STRING
 		do
 			i := count + 1
 			l_area := area_v2; l_token_area := token_area
@@ -119,57 +119,28 @@ feature -- Element change
 			end
 			inspect token
 				when Tok_name, Tok_pound_name then
-					inspect last_token
-						when Tok_open_parenthesis then
-							if l_area.count > 1 and l_area [l_area.count - 1] = NOTATION then
-								type.append (NOTATION)
-								i := l_area.count - 1
-								l_area [i] := type
-								l_token_area [i] := Tok_or
-							else
-								l_area.extend (type); l_token_area.extend (Tok_or)
-							end
-							type.append_character ('('); append_area (type, buffer, start_index, end_index)
+					if attached name_constant (buffer, start_index, end_index, token) as constant then
+						l_name := constant
 
-						when Tok_or then
-							type.append_character ('|'); append_area (type, buffer, start_index, end_index)
-
-						when Tok_close_parenthesis then
-							type.append_character (')')
-							last_token := Tok_none
-							check_for_name := True
-
+					elseif count > 1 and l_area [count - 1] = NDATA then
+						l_name := new_notation_name (buffer, start_index, end_index)
 					else
-						check_for_name := True
+						l_name := new_name (buffer, start_index, end_index)
 					end
-					if check_for_name then
-						if attached name_constant (buffer, start_index, end_index, token) as constant then
-							l_name := constant
+					inspect state
+						when State_extending then
+							l_area.extend (l_name); l_token_area.extend (token)
 
-						elseif count > 1 and l_area [count - 1] = NDATA then
-							l_name := new_notation_name (buffer, start_index, end_index)
-						else
-							l_name := new_name (buffer, start_index, end_index)
-						end
-						l_area.extend (l_name); l_token_area.extend (token)
-					end
+						when State_building then
+						-- building an expression like (gif|jpg|png)
+							last_name := l_name
+					else end
 
 				when Tok_literal then
 					l_area.extend (new_value (buffer, start_index, end_index, newline_or_tab_found))
 					l_token_area.extend (token)
 			else
 			end
-			last_token := token
-		ensure
-			OR_token_inserted:
-				(type.count > old type.count and type [type.count] /= ')') implies token_area [count - 1] = Tok_or
-			valid_type_string: (token_area [count - 1] = Tok_or and then old last_token /= Tok_close_parenthesis)
-					implies valid_type_ending (buffer, start_index, end_index, old type.count + 1)
-		end
-
-	set_last_token (token: INTEGER)
-		do
-			last_token := token
 		end
 
 	wipe_out
@@ -177,8 +148,54 @@ feature -- Element change
 		do
 			Precursor
 			token_area.wipe_out
-			type.wipe_out
-			last_token := Tok_none
+			complex_type.wipe_out
+			state := State_extending
+			last_name := Empty_string
+		end
+
+feature -- Event handler
+
+	on_operator (token: INTEGER)
+		-- change parsing state for '(', ')' or '|' operators
+		require
+			big_enough_capacity: token = Tok_close_parenthesis implies count < capacity
+		local
+			i: INTEGER
+		do
+			inspect token
+				when Tok_open_parenthesis then
+					state := State_building
+					complex_type.wipe_out
+					if attached area as l_area and then l_area.count > 1
+						and then l_area [l_area.count - 1] = NOTATION
+					then
+						complex_type.append (NOTATION)
+					end
+					complex_type.append_character ('(')
+
+				when Tok_close_parenthesis then
+					complex_type.append (last_name)
+					complex_type.append_character (')')
+					if attached area as l_area and then l_area.count < l_area.capacity then
+						if complex_type.starts_with (NOTATION) then
+							i := l_area.count - 1
+							l_area [i] := complex_type; token_area [i] := Tok_or
+						else
+							l_area.extend (complex_type)
+							token_area.extend (Tok_or)
+						end
+					end
+					state := State_extending
+
+				when Tok_or then
+					complex_type.append (last_name)
+					complex_type.append_character ('|')
+
+			else end
+		ensure
+			OR_token_inserted: token = Tok_close_parenthesis implies token_area [count - 1] = Tok_or
+			last_name_ends_with_parenthesis:
+				token = Tok_close_parenthesis implies (attached last as s and then s.count > 1 and then s [s.count] = ')')
 		end
 
 feature {NONE} -- Implementation
@@ -198,20 +215,6 @@ feature {NONE} -- Implementation
 				else
 					i := i + 1
 				end
-			end
-		end
-
-	valid_type_ending (buffer: SPECIAL [CHARACTER_8]; start_index, end_index, type_start_index: INTEGER): BOOLEAN
-		local
-			ending: STRING; delimiter_index: INTEGER
-		do
-			ending := type.substring (type_start_index, type.count)
-			if ending.count > 2 then
-				delimiter_index := ending.last_index_of ('(', ending.count)
-				delimiter_index := ending.last_index_of ('|', ending.count).max (delimiter_index)
-				ending.remove_head (delimiter_index)
-
-				Result := same_characters (buffer, start_index, end_index, ending)
 			end
 		end
 
@@ -242,7 +245,13 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Internal attributes
 
-	last_token: INTEGER
+	state: INTEGER
+		-- parsing state of either extending `area'
+		-- or building a name choice expression like (gif|jpg|png)
+
+	last_name: STRING
+
+	complex_type: STRING
 
 	name_cache: XT_NAME_CACHE
 
@@ -250,9 +259,13 @@ feature {NONE} -- Internal attributes
 
 feature {NONE} -- Constants
 
+	State_building: INTEGER = 1
+
+	State_extending: INTEGER = 2
+
 	Hash_names: SPECIAL [STRING]
 		once
-			Result := (<< Hash_fixed, Hash_implied, Hash_required >>).area
+			Result := (<< Hash_fixed, Hash_implied, Hash_pcdata, Hash_required >>).area
 		end
 
 	Reserved_names: SPECIAL [STRING]
@@ -265,6 +278,8 @@ feature {NONE} -- Constants
 	Hash_implied: STRING = "#IMPLIED"
 
 	Hash_required: STRING = "#REQUIRED"
+
+	Hash_pcdata: STRING = "#PCDATA"
 
 note
 	attribute_types: "[

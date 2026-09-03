@@ -1,5 +1,8 @@
 note
-	description: "Content-model type and quantifier codes for ${XT_CONTENT_PARTICLE} (XML_Content_Type / XML_Content_Quant enums from expat.h)"
+	description: "[
+		Content-model type and quantifier codes for ${XT_ELEMENT_PARTICLE}
+		See `XML_Content_Type' and `XML_Content_Quant' enums from `expat.h'.
+	]"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -10,9 +13,9 @@ note
 	revision: "1"
 
 class
-	XT_CONTENT_CONSTANTS
+	XT_ELEMENT_PARTICLE_CONSTANTS
 
-feature -- Content type codes (ordinal matches C enum XML_Content_Type)
+feature {NONE} -- Content type codes (ordinal matches C enum XML_Content_Type)
 
 	CT_empty: INTEGER = 1
 			-- XML_CTYPE_EMPTY: element declared EMPTY.
@@ -32,7 +35,7 @@ feature -- Content type codes (ordinal matches C enum XML_Content_Type)
 	CT_sequence: INTEGER = 6
 			-- XML_CTYPE_SEQ: a sequence, e.g. (a,b,c).
 
-feature -- Content quantifier codes (ordinal matches C enum XML_Content_Quant)
+feature {NONE}  -- Content quantifier codes (ordinal matches C enum XML_Content_Quant)
 
 	QT_none: INTEGER = 0
 			-- XML_CQUANT_NONE: no quantifier, occurs exactly once.

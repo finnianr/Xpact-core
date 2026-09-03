@@ -22,6 +22,9 @@ note
 class
 	XT_C_PARSE_DATA_STRUCT
 
+inherit
+	EL_C_API
+
 feature {NONE} -- Measurement
 
 	frozen size_of_parse_data: INTEGER

@@ -55,7 +55,7 @@ feature {NONE} -- Measurement
 			"C inline"
 		alias
 			"[
-				return (EIF_BOOLEAN) (((unsigned char *) $a_bytes) [$a_offset] == 1);
+				return (EIF_BOOLEAN) (((EIF_BOOLEAN *) $a_bytes) [$a_offset] == 1);
 			]"
 		end
 

@@ -49,12 +49,14 @@ feature {NONE} -- Initialization
 
 			create attribute_parts_list.make (name_cache)
 			create document_type_parts_list.make (name_cache)
+			create element_parts_list.make (name_cache)
 			create entity_parts_list.make (entity_cache)
 			create notation_parts_list.make (name_cache)
 			create parameter_entity_parts_list.make (parameter_name_cache)
 
 			create declaration_parts.make_filled (document_type_parts_list, PARAMETER_ENTITY)
 			declaration_parts [ATTLIST - 1] := attribute_parts_list
+			declaration_parts [ELEMENT - 1] := element_parts_list
 			declaration_parts [ENTITY - 1] := entity_parts_list
 			declaration_parts [NOTATION_ - 1] := notation_parts_list
 			declaration_parts [PARAMETER_ENTITY - 1] := parameter_entity_parts_list
@@ -130,48 +132,38 @@ feature {NONE} -- Token processing
 					end
 
 				when Tok_name then
-					inspect declaration
-						when ATTLIST, ENTITY, NOTATION_, PARAMETER_ENTITY then
-							if declaration_stack.count = 2 then
-								parts_list.extend (buf, index, end_index, token, newline_or_tab_found)
-							else
-								Result := Error_syntax; put_boolean (done, True)
-							end
-
-						when ELEMENT then
-							do_nothing -- for now
+					inspect declaration when ATTLIST, ELEMENT, ENTITY, NOTATION_, PARAMETER_ENTITY then
+						if declaration_stack.count = 2 then
+							parts_list.extend (buf, index, end_index, token, newline_or_tab_found)
+						else
+							Result := Error_syntax; put_boolean (done, True)
+						end
 					else
 						put_boolean (default_case, True)
 					end
 
 				when Tok_literal then
-					inspect declaration
-						when ATTLIST, ENTITY, NOTATION_, PARAMETER_ENTITY then
-							if declaration_stack.count = 2 then
-								if attached expanded_dtd_literal (buf, index, end_index) as str
-									and then attached str.area as area
-								then
-									parts_list.extend (area, 0, str.count - 1, token, newline_or_tab_found)
-								else
-									parts_list.extend (buf, index + 1, end_index - 1, token, newline_or_tab_found)
-								end
+					inspect declaration when ATTLIST, ELEMENT, ENTITY, NOTATION_, PARAMETER_ENTITY then
+						if declaration_stack.count = 2 then
+							if attached expanded_dtd_literal (buf, index, end_index) as str
+								and then attached str.area as area
+							then
+								parts_list.extend (area, 0, str.count - 1, token, newline_or_tab_found)
 							else
-								Result := Error_syntax; put_boolean (done, True)
+								parts_list.extend (buf, index + 1, end_index - 1, token, newline_or_tab_found)
 							end
-
-						when ELEMENT then
-							do_nothing -- for now
+						else
+							Result := Error_syntax; put_boolean (done, True)
+						end
 					else
 						put_boolean (default_case, True)
 					end
 
 				when Tok_pound_name then
 					inspect declaration
-						when ATTLIST, ENTITY, NOTATION_, PARAMETER_ENTITY then
+						when ATTLIST, ELEMENT, ENTITY, NOTATION_, PARAMETER_ENTITY then
 							parts_list.extend (buf, index, end_index, token, newline_or_tab_found)
 
-						when ELEMENT then
-							do_nothing -- for now
 					else
 						put_boolean (default_case, True)
 					end
@@ -190,8 +182,11 @@ feature {NONE} -- Token processing
 						parameter.set_referenced
 					end
 
-				when Tok_open_parenthesis, Tok_close_parenthesis, Tok_or, Tok_char_ref then
-					parts_list.set_last_token (token)
+				when Tok_open_parenthesis, Tok_or, Tok_close_parenthesis, Tok_close_paren_plus,
+					Tok_close_paren_question, Tok_close_paren_asterisk,
+					Tok_name_question, Tok_name_asterisk, Tok_name_plus
+				then
+					parts_list.on_operator (token)
 
 			else
 				put_boolean (common_case, True)
@@ -351,6 +346,7 @@ feature {NONE} -- Event handlers
 	on_close_declaration (declaration: INTEGER; parse_data: POINTER): INTEGER
 		local
 			system_id, public_id: detachable STRING
+			example: detachable PARTICLE_CONSTRUCTION
 		do
 			inspect declaration
 				when ATTLIST then
@@ -363,6 +359,15 @@ feature {NONE} -- Event handlers
 								parts_list [1], parts_list [2], parts_list [3], parts_list.default_value, parts_list.is_required
 							)
 							parts_list.wipe_out
+						else
+							Result := Error_syntax
+						end
+					end
+
+				when ELEMENT then
+					if attached element_parts_list as parts_list and then parts_list.is_valid then
+						if attached parts_list.particle as model then
+							on_element_declaration (parts_list.name, model)
 						else
 							Result := Error_syntax
 						end
@@ -602,6 +607,8 @@ feature {NONE} -- Declaration parts
 	declaration_parts: SPECIAL [XT_DECLARATION_PARTS_LIST]
 
 	document_type_parts_list: XT_DOCUMENT_TYPE_PARTS_LIST
+
+	element_parts_list: XT_ELEMENT_PARTS_LIST
 
 	entity_parts_list: XT_ENTITY_PARTS_LIST
 

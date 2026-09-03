@@ -18,6 +18,7 @@ inherit
 			on_attribute_list_declaration as on_base_attribute_list_declaration,
 			on_content as on_base_content,
 			on_comment as on_base_commment,
+			on_element_declaration as on_base_element_declaration,
 			on_tag_start as on_base_tag_start,
 			on_tag_end as on_base_tag_end,
 			on_processing_instruction as on_base_processing_instruction
@@ -77,6 +78,11 @@ feature {NONE} -- Base event handlers
 				end
 				content_call_count := content_call_count + 1
 			end
+		end
+
+	on_base_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE)
+		-- typedef void(XMLCALL *XML_ElementDeclHandler)(void *userData, const XML_Char *name, XML_Content *model);
+		do
 		end
 
 	on_base_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)

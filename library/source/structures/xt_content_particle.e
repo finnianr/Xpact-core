@@ -24,7 +24,7 @@ class
 	XT_CONTENT_PARTICLE
 
 inherit
-	XT_CONTENT_CONSTANTS
+	XT_ELEMENT_PARTICLE_CONSTANTS
 
 create
 	make, make_named
@@ -103,17 +103,26 @@ feature -- Element change
 			sub_particle_list.last.set_name (a_name)
 		end
 
-	add_particle (a_type, a_quantity_type: INTEGER; a_name: detachable STRING)
-			-- Create a new content particle of `a_type', `a_quantity_type' and `a_name'
-			-- and append it to `sub_particle_list'.
+	add_particle (a_type, a_quantity_type: INTEGER)
+		-- Create a new content particle of `a_type' and `a_quantity_type'
+		-- and append it to `sub_particle_list'.
 		local
 			particle: like Current
+		do
+			create particle.make (a_type, a_quantity_type)
+			add_child_particle (particle)
+		ensure
+			particle_added: sub_particle_list.count = old sub_particle_list.count + 1
+		end
+
+	add_child_particle (a_particle: like Current)
+		-- Append an already-constructed `a_particle' (e.g. a nested group built
+		-- up separately) to `sub_particle_list'.
 		do
 			if sub_particle_list = Default_sub_particle_list then
 				create sub_particle_list.make (1)
 			end
-			create particle.make (a_type, a_quantity_type, a_name)
-			sub_particle_list.extend (particle)
+			sub_particle_list.extend (a_particle)
 		ensure
 			particle_added: sub_particle_list.count = old sub_particle_list.count + 1
 		end

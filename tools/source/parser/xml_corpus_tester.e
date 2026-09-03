@@ -46,6 +46,7 @@ inherit
 			on_comment_ as on_comment,
 			on_content_ as on_content,
 			on_doctype_declaration_start_ as on_doctype_declaration_start,
+			on_element_declaration_ as on_element_declaration,
 			on_entity_declaration_ as on_entity_declaration,
 			on_notation_declaration_ as on_notation_declaration,
 			on_processing_instruction_ as on_processing_instruction,
