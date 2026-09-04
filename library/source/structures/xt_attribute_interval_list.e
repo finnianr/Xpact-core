@@ -17,6 +17,7 @@ deferred class
 inherit
 	ARRAYED_LIST [INTEGER]
 		rename
+			empty as empty_list,
 			index_of as index_of_item,
 			forth as index_forth,
 			extend as extend_index,

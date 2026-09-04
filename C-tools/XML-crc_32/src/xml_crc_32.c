@@ -27,12 +27,14 @@ typedef enum {
 	TYPE_DOCTYPE,
 	TYPE_ATTLIST,
 	TYPE_ENTITY,
-	TYPE_NOTATION
+	TYPE_NOTATION,
+	TYPE_ELEMENT
 } data_type_t;
 
 static const char *data_type_name[] = {
 	"text", "cdata", "comment", "tag", "attribute", "attrib-name",
-	"pi-name", "pi-data", "xml-decl", "doctype", "attlist", "entity", "notation"
+	"pi-name", "pi-data", "xml-decl", "doctype", "attlist", "entity", "notation",
+	"element"
 };
 
 typedef struct {
@@ -42,6 +44,7 @@ typedef struct {
 	uint32_t    crc;
 	int         event_count;
 	int         in_cdata;
+	XML_Parser  parser; /* needed to free XML_Content models handed to on_element_decl */
 } crc_ctx_t;
 
 static uint32_t crc32_table[256];
@@ -272,6 +275,82 @@ static void XMLCALL on_notation_decl(void *userData, const XML_Char *notationNam
 		crc32_update(ctx, (const unsigned char *) publicId, strlen(publicId));
 }
 
+/* Same CRC update as crc32_update_int32, but for tracing an enumerated value:
+ * when annotation is non-NULL, it is appended to the trace line as an
+ * Eiffel-style comment, e.g. "6 -- Sequence". Used for the XML_Content
+ * type/quant fields. */
+static void crc32_update_int32_annotated(crc_ctx_t *ctx, int32_t value,
+                                          const char *annotation) {
+	crc32_bytes(ctx, (const unsigned char *)&value, sizeof(int32_t));
+	if (ctx->trace && ctx->verbose_output) {
+		printf("#%07d (%u): %d", ctx->event_count, ctx->crc ^ 0xFFFFFFFFu, value);
+		if (annotation)
+			printf(" -- %s", annotation);
+		putchar('\n');
+	}
+}
+
+/* Name of an XML_Content_Type value, for trace annotation; NULL if out of range. */
+static const char *content_type_name(enum XML_Content_Type type) {
+	switch (type) {
+		case XML_CTYPE_EMPTY:  return "Empty";
+		case XML_CTYPE_ANY:    return "Any";
+		case XML_CTYPE_MIXED:  return "Mixed";
+		case XML_CTYPE_NAME:   return "Name";
+		case XML_CTYPE_CHOICE: return "Choice";
+		case XML_CTYPE_SEQ:    return "Sequence";
+		default:               return NULL;
+	}
+}
+
+/* Name of an XML_Content_Quant value, for trace annotation; NULL if out of range. */
+static const char *content_quant_name(enum XML_Content_Quant quant) {
+	switch (quant) {
+		case XML_CQUANT_NONE: return "None";
+		case XML_CQUANT_OPT:  return "Option";
+		case XML_CQUANT_REP:  return "Repetition";
+		case XML_CQUANT_PLUS: return "Plus";
+		default:              return NULL;
+	}
+}
+
+/* Recursively combines one XML_Content particle's fields, left to right, into
+ * the running checksum: type, quant, name (skipped when NULL), numchildren,
+ * then each child in the children array, in order. Used by on_element_decl
+ * to fold in the recursive content model returned for an <!ELEMENT ...>
+ * declaration. type and quant are traced with their enumeration names. */
+static void crc32_update_content(crc_ctx_t *ctx, XML_Content *model) {
+	unsigned int i;
+	crc32_update_int32_annotated(ctx, (int32_t) model->type, content_type_name(model->type));
+	crc32_update_int32_annotated(ctx, (int32_t) model->quant, content_quant_name(model->quant));
+	if (model->name)
+		crc32_update(ctx, (const unsigned char *) model->name, strlen(model->name));
+	crc32_update_int32(ctx, (int32_t) model->numchildren);
+	for (i = 0; i < model->numchildren; i++) {
+		crc32_update_content(ctx, &model->children[i]);
+	}
+}
+
+/* Combines the ELEMENT declaration's fields into the running checksum, as
+ * supplied to XML_ElementDeclHandler: first the element name, then the
+ * recursive content model (type, quant, name, numchildren and children,
+ * see crc32_update_content). An EMPTY or ANY declaration is still
+ * represented by a non-NULL model (of type XML_CTYPE_EMPTY / XML_CTYPE_ANY);
+ * model is only NULL if expat itself failed to allocate one, in which case
+ * there is nothing further to checksum. Per the eXpat API contract, the
+ * model must be freed by the caller once done with it. */
+static void XMLCALL on_element_decl(void *userData, const XML_Char *name,
+                                     XML_Content *model) {
+	crc_ctx_t *ctx = (crc_ctx_t *) userData;
+	if (ctx->type == TYPE_ELEMENT) {
+		crc32_update(ctx, (const unsigned char *) name, strlen(name));
+		if (model)
+			crc32_update_content(ctx, model);
+	}
+	if (model)
+		XML_FreeContentModel(ctx->parser, model);
+}
+
 #define CHUNK_SIZE 4096
 
 /* Parses the file incrementally in 4096-byte chunks, feeding events into ctx.
@@ -294,6 +373,8 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 		exit(1);
 	}
 
+	ctx->parser = parser;
+
 	XML_SetUserData(parser, ctx);
 	XML_SetParamEntityParsing(parser, XML_PARAM_ENTITY_PARSING_ALWAYS);
 	XML_SetExternalEntityRefHandler(parser, on_external_entity);
@@ -307,6 +388,7 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	XML_SetAttlistDeclHandler(parser, on_attlist_decl);
 	XML_SetEntityDeclHandler(parser, on_entity_decl);
 	XML_SetNotationDeclHandler(parser, on_notation_decl);
+	XML_SetElementDeclHandler(parser, on_element_decl);
 
 	char buf[CHUNK_SIZE];
 	int done = 0;
@@ -338,7 +420,7 @@ static long now_ms(void) {
 static void usage(const char *prog) {
 	fprintf(stderr,
 			"Usage: %s -type <text|cdata|comment|tag|attribute|attrib-name|"
-			"pi-name|pi-data|xml-decl|doctype|attlist|entity|notation> "
+			"pi-name|pi-data|xml-decl|doctype|attlist|entity|notation|element> "
 			"[-duration <time-window-ms>] [-trace] <xml-file-path>\n",
 			prog);
 }
@@ -413,6 +495,7 @@ int main(int argc, char **argv) {
 	else if (strcmp(type_arg, "attlist") == 0) type = TYPE_ATTLIST;
 	else if (strcmp(type_arg, "entity") == 0) type = TYPE_ENTITY;
 	else if (strcmp(type_arg, "notation") == 0) type = TYPE_NOTATION;
+	else if (strcmp(type_arg, "element") == 0) type = TYPE_ELEMENT;
 	else {
 		fprintf(stderr, "Error: invalid -type '%s'\n", type_arg);
 		usage(argv[0]);

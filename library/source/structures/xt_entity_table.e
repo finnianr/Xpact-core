@@ -15,6 +15,7 @@ class
 inherit
 	HASH_TABLE [STRING, XT_ENTITY_NAME]
 		rename
+			empty as table_empty,
 			item as table_item,
 			put as put_name
 		export

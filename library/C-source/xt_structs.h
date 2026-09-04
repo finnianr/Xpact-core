@@ -16,7 +16,7 @@ typedef struct XT_particle XT_element_particle;
 
 typedef struct XT_particle {
 	EIF_INTEGER type;
-	EIF_INTEGER quantity;
+	EIF_INTEGER quantifier;
 	EIF_CHARACTER *name;
 	EIF_NATURAL list_count;
 	XT_element_particle *particle_list;

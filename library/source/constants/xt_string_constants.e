@@ -12,9 +12,11 @@ note
 class
 	XT_STRING_CONSTANTS
 
-feature {NONE} -- Declaration qualifiers
+feature {NONE} -- Reserved names
 
 	CDATA: STRING = "CDATA"
+
+	EMPTY: STRING = "EMPTY"
 
 	NDATA: STRING = "NDATA"
 
@@ -23,6 +25,11 @@ feature {NONE} -- Declaration qualifiers
 	PUBLIC: STRING = "PUBLIC"
 
 	SYSTEM: STRING = "SYSTEM"
+
+	Reserved_names: SPECIAL [STRING]
+		once
+			Result := (<< CDATA, EMPTY, NDATA, NOTATION, PUBLIC, SYSTEM >>).area
+		end
 
 feature {NONE} -- Standard strings
 

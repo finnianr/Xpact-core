@@ -142,6 +142,17 @@ feature {NONE} -- Token processing
 						put_boolean (default_case, True)
 					end
 
+				when Tok_name_question, Tok_name_asterisk, Tok_name_plus then
+					inspect declaration when ELEMENT then
+						if declaration_stack.count = 2 then
+							parts_list.extend (buf, index, end_index - 1, token, newline_or_tab_found)
+						else
+							Result := Error_syntax; put_boolean (done, True)
+						end
+					else
+						put_boolean (default_case, True)
+					end
+
 				when Tok_literal then
 					inspect declaration when ATTLIST, ELEMENT, ENTITY, NOTATION_, PARAMETER_ENTITY then
 						if declaration_stack.count = 2 then
@@ -183,8 +194,7 @@ feature {NONE} -- Token processing
 					end
 
 				when Tok_open_parenthesis, Tok_or, Tok_close_parenthesis, Tok_close_paren_plus,
-					Tok_close_paren_question, Tok_close_paren_asterisk,
-					Tok_name_question, Tok_name_asterisk, Tok_name_plus
+					Tok_close_paren_question, Tok_close_paren_asterisk, Tok_comma
 				then
 					parts_list.on_operator (token)
 
@@ -366,8 +376,10 @@ feature {NONE} -- Event handlers
 
 				when ELEMENT then
 					if attached element_parts_list as parts_list and then parts_list.is_valid then
+						parts_list.on_close
 						if attached parts_list.particle as model then
 							on_element_declaration (parts_list.name, model)
+							parts_list.wipe_out
 						else
 							Result := Error_syntax
 						end

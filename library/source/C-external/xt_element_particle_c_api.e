@@ -16,7 +16,7 @@ note
 
 class
 	XT_ELEMENT_PARTICLE_C_API
-	
+
 inherit
 	EL_C_API
 
@@ -36,18 +36,18 @@ feature {NONE} -- C struct field access
 			"((XT_element_particle *) $a_ptr)->type = $a_value;"
 		end
 
-	frozen c_quantity (a_ptr: POINTER): INTEGER
+	frozen c_quantifier (a_ptr: POINTER): INTEGER
 		external
 			"C inline use <xt_structs.h>"
 		alias
-			"return ((XT_element_particle *) $a_ptr)->quantity;"
+			"return ((XT_element_particle *) $a_ptr)->quantifier;"
 		end
 
-	frozen c_set_quantity (a_ptr: POINTER; a_value: INTEGER)
+	frozen c_set_quantifier (a_ptr: POINTER; a_value: INTEGER)
 		external
 			"C inline use <xt_structs.h>"
 		alias
-			"((XT_element_particle *) $a_ptr)->quantity = $a_value;"
+			"((XT_element_particle *) $a_ptr)->quantifier = $a_value;"
 		end
 
 	frozen c_name (a_ptr: POINTER): POINTER

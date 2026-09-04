@@ -35,7 +35,7 @@ feature -- Basic operations
 			ptr := area; i_final := count - 1
 			remaining_count := n
 			from i := 0; j := dest_index until i > i_final or dest_full loop
-				c_i := read_character_8 (ptr, i)
+				c_i := c_read_character_8 (ptr, i)
 				inspect c_i when '%R' then
 				-- skip '%R'
 					i := i + 1

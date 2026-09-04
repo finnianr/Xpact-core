@@ -37,7 +37,7 @@ feature -- Basic operations
 			i := 0; j := dest_index
 			if pending_CR then
 			-- The last chunked ended with a CR
-				inspect read_character_8 (ptr, i) when '%N' then
+				inspect c_read_character_8 (ptr, i) when '%N' then
 					do_nothing
 				else
 				-- replace isolated '%R' with '%N'
@@ -48,14 +48,14 @@ feature -- Basic operations
 				pending_CR := False
 			end
 			from until i > i_final loop
-				c := read_character_8 (ptr, i)
+				c := c_read_character_8 (ptr, i)
 				inspect c when '%R' then
 					i := i + 1 -- skip '%R'
 					if i > i_final then
 					-- find out in next chunk if characters is Newline
 						pending_CR := True
 					else
-						inspect read_character_8 (ptr, i) when '%N' then
+						inspect c_read_character_8 (ptr, i) when '%N' then
 							do_nothing
 						else
 						-- replace isolated '%R' with '%N'

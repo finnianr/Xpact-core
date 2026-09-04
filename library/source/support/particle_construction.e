@@ -4,22 +4,22 @@ note
 		declaration in the shared-mime-info DTD:
 
 			<!DOCTYPE mime-info [
-			<!ELEMENT mime-info (mime-type)+>
-			<!ELEMENT mime-type (comment+ , (acronym , expanded-acronym)? ,
-				(icon | generic-icon | glob | magic | treemagic | root-XML | alias | sub-class-of)*)>
-			<!ELEMENT comment (#PCDATA)>
-			<!ELEMENT acronym (#PCDATA)>
-			<!ELEMENT expanded-acronym (#PCDATA)>
-			<!ELEMENT icon EMPTY>
-			<!ELEMENT generic-icon EMPTY>
-			<!ELEMENT glob EMPTY>
-			<!ELEMENT magic (match)+>
-			<!ELEMENT match (match)*>
-			<!ELEMENT treemagic (treematch)+>
-			<!ELEMENT treematch (treematch)*>
-			<!ELEMENT root-XML EMPTY>
-			<!ELEMENT alias EMPTY>
-			<!ELEMENT sub-class-of EMPTY>
+				<!ELEMENT mime-info (mime-type)+>
+				<!ELEMENT mime-type (comment+ , (acronym , expanded-acronym)? ,
+					(icon | generic-icon | glob | magic | treemagic | root-XML | alias | sub-class-of)*)>
+				<!ELEMENT comment (#PCDATA)>
+				<!ELEMENT acronym (#PCDATA)>
+				<!ELEMENT expanded-acronym (#PCDATA)>
+				<!ELEMENT icon EMPTY>
+				<!ELEMENT generic-icon EMPTY>
+				<!ELEMENT glob EMPTY>
+				<!ELEMENT magic (match)+>
+				<!ELEMENT match (match)*>
+				<!ELEMENT treemagic (treematch)+>
+				<!ELEMENT treematch (treematch)*>
+				<!ELEMENT root-XML EMPTY>
+				<!ELEMENT alias EMPTY>
+				<!ELEMENT sub-class-of EMPTY>
 			]>
 
 		Each query below returns the ${XT_CONTENT_PARTICLE} tree eXpat's
@@ -63,6 +63,7 @@ feature -- Access
 	mime_type_model: XT_CONTENT_PARTICLE
 			-- <!ELEMENT mime-type (comment+ , (acronym , expanded-acronym)? ,
 			--   (icon | generic-icon | glob | magic | treemagic | root-XML | alias | sub-class-of)*)>
+			
 			-- A 3-part sequence: one or more <comment>, an optional
 			-- <acronym>/<expanded-acronym> pair, then zero or more of eight
 			-- alternative elements.

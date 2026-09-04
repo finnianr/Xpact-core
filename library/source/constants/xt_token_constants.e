@@ -83,16 +83,16 @@ feature {NONE} -- Prolog / DTD tokens
 	Tok_param_entity_ref: INTEGER = 28
 	Tok_instance_start: INTEGER = 29
 
-feature {NONE} -- Extended prolog tokens (occurrenceIndicators, conditionals)
+feature {NONE} -- Prolog ELEMENT related tokens
 
-	Tok_name_question: INTEGER = 30
-	Tok_name_asterisk: INTEGER = 31
-	Tok_name_plus: INTEGER = 32
+	Tok_name_question: INTEGER = 30	-- name?
+	Tok_name_asterisk: INTEGER = 31	-- name*
+	Tok_name_plus: INTEGER = 32		-- name+
 	Tok_cond_sect_open: INTEGER = 33
 	Tok_cond_sect_close: INTEGER = 34
-	Tok_close_paren_question: INTEGER = 35
-	Tok_close_paren_asterisk: INTEGER = 36
-	Tok_close_paren_plus: INTEGER = 37
+	Tok_close_paren_question: INTEGER = 35 -- )?
+	Tok_close_paren_asterisk: INTEGER = 36 -- )*
+	Tok_close_paren_plus: INTEGER = 37		-- )+
 	Tok_comma: INTEGER = 38
 
 feature {NONE} -- Literal / CDATA tokens

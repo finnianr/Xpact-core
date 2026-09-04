@@ -3,7 +3,7 @@ note
 		Eiffel wrapper, with managed memory, for the C struct `XT_particle' (typedef'd as
 		`XT_element_particle') defined in `xt_structs.h'. Field-for-field, this struct is
 		laid out the same as eXpat's own ${XML_Content} struct (`struct XML_cp' in
-		expat.h): a NATURAL `type', a NATURAL `quantity', a `name' string pointer, a
+		expat.h): a NATURAL `type', a NATURAL `quantifier', a `name' string pointer, a
 		NATURAL `list_count' and a `particle_list' pointer to a contiguous run of
 		`list_count' further `XT_element_particle' cells.
 	]"
@@ -45,13 +45,18 @@ inherit
 			copy, is_equal
 		end
 
+	DEBUG_OUTPUT
+		undefine
+			copy, is_equal
+		end
+
 create
 	make, make_shareable
 
 feature {NONE} -- Initialization
 
 	make
-			-- Allocate the C struct and set its `type' and `quantity' fields.
+			-- Allocate the C struct and set its `type' and `quantifier' fields.
 			-- `list_count' starts at 0 and `particle_list' starts empty.
 		do
 			make_default
@@ -70,16 +75,25 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
+	debug_output: STRING
+		local
+			s: XT_STRING_8_ROUTINES
+		do
+			Result := s.substitute (Output_template, <<
+				attached_name, Content_names [type], Quantifier_names [quantifier + 1], list_count.out
+			>>)
+		end
+
 	type: INTEGER
 			-- Kind of content particle: one of the CT_* constants.
 		do
 			Result := c_type (self_ptr)
 		end
 
-	quantity: INTEGER
+	quantifier: INTEGER
 			-- Number of times `Current' may occur: one of the QT_* constants.
 		do
-			Result := c_quantity (self_ptr)
+			Result := c_quantifier (self_ptr)
 		end
 
 	name: detachable STRING
@@ -100,11 +114,12 @@ feature -- Basic operations
 			i: INTEGER; ptr: POINTER
 		do
 			checksum.add_integer_32 (type)
-			checksum.add_integer_32 (quantity)
+			checksum.add_integer_32 (quantifier)
 			ptr := name_ptr
 			if attached name as l_name then
 				checksum.add_string (l_name)
 			end
+			checksum.add_integer_32 (list_count)
 			if attached particle_list.area as l_area then
 				from i := 0 until i = l_area.count loop
 					l_area [i].append_to_crc_32 (checksum) -- recurse
@@ -139,18 +154,18 @@ feature -- Element change
 	set_defaults
 		do
 			c_set_type (self_ptr, CT_any)
-			c_set_quantity (self_ptr, QT_none)
+			c_set_quantifier (self_ptr, QT_none)
 			c_set_particle_list_count (self_ptr, 0)
 			c_set_name (self_ptr, default_pointer)
 		end
 
-	set_type_and_quantity (a_type, a_quantity: INTEGER)
+	set_type_and_quantifier (a_type, a_quantity: INTEGER)
 		do
 			c_set_type (self_ptr, a_type)
-			c_set_quantity (self_ptr, a_quantity)
+			c_set_quantifier (self_ptr, a_quantity)
 		ensure
 			type_set: type = a_type
-			quantity_set: quantity = a_quantity
+			quantity_set: quantifier = a_quantity
 		end
 
 	set_type (a_type: INTEGER)
@@ -160,11 +175,11 @@ feature -- Element change
 			type_set: type = a_type
 		end
 
-	set_quantity (a_quantity: INTEGER)
+	set_quantifier (a_quantity: INTEGER)
 		do
-			c_set_quantity (self_ptr, a_quantity)
+			c_set_quantifier (self_ptr, a_quantity)
 		ensure
-			quantity_set: quantity = a_quantity
+			quantity_set: quantifier = a_quantity
 		end
 
 	set_name (a_name: detachable STRING)
@@ -178,7 +193,7 @@ feature -- Element change
 			if attached a_name as l_name then
 				to_c := l_name.to_c
 				c_set_name (self_ptr, $to_c)
-				set_type_and_quantity (CT_name, QT_none)
+				set_type_and_quantifier (CT_name, QT_none)
 			else
 				c_set_name (self_ptr, default_pointer)
 			end
@@ -246,7 +261,7 @@ feature {XT_ELEMENT_PARTICLE} -- Implementation
 
 	same_as (other: XT_ELEMENT_PARTICLE): BOOLEAN
 		do
-			if type = other.type and then quantity = other.quantity and then list_count = other.list_count then
+			if type = other.type and then quantifier = other.quantifier and then list_count = other.list_count then
 				Result := attached_name ~ other.attached_name
 			end
 		end
@@ -286,6 +301,8 @@ feature {NONE} -- Constants
 		once
 			create Result.make (0)
 		end
+
+	Output_template: STRING = "%S: type = %S; quantity = %S; list_count = %S"
 
 	Shared_particle: XT_ELEMENT_PARTICLE
 		once

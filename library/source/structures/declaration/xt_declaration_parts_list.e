@@ -26,6 +26,7 @@ inherit
 	ARRAYED_LIST [STRING]
 		rename
 			first as name,
+			empty as empty_list,
 			extend as extend_list,
 			make as make_sized,
 			index_of as index_of_item
@@ -118,7 +119,7 @@ feature -- Element change
 				area_v2 := l_area; token_area := l_token_area
 			end
 			inspect token
-				when Tok_name, Tok_pound_name then
+				when Tok_name, Tok_pound_name, Tok_name_question, Tok_name_asterisk, Tok_name_plus then
 					if attached name_constant (buffer, start_index, end_index, token) as constant then
 						l_name := constant
 
@@ -134,6 +135,7 @@ feature -- Element change
 						when State_building then
 						-- building an expression like (gif|jpg|png)
 							last_name := l_name
+							on_name (l_name, token)
 					else end
 
 				when Tok_literal then
@@ -153,7 +155,7 @@ feature -- Element change
 			last_name := Empty_string
 		end
 
-feature -- Event handler
+feature -- Event handlers
 
 	on_operator (token: INTEGER)
 		-- change parsing state for '(', ')' or '|' operators
@@ -193,9 +195,26 @@ feature -- Event handler
 
 			else end
 		ensure
-			OR_token_inserted: token = Tok_close_parenthesis implies token_area [count - 1] = Tok_or
-			last_name_ends_with_parenthesis:
-				token = Tok_close_parenthesis implies (attached last as s and then s.count > 1 and then s [s.count] = ')')
+			OR_token_inserted: token = Tok_close_parenthesis implies is_OR_token_appended (token)
+			valid_complex_type: token = Tok_close_parenthesis implies valid_complex_type (token)
+		end
+
+	on_name (a_name: STRING; token: INTEGER)
+		do
+		end
+
+feature {NONE} -- Contract support
+
+	is_OR_token_appended (token: INTEGER): BOOLEAN
+		do
+			Result := token_area [count - 1] = Tok_or
+		end
+
+	valid_complex_type (token: INTEGER): BOOLEAN
+		do
+			if attached last as s then
+				Result := s = complex_type and then s.count > 1 and then s [s.count] = ')'
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -266,11 +285,6 @@ feature {NONE} -- Constants
 	Hash_names: SPECIAL [STRING]
 		once
 			Result := (<< Hash_fixed, Hash_implied, Hash_pcdata, Hash_required >>).area
-		end
-
-	Reserved_names: SPECIAL [STRING]
-		once
-			Result := (<< CDATA, NDATA, NOTATION, PUBLIC, SYSTEM >>).area
 		end
 
 	Hash_fixed: STRING = "#FIXED"
