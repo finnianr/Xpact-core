@@ -74,10 +74,11 @@ feature -- Status query
 
 					elseif attached ntfs.last_string as line then
 						index_root_slash := line.index_of ('/', 1)
-						if index_root_slash > 0 and then attached line.substring (index_root_slash, line.count) as mount_path then
-							if dir_path.name.starts_with_general (mount_path) then
-								Result := True; done := True
-							end
+						if index_root_slash > 0
+							and then attached line.substring (index_root_slash, line.count) as mount_path
+							and then dir_path.name.starts_with_general (mount_path)
+						then
+							Result := True; done := True
 						end
 					end
 				end

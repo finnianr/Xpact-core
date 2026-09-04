@@ -54,3 +54,6 @@ mandarin-names-and-text.xsl: eXpat passes = 2072; Xpact-core passes = 3204 (x1.5
 
 2026 30 AUG 16:16
 mandarin-names-and-text.xsl: eXpat passes = 2113; Xpact-core passes = 3214 (x1.52 to eXpat)
+
+2026 04 SEP 15:58
+mandarin-names-and-text.xsl: eXpat passes = 2067; Xpact-core passes = 3180 (x1.54 to eXpat)

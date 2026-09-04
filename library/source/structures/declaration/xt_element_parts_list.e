@@ -88,7 +88,7 @@ feature -- Event handlers
 		end
 
 	on_operator (token: INTEGER)
-		-- change parsing state for '(', ')' or '|' operators
+		-- change parsing state for operator tokens related to characters: ()|,*+
 		local
 			l_particle: XT_ELEMENT_PARTICLE
 		do

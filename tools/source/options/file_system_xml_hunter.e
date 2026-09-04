@@ -48,6 +48,7 @@ feature {NONE} -- Initialization
 				valid_driver := Environment.file_system_module (dir_path) ~ "ntfs3"
 			else
 				create directory.make_with_path (dir_path)
+				valid_driver := True
 			end
 			create extension_list.make (0)
 			extension_list.append (new_xml_extensions.split (';'))
