@@ -80,7 +80,7 @@ feature -- Access
 	inserted_name: detachable XT_ENTITY_NAME
 
 	expanded_value (
-		buffer: SPECIAL [CHARACTER_8]; lower_index, upper_index: INTEGER; entity: SPECIAL [XT_ENTITY_NAME]
+		buffer: SPECIAL [CHARACTER_8]; lower_index, upper_index: INTEGER; a_entity: SPECIAL [XT_ENTITY_NAME]
 		is_dtd_literal, keep_ref: BOOLEAN
 	): STRING
 		-- copy of `value' with any entities like &amp; expanded.
@@ -93,11 +93,11 @@ feature -- Access
 				amp_index := index_of (buffer, '&', start_index, upper_index)
 				if amp_index > -1 then
 					append_area (Result, buffer, start_index, amp_index - 1)
-					if i = entity.count then
+					if i = a_entity.count then
 						append_area (Result, buffer, amp_index, upper_index)
 						done := True
 
-					elseif attached entity [i] as name
+					elseif attached a_entity [i] as name
 						and then same_characters (buffer, amp_index, amp_index + name.count - 1, name)
 					then
 						if is_dtd_literal implies name.is_dtd_expandable then

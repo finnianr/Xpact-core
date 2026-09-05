@@ -32,13 +32,19 @@ feature {NONE} -- Initialization
 			has_space: command_template.has (' ')
 		local
 			s: XT_STRING_8_ROUTINES; error_file: PLAIN_TEXT_FILE; temp_path: PATH
-			checksum: EL_CRC_32_DIGEST; argument_list: ARRAYED_LIST [ANY]
+			checksum: EL_CRC_32_DIGEST; argument_list: ARRAYED_LIST [STRING]
 		do
 			error_lines := Empty_lines
 			create checksum
+			if attached {ARRAY [STRING]} argument_array as array then
+				create argument_list.make_from_array (array)
+			else
+				argument_list := s.new_string_list (argument_array)
+			end
+
 			checksum.add_string (command_template) -- stop clashes
-			across argument_array as argument loop
-				checksum.add_string (argument.out)
+			across argument_list as argument loop
+				checksum.add_string (argument)
 			end
 			temp_path := Environment.temporary_command_path
 			Environment.make_directory (temp_path, False)
@@ -46,9 +52,8 @@ feature {NONE} -- Initialization
 			output_path := temp_path.extended (s.substitute (Output_name_template, << "output", checksum.out >>))
 			error_path := temp_path.extended (s.substitute (Output_name_template, << "error", checksum.out >>))
 
-			create argument_list.make_from_array (argument_array)
-			argument_list.extend (output_path); argument_list.extend (error_path)
-			Environment.do_command (command_template + Redirection_template, argument_list.to_array)
+			argument_list.append (s.new_string_list (<< output_path, error_path >>))
+			Environment.do_command (command_template + Redirection_template, argument_list)
 
 			return_code := Environment.return_code
 			if return_code = 0 then

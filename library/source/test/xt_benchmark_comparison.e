@@ -90,8 +90,8 @@ feature {NONE} -- Implementation
 		require
 			benchmark_dir_defined: not benchmark_dir_path.is_empty
 		local
-			index_colon, expat_pass_count: INTEGER; time_stamp: DATE_TIME
-			expat_output: XT_COMMAND_OUTPUT_FILE; log_file: PLAIN_TEXT_FILE done: BOOLEAN
+			index_colon, expat_pass_count: INTEGER; time_stamp: DATE_TIME; done: BOOLEAN
+			expat_output: XT_COMMAND_OUTPUT_FILE; log_file: PLAIN_TEXT_FILE
 			log_line: STRING; log_path: PATH
 		do
 			create log_line.make_empty

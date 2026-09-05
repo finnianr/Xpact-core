@@ -36,9 +36,9 @@ feature {NONE} -- Initialization
 				create predefined_table.make (table.count)
 				from table.start until table.after loop
 					if attached table.key_for_iteration as name
-						and then attached item (name.area, 0, name.count - 1) as entity
+						and then attached item (name.area, 0, name.count - 1) as l_entity
 					then
-						predefined_table.extend (table.item_for_iteration.out, entity)
+						predefined_table.extend (table.item_for_iteration.out, l_entity)
 					end
 					table.forth
 				end

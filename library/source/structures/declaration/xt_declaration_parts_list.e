@@ -50,6 +50,7 @@ inherit
 
 	XT_PARSE_CONSTANTS
 		rename
+			ENTITY as ENTITY_,
 			NOTATION as NOTATION_
 		export
 			{ANY} Valid_declaration_types
@@ -93,9 +94,23 @@ feature -- Status query
 			Result := count >= 2 and then i_th (count - 1) = NDATA
 		end
 
+	i_th_reserved (i: INTEGER): BOOLEAN
+		require
+			valid_index: valid_index (i)
+		do
+			Result := Reserved_names.index_of (area [i - 1], 0) > -1
+		end
+
 	is_public: BOOLEAN
 		do
 			Result := count >= 2 and then i_th (2) = PUBLIC
+		end
+
+	is_complete: BOOLEAN
+		-- `True' if list is completed and therefore ready for calling `on_close_declaration'
+		-- (redefined in `XT_ATTRIBUTE_PARTS_LIST')
+		do
+			Result := False
 		end
 
 	is_valid: BOOLEAN

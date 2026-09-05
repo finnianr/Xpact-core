@@ -163,6 +163,14 @@ feature -- Tests
 			end
 		end
 
+	test_unix_escaping
+		local
+			s: XT_STRING_8_ROUTINES; path: PATH
+		do
+			create path.make_from_string ("a*b c")
+			assert ("escaped", s.new_unix_escaped (path) ~ "a\*b\ c")
+		end
+
 feature -- Status report
 
 	failed: BOOLEAN
@@ -190,7 +198,8 @@ feature {NONE} -- Implementation
 				[agent test_date_formatting, "date_formatting"],
 				[agent test_file_info, "file_info"],
 				[agent test_ntfs_link_detection, "ntfs_link_detection"],
-				[agent test_mount_driver_name, "mount_driver_name"]
+				[agent test_mount_driver_name, "mount_driver_name"],
+				[agent test_unix_escaping, "unix_escaping"]
 			>>)
 		end
 

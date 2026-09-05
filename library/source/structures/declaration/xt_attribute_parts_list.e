@@ -15,8 +15,10 @@ class
 
 inherit
 	XT_DECLARATION_PARTS_LIST
+		rename
+			name as element_name
 		redefine
-			is_valid
+			is_complete, is_valid, Reserved_names
 		end
 
 create
@@ -24,49 +26,71 @@ create
 
 feature -- Access
 
-	default_value: detachable STRING
-		local
-			last_index: INTEGER
+	name: STRING
 		do
-			if attached token_area as tokens and then tokens.count >= 4 then
-				last_index := tokens.count - 1
-				if tokens [last_index] = Tok_literal then
-					inspect tokens [last_index - 1]
-						when Tok_name, Tok_or then
-						-- Eg. <!ATTLIST glob weight CDATA "50">
-							Result := area_v2 [last_index]
-
-						when Tok_pound_name then
-							if area_v2 [last_index - 1] = Hash_fixed then
-							-- Eg. <!ATTLIST mime-info xmlns CDATA
-							-- 	#FIXED "http://www.freedesktop.org/standards/shared-mime-info">
-								Result := area_v2 [last_index]
-							end
-					else
-					end
-				end
+			if attached area_v2 as l_area and then l_area.valid_index (1) then
+				Result := l_area [1]
+			else
+				Result := Empty_string
 			end
 		end
 
 feature -- Status query
 
 	defines_attribute_default: BOOLEAN
-		-- `True' if parts list defines a default value for an attribute
-		local
-			i, i_final: INTEGER
+		-- `True' completed attribute defines a default value
+		require
+			completed: is_complete
 		do
-			if count >= 3 and then token_area [count - 1] = Tok_literal and then area_v2 [count - 2] = CDATA then
-				Result := True
-				from i := 0; i_final := count - 3 until i = i_final or not Result loop
-					Result := token_area [i] = Tok_name
-					i := i + 1
-				end
-			end
+			Result := i_th_token (count) = Tok_literal
 		end
 
 	is_valid: BOOLEAN
+		-- is syntactically legal expat input, one component (the element name foo),
+		-- zero attribute definitions, but XML_AttlistDeclHandler simply never fires for it.
 		do
-			Result := count >= 4
+			Result := count >= 1 and then token_area [0] = Tok_name
+		end
+
+	is_complete: BOOLEAN
+		-- `True' if list is completed and therefore ready for calling `on_close_declaration'
+		do
+			-- to get even one XML_AttlistDeclHandler call, you need all 4: element name, attribute name,
+			-- AttType, and DefaultDecl. There's no 3-component form that fires it: drop any one and you
+			-- either get a syntax error (per the state-machine trace above) or, in the zero-attribute-defs
+			-- case (<!ATTLIST foo>), no attribute to report at all, so the handler simply never runs.
+			inspect state when State_extending then
+				inspect count
+					when 4 then
+						if token_area.filled_with (Tok_name, 0, 1) then
+							if i_th (4) = Hash_fixed then
+								Result := False
+
+							elseif i_th_token (3) = Tok_or and then i_th (3).starts_with (NOTATION) then
+								-- <!ATTLIST doc format NOTATION (gif|jpg|png) #IMPLIED>
+								inspect i_th_token (4) when Tok_pound_name, Tok_literal then
+									Result := True
+								else end
+							else
+								inspect i_th_token (4)
+									when Tok_pound_name then
+									-- <!ATTLIST delegate command CDATA #REQUIRED>
+										Result := i_th_reserved (3)
+
+									when Tok_literal then
+									-- <!ATTLIST magic priority CDATA "50">
+										Result := i_th_reserved (3)
+								else
+								end
+							end
+						end
+					when 5 then
+						if token_area.filled_with (Tok_name, 0, 1) and then i_th_reserved (3) then
+							-- <!ATTLIST delegate xmlns CDATA #FIXED ''>
+							Result := i_th (4) = Hash_fixed and then i_th_token (5) = Tok_literal
+						end
+				else end
+			else end
 		end
 
 	is_required: BOOLEAN
@@ -78,20 +102,22 @@ feature -- Status query
 			end
 		end
 
-feature -- Basic operations
+feature -- Element change
 
-	extend_table (default_value_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING])
+	partial_wipe_out
 		local
-			default_values_list: ARRAYED_LIST [STRING]
+			l_name: STRING
 		do
-			if attached default_value_table [name] as list then
-				default_values_list := list
-			else
-				create default_values_list.make (5)
-				default_value_table.extend (default_values_list, name)
-			end
-			default_values_list.extend (i_th (2))
-			default_values_list.extend (last)
+			l_name := element_name
+			wipe_out
+			area.extend (l_name); token_area.extend (Tok_name)
+		end
+
+feature {NONE} -- Constants
+
+	Reserved_names: SPECIAL [STRING]
+		once
+			Result := (<< CDATA, ID, IDREF, IDREFS, ENTITY, ENTITIES, NMTOKEN, NMTOKENS, NOTATION >>).area
 		end
 
 end

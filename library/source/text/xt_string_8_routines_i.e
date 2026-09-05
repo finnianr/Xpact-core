@@ -20,7 +20,20 @@ inherit
 
 feature {NONE} -- Access
 
-	ascii_to_utf_16 (str: STRING): STRING
+	frozen area_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; keep_ref: BOOLEAN): STRING_8
+		-- `lower .. upper' substring of `area' placed in `output_area'
+		do
+			Result := empty_buffer
+			append_area (Result, area, lower, upper)
+			if keep_ref then
+				Result := Result.twin
+			end
+		ensure
+			null_terminated: Result.area [Result.count] = '%U'
+			not_keeping_definition: not keep_ref implies Result = Output_buffer
+		end
+
+	frozen ascii_to_utf_16 (str: STRING): STRING
 		local
 			i: INTEGER
 		do
@@ -73,11 +86,11 @@ feature {NONE} -- Access
 			Result.wipe_out
 		end
 
-	frozen substitute (template: STRING; insertions: ARRAY [STRING]): STRING
+	frozen substitute (template: STRING; insertions: READABLE_INDEXABLE [STRING]): STRING
 		require
-			enough_place_holders: template.occurrences ('%S') = insertions.count
+			enough_place_holders: template.occurrences ('%S') = insertions.upper -  insertions.lower + 1
 		local
-			index, last_index: INTEGER; index_stack: like Shared_index_stack
+			index, last_index, offset: INTEGER; index_stack: like Shared_index_stack
 		do
 			Result := template.twin
 			index_stack := Shared_index_stack
@@ -89,8 +102,9 @@ feature {NONE} -- Access
 					index_stack.put (index)
 				end
 			end
+			offset := insertions.lower - 1
 			from until index_stack.is_empty loop
-				Result.replace_substring (insertions [index_stack.count], index_stack.item, index_stack.item)
+				Result.replace_substring (insertions [index_stack.count - offset], index_stack.item, index_stack.item)
 				index_stack.remove
 			end
 		ensure
@@ -181,6 +195,30 @@ feature {NONE} -- Factory
 			Result := area_substring (area, lower, upper, True)
 		end
 
+	frozen new_string_list (list: READABLE_INDEXABLE [ANY]): ARRAYED_LIST [STRING]
+		local
+			i, upper: INTEGER; u: UTF_CONVERTER; item: ANY
+		do
+			upper := list.upper
+			create Result.make (upper - list.lower + 1)
+			from i := list.lower until i > upper loop
+				item := list [i]
+				if attached {PATH} item as path then
+					Result.extend (new_unix_escaped (path))
+
+				elseif attached {STRING} item as str then
+					if is_ascii_string (str) or else u.is_valid_utf_8_string_8 (str) then
+						Result.extend (str)
+					else
+						Result.extend (u.utf_32_string_to_utf_8_string_8 (str))
+					end
+				else
+					Result.extend (item.out)
+				end
+				i := i + 1
+			end
+		end
+
 	frozen new_unicode_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): STRING_32
 		-- `lower .. upper' substring of `area' placed in `output_area'
 		local
@@ -189,17 +227,38 @@ feature {NONE} -- Factory
 			Result := u.utf_8_string_8_to_string_32 (area_substring (area, lower, upper, False))
 		end
 
-	frozen area_substring (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER; keep_ref: BOOLEAN): STRING_8
-		-- `lower .. upper' substring of `area' placed in `output_area'
+	new_unix_escaped (a_path: PATH): STRING
+		-- path escaped for Unix bash shell
+		local
+			path: STRING; i, i_upper: INTEGER; requires_escaping: BOOLEAN; c: CHARACTER
 		do
-			Result := empty_buffer
-			append_area (Result, area, lower, upper)
-			if keep_ref then
-				Result := Result.twin
+			path := a_path.utf_8_name
+			Result := path
+			if attached Reserved_path_chars as reserved and then attached path.area as area then
+				from i := 0; i_upper := path.count - 1 until i > i_upper or requires_escaping loop
+					c := area [i]
+					if not c.is_alpha_numeric and then (c = ' ' or else reserved.has (c)) then
+						requires_escaping := True
+					else
+						i := i + 1
+					end
+				end
+				if requires_escaping then
+					create Result.make ((path.count * 1.3).ceiling)
+					from i := 0 until i > i_upper loop
+						c := area [i]
+						inspect c when ' ' then
+							Result.extend ('\')
+						else
+							if reserved.has (c) then
+								Result.extend ('\')
+							end
+						end
+						Result.extend (c)
+						i := i + 1
+					end
+				end
 			end
-		ensure
-			null_terminated: Result.area [Result.count] = '%U'
-			not_keeping_definition: not keep_ref implies Result = Output_buffer
 		end
 
 	frozen key_set_string (key_list: ITERABLE [STRING]; keep_ref: BOOLEAN): STRING
@@ -457,6 +516,8 @@ feature {NONE} -- Constants
 		once
 			create Result.make_filled (' ', 3)
 		end
+
+	Reserved_path_chars: STRING = "*?[]<>|&;`$()%"%'!~ %T%N-"
 
 invariant
 	empty_definition: Empty_string.is_empty

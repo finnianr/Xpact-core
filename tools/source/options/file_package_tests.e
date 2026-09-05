@@ -112,12 +112,14 @@ feature {NONE} -- Implementation
 		end
 
 	set_package_path (a_package_path: PATH)
+		local
+			s: XT_STRING_8_ROUTINES
 		do
 			package_path := a_package_path
 			if attached a_package_path.entry as entry then
 				package_content_path := Environment.temporary_command_path + entry
 				Environment.make_directory (package_content_path, False)
-				Environment.do_command (Unzip_template, << a_package_path, package_content_path >>)
+				Environment.do_command (Unzip_template, s.new_string_list (<< a_package_path, package_content_path >>))
 				if Environment.return_code = 0 then
 					make_log
 					is_extracted := True

@@ -17,7 +17,8 @@ class
 inherit
 	EL_CRC_32_DIGEST
 		redefine
-			add_boolean, add_character_buffer, add_characters, add_integer_32, default_create, reset
+			add_boolean, add_character_buffer, add_characters, add_integer_32, add_string,
+			default_create, reset
 		end
 
 create
@@ -47,6 +48,8 @@ feature -- Element change
 		end
 
 	add_characters (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
+		local
+			c_i, code: CHARACTER; i: INTEGER
 		do
 			Precursor (area, lower, upper)
 			put_indexable (area, lower, upper)
@@ -65,6 +68,18 @@ feature -- Element change
 			IO.put_integer (integer)
 			IO.put_new_line
 		end
+
+	add_string (str: STRING_8)
+		do
+			if str.is_empty then
+				put_digest_trace (True)
+				IO.put_character ('"')
+				IO.put_new_line
+			else
+				Precursor (str)
+			end
+		end
+
 
 feature {NONE} -- Implementation
 

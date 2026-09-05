@@ -30,6 +30,7 @@ inherit
 
 	XT_PARSE_CONSTANTS
 		rename
+			ENTITY as ENTITY_,
 			NOTATION as NOTATION_
 		end
 
@@ -57,7 +58,7 @@ feature {NONE} -- Initialization
 			create declaration_parts.make_filled (document_type_parts_list, PARAMETER_ENTITY)
 			declaration_parts [ATTLIST - 1] := attribute_parts_list
 			declaration_parts [ELEMENT - 1] := element_parts_list
-			declaration_parts [ENTITY - 1] := entity_parts_list
+			declaration_parts [ENTITY_ - 1] := entity_parts_list
 			declaration_parts [NOTATION_ - 1] := notation_parts_list
 			declaration_parts [PARAMETER_ENTITY - 1] := parameter_entity_parts_list
 
@@ -125,16 +126,19 @@ feature {NONE} -- Token processing
 
 				when Tok_decl_close then
 					inspect declaration_stack.count when 2 then
-						Result := on_close_declaration (declaration, parse_data)
+						Result := on_close_declaration (declaration, token, parse_data)
 						declaration_stack.remove_tail (1)
 					else
 						Result := Error_syntax; put_boolean (done, True)
 					end
 
 				when Tok_name then
-					inspect declaration when ATTLIST, ELEMENT, ENTITY, NOTATION_, PARAMETER_ENTITY then
+					inspect declaration when ATTLIST, ELEMENT, ENTITY_, NOTATION_, PARAMETER_ENTITY then
 						if declaration_stack.count = 2 then
 							parts_list.extend (buf, index, end_index, token, newline_or_tab_found)
+							if parts_list.is_complete then
+								Result := on_close_declaration (declaration, token, parse_data)
+							end
 						else
 							Result := Error_syntax; put_boolean (done, True)
 						end
@@ -154,14 +158,20 @@ feature {NONE} -- Token processing
 					end
 
 				when Tok_literal then
-					inspect declaration when ATTLIST, ELEMENT, ENTITY, NOTATION_, PARAMETER_ENTITY then
+					inspect declaration when ATTLIST, ELEMENT, ENTITY_, NOTATION_, PARAMETER_ENTITY then
 						if declaration_stack.count = 2 then
 							if attached expanded_dtd_literal (buf, index, end_index) as str
 								and then attached str.area as area
 							then
 								parts_list.extend (area, 0, str.count - 1, token, newline_or_tab_found)
+								if parts_list.is_complete then
+									Result := on_close_declaration (declaration, token, parse_data)
+								end
 							else
 								parts_list.extend (buf, index + 1, end_index - 1, token, newline_or_tab_found)
+								if parts_list.is_complete then
+									Result := on_close_declaration (declaration, token, parse_data)
+								end
 							end
 						else
 							Result := Error_syntax; put_boolean (done, True)
@@ -172,15 +182,18 @@ feature {NONE} -- Token processing
 
 				when Tok_pound_name then
 					inspect declaration
-						when ATTLIST, ELEMENT, ENTITY, NOTATION_, PARAMETER_ENTITY then
+						when ATTLIST, ELEMENT, ENTITY_, NOTATION_, PARAMETER_ENTITY then
 							parts_list.extend (buf, index, end_index, token, newline_or_tab_found)
+							if parts_list.is_complete then
+								Result := on_close_declaration (declaration, token, parse_data)
+							end
 
 					else
 						put_boolean (default_case, True)
 					end
 
 				when Tok_percent then
-					inspect declaration when ENTITY then
+					inspect declaration when ENTITY_ then
 						inspect declaration_stack.count when 2 then
 							declaration := PARAMETER_ENTITY
 							declaration_stack [1] := declaration
@@ -268,7 +281,7 @@ feature {NONE} -- Token processing
 							if c_has_dtd_section (parse_data) then
 								do_nothing
 							else
-								Result := on_close_declaration (DOCTYPE, parse_data)
+								Result := on_close_declaration (DOCTYPE, token, parse_data)
 								put_boolean (done, Result > 0)
 							end
 						else
@@ -293,7 +306,7 @@ feature {NONE} -- Token processing
 						if declaration_stack.count = 1 and then attached document_type_parts_list as parts_list then
 							set_in_dtd_section (parse_data, True)
 							set_has_dtd_section (parse_data, True)
-							Result := on_close_declaration (DOCTYPE, parse_data)
+							Result := on_close_declaration (DOCTYPE, token, parse_data)
 							put_boolean (done, Result > 0)
 						else
 							Result := Error_syntax; put_boolean (done, True)
@@ -353,22 +366,28 @@ feature {NONE} -- Token processing
 
 feature {NONE} -- Event handlers
 
-	on_close_declaration (declaration: INTEGER; parse_data: POINTER): INTEGER
+	on_close_declaration (declaration, token: INTEGER; parse_data: POINTER): INTEGER
 		local
-			system_id, public_id: detachable STRING
-			example: detachable PARTICLE_CONSTRUCTION
+			system_id, public_id, default_value: detachable STRING
 		do
 			inspect declaration
 				when ATTLIST then
 					if attached attribute_parts_list as parts_list then
 						if parts_list.is_valid then
-							if parts_list.defines_attribute_default then
-								parts_list.extend_table (attribute_value_defaults_table)
+							if parts_list.is_complete then
+								if parts_list.defines_attribute_default then
+									default_value := parts_list.last
+									extend_attribute_value_defaults_table (parts_list.element_name, parts_list.name, parts_list.last)
+								end
+								on_attribute_list_declaration (
+									parts_list [1], parts_list [2], parts_list [3], default_value, parts_list.is_required
+								)
 							end
-							on_attribute_list_declaration (
-								parts_list [1], parts_list [2], parts_list [3], parts_list.default_value, parts_list.is_required
-							)
-							parts_list.wipe_out
+							inspect token when Tok_decl_close then
+								parts_list.wipe_out
+							else
+								parts_list.partial_wipe_out
+							end
 						else
 							Result := Error_syntax
 						end
@@ -385,7 +404,7 @@ feature {NONE} -- Event handlers
 						end
 					end
 
-				when ENTITY then
+				when ENTITY_ then
 					if attached entity_parts_list as parts_list then
 						if parts_list.is_valid then
 							parts_list.extend_table (entity_table)
@@ -452,6 +471,22 @@ feature {NONE} -- Event handlers
 		end
 
 feature {NONE} -- Implementation
+
+	extend_attribute_value_defaults_table (element_name, attribute_name, value: STRING)
+		local
+			default_values_list: ARRAYED_LIST [STRING]
+		do
+			if attached attribute_value_defaults_table as table then
+				if attached table [element_name] as list then
+					default_values_list := list
+				else
+					create default_values_list.make (5)
+					table.extend (default_values_list, element_name)
+				end
+				default_values_list.extend (attribute_name)
+				default_values_list.extend (value)
+			end
+		end
 
 	in_prolog_section: BOOLEAN
 		do

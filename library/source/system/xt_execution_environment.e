@@ -110,31 +110,15 @@ feature -- Status query
 
 feature -- Basic operations
 
-	do_command (template: STRING; argument_array: ARRAY [ANY])
+	do_command (template: STRING; argument_array: READABLE_INDEXABLE [STRING])
 		local
-			s: XT_STRING_8_ROUTINES; argument_list: ARRAYED_LIST [STRING]
-			u: UTF_CONVERTER; command: STRING
+			s: XT_STRING_8_ROUTINES; command: STRING
 		do
-			create argument_list.make (argument_array.count)
-			across argument_array as arg loop
-				if attached {PATH} arg as path then
-					argument_list.extend (unix_escaped (path))
-
-				elseif attached {STRING} arg as str then
-					if s.is_ascii_string (str) or else u.is_valid_utf_8_string_8 (str) then
-						argument_list.extend (str)
-					else
-						argument_list.extend (u.utf_32_string_to_utf_8_string_8 (str))
-					end
-				else
-					argument_list.extend (arg.out)
-				end
-			end
-			command := s.substitute (template, argument_list.to_array)
+			command := s.substitute (template, argument_array)
 			if s.is_ascii_string (command) then
 				system (command)
 			else
-				system (u.utf_8_string_8_to_string_32 (command))
+				system ({UTF_CONVERTER}.utf_8_string_8_to_string_32 (command))
 			end
 		end
 
@@ -174,34 +158,6 @@ feature -- Basic operations
 
 feature -- Access
 
-	unix_escaped (a_path: PATH): STRING
-		-- path escaped for Unix bash shell
-		local
-			path: STRING
-		do
-			path := a_path.utf_8_name
-			if attached Reserved_path_chars as reserved and then
-				across path as c some
-					(not c.is_alpha_numeric implies c = ' ' or else reserved.has (c))
-				end
-			then
-				create Result.make ((path.count * 1.3).ceiling)
-				across path as c loop
-					inspect c
-						when ' ' then
-							Result.extend ('\')
-					else
-						if reserved.has (c) then
-							Result.extend ('\')
-						end
-					end
-					Result.extend (c)
-				end
-			else
-				Result := path
-			end
-		end
-
 	temporary_command_path: PATH
 		do
 			Result := temporary_path (command_name)
@@ -215,6 +171,9 @@ feature -- Access
 				create Result.make_empty
 			end
 		end
+
+feature {NONE} -- Implementation
+
 
 feature -- Constants
 
@@ -239,7 +198,5 @@ feature {NONE} -- Constants
 		once
 			create Result.make_with_name ("none.dat")
 		end
-
-	Reserved_path_chars: STRING = "*?[]<>|&;`$()%"%'!~ %T%N-"
 
 end

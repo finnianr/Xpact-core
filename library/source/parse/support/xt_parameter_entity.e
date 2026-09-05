@@ -37,10 +37,10 @@ feature {NONE} -- Initialization
 			s: XT_STRING_8_ROUTINES
 		do
 			name := parts_list.name; external_id := s.Empty_string
-			if parts_list.count = 3 and then attached parts_list [2] as id
-				and then Valid_external_id_list.has (id)
+			if parts_list.count = 3 and then attached parts_list [2] as parts_id
+				and then Valid_external_id_list.has (parts_id)
 			then
-				external_id := id
+				external_id := parts_id
 			end
 			value := parts_list.last
 		end
