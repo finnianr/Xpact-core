@@ -18,7 +18,7 @@ inherit
 		undefine
 			is_valid
 		redefine
-			name_cache, new_value
+			is_reserved_first_letter, name_cache, new_value, Reserved_identifiers
 		end
 
 	XT_ENTITY_PARTS_I
@@ -47,7 +47,7 @@ feature -- Basic operations
 					entity_table.put (Empty_string, name)
 				when 4 .. 6 then
 					entity_table.put (Empty_string, name)
-					
+
 					if  i_th (count - 1) = NDATA and i_th_token (count) = Tok_name
 						and then attached entity_table.inserted_name as entity_name
 					then
@@ -70,7 +70,24 @@ feature {NONE} -- Implementation
 			end
 		end
 
+feature {NONE} -- Implementation
+
+	is_reserved_first_letter (c: CHARACTER): BOOLEAN
+		do
+			inspect c when 'N', 'P', 'S' then
+				Result := True
+			else
+			end
+		end
+
 feature {NONE} -- Internal attributes
 
 	name_cache: XT_ENTITY_NAME_CACHE
+
+feature {NONE} -- Reserved identifiers
+
+	Reserved_identifiers: SPECIAL [STRING]
+		once
+			Result := (<< NDATA, SYSTEM, PUBLIC >>).area
+		end
 end

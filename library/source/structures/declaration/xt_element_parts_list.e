@@ -16,7 +16,8 @@ class
 inherit
 	XT_DECLARATION_PARTS_LIST
 		redefine
-			make, on_name, on_operator, wipe_out, is_valid, is_OR_token_appended, valid_complex_type
+			make, on_name, on_operator, wipe_out, is_valid, is_OR_token_appended, is_reserved_first_letter,
+			valid_complex_type, Hash_identifiers, Reserved_identifiers
 		end
 
 	XT_ELEMENT_PARTICLE_CONSTANTS
@@ -62,13 +63,22 @@ feature {NONE} -- Contract support
 feature -- Event handlers
 
 	on_close
+		local
+			type: INTEGER
 		do
-			inspect count when 2 then
-				if i_th (2) = EMPTY and then attached borrowed as l_particle then
-					l_particle.set_type_and_quantifier (CT_empty, QT_none)
-					particle := l_particle
+			if count = 2 and then attached last as l_last then
+				if l_last = ANY then
+					type := CT_any
+				elseif l_last = EMPTY then
+					type := CT_empty
 				end
-			else end
+				inspect type when CT_any, CT_empty then
+					if attached borrowed as l_particle then
+						l_particle.set_type_and_quantifier (type, QT_none)
+						particle := l_particle
+					end
+				else end
+			end
 		end
 
 	on_name (a_name: STRING; token: INTEGER)
@@ -198,10 +208,32 @@ feature {NONE} -- Implementation
 			else end
 	 	end
 
+feature {NONE} -- Implementation
+
+	is_reserved_first_letter (c: CHARACTER): BOOLEAN
+		do
+			inspect c when 'A', 'E' then
+				Result := True
+			else
+			end
+		end
+
 feature {NONE} -- Internal attributes
 
 	particle_pool: ARRAYED_STACK [XT_ELEMENT_PARTICLE]
 
 	stack: ARRAYED_STACK [XT_ELEMENT_PARTICLE]
 		-- expression building stack
+
+feature {NONE} -- Reserved identifiers
+
+	Hash_identifiers: SPECIAL [STRING]
+		once
+			Result := (<< Hash_pcdata >>).area
+		end
+
+	Reserved_identifiers: SPECIAL [STRING]
+		once
+			Result := (<< ANY, EMPTY >>).area
+		end
 end

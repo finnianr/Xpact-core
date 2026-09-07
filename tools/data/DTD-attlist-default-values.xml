@@ -13,7 +13,8 @@
 <!-- a generic icon name as per the Icon Naming Specification, only required if computing
   it from the mime-type would not work, See "generic-icon" in the Shared Mime Specification --><!ELEMENT generic-icon EMPTY>
 <!ATTLIST generic-icon name (application-x-executable | audio-x-generic | emblem-symbolic-link | folder | font-x-generic | image-x-generic | media-floppy | media-optical | package-x-generic | text-html | text-x-generic | text-x-generic-template | text-x-script | video-x-generic | x-office-address-book | x-office-calendar | x-office-document | x-office-presentation | x-office-spreadsheet) #REQUIRED>
-<!ELEMENT glob EMPTY>
+<!ENTITY % declare_empty_glob "<!ELEMENT glob EMPTY>">
+%declare_empty_glob; <!-- recursive parameter entity test -->
 <!ATTLIST glob pattern CDATA #REQUIRED>
 <!ATTLIST glob weight CDATA "50">
 <!ATTLIST glob case-sensitive CDATA #IMPLIED>

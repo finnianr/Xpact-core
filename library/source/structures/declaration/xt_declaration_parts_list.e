@@ -9,6 +9,7 @@ note
 			
 			<< "magic", "priority", "CDATA", "50" >>
 	]"
+	notes: "See end of class"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -75,7 +76,7 @@ feature {NONE} -- Initialization
 			last_name := Empty_string
 			state := State_extending
 			create token_area.make_empty (area.capacity)
-			create complex_type.make (50)
+			create option_list.make (50)
 		end
 
 feature -- Access
@@ -98,7 +99,7 @@ feature -- Status query
 		require
 			valid_index: valid_index (i)
 		do
-			Result := Reserved_names.index_of (area [i - 1], 0) > -1
+			Result := Reserved_identifiers.index_of (area [i - 1], 0) > -1
 		end
 
 	is_public: BOOLEAN
@@ -165,7 +166,7 @@ feature -- Element change
 		do
 			Precursor
 			token_area.wipe_out
-			complex_type.wipe_out
+			option_list.wipe_out
 			state := State_extending
 			last_name := Empty_string
 		end
@@ -182,31 +183,31 @@ feature -- Event handlers
 			inspect token
 				when Tok_open_parenthesis then
 					state := State_building
-					complex_type.wipe_out
+					option_list.wipe_out
 					if attached area as l_area and then l_area.count > 1
 						and then l_area [l_area.count - 1] = NOTATION
 					then
-						complex_type.append (NOTATION)
+						option_list.append (NOTATION)
 					end
-					complex_type.append_character ('(')
+					option_list.append_character ('(')
 
 				when Tok_close_parenthesis then
-					complex_type.append (last_name)
-					complex_type.append_character (')')
+					option_list.append (last_name)
+					option_list.append_character (')')
 					if attached area as l_area and then l_area.count < l_area.capacity then
-						if complex_type.starts_with (NOTATION) then
+						if option_list.starts_with (NOTATION) then
 							i := l_area.count - 1
-							l_area [i] := complex_type; token_area [i] := Tok_or
+							l_area [i] := option_list; token_area [i] := Tok_or
 						else
-							l_area.extend (complex_type)
+							l_area.extend (option_list)
 							token_area.extend (Tok_or)
 						end
 					end
 					state := State_extending
 
 				when Tok_or then
-					complex_type.append (last_name)
-					complex_type.append_character ('|')
+					option_list.append (last_name)
+					option_list.append_character ('|')
 
 			else end
 		ensure
@@ -228,7 +229,7 @@ feature {NONE} -- Contract support
 	valid_complex_type (token: INTEGER): BOOLEAN
 		do
 			if attached last as s then
-				Result := s = complex_type and then s.count > 1 and then s [s.count] = ')'
+				Result := s = option_list and then s.count > 1 and then s [s.count] = ')'
 			end
 		end
 
@@ -236,19 +237,31 @@ feature {NONE} -- Implementation
 
 	name_constant (buffer: SPECIAL [CHARACTER_8]; start_index, end_index, token: INTEGER): detachable STRING
 		local
-			i, i_final: INTEGER; name_array: SPECIAL [STRING]
+			i, i_upper: INTEGER; name_array: SPECIAL [STRING]
+			first_letter_ok: BOOLEAN
 		do
 			inspect token when Tok_pound_name then
-				name_array := Hash_names
+				name_array := Hash_identifiers; first_letter_ok := buffer [start_index] = '#'
 			else
-				name_array := Reserved_names
+				name_array := Reserved_identifiers
+				first_letter_ok := is_reserved_first_letter (buffer [start_index])
 			end
-			from i := 0; i_final := name_array.count until i = i_final or Result /= Void loop
-				if same_characters (buffer, start_index, end_index, name_array [i]) then
-					Result := name_array [i]
-				else
-					i := i + 1
+			if first_letter_ok then
+				from i := 0; i_upper := name_array.count - 1 until i > i_upper or Result /= Void loop
+					if same_characters (buffer, start_index, end_index, name_array [i]) then
+						Result := name_array [i]
+					else
+						i := i + 1
+					end
 				end
+			end
+		end
+
+	is_reserved_first_letter (c: CHARACTER): BOOLEAN
+		do
+			inspect c when 'P', 'S' then
+				Result := True
+			else
 			end
 		end
 
@@ -285,22 +298,34 @@ feature {NONE} -- Internal attributes
 
 	last_name: STRING
 
-	complex_type: STRING
+	option_list: STRING
+		-- (a|b|c) or NOTATION(a|b|c)
 
 	name_cache: XT_NAME_CACHE
 
 	token_area: SPECIAL [INTEGER]
+
+feature {NONE} -- Reserved identifiers
+
+	Hash_identifiers: SPECIAL [STRING]
+		once
+			create Result.make_empty (0)
+		end
+
+	Reserved_identifiers: SPECIAL [STRING]
+		-- for both <!DOCTYPE ...> and  <!NOTATION ...>
+		once
+			Result := (<< PUBLIC, SYSTEM >>).area
+		ensure
+			all_reserved_first_letter:
+				across Result as identifier all is_reserved_first_letter (identifier [1]) end
+		end
 
 feature {NONE} -- Constants
 
 	State_building: INTEGER = 1
 
 	State_extending: INTEGER = 2
-
-	Hash_names: SPECIAL [STRING]
-		once
-			Result := (<< Hash_fixed, Hash_implied, Hash_pcdata, Hash_required >>).area
-		end
 
 	Hash_fixed: STRING = "#FIXED"
 
@@ -311,33 +336,31 @@ feature {NONE} -- Constants
 	Hash_pcdata: STRING = "#PCDATA"
 
 note
-	attribute_types: "[
+	notes: "[
 
-		Values that `att_type` (from XML_AttlistDeclHandler) can take, per the
-		DTD AttType grammar (XML 1.0 S3.3.1):
+		<!ATTLIST ...> in attlist2's types[] (line 747-749), plus NOTATION and the DefaultDecl keywords in attlist2/attlist8:
 
-			DTD declaration           | att_type string
-			--------------------------+----------------------------
-			CDATA                     | "CDATA"
-			ID                        | "ID"
-			IDREF                     | "IDREF"
-			IDREFS                    | "IDREFS"
-			ENTITY                    | "ENTITY"
-			ENTITIES                  | "ENTITIES"
-			NMTOKEN                   | "NMTOKEN"
-			NMTOKENS                  | "NMTOKENS"
-			(v1|v2|...)  (enumeration)| "(v1|v2|...)"
-			NOTATION (n1|n2|...)      | "NOTATION(n1|n2|...)"
+			CDATA, ID, IDREF, IDREFS, ENTITY, ENTITIES, NMTOKEN, NMTOKENS: the 8 TokenizedType/StringType keywords
+			NOTATION  introduces NotationType
+			#REQUIRED, #IMPLIED, #FIXED: DefaultDecl (pound-prefixed)
 
-		* The 8 fixed-keyword forms above are exact, case-sensitive constants
-			- that is the complete set; there is no "NOTATIONS" or other variant.
-		* "NOTATION(...)" has NO space between "NOTATION" and "(" in the
-			string expat delivers, even though the XML source usually writes
-			"NOTATION (a|b)" with a space.
-		* Enumeration and NOTATION are the only two variable-content forms;
-			check att_type.item (1) = '(' for a plain enumeration, or
-			att_type.starts_with ("NOTATION(") for a notation list; otherwise
-			it is one of the 8 fixed keywords above.
+		<!ENTITY ...>
+
+			SYSTEM, PUBLIC:  external-ID keywords (both general and parameter entity forms)
+			NDATA: introduces the notation name on an unparsed general entity
+
+		<!ELEMENT ...>  element1, element2:
+
+			EMPTY, ANY: the two atomic content-spec keywords
+			#PCDATA: pound-prefixed, opens a Mixed content spec (element2)
+
+		<!NOTATION ...>  notation1:
+
+			SYSTEM, PUBLIC: external/public ID keywords (same two words as ENTITY, independently matched here)
+
+		<!DOCTYPE ...> doctype1:
+
+			SYSTEM, PUBLIC: same pair again, independently matched a third time
 	]"
 
 end

@@ -1,5 +1,6 @@
 note
 	description: "${XT_DECLARATION_PARTS_LIST} for `<!ATTLIST ..>' declarations"
+	notes: "See end of class"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -16,9 +17,10 @@ class
 inherit
 	XT_DECLARATION_PARTS_LIST
 		rename
-			name as element_name
+			name as element_name,
+			is_valid as is_valid_as_one
 		redefine
-			is_complete, is_valid, Reserved_names
+			is_complete, is_valid_as_one, is_reserved_first_letter, Hash_identifiers, Reserved_identifiers
 		end
 
 create
@@ -37,19 +39,11 @@ feature -- Access
 
 feature -- Status query
 
-	defines_attribute_default: BOOLEAN
-		-- `True' completed attribute defines a default value
-		require
-			completed: is_complete
-		do
-			Result := i_th_token (count) = Tok_literal
-		end
-
-	is_valid: BOOLEAN
+	is_valid_as_one: BOOLEAN
 		-- is syntactically legal expat input, one component (the element name foo),
 		-- zero attribute definitions, but XML_AttlistDeclHandler simply never fires for it.
 		do
-			Result := count >= 1 and then token_area [0] = Tok_name
+			Result := count = 1 and then token_area [0] = Tok_name
 		end
 
 	is_complete: BOOLEAN
@@ -66,8 +60,8 @@ feature -- Status query
 							if i_th (4) = Hash_fixed then
 								Result := False
 
-							elseif i_th_token (3) = Tok_or and then i_th (3).starts_with (NOTATION) then
-								-- <!ATTLIST doc format NOTATION (gif|jpg|png) #IMPLIED>
+							elseif i_th_token (3) = Tok_or and then i_th (3) = option_list then
+							-- <!ATTLIST match type (string | big16 | big32) #REQUIRED>
 								inspect i_th_token (4) when Tok_pound_name, Tok_literal then
 									Result := True
 								else end
@@ -95,29 +89,84 @@ feature -- Status query
 
 	is_required: BOOLEAN
 		require
-			valid_list: is_valid
+			completed: is_complete
 		do
-			if attached area_v2 [3] as l_name then
+			if attached i_th (4) as l_name then
 				Result := l_name = Hash_fixed or else l_name = Hash_required
 			end
 		end
 
+	last_is_literal: BOOLEAN
+		-- `True' completed attribute defines a default value
+		require
+			completed: is_complete
+		do
+			Result := i_th_token (count) = Tok_literal
+		end
+
 feature -- Element change
 
-	partial_wipe_out
+	reset
 		local
 			l_name: STRING
 		do
 			l_name := element_name
 			wipe_out
 			area.extend (l_name); token_area.extend (Tok_name)
+		ensure
+			one_item: count = 1
 		end
 
-feature {NONE} -- Constants
+feature {NONE} -- Implementation
 
-	Reserved_names: SPECIAL [STRING]
+	is_reserved_first_letter (c: CHARACTER): BOOLEAN
+		do
+			inspect c when 'C', 'E', 'I', 'N' then
+				Result := True
+			else
+			end
+		end
+
+feature {NONE} -- Reserved identifiers
+
+	Hash_identifiers: SPECIAL [STRING]
 		once
-			Result := (<< CDATA, ID, IDREF, IDREFS, ENTITY, ENTITIES, NMTOKEN, NMTOKENS, NOTATION >>).area
+			Result := (<< Hash_fixed, Hash_implied, Hash_required >>).area
 		end
+
+	Reserved_identifiers: SPECIAL [STRING]
+		once
+			Result := (<< CDATA, ENTITY, ENTITIES, ID, IDREF, IDREFS, NMTOKEN, NMTOKENS, NOTATION >>).area
+		end
+
+note
+	notes: "[
+
+		Values that `att_type` (from XML_AttlistDeclHandler) can take, per the
+		DTD AttType grammar (XML 1.0 S3.3.1):
+
+			DTD declaration           | att_type string
+			--------------------------+----------------------------
+			CDATA                     | "CDATA"
+			ID                        | "ID"
+			IDREF                     | "IDREF"
+			IDREFS                    | "IDREFS"
+			ENTITY                    | "ENTITY"
+			ENTITIES                  | "ENTITIES"
+			NMTOKEN                   | "NMTOKEN"
+			NMTOKENS                  | "NMTOKENS"
+			(v1|v2|...)  (enumeration)| "(v1|v2|...)"
+			NOTATION (n1|n2|...)      | "NOTATION(n1|n2|...)"
+
+		* The 8 fixed-keyword forms above are exact, case-sensitive constants
+			- that is the complete set; there is no "NOTATIONS" or other variant.
+		* "NOTATION(...)" has NO space between "NOTATION" and "(" in the
+			string expat delivers, even though the XML source usually writes
+			"NOTATION (a|b)" with a space.
+		* Enumeration and NOTATION are the only two variable-content forms;
+			check att_type.item (1) = '(' for a plain enumeration, or
+			att_type.starts_with ("NOTATION(") for a notation list; otherwise
+			it is one of the 8 fixed keywords above.
+	]"
 
 end

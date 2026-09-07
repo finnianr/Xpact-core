@@ -20,9 +20,7 @@ typedef enum {
 	TYPE_COMMENT,
 	TYPE_TAG,
 	TYPE_ATTRIBUTE,
-	TYPE_ATTRIB_NAME,
-	TYPE_PI_NAME,
-	TYPE_PI_DATA,
+	TYPE_PROCESSING,
 	TYPE_XML_DECL,
 	TYPE_DOCTYPE,
 	TYPE_ATTLIST,
@@ -32,8 +30,8 @@ typedef enum {
 } data_type_t;
 
 static const char *data_type_name[] = {
-	"text", "cdata", "comment", "tag", "attribute", "attrib-name",
-	"pi-name", "pi-data", "xml-decl", "doctype", "attlist", "entity", "notation",
+	"text", "cdata", "comment", "tag", "attribute",
+	"processing", "xml-decl", "doctype", "attlist", "entity", "notation",
 	"element"
 };
 
@@ -144,9 +142,8 @@ static void XMLCALL on_processing_instruction(void *userData,
                                                const XML_Char *target,
                                                const XML_Char *data) {
 	crc_ctx_t *ctx = (crc_ctx_t *) userData;
-	if (ctx->type == TYPE_PI_NAME) {
+	if (ctx->type == TYPE_PROCESSING) {
 		crc32_update(ctx, (const unsigned char *) target, strlen(target));
-	} else if (ctx->type == TYPE_PI_DATA) {
 		if (data && *data)
 			crc32_update(ctx, (const unsigned char *) data, strlen(data));
 	}
@@ -166,11 +163,8 @@ static void XMLCALL on_start_element(void *userData, const XML_Char *name,
 		crc32_update(ctx, (const unsigned char *) name, strlen(name));
 	} else if (ctx->type == TYPE_ATTRIBUTE) {
 		for (int i = 0; atts[i]; i += 2) {
-			crc32_update(ctx, (const unsigned char *) atts[i + 1], strlen(atts[i + 1]));
-		}
-	} else if (ctx->type == TYPE_ATTRIB_NAME) {
-		for (int i = 0; atts[i]; i += 2) {
 			crc32_update(ctx, (const unsigned char *) atts[i], strlen(atts[i]));
+			crc32_update(ctx, (const unsigned char *) atts[i + 1], strlen(atts[i + 1]));
 		}
 	}
 }
@@ -419,8 +413,8 @@ static long now_ms(void) {
 
 static void usage(const char *prog) {
 	fprintf(stderr,
-			"Usage: %s -type <text|cdata|comment|tag|attribute|attrib-name|"
-			"pi-name|pi-data|xml-decl|doctype|attlist|entity|notation|element> "
+			"Usage: %s -type <text|cdata|comment|tag|attribute|"
+			"processing|xml-decl|doctype|attlist|entity|notation|element> "
 			"[-duration <time-window-ms>] [-trace] <xml-file-path>\n",
 			prog);
 }
@@ -487,9 +481,7 @@ int main(int argc, char **argv) {
 	else if (strcmp(type_arg, "comment") == 0) type = TYPE_COMMENT;
 	else if (strcmp(type_arg, "tag") == 0) type = TYPE_TAG;
 	else if (strcmp(type_arg, "attribute") == 0) type = TYPE_ATTRIBUTE;
-	else if (strcmp(type_arg, "attrib-name") == 0) type = TYPE_ATTRIB_NAME;
-	else if (strcmp(type_arg, "pi-name") == 0) type = TYPE_PI_NAME;
-	else if (strcmp(type_arg, "pi-data") == 0) type = TYPE_PI_DATA;
+	else if (strcmp(type_arg, "processing") == 0) type = TYPE_PROCESSING;
 	else if (strcmp(type_arg, "xml-decl") == 0) type = TYPE_XML_DECL;
 	else if (strcmp(type_arg, "doctype") == 0) type = TYPE_DOCTYPE;
 	else if (strcmp(type_arg, "attlist") == 0) type = TYPE_ATTLIST;

@@ -46,6 +46,15 @@ feature {NONE} -- Access
 			valid_last: Result [Result.count - 1] = str [str.count]
 		end
 
+	frozen as_entity_name (a_name: STRING): XT_ENTITY_NAME
+		do
+			if attached {XT_ENTITY_NAME} a_name as name then
+				Result := name
+			else
+				create Result.make_shared (a_name)
+			end
+		end
+
 	frozen char_ref_number (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- Parse &#N; or &#xH; starting at '&'
 		-- Unicode code point of the character reference starting at start_index ('&').

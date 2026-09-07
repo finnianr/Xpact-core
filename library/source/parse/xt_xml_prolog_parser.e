@@ -72,7 +72,8 @@ feature {NONE} -- Initialization
 			ptr: POINTER
 		do
 			Precursor
-			is_standalone   	 	   := False
+			is_standalone					:= False
+			runway_expansion_threshold := Default_runway_expansion_threshold
 
 			ptr := parse_data_memory.item
 			if not ptr.is_default_pointer then
@@ -93,10 +94,10 @@ feature {NONE} -- Token processing
 
 	process_doctype_definition (
 		buf: like buffer; index, end_index, token: INTEGER; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
-		parse_data: POINTER; done, default_case, common_case: TYPED_POINTER [BOOLEAN]
+		parse_data: POINTER; a_source_type: NATURAL_8; done, default_case, common_case: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
-			decl_type, declaration: INTEGER; name: STRING; parts_list: XT_DECLARATION_PARTS_LIST
+			decl_type, declaration: INTEGER; parts_list: XT_DECLARATION_PARTS_LIST
 		do
 			inspect declaration_stack.count when 0 then
 				parts_list := document_type_parts_list
@@ -201,10 +202,9 @@ feature {NONE} -- Token processing
 					else end
 
 				when Tok_param_entity_ref then
-					name := parameter_name_cache.item (buf, index + 1, end_index - 1)
-					if attached parameter_entity_table [name] as parameter then
-						parameter.set_referenced
-					end
+					Result := process_parameter_entity (
+						buf, index + 1, end_index - 1, names, declaration_stack, parse_data, a_source_type, done
+					)
 
 				when Tok_open_parenthesis, Tok_or, Tok_close_parenthesis, Tok_close_paren_plus,
 					Tok_close_paren_question, Tok_close_paren_asterisk, Tok_comma
@@ -216,10 +216,50 @@ feature {NONE} -- Token processing
 			end
 		end
 
+	process_parameter_entity (
+		buf: like buffer; start_index, end_index: INTEGER; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
+		parse_data: POINTER; a_source_type: NATURAL_8; done: TYPED_POINTER [BOOLEAN]
+	): INTEGER
+		local
+			buffer_index_copy, error: INTEGER; entity_name: XT_ENTITY_NAME
+		do
+			entity_name := parameter_name_cache.item (buf, start_index, end_index)
+			if entity_name.is_open then
+				Result := Error_recursive_entity_ref; put_boolean (done, True)
+
+			elseif attached parameter_entity_table.item (entity_name) as parameter then
+				parameter.set_referenced
+				if parameter.is_external then
+					do_nothing
+				elseif attached parameter.value as value then
+					buffer_index_copy := buffer_index -- save field
+					buffer_index := 0
+					entity_name.open
+					error := process_content (
+						value.area, 0, value.count, Byte_type_table, attribute_list, names, declaration_stack,
+						element_context, parse_data, source_type (parse_data, a_source_type)
+					)  -- Recurse
+
+					entity_name.close
+					buffer_index := buffer_index_copy -- restore field
+					set_in_cdata_section (parse_data, False) -- restore state
+
+					inspect error when Error_none then
+						do_nothing
+					else
+						put_boolean (done, True)
+					end
+					Result := error
+				end
+			else
+				Result := Error_undefined_entity; put_boolean (done, True)
+			end
+		end
+
 	process_prolog (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_LIST
-		names: like name_cache; declaration_stack: SPECIAL [INTEGER]
-		parse_data: POINTER; a_index: TYPED_POINTER [INTEGER]; done: TYPED_POINTER [BOOLEAN]
+		names: like name_cache; declaration_stack: SPECIAL [INTEGER]; parse_data: POINTER; a_source_type: NATURAL_8
+		a_index: TYPED_POINTER [INTEGER]; done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
 		local
@@ -231,7 +271,8 @@ feature {NONE} -- Token processing
 			tok_end := next_token_index
 			if c_in_dtd_section (parse_data) then
 				Result := process_doctype_definition (
-					buf, index, tok_end - 1, token, names, declaration_stack, parse_data, done, $default_case, $common_case
+					buf, index, tok_end - 1, token, names, declaration_stack, parse_data, a_source_type,
+					done, $default_case, $common_case
 				)
 			else
 				inspect token
@@ -373,23 +414,27 @@ feature {NONE} -- Event handlers
 			inspect declaration
 				when ATTLIST then
 					if attached attribute_parts_list as parts_list then
-						if parts_list.is_valid then
-							if parts_list.is_complete then
-								if parts_list.defines_attribute_default then
-									default_value := parts_list.last
-									extend_attribute_value_defaults_table (parts_list.element_name, parts_list.name, parts_list.last)
-								end
-								on_attribute_list_declaration (
-									parts_list [1], parts_list [2], parts_list [3], default_value, parts_list.is_required
-								)
-							end
-							inspect token when Tok_decl_close then
-								parts_list.wipe_out
+						inspect token when Tok_decl_close then
+							if parts_list.is_valid_as_one then
+								do_nothing -- legal syntax but does not call handler
 							else
-								parts_list.partial_wipe_out
+								inspect parts_list.count when 4, 5 then
+									do_nothing -- already handled when `token /= Tok_decl_close'
+								else
+									Result := Error_syntax
+								end
 							end
+							parts_list.wipe_out
+
 						else
-							Result := Error_syntax
+							if parts_list.last_is_literal and then attached parts_list.last as value then
+								default_value := value
+								extend_attribute_value_defaults_table (parts_list.element_name, parts_list.name, value)
+							end
+							if attached parts_list.area as part then
+								on_attribute_list_declaration (part [0], part [1], part [2], default_value, parts_list.is_required)
+							end
+							parts_list.reset -- reset to just `element_name'
 						end
 					end
 
@@ -447,7 +492,7 @@ feature {NONE} -- Event handlers
 				when PARAMETER_ENTITY then
 					if attached parameter_entity_parts_list as parts_list then
 						if parts_list.is_valid then
-							parameter_entity_table.put (parts_list.new_parameter, parts_list.name)
+							parameter_entity_table.put (parts_list.new_parameter, as_entity_name (parts_list.name))
 							on_entity (parts_list)
 							parts_list.wipe_out
 						else
@@ -646,6 +691,36 @@ feature {NONE} -- Implementation
 			doctype_identifiers.formal_public := Empty_string
 		end
 
+
+	source_type (parse_data: POINTER; a_source_type: NATURAL_8): NATURAL_8
+		do
+			inspect a_source_type when Source_expansion_with_checks then
+				Result := a_source_type
+			else
+				if c_content_count (parse_data) + c_entity_expansion_count (parse_data) > runway_expansion_threshold then
+					Result := Source_expansion_with_checks
+				else
+					Result := Source_expansion
+				end
+			end
+		end
+
+feature {NONE} -- Deferred
+
+	process_content (
+		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
+		attributes: XT_ATTRIBUTE_LIST; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
+		a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER; a_source_type: NATURAL_8
+	): INTEGER
+		require
+			valid_range: start_index >= 0 and then start_index <= end_index
+			end_in_buffer: buf = buffer implies end_index <= buffer_end
+			buffer_index_at_start: buffer_index = start_index
+		deferred
+		ensure
+			buffer_index_advanced: buffer_index >= start_index and buffer_index <= end_index
+		end
+
 feature {NONE} -- Declaration parts
 
 	attribute_parts_list: XT_ATTRIBUTE_PARTS_LIST
@@ -667,7 +742,7 @@ feature {NONE} -- Tables
 
 	attribute_value_defaults_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING]
 
-	parameter_entity_table: HASH_TABLE [XT_PARAMETER_ENTITY, STRING]
+	parameter_entity_table: HASH_TABLE [XT_PARAMETER_ENTITY, XT_ENTITY_NAME]
 
 feature {NONE} -- Internal attributes
 
@@ -687,5 +762,9 @@ feature {NONE} -- Internal attributes
 
 	parse_data_memory: MANAGED_POINTER
 		-- allocated memory for C struct `XT_C_PARSE_DATA_STRUCT'
+
+	runway_expansion_threshold: NATURAL_64
+		-- number of bytes processed after which checks for runaway entity expansion
+		-- should be performed
 
 end

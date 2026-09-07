@@ -139,11 +139,7 @@ feature -- Element change
 		local
 			l_name: XT_ENTITY_NAME
 		do
-			if attached {XT_ENTITY_NAME} a_name as name then
-				l_name := name
-			else
-				create l_name.make_shared (a_name)
-			end
+			l_name := as_entity_name (a_name)
 			put_name (new, l_name)
 			inserted_name := if inserted then l_name else Void end
 		end

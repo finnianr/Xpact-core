@@ -26,8 +26,6 @@ feature {NONE} -- Initialization
 	make
 		do
 			Precursor
-			runway_expansion_threshold := Default_runway_expansion_threshold
-			max_expansion_proportion := Default_max_expansion_proportion
 		ensure then
 			set_to_check_encoding: parsing_state = State_check_encoding
 			no_error: error_code = Error_none
@@ -47,6 +45,7 @@ feature {NONE} -- Initialization
 			last_buffer_request_size   := 0
 			partial_token_bytes_before := 0
 			parse_end_byte_index       := 0
+			max_expansion_proportion	:= Default_max_expansion_proportion
 		end
 
 feature -- Access
@@ -424,10 +423,6 @@ feature {NONE} -- Processor dispatch
 		-- Must update `buffer_index' to the first unconsumed byte.
 		-- Returns Error_none on success or an Error_* code on failure.
 		-- Corresponds to a single call of `m_processor' in xmlparse.c.
-		require
-			valid_range: start_index >= 0 and then start_index <= end_index
-			end_in_buffer: buf = buffer implies end_index <= buffer_end
-			buffer_index_at_start: buffer_index = start_index
 		local
 			code, index, token, tok_end: INTEGER; content_plus_expansion_count: NATURAL_64
 			context: XT_ELEMENT_CONTEXT; tag_name: STRING; done: BOOLEAN
@@ -436,7 +431,8 @@ feature {NONE} -- Processor dispatch
 			from until index >= end_index or done loop
 				if c_in_prolog_section (parse_data) then
 					Result := process_prolog (
-						buf, start_index, end_index, bt_table, attributes, names, declaration_stack, parse_data, $index, $done
+						buf, start_index, end_index, bt_table, attributes, names, declaration_stack, parse_data,
+						a_source_type, $index, $done
 					)
 					context := element_context
 
@@ -563,8 +559,6 @@ feature {NONE} -- Processor dispatch
 				else end
 			else end
 			buffer_index := index
-		ensure
-			buffer_index_advanced: buffer_index >= start_index and buffer_index <= end_index
 		end
 
 	process_entity (
@@ -593,7 +587,7 @@ feature {NONE} -- Processor dispatch
 						entity_value.area, 0, entity_value.count, bt_table, attributes, names, declaration_stack,
 						context, parse_data, source_type (parse_data, a_source_type)
 					)  -- Recurse
-					
+
 					entity_name.close
 					buffer_index := buffer_index_copy -- restore field
 					set_in_cdata_section (parse_data, False) -- restore state
@@ -642,24 +636,7 @@ feature {NONE} -- Implementation
 			depth_decreased: handler_call_depth = old handler_call_depth - 1
 		end
 
-	source_type (parse_data: POINTER; a_source_type: NATURAL_8): NATURAL_8
-		do
-			inspect a_source_type when Source_expansion_with_checks then
-				Result := a_source_type
-			else
-				if c_content_count (parse_data) + c_entity_expansion_count (parse_data) > runway_expansion_threshold then
-					Result := Source_expansion_with_checks
-				else
-					Result := Source_expansion
-				end
-			end
-		end
-
 feature {NONE} -- Internal attributes
-
-	runway_expansion_threshold: NATURAL_64
-		-- number of bytes processed after which checks for runaway entity expansion
-		-- should be performed
 
 	max_expansion_proportion: DOUBLE
 		-- maximum proportion of entity expanded text to already processed text
@@ -673,22 +650,6 @@ feature {NONE} -- Internal attributes
 		-- Cumulative count of bytes committed to the parser.
 
 	reparse_deferral_enabled: BOOLEAN
-
-feature {NONE} -- Constants
-
-	Default_runway_expansion_threshold: NATURAL_64 = 0x800000
-		-- number of bytes processed after which checks for
-		-- runaway expansion should be performed
-
-	Default_max_expansion_proportion: DOUBLE = 100.0
-
-	Source_content: NATURAL_8 = 0
-
-	Source_expansion: NATURAL_8 = 1
-		-- entity expansion
-
-	Source_expansion_with_checks: NATURAL_8 = 2
-		-- entity expansion and instruction to test if `max_expansion_proportion' exceeded
 
 invariant
 	valid_state: Parsing_states.has (parsing_state)

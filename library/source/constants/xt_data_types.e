@@ -31,8 +31,7 @@ feature {NONE} -- Constants
 	Data_type_table: HASH_TABLE [INTEGER, STRING]
 		once
 			create Result.make_from_iterable_tuples (<<
-				[Type_attribute,				"attribute"],	-- attribute value
-				[Type_attribute_name,		"attrib-name"],-- attribute name
+				[Type_attribute,				"attribute"],	-- attribute name and value
 				[Type_cdata, 					"cdata"],		-- CDATA text content
 				[Type_comment,					"comment"],		-- comment
 				[Type_decl_attribute_list,	"attlist"],		-- ATTLIST declaration
@@ -40,8 +39,7 @@ feature {NONE} -- Constants
 				[Type_decl_element,			"element"],		-- ELEMENT declaration
 				[Type_decl_entity,			"entity"],		-- ENTITY declaration
 				[Type_decl_notation,			"notation"],	-- NOTATION declaration
-				[Type_pi_name,					"pi-name"],		-- processing instruction name
-				[Type_pi_data,					"pi-data"],		-- processing instruction data
+				[Type_processing,				"processing"],	-- processing instruction name and data
 				[Type_tag,						"tag"],			-- tag name (open element)
 				[Type_text,						"text"],			-- text content
 				[Type_xml_declaration,		"xml-decl"]		-- XML declaration parts: version, encoding, standalone
@@ -60,30 +58,26 @@ feature {NONE}	-- Constants
 
 	Type_attribute: INTEGER = 1
 
-	Type_attribute_name: INTEGER = 2
+	Type_cdata: INTEGER = 2
 
-	Type_cdata: INTEGER = 3
+	Type_comment: INTEGER = 3
 
-	Type_comment: INTEGER = 4
+	Type_decl_attribute_list: INTEGER = 4
 
-	Type_decl_attribute_list: INTEGER = 5
+	Type_decl_doctype: INTEGER = 5
 
-	Type_decl_doctype: INTEGER = 6
+	Type_decl_element: INTEGER = 6
 
-	Type_decl_element: INTEGER = 7
+	Type_decl_entity: INTEGER = 7
 
-	Type_decl_entity: INTEGER = 8
+	Type_decl_notation: INTEGER = 8
 
-	Type_decl_notation: INTEGER = 9
+	Type_processing: INTEGER = 9
 
-	Type_pi_name: INTEGER = 10
+	Type_tag: INTEGER = 10
 
-	Type_pi_data: INTEGER = 11
+	Type_text: INTEGER = 11
 
-	Type_tag: INTEGER = 12
-
-	Type_text: INTEGER = 13
-
-	Type_xml_declaration: INTEGER = 14
+	Type_xml_declaration: INTEGER = 12
 
 end

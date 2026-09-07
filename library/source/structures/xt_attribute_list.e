@@ -36,7 +36,7 @@ inherit
 
 	XT_DATA_TYPES
 		export
-			{ANY} Type_attribute, Type_attribute_name
+			{ANY} Type_attribute
 		undefine
 			copy, is_equal
 		end
@@ -292,10 +292,9 @@ feature -- Appending to CRC-32 checksum
 
 	append_to_crc_32 (
 		buffer: SPECIAL [CHARACTER_8]; default_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
-		data_type: INTEGER; checksum: EL_CRC_32_DIGEST
+		checksum: EL_CRC_32_DIGEST
 	)
 		require
-			valid_data_type: data_type = Type_attribute_name or data_type = Type_attribute
 			all_default_values_unchecked: across default_values as value all not value.checked end
 		local
 			i, i_final, lower_index, upper_index: INTEGER; attribute_: XT_DEFAULT_ATTRIBUTE_VALUE
@@ -310,22 +309,16 @@ feature -- Appending to CRC-32 checksum
 						check_value (name, default_values)
 					end
 					lower_index := a [i]; upper_index := a [i + 1]
-					inspect data_type when Type_attribute_name then
-						checksum.add_string (name)
-					else
-						checksum.add_characters (choose (i, buffer, overflow_area), lower_index, upper_index)
-					end
+					checksum.add_string (name)
+					checksum.add_characters (choose (i, buffer, overflow_area), lower_index, upper_index)
 					i := i + Interval_count
 				end
 			-- Add default values for unchecked
 				from i := 0 until i = default_values.count loop
 					attribute_ := default_values [i]
 					if not attribute_.checked then
-						inspect data_type when Type_attribute_name then
-							checksum.add_string (attribute_.name)
-						else
-							checksum.add_string (attribute_.value)
-						end
+						checksum.add_string (attribute_.name)
+						checksum.add_string (attribute_.value)
 					end
 					i := i + 1
 				end

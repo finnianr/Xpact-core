@@ -57,7 +57,25 @@ feature -- Status query
 
 	is_referenced: BOOLEAN
 
+	is_external: BOOLEAN
+		-- `True' if the entity is defined externaly to document
+		do
+			Result := external_id.count > 0
+		end
+
+	is_open: BOOLEAN
+
 feature -- Status change	
+
+	close
+		do
+			is_open := False
+		end
+
+	open
+		do
+			is_open := True
+		end
 
 	set_referenced
 		do

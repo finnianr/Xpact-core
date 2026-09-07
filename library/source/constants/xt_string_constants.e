@@ -14,19 +14,21 @@ class
 
 feature {NONE} -- Reserved names
 
+	ANY: STRING = "ANY"
+
 	CDATA: STRING = "CDATA"
 
 	EMPTY: STRING = "EMPTY"
+
+	ENTITY: STRING = "ENTITY"
+
+	ENTITIES: STRING = "ENTITIES"
 
 	ID: STRING = "ID"
 
 	IDREF: STRING = "IDREF"
 
 	IDREFS: STRING = "IDREFS"
-
-	ENTITY: STRING = "ENTITY"
-
-	ENTITIES: STRING = "ENTITIES"
 
 	NDATA: STRING = "NDATA"
 
@@ -39,11 +41,6 @@ feature {NONE} -- Reserved names
 	PUBLIC: STRING = "PUBLIC"
 
 	SYSTEM: STRING = "SYSTEM"
-
-	Reserved_names: SPECIAL [STRING]
-		once
-			Result := (<< CDATA, EMPTY, NDATA, NOTATION, PUBLIC, SYSTEM >>).area
-		end
 
 feature {NONE} -- Standard strings
 

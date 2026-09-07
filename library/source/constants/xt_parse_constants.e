@@ -66,4 +66,20 @@ feature {XT_STRING_CONSTANTS} -- Declaration types
 
 	Parameter_entity: INTEGER = 6
 
+feature {NONE} -- Content expansion
+
+	Default_runway_expansion_threshold: NATURAL_64 = 0x800000
+		-- number of bytes processed after which checks for
+		-- runaway expansion should be performed
+
+	Default_max_expansion_proportion: DOUBLE = 100.0
+
+	Source_content: NATURAL_8 = 0
+
+	Source_expansion: NATURAL_8 = 1
+		-- entity expansion
+
+	Source_expansion_with_checks: NATURAL_8 = 2
+		-- entity expansion and instruction to test if `max_expansion_proportion' exceeded
+
 end

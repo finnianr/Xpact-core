@@ -226,14 +226,14 @@ feature {NONE} -- Event handlers
 				when Type_tag then
 					checksum.add_string (context.name)
 
-				when Type_attribute, Type_attribute_name then
+				when Type_attribute then
 					inspect token when Tok_start_tag_with_attributes, Tok_empty_element_with_attributes then
-						attributes.append_to_crc_32 (buf, context.default_attribute_values, data_type, checksum)
+						attributes.append_to_crc_32 (buf, context.default_attribute_values, checksum)
 					else
 					-- perhaps there are some default values defined in DTD prolog
 						inspect attributes.count when 0 then
 							if context.has_attributes then
-								attributes.append_to_crc_32 (buf, context.default_attribute_values, data_type, checksum)
+								attributes.append_to_crc_32 (buf, context.default_attribute_values, checksum)
 							end
 						else end
 					end
@@ -243,17 +243,15 @@ feature {NONE} -- Event handlers
 
 	on_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
 		do
-			inspect data_type
-				when Type_pi_name then
-					if attributes.is_empty then
-						checksum.add_characters (buf, start_index, end_index)
-					else
-						checksum.add_string (attributes.first_name)
-					end
-				when Type_pi_data then
-					if attributes.count > 0 then
-						attributes.append_first_value_to_crc_32 (buf, checksum)
-					end
+			inspect data_type when Type_processing then
+				if attributes.is_empty then
+					checksum.add_characters (buf, start_index, end_index)
+				else
+					checksum.add_string (attributes.first_name)
+				end
+				if attributes.count > 0 then
+					attributes.append_first_value_to_crc_32 (buf, checksum)
+				end
 			else
 			end
 		end
