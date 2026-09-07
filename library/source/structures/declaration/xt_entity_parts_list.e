@@ -61,7 +61,9 @@ feature -- Basic operations
 
 feature {NONE} -- Implementation
 
-	new_value (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; newline_or_tab_found: BOOLEAN): STRING_8
+	new_value (
+		buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; newline_or_tab_found: BOOLEAN
+	): STRING_8
 		do
 			if newline_or_tab_found then
 				Result := new_abnormal_string (buffer, start_index, end_index)

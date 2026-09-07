@@ -155,7 +155,11 @@ feature -- Element change
 					else end
 
 				when Tok_literal then
-					l_area.extend (new_value (buffer, start_index, end_index, newline_or_tab_found))
+					if i > 1 and then Valid_external_id_list.has (l_area [i - 2]) then
+						l_area.extend (new_public_id (buffer, start_index, end_index))
+					else
+						l_area.extend (new_value (buffer, start_index, end_index, newline_or_tab_found))
+					end
 					l_token_area.extend (token)
 			else
 			end
@@ -280,7 +284,9 @@ feature {NONE} -- Factory
 			Result := new_substring (buffer, start_index, end_index)
 		end
 
-	new_value (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; newline_or_tab_found: BOOLEAN): STRING_8
+	new_value (
+		buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER; newline_or_tab_found: BOOLEAN
+	): STRING_8
 		do
 			Result := new_attribute_value (buffer, start_index, end_index, newline_or_tab_found)
 		end

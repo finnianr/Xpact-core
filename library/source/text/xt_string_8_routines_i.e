@@ -204,6 +204,55 @@ feature {NONE} -- Factory
 			Result := area_substring (area, lower, upper, True)
 		end
 
+	frozen new_public_id (area: SPECIAL [CHARACTER_8]; a_lower, a_upper: INTEGER): STRING_8
+		-- public id substring of `area' from `lower' to `upper'
+		-- The XML 1.0 spec's note on public identifiers (following the ExternalID/PublicID production)
+		-- says that once the surrounding quotes are stripped from a PubidLiteral, the resulting string
+		-- must be normalized by:
+		-- 1. discarding leading white space,
+		-- 2. discarding trailing white space, and
+		-- 3. replacing every internal run of white space with a single space character.
+		local
+			count, leading_count, trailing_count, i, j,  lower, upper: INTEGER
+			c: CHARACTER
+		do
+			count := a_upper - a_lower + 1
+			inspect count when 0 then
+				Result := Empty_string
+			else
+				leading_count := leading_white_space (area, a_lower, a_upper)
+				if leading_count = count then
+					Result := Empty_string
+				else
+					lower := a_lower + leading_count
+					upper := a_upper - trailing_white_space (area, lower, a_upper)
+					count := upper - lower + 1
+					create Result.make (count)
+					if attached Result.area as l_area then
+						from i := lower; j := 0 until i > upper loop
+							c := area [i]
+							if c.is_space then
+								c := ' '
+							end
+							l_area [j] := c
+							if c = ' ' and then j > 0 then
+							-- if `i' th character is space and previous was too then don't increment `j'
+								inspect l_area [j - 1] when ' '  then
+									do_nothing
+								else
+									j := j + 1
+								end
+							else
+								j := j + 1
+							end
+							i := i + 1
+						end
+						Result.set_count (j)
+					end
+				end
+			end
+		end
+
 	frozen new_string_list (list: READABLE_INDEXABLE [ANY]): ARRAYED_LIST [STRING]
 		local
 			i, upper: INTEGER; u: UTF_CONVERTER; item: ANY
@@ -429,6 +478,22 @@ feature {NONE} -- Measurement
 					Result := Result + 1; i := i + 1
 				else
 					i := upper + 1 -- break
+				end
+			end
+		end
+
+	frozen trailing_white_space (area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER): INTEGER
+		-- count of trailing whitespace in `area' from `lower' to `upper'
+		require
+			valid_range: upper + 1 >= lower and then upper >= lower implies area.valid_index (lower) and area.valid_index (upper)
+		local
+			i: INTEGER
+		do
+			from i := upper until i < lower loop
+				if area [i].is_space then
+					Result := Result + 1; i := i - 1
+				else
+					i := lower - 1 -- break
 				end
 			end
 		end
