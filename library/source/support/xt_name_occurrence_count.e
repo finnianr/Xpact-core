@@ -38,13 +38,13 @@ feature -- Basic operations
 			count := count + 1
 		end
 
-	io_print
+	put_status (output: IO_MEDIUM)
 		do
-			io.put_character ('<')
-			io.put_string (name)
-			io.put_string (">: occurrences ")
-			io.put_integer (count)
-			io.put_new_line
+			output.put_character ('<')
+			output.put_string (name)
+			output.put_string (">: occurrences ")
+			output.put_integer (count)
+			output.put_new_line
 		end
 
 feature -- Comparison

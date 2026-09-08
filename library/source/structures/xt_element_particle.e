@@ -157,6 +157,7 @@ feature -- Element change
 			c_set_quantifier (self_ptr, QT_none)
 			c_set_particle_list_count (self_ptr, 0)
 			c_set_name (self_ptr, default_pointer)
+			name := Void
 		end
 
 	set_type_and_quantifier (a_type, a_quantity: INTEGER)

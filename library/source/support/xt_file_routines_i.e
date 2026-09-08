@@ -86,8 +86,8 @@ feature {NONE} -- Implementation
 		do
 			create file.make_with_path (file_path)
 			file.open_read
-			if file.file_readable and file.count > 4 then
-				file.read_to_managed_pointer (File_header, 0, File_header.count)
+			if file.file_readable and file.count > Zip_header_size then
+				file.read_to_managed_pointer (File_header, 0, Zip_header_size)
 				Result := file.bytes_read
 			end
 			file.close
@@ -97,7 +97,7 @@ feature {NONE} -- Constants
 
 	File_header: EL_MANAGED_C_STRING_8
 		once
-			create Result.make (4)
+			create Result.make (Zip_header_size)
 		end
 
 	Find_template: STRING
@@ -172,5 +172,7 @@ feature {NONE} -- Constants
 		once
 			create Result.make_from_string ("PK")
 		end
+
+	Zip_header_size: INTEGER = 4
 
 end

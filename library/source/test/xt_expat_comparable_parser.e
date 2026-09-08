@@ -35,7 +35,7 @@ feature -- Basic operations
 		deferred
 		end
 
-	print_stats
+	put_status (output: IO_MEDIUM)
 		deferred
 		end
 

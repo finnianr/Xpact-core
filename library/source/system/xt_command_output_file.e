@@ -140,8 +140,11 @@ feature -- Basic operations
 
 	cleanup
 		do
+			if exists then
+				delete
+			end
 			if not is_closed then
-				delete; close
+				close
 			end
 		end
 

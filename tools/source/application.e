@@ -105,7 +105,7 @@ feature {NONE} -- Factory
 				and then attached Data_type_table [data_type_arg] as data_type
 			then
 				create Result.make (data_type)
-				if index_of_word_option (Option.trace) > 0 then
+				if is_option_enabled (Option.trace) then
 					Result.enable_trace
 				end
 			end
@@ -128,7 +128,7 @@ feature {NONE} -- Application options
 
 	do_count_tags (app_option: STRING)
 		do
-			do_parsing (create {TAG_COUNTER}.make, last_path_argument)
+			do_parsing (create {TAG_COUNTER}.make, last_path_argument, False)
 		end
 
 	do_corpus_test (app_option: STRING)
@@ -145,7 +145,7 @@ feature {NONE} -- Application options
 	do_crc_32 (app_option: STRING)
 		do
 			if attached new_crc_32_generator (app_option) as crc_32 then
-				do_parsing (crc_32, last_path_argument)
+				do_parsing (crc_32, last_path_argument, is_option_enabled (Option.repeat))
 			else
 				put_usage (app_option)
 			end
@@ -181,7 +181,7 @@ feature {NONE} -- Application options
 		do
 			file_path := last_path_argument
 			if Environment.file_exists (file_path, IO.Output) then
-				do_parsing (create {XML_PRINTER}.make, file_path)
+				do_parsing (create {XML_PRINTER}.make, file_path, False)
 			else
 				put_usage (app_option)
 			end
@@ -210,7 +210,7 @@ feature {NONE} -- Application options
 				path_exists := Environment.file_exists (path, IO.Output)
 			end
 			if path_exists then
-				tests := new_tests (path, index_of_word_option (Option.keep_logs) > 0)
+				tests := new_tests (path, is_option_enabled (Option.keep_logs))
 				tests.execute
 			else
 				put_usage (app_option)
@@ -265,6 +265,7 @@ feature {NONE} -- Factory
 				elseif word ~ "crc" then
 					usage := new_usage_text (l_option, "<data-type> " + Bench_mark_options +
 						"%NOPTIONAL: -trace. Trace all CRC-32 stages step by step for debugging" +
+						"%NOPTIONAL: -repeat. Repeat parse a 2nd time to test parser reset" +
 						"%NValid XML data types: " + s.key_set_string (Data_type_table.current_keys, False)
 					)
 				elseif word ~ "count" then
@@ -305,7 +306,7 @@ feature {NONE} -- Implementation
 
 	last_path_argument: PATH
 		do
-			if index_of_word_option (Option.path_prompt) > 0 then
+			if is_option_enabled (Option.path_prompt) then
 				print ("Enter a file path: ")
 				IO.read_line
 				create Result.make_from_string (IO.last_string)
@@ -315,12 +316,13 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	do_parsing (parser: XT_XML_PARSER_BASE; file_path: PATH)
+	do_parsing (parser: XT_XML_PARSER_BASE; file_path: PATH; do_repeat: BOOLEAN)
 		local
 			file: PLAIN_TEXT_FILE; time_start: TIME; duration: INTEGER
-			chunk_size: INTEGER; checksum: NATURAL
+			chunk_size: INTEGER; checksum: NATURAL; i: INTEGER
 		do
 			if Environment.file_exists (file_path, IO.Output) then
+				duration := new_integer_argument (Option.duration, 0)
 				chunk_size := new_integer_argument (Option.chunk_size, 0)
 				create file.make_with_path (file_path)
 				print ("Parsing: " + file_path.utf_8_name)
@@ -328,19 +330,22 @@ feature {NONE} -- Implementation
 
 				create time_start.make_now -- start timer
 				parser.parse_file (file_path, chunk_size, True)
-				inspect parser.status
-					when Status_ok then
-						if attached {XT_EXPAT_COMPARABLE_PARSER} parser as comparable then
-							duration := new_integer_argument (Option.duration, 0)
-							comparable.print_stats
-							checksum := comparable.checksum
-							if attached comparable.new_benchmark (file_path, time_start, duration, chunk_size) as benchmark then
-								benchmark.execute (checksum)
-								if index_of_word_option (Option.compare_to_expat) > 0 then
-									benchmark.try_compare_to_expat
-								end
+				parser.put_status (IO.Output)
+				inspect parser.status when Status_ok then
+					if do_repeat then
+						parser.reset
+						parser.parse_file (file_path, chunk_size, True)
+						parser.put_status (IO.Output)
+
+					elseif duration > 0 and then attached {XT_EXPAT_COMPARABLE_PARSER} parser as comparable then
+						checksum := comparable.checksum
+						if attached comparable.new_benchmark (file_path, time_start, duration, chunk_size) as benchmark then
+							benchmark.execute (checksum)
+							if is_option_enabled (Option.compare_to_expat) then
+								benchmark.try_compare_to_expat
 							end
 						end
+					end
 				else
 					parser.put_error (IO.Error, file_path)
 				end
@@ -350,6 +355,11 @@ feature {NONE} -- Implementation
 	compile: TUPLE [XP_EXPAT_CALLBACK_HANDLER]
 		do
 			create Result
+		end
+
+	is_option_enabled (opt: READABLE_STRING_GENERAL): BOOLEAN
+		do
+			Result := index_of_word_option (opt) > 0
 		end
 
 	put_usage (a_option: STRING)
@@ -406,12 +416,14 @@ feature {NONE} -- Constants
 
 	Operation_parameter: STRING = "<operation>"
 
-	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, path_prompt, resume_at, trace: STRING]
+	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, path_prompt, repeat, resume_at, trace: STRING]
 		local
 			s: XT_STRING_8_ROUTINES
 		once
 			create Result
-			s.fill_tuple (Result, "compare_to_expat, chunk_size, duration, keep_logs, path_prompt, resume_at, trace")
+			s.fill_tuple (Result,
+						"compare_to_expat, chunk_size, duration, keep_logs, path_prompt, repeat, resume_at, trace"
+			)
 		end
 
 	Usage_base: STRING = "Usage: xml_reader "

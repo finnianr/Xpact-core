@@ -59,7 +59,7 @@ feature -- Basic operations
 					inspect pass_count when 1 then
 						if parser.checksum /= first_checksum then
 							IO.put_string ("2nd pass"); IO.put_new_line
-							parser.print_stats
+							parser.put_status (IO.Output)
 							create exception
 							exception.set_description ("Checksum on 2nd run does not agree with first")
 							exception.raise

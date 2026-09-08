@@ -15,7 +15,7 @@ class
 inherit
 	XT_XML_PARSER_BASE
 		redefine
-			make
+			make, put_status
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
@@ -48,16 +48,16 @@ feature {NONE} -- Initialisation
 
 feature -- Basic operations
 
-	print_stats
+	put_status (output: IO_MEDIUM)
 		do
-			IO.put_string ("Tags sorted in order of occurrence count (Highest first)")
-			IO.put_new_line
-			IO.put_new_line
+			output.put_string ("Tags sorted in order of occurrence count (Highest first)")
+			output.put_new_line
+			output.put_new_line
 			across tag_occurrence_table.sorted_occurrence_list (False) as tag_count loop
-				tag_count.io_print
+				tag_count.put_status (output)
 			end
-			IO.put_new_line
-			name_cache.print_stats
+			output.put_new_line
+			name_cache.put_status (output)
 		end
 
 feature {NONE} -- Event handlers

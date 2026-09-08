@@ -20,7 +20,7 @@ inherit
 		rename
 			make as make_parser
 		redefine
-			make_parser, reset
+			make_parser, put_status, reset
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
@@ -73,10 +73,10 @@ feature -- Access
 
 feature -- Basic operations
 
-	print_stats
+	put_status (output: IO_MEDIUM)
 		do
-			IO.put_string ("Checksum for " + data_type_name (data_type) + ": " + checksum.out)
-			IO.put_new_line
+			output.put_string ("Checksum for " + data_type_name (data_type) + ": " + checksum.out)
+			output.put_new_line
 		end
 
 feature -- Status change

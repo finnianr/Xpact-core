@@ -209,9 +209,9 @@ feature {NONE} -- Factory
 		-- The XML 1.0 spec's note on public identifiers (following the ExternalID/PublicID production)
 		-- says that once the surrounding quotes are stripped from a PubidLiteral, the resulting string
 		-- must be normalized by:
-		-- 1. discarding leading white space,
-		-- 2. discarding trailing white space, and
-		-- 3. replacing every internal run of white space with a single space character.
+		-- 	1. discarding leading white space,
+		-- 	2. discarding trailing white space, and
+		-- 	3. replacing every internal run of white space with a single space character.
 		local
 			count, leading_count, trailing_count, i, j,  lower, upper: INTEGER
 			c: CHARACTER
@@ -232,7 +232,7 @@ feature {NONE} -- Factory
 						from i := lower; j := 0 until i > upper loop
 							c := area [i]
 							if c.is_space then
-								c := ' '
+								c := ' ' -- replace tabs etc with space
 							end
 							l_area [j] := c
 							if c = ' ' and then j > 0 then

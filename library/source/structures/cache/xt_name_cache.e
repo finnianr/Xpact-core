@@ -159,29 +159,29 @@ feature -- Basic operations
 			end
 		end
 
-	print_stats
+	put_status (output: IO_MEDIUM)
 		do
-			print ("NAME CACHING")
-			IO.put_new_line
-			print ("Buckets used count: ")
-			IO.put_integer (buckets_used_count)
-			IO.put_new_line
-			print ("Average hash bucket count: ")
-			IO.put_integer (average_bucket_item_count)
-			IO.put_new_line
-			print ("Hash bucket counts greater than 1")
-			print (":%N")
+			output.put_string ("NAME CACHING")
+			output.put_new_line
+			output.put_string ("Buckets used count: ")
+			output.put_integer (buckets_used_count)
+			output.put_new_line
+			output.put_string ("Average hash bucket count: ")
+			output.put_integer (average_bucket_item_count)
+			output.put_new_line
+			output.put_string ("Hash bucket counts greater than 1")
+			output.put_string (":%N")
 			if attached bucket_distribution_gt_1.sorted_occurrence_list (False) as sorted_list then
 				if sorted_list.count = 0 then
-					print ("None")
+					output.put_string ("None")
 				else
 					across sorted_list as bucket_count loop
-						print ("   ")
-						bucket_count.io_print
+						output.put_string ("   ")
+						bucket_count.put_status (output)
 					end
 				end
 			end
-			IO.put_new_line
+			output.put_new_line
 		end
 
 feature {NONE} -- Implementation

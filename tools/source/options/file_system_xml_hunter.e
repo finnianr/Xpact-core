@@ -87,7 +87,7 @@ feature -- Basic operations
 				IO.put_string ("Extensions sorted in order of occurrence count (Highest first)")
 				IO.put_new_line; IO.put_new_line
 				across table.sorted_occurrence_list (False) as tag_count loop
-					tag_count.io_print
+					tag_count.put_status (IO.Output)
 				end
 				IO.put_new_line
 			end

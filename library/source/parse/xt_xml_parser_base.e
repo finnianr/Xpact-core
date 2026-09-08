@@ -215,6 +215,10 @@ feature -- Basic operations
 			end
 		end
 
+	put_status (output: IO_MEDIUM)
+		do
+		end
+
 feature {NONE} -- Buffer implementation
 
 	parse_buffer (a_count: INTEGER; a_is_final: BOOLEAN; parse_data: POINTER): INTEGER
