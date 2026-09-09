@@ -25,10 +25,7 @@ class
 inherit
 	XT_FILE_HANDLER
 
-	XT_FILE_ROUTINES_I
-		rename
-			extension as wild_card_extension
-		end
+	XT_XML_PACKAGE_CONSTANTS
 
 	XT_SHARED_EXECUTION_ENVIRONMENT
 
@@ -50,16 +47,14 @@ feature {NONE} -- Initialization
 				create directory.make_with_path (dir_path)
 				valid_driver := True
 			end
-			create extension_list.make (0)
-			extension_list.append (new_xml_extensions.split (';'))
-			create occurrence_table.make (extension_list.count)
+			create occurrence_table.make (Extension_list.count)
 			create archive_occurrence_table.make (Internal_extension_table.count)
 			create log_path.make_from_string ("system_xml_hunter.log")
 			log_path := Environment.temporary_command_path + log_path
 			Environment.make_directory (log_path.parent, False)
 			create log.make_with_path (log_path)
 		ensure
-			valid_extensions: across extension_list as item all item.count > 0 end
+			valid_extensions: across Extension_list as item all item.count > 0 end
 		end
 
 feature -- Status query
@@ -123,7 +118,7 @@ feature {NONE} -- Implementation
 			package_tests: FILE_PACKAGE_TESTS; comparison: XT_EXPAT_COMPARISON
 		do
 			extension := s.Empty_string
-			across extension_list as item until found loop
+			across Extension_list as item until found loop
 				if file_path.has_extension (item) then -- case insensitive comparison
 					extension := item; found := True
 				end
@@ -132,13 +127,13 @@ feature {NONE} -- Implementation
 				if testing_package then
 					occurrence_table.put (extension) -- record internal XML extension
 
-				elseif is_zip_archive (file_path) then
+				elseif attached new_package (file_path) as package and then package.is_valid then
 					IO.put_new_line
 					IO.put_string ("Package: ")
 					IO.put_string (file_path.utf_8_name)
 					IO.put_new_line
 					archive_occurrence_table.put (extension)
-					create package_tests.make (file_path)
+					create package_tests.make (package)
 					package_tests.set_file_handler (Current)
 
 					testing_package := True
@@ -157,14 +152,9 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	new_xml_extensions: STRING
+	new_package (path: PATH): XT_XML_PACKAGE
 		do
-			Result := "3mf;adml;admx;apk;appx;appxbundle;atom;axaml;config;csproj;dae;docm;docx;dotm;dotx;eant;ecf;%
-				%epub;fb2;fodg;fodp;fods;fodt;fsproj;glade;gml;gpx;html;iml;ivy;kml;kmz;manifest;mathml;mml;msix;%
-				%msixbundle;mum;ncx;nuspec;odb;odc;odf;odg;odi;odm;odp;ods;odt;opf;opml;otg;otp;ots;ott;owl;plist;%
-				%pom;potm;potx;ppsm;ppsx;pptm;pptx;props;pubxml;rdf;resw;resx;rng;rss;ruleset;saml;sitemap;soap;svg;%
-				%svgz;targets;tld;tmx;vbproj;vcxproj;vsixmanifest;wadl;wsdl;wsp;wxi;wxs;x3d;xacml;xaml;xamlx;%
-				%xbrl;xht;xhtml;xlam;xlf;xliff;xlsm;xlsx;xltm;xltx;xml;xsd;xsl;xslt;xsp;xul"
+			create Result.make_with_path (path)
 		end
 
 feature {NONE} -- Internal attributes
@@ -172,8 +162,6 @@ feature {NONE} -- Internal attributes
 	resume_at_count: INTEGER
 
 	fail_count: INTEGER
-
-	extension_list: ARRAYED_LIST [STRING]
 
 	counter: INTEGER
 

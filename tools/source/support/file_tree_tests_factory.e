@@ -19,9 +19,12 @@ inherit
 feature {NONE} -- Implementation
 
 	new_tests (file_path: PATH; keep_logs: BOOLEAN): FILE_TREE_TESTS
+		local
+			package: XT_XML_PACKAGE
 		do
-			if is_xml_package (file_path) then
-				create {FILE_PACKAGE_TESTS} Result.make (file_path)
+			create package.make_with_path (file_path)
+			if package.is_valid then
+				create {FILE_PACKAGE_TESTS} Result.make (package)
 			else
 				create Result.make (file_path)
 			end

@@ -16,9 +16,7 @@
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf" readonly="false"/>
 		<library name="base_ext" location="$ISE_LIBRARY\library\base_extension\base_extension.ecf"/>
 		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf"/>
-		<library name="xpact_core" location="$XPACT_CORE\library\xpact-core.ecf" readonly="false">
-			<visible class="XT_STRING_8_ROUTINES_I"/>
-		</library>
+		<library name="xpact_core" location="$XPACT_CORE\library\xpact-core.ecf" readonly="false"/>
 		<cluster name="project" location="source\" recursive="true"/>
 	</target>
 </system>

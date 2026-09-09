@@ -319,7 +319,7 @@ feature {NONE} -- Implementation
 	do_parsing (parser: XT_XML_PARSER_BASE; file_path: PATH; do_repeat: BOOLEAN)
 		local
 			file: PLAIN_TEXT_FILE; time_start: TIME; duration: INTEGER
-			chunk_size: INTEGER; checksum: NATURAL; i: INTEGER
+			chunk_size: INTEGER; checksum: NATURAL
 		do
 			if Environment.file_exists (file_path, IO.Output) then
 				duration := new_integer_argument (Option.duration, 0)

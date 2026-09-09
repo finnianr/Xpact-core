@@ -17,9 +17,10 @@ inherit
 	FILE_TREE_TESTS
 		rename
 			do_tests as do_xml_tests,
-			path as package_content_path
+			path as package_content_path,
+			make as make_tree
 		redefine
-			execute, make, new_comparison, sum_fail_count, sum_pass_count
+			execute, new_comparison, sum_fail_count, sum_pass_count
 		end
 
 create
@@ -27,10 +28,10 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_package_path: PATH)
+	make (a_package: XT_XML_PACKAGE)
 		do
-			package_path := a_package_path
-			Precursor (a_package_path)
+			package := a_package
+			make_tree (a_package.path)
 		end
 
 feature -- Access
@@ -98,7 +99,7 @@ feature {NONE} -- Implementation
 
 	package_name: STRING
 		do
-			if attached package_path.entry as entry then
+			if attached package.path.entry as entry then
 				Result := entry.utf_8_name
 			else
 				create Result.make_empty
@@ -112,21 +113,17 @@ feature {NONE} -- Implementation
 		end
 
 	set_package_path (a_package_path: PATH)
-		local
-			s: XT_STRING_8_ROUTINES
 		do
-			package_path := a_package_path
+			package.make_with_path (a_package_path)
 			if attached a_package_path.entry as entry then
 				package_content_path := Environment.temporary_command_path + entry
-				Environment.make_directory (package_content_path, False)
-				Environment.do_command (Unzip_template, s.new_string_list (<< a_package_path, package_content_path >>))
-				if Environment.return_code = 0 then
+				package.extract (package_content_path)
+				is_extracted :=  package.is_extracted
+				if is_extracted then
 					make_log
-					is_extracted := True
 				else
-					is_extracted := False
 					IO.put_string ("Failed to extract ")
-					IO.put_string_32 (package_path.name)
+					IO.put_string_32 (package.name)
 					IO.put_new_line
 				end
 			end
@@ -134,16 +131,11 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
-	package_path: PATH
+	package: XT_XML_PACKAGE
 
 	is_extracted: BOOLEAN
 
 feature {NONE} -- Constants
-
-	Unzip_template: STRING
-		once
-			Result := "unzip -q %S -d %S"
-		end
 
 	Values_differ_template: STRING = "VALUES DIFFER (%S): %S"
 
