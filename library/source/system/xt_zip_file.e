@@ -25,6 +25,7 @@ feature -- Status query
 	is_extracted: BOOLEAN
 
 	is_valid: BOOLEAN
+		-- `True' if `path'is a valid zip archive that can be extracted
 		-- ZIP files start with one of these byte sequences:
 
 		-- PK\x03\x04 normal file entry (most common start)
@@ -48,6 +49,8 @@ feature -- Status query
 feature -- Basic operations
 
 	extract (destination_path: PATH)
+		require
+			valid_zip_archive: is_valid
 		local
 			s: XT_STRING_8_ROUTINES
 		do
