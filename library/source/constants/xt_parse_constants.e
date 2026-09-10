@@ -68,11 +68,12 @@ feature {XT_STRING_CONSTANTS} -- Declaration types
 
 feature {NONE} -- Content expansion
 
-	Default_runway_expansion_threshold: NATURAL_64 = 0x800000
-		-- number of bytes processed after which checks for
-		-- runaway expansion should be performed
+	Default_exponential_expansion_threshold: NATURAL_64 = 0x800000
+		-- number of bytes processed after which checks for runaway expansion should be performed
+		-- 10^9 LOL attack
 
-	Default_max_expansion_proportion: DOUBLE = 100.0
+	Default_max_expansion_proportion: REAL = 100.0
+		-- 10^9 LOL attack
 
 	Source_content: NATURAL_8 = 0
 

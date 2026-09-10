@@ -3,7 +3,7 @@
 	<target name="xpact_core">
 		<description>
 export:
-	XPACT_INCLUDE = "$EIFFEL/library/xpact/native"
+	XPACT_INCLUDE = "$EIFFEL/library/Xpact-core/contrib/xpact/native"
 	XPACT_CORE_INCLUDE = "$EIFFEL/library/Xpact-core/library/C-source"
 		</description>
 		<root all_classes="true"/>
@@ -21,6 +21,8 @@ export:
 		<external_include location="$(XPACT_INCLUDE)"/>
 		<external_include location="$(XPACT_CORE_INCLUDE)"/>
 		<cluster name="eiffel_loop" location="../contrib/Eiffel-Loop" recursive="true"/>
+		<cluster name="xpact-so" location="../contrib/xpact/src" recursive="true"/>
+
 		<cluster name="xpact" location="source" recursive="true">
 			<file_rule>
 				<exclude>/small-size$</exclude>

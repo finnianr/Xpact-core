@@ -25,8 +25,9 @@ inherit
 
 	XT_DEFAULT_PARSE_EVENTS
 		rename
-			on_cdata_section_close_ as on_cdata_section_close,
-			on_tag_end_ as on_tag_end
+			on_cdata_section_start_ as on_cdata_section_start,
+			on_cdata_section_end_ as on_cdata_section_end,
+			on_element_end_ as on_element_end
 		end
 
 	XT_EXPAT_COMPARABLE_PARSER
@@ -100,7 +101,7 @@ feature {NONE} -- Event handlers
 
 	on_attribute_list_declaration (
 		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
-		is_required: BOOLEAN
+		is_required: BOOLEAN; parse_data: POINTER
 	)
 		do
 			inspect data_type when Type_decl_attribute_list then
@@ -117,7 +118,7 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
+	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
 		do
 			inspect data_type when Type_comment then
 				checksum.add_characters (area, start_index, end_index)
@@ -125,22 +126,22 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_content (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
+	on_content (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
 		do
 			inspect data_type
 				when Type_cdata then
-					if in_cdata_section then
+					if c_in_cdata_section (parse_data) then
 						checksum.add_characters (area, start_index, end_index)
 					end
 				when Type_text then
-					if not in_cdata_section then
+					if not c_in_cdata_section (parse_data) then
 						checksum.add_characters (area, start_index, end_index)
 					end
 			else
 			end
 		end
 
-	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN)
+	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
 		local
 			i: INTEGER
 		do
@@ -155,7 +156,7 @@ feature {NONE} -- Event handlers
 			else end
 		end
 
-	on_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE)
+	on_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_ElementDeclHandler)(void *userData, const XML_Char *name, XML_Content *model);
 		do
 			inspect data_type when Type_decl_element then
@@ -168,7 +169,7 @@ feature {NONE} -- Event handlers
 
 	on_entity_declaration (
 		entity_name: STRING; value, a_base, system_id, public_id, notation_name: detachable STRING
-		is_parameter_entity: BOOLEAN
+		is_parameter_entity: BOOLEAN; parse_data: POINTER
 	)
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
 		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity,
@@ -200,7 +201,7 @@ feature {NONE} -- Event handlers
 			else end
 		end
 
-	on_notation_declaration (name: STRING; a_base, system_id, public_id: detachable STRING)
+	on_notation_declaration (name: STRING; a_base, system_id, public_id: detachable STRING; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
 		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
 		do
@@ -220,7 +221,9 @@ feature {NONE} -- Event handlers
 			else end
 		end
 
-	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
+	on_element_start (
+		buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER; parse_data: POINTER
+	)
 		do
 			inspect data_type
 				when Type_tag then
@@ -241,22 +244,22 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
+	on_processing_instruction (
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER
+	)
 		do
 			inspect data_type when Type_processing then
 				if attributes.is_empty then
 					checksum.add_characters (buf, start_index, end_index)
 				else
 					checksum.add_string (attributes.first_name)
-				end
-				if attributes.count > 0 then
 					attributes.append_first_value_to_crc_32 (buf, checksum)
 				end
 			else
 			end
 		end
 
-	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST)
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
 		do
 			inspect data_type when Type_xml_declaration then
 				attributes.append_xml_declaration_to_crc_32 (buf, checksum)

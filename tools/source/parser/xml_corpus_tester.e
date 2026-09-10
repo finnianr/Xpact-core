@@ -42,7 +42,8 @@ inherit
 	XT_DEFAULT_PARSE_EVENTS
 		rename
 			on_attribute_list_declaration_ as on_attribute_list_declaration,
-			on_cdata_section_close_ as on_cdata_section_close,
+			on_cdata_section_end_ as on_cdata_section_end,
+			on_cdata_section_start_ as on_cdata_section_start,
 			on_comment_ as on_comment,
 			on_content_ as on_content,
 			on_doctype_declaration_start_ as on_doctype_declaration_start,
@@ -50,7 +51,7 @@ inherit
 			on_entity_declaration_ as on_entity_declaration,
 			on_notation_declaration_ as on_notation_declaration,
 			on_processing_instruction_ as on_processing_instruction,
-			on_tag_end_ as on_tag_end,
+			on_element_end_ as on_element_end,
 			on_xml_declaration_ as on_xml_declaration
 		end
 
@@ -84,7 +85,9 @@ feature {NONE} -- Event handlers
 			report_file.close
 		end
 
-	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
+	on_element_start (
+		buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER; parse_data: POINTER
+	)
 		local
 			directory: DIRECTORY; report_path: PATH; attribute_table: HASH_TABLE [STRING, STRING]
 		do

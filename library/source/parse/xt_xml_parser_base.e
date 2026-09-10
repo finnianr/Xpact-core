@@ -45,7 +45,7 @@ feature {NONE} -- Initialization
 			last_buffer_request_size   := 0
 			partial_token_bytes_before := 0
 			parse_end_byte_index       := 0
-			max_expansion_proportion	:= Default_max_expansion_proportion
+			set_max_expansion_proportion (parse_data_memory.item, Default_max_expansion_proportion)
 		end
 
 feature -- Access
@@ -78,18 +78,6 @@ feature -- Status query
 
 	is_final_buffer: BOOLEAN
 		-- Was the current parse call marked as the last chunk?
-
-feature -- Element change
-
-	set_runway_expansion_threshold (a_runway_expansion_threshold: NATURAL_64)
-		do
-			runway_expansion_threshold := a_runway_expansion_threshold
-		end
-
-	set_max_expansion_proportion (a_max_expansion_proportion: DOUBLE)
-		do
-			max_expansion_proportion := a_max_expansion_proportion
-		end
 
 feature -- Basic operations
 
@@ -445,16 +433,16 @@ feature {NONE} -- Processor dispatch
 					tok_end := next_token_index
 					inspect token
 						when Tok_cdata_sect_close then
-							on_cdata_section_close
+							on_cdata_section_end (parse_data)
 							set_in_cdata_section (parse_data, False)
 							index := tok_end
 
 						when Tok_data_chars then
-							on_content (buf, index, tok_end - 1, attributes)
+							on_content (buf, index, tok_end - 1, parse_data)
 							index := tok_end
 
 						when Tok_data_newline then
-							on_content (new_line, 0, 0, attributes)
+							on_content (new_line, 0, 0, parse_data)
 							index := tok_end
 
 					else
@@ -470,34 +458,35 @@ feature {NONE} -- Processor dispatch
 					inspect token
 						when Tok_cdata_sect_open then
 							set_in_cdata_section (parse_data, True)
+							on_cdata_section_start (parse_data)
 
 						when Tok_invalid then
 							Result := Error_invalid_token; done := True
 
 						when Tok_data_chars then
-							on_content (buf, index, tok_end - 1, attributes)
+							on_content (buf, index, tok_end - 1, parse_data)
 
 						when Tok_data_newline then
-							on_content (new_line, 0, 0, attributes)
+							on_content (new_line, 0, 0, parse_data)
 
 						when Tok_start_tag_no_attributes then
 							context.push (cached_tag_name (buf, index, names))
-							on_tag_start (buf, context, attributes, token)
+							on_element_start (buf, context, attributes, token, parse_data)
 
 						when Tok_start_tag_with_attributes then
 							context.push (cached_tag_name (buf, index, names))
-							on_tag_start (buf, context, attributes, token)
+							on_element_start (buf, context, attributes, token, parse_data)
 							attributes.wipe_out
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
 							tag_name := cached_tag_name (buf, index, names)
 							context.push (tag_name)
-							on_tag_start (buf, context, attributes, token)
+							on_element_start (buf, context, attributes, token, parse_data)
 							inspect token when Tok_empty_element_with_attributes then
 								attributes.wipe_out
 							else
 							end
-							on_tag_end (tag_name)
+							on_element_end (tag_name, parse_data)
 							inspect context.pop (tag_name) when Error_tag_mismatch then
 								Result := Error_tag_mismatch; done := True
 							else
@@ -505,17 +494,17 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_end_tag then
 							tag_name := cached_tag_name (buf, index + 1, names)
-							on_tag_end (tag_name)  -- skip '</'
+							on_element_end (tag_name, parse_data)  -- skip '</'
 							inspect context.pop (tag_name) when Error_tag_mismatch then
 								Result := Error_tag_mismatch; done := True
 							else
 							end
 
 						when Tok_comment then
-							on_comment (buf, index + 4, tok_end - 4, attributes)
+							on_comment (buf, index + 4, tok_end - 4, parse_data)
 
 						when Tok_pi then
-							on_processing_instruction (buf, index + 2, tok_end - 3, attributes)
+							on_processing_instruction (buf, index + 2, tok_end - 3, attributes, parse_data)
 							attributes.wipe_out
 
 						when Tok_entity_ref then
@@ -531,7 +520,7 @@ feature {NONE} -- Processor dispatch
 								Result := Error_bad_char_ref; done := True
 							else
 								if attached utf_8_encoded (code) as l_utf_8 then
-									on_content (l_utf_8, 0, l_utf_8.count - 1, attributes)
+									on_content (l_utf_8, 0, l_utf_8.count - 1, parse_data)
 								end
 							end
 					else
@@ -548,7 +537,7 @@ feature {NONE} -- Processor dispatch
 							when Source_expansion_with_checks then
 								add_to_entity_expansion_count (parse_data, tok_end - index)
 								content_plus_expansion_count := c_content_count (parse_data) + c_entity_expansion_count (parse_data)
-								if content_plus_expansion_count / c_content_count (parse_data) > max_expansion_proportion then
+								if content_plus_expansion_count / c_content_count (parse_data) > c_max_expansion_proportion (parse_data) then
 									Result := Error_amplification_limit_breach; done := True
 								end
 
@@ -609,7 +598,7 @@ feature {NONE} -- Processor dispatch
 					Result := Error_undefined_entity; put_boolean (done, True)
 				end
 			else
-				on_content (unescaped (code), 0, 0, attributes)
+				on_content (unescaped (code), 0, 0, parse_data)
 			end
 		end
 
@@ -641,10 +630,6 @@ feature {NONE} -- Implementation
 		end
 
 feature {NONE} -- Internal attributes
-
-	max_expansion_proportion: DOUBLE
-		-- maximum proportion of entity expanded text to already processed text
-		-- permitted before raising error `Error_amplification_limit_breach'
 
 	last_buffer_request_size: INTEGER
 

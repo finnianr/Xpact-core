@@ -46,7 +46,7 @@ class XML_PRINTER
 inherit
 	XT_XML_PARSER
 		redefine
-			on_base_tag_start
+			on_base_start_element
 		end
 
 create
@@ -54,12 +54,14 @@ create
 
 feature {NONE} -- Event handlers
 
-	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
+	on_base_start_element (
+		buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER; parse_data: POINTER
+	)
 		do
 			if attributes.index_count > 0 then
 				attributes.null_terminate_values (buf) -- purely to test null termination
 			end
-			on_tag_start (context.name, context.depth, attributes.as_table (buf, False))
+			on_start_element (context.name, context.depth, attributes.as_table (buf, False))
 			if attributes.index_count > 0 then
 				attributes.undo_null_terminated_values (buf) -- purely to test restoring value
 			end
@@ -109,19 +111,24 @@ feature {NONE} -- Event handlers
 			IO.put_new_line
 		end
 
-	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN)
+	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
 		do
-			IO.put_string ("DOCTYPE:")
+			IO.put_string ("DOCTYPE: ")
 			across parts_list as part loop
-				IO.put_character (' ')
-				IO.put_string (part)
+				inspect @ part.cursor_index when 1, 2 then
+					IO.put_character (' ')
+					IO.put_string (part)
+				else
+					IO.put_string (" %"" + part)
+					IO.put_character ('"')
+				end
 			end
 			IO.put_new_line
 		end
 
 	on_entity_declaration (
 		entity_name: STRING; value, a_base, system_id, public_id, notation_name: detachable STRING
-		is_parameter_entity: BOOLEAN
+		is_parameter_entity: BOOLEAN; parse_data: POINTER
 	)
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
 		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity,
@@ -131,17 +138,17 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-	on_notation_declaration (name: STRING; a_base, system_id, public_id: detachable STRING)
+	on_notation_declaration (name: STRING; a_base, system_id, public_id: detachable STRING; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
 		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
 		do
 		end
 
-	on_tag_end (name: STRING_8)
+	on_end_element (name: STRING_8)
 		do
 		end
 
-	on_tag_start (name: STRING_8; depth: INTEGER; attribute_table: HASH_TABLE [STRING, STRING])
+	on_start_element (name: STRING_8; depth: INTEGER; attribute_table: HASH_TABLE [STRING, STRING])
 		do
 			put_tabs (depth - 1)
 			IO.put_string (name)
@@ -174,7 +181,7 @@ feature {NONE} -- Event handlers
 			IO.put_new_line
 		end
 
-	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST)
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
 		do
 			put_attributes ("XML", 0, attributes.as_table (buffer, False))
 		end

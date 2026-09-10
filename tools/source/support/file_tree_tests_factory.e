@@ -23,7 +23,7 @@ feature {NONE} -- Implementation
 			package: XT_XML_PACKAGE
 		do
 			create package.make_with_path (file_path)
-			if package.is_valid then
+			if package.exists and then package.is_valid then
 				create {FILE_PACKAGE_TESTS} Result.make (package)
 			else
 				create Result.make (file_path)

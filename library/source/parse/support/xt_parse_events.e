@@ -56,7 +56,7 @@ feature {NONE} -- Deferred event handlers
 
 	on_attribute_list_declaration (
 		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
-		is_required: BOOLEAN
+		is_required: BOOLEAN; parse_data: POINTER
 	)
 		-- typedef void(XMLCALL *XML_AttlistDeclHandler)(
 		--   void *userData, const XML_Char *elname, const XML_Char *attname,
@@ -64,35 +64,39 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_cdata_section_close
+	on_cdata_section_start (parse_data: POINTER)
 		deferred
 		end
 
-	on_comment (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
+	on_cdata_section_end (parse_data: POINTER)
 		deferred
 		end
 
-	on_content (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
+	on_comment (buf: like buffer; start_index, end_index: INTEGER; parse_data: POINTER)
 		deferred
 		end
 
-	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN)
+	on_content (buf: like buffer; start_index, end_index: INTEGER; parse_data: POINTER)
+		deferred
+		end
+
+	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
 		-- typedef void (
 		-- 	XMLCALL *XML_StartDoctypeDeclHandler)(void *userData,
  		-- 	const XML_Char *doctypeName, const XML_Char *sysid, const XML_Char *pubid, int has_internal_subset
- 		-- );	
+ 		-- );
 
 		deferred
 		end
 
-	on_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE)
+	on_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_ElementDeclHandler)(void *userData, const XML_Char *name, XML_Content *model);
 		deferred
 		end
 
 	on_entity_declaration (
 		entity_name: STRING; value, base, system_id, public_id, notation_name: detachable STRING
-		is_parameter_entity: BOOLEAN
+		is_parameter_entity: BOOLEAN; parse_data: POINTER
 	)
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
 		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity,
@@ -105,29 +109,30 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-
-	on_notation_declaration (name: STRING; base, system_id, public_id: detachable STRING)
+	on_notation_declaration (name: STRING; base, system_id, public_id: detachable STRING; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
 		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
 		deferred
 		end
 
-	on_tag_end (name: STRING_8)
+	on_element_end (name: STRING_8; parse_data: POINTER)
 		deferred
 		end
 
-	on_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
+	on_element_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER; parse_data: POINTER)
 		require
 			valid_token: element_tokens.has (token)
 			valid_attribute_indices_count: attributes.is_valid_count
 		deferred
 		end
 
-	on_processing_instruction (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
+	on_processing_instruction (
+		buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER
+	)
 		deferred
 		end
 
-	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST)
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
 		require
 			valid_attribute_indices_count: attributes.is_valid_count
 		deferred

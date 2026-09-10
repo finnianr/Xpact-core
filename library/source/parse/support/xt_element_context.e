@@ -13,7 +13,7 @@ class
 	XT_ELEMENT_CONTEXT
 
 inherit
-	XT_C_PARSE_DATA_STRUCT
+	XT_C_PARSER_STRUCT
 
 create
 	make

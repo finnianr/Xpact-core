@@ -19,8 +19,8 @@ inherit
 			on_content as on_base_content,
 			on_comment as on_base_commment,
 			on_element_declaration as on_base_element_declaration,
-			on_tag_start as on_base_tag_start,
-			on_tag_end as on_base_tag_end,
+			on_element_start as on_base_start_element,
+			on_element_end as on_base_end_element,
 			on_processing_instruction as on_base_processing_instruction
 		redefine
 			make
@@ -38,14 +38,18 @@ feature {NONE} -- Initialisation
 
 feature {NONE} -- Base event handlers
 
-	on_cdata_section_close
+	on_cdata_section_start (parse_data: POINTER)
+		do
+		end
+
+	on_cdata_section_end (parse_data: POINTER)
 		do
 			do_with_content (text_buffer)
 		end
 
 	on_base_attribute_list_declaration (
 		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
-		is_required: BOOLEAN
+		is_required: BOOLEAN; parse_data: POINTER
 	)
 		-- typedef void(XMLCALL *XML_AttlistDeclHandler)(
 		--   void *userData, const XML_Char *elname, const XML_Char *attname,
@@ -53,13 +57,15 @@ feature {NONE} -- Base event handlers
 		do
 		end
 
-	on_base_commment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
+	on_base_commment (
+		area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER
+	)
 		do
 			on_comment (new_substring (area, start_index, end_index))
 		end
 
 	on_base_content (
-		area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST
+		area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER
 	)
 		-- handle content section in `area' from index `start_index' to `end_index'
 		local
@@ -80,12 +86,14 @@ feature {NONE} -- Base event handlers
 			end
 		end
 
-	on_base_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE)
+	on_base_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_ElementDeclHandler)(void *userData, const XML_Char *name, XML_Content *model);
 		do
 		end
 
-	on_base_processing_instruction (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST)
+	on_base_processing_instruction (
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER
+	)
 		do
 			if attributes.is_empty then
 				on_processing_instruction (new_substring (buf, start_index, end_index), Empty_string)
@@ -94,15 +102,17 @@ feature {NONE} -- Base event handlers
 			end
 		end
 
-	on_base_tag_start (buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER)
+	on_base_start_element (
+		buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER; parse_data: POINTER
+	)
 		do
-			on_tag_start (context.name, context.depth, attributes.as_table (buf, False))
+			on_start_element (context.name, context.depth, attributes.as_table (buf, False))
 		end
 
-	on_base_tag_end (name: STRING)
+	on_base_end_element (name: STRING; parse_data: POINTER)
 		do
 			do_with_content (text_buffer)
-			on_tag_end (name)
+			on_end_element (name)
 		end
 
 feature {NONE} -- Event handlers
@@ -115,11 +125,11 @@ feature {NONE} -- Event handlers
 		deferred
 		end
 
-	on_tag_start (name: STRING_8; depth: INTEGER; attribute_table: HASH_TABLE [STRING, STRING])
+	on_start_element (name: STRING_8; depth: INTEGER; attribute_table: HASH_TABLE [STRING, STRING])
 		deferred
 		end
 
-	on_tag_end (name: STRING_8)
+	on_end_element (name: STRING_8)
 		deferred
 		end
 

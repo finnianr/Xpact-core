@@ -26,7 +26,7 @@ inherit
 
 	XT_PARSE_EVENTS
 
-	XT_C_PARSE_DATA_STRUCT
+	XT_C_PARSER_STRUCT
 
 	XT_PARSE_CONSTANTS
 		rename
@@ -73,7 +73,7 @@ feature {NONE} -- Initialization
 		do
 			Precursor
 			is_standalone					:= False
-			runway_expansion_threshold := Default_runway_expansion_threshold
+			set_exponential_expansion_threshold (parse_data_memory.item, Default_exponential_expansion_threshold)
 
 			ptr := parse_data_memory.item
 			if not ptr.is_default_pointer then
@@ -286,7 +286,7 @@ feature {NONE} -- Token processing
 							yes_no := attributes.standalone_value (buf)
 							if Valid_yes_no.has (yes_no) then
 								is_standalone := yes_no [1] = 'y'
-								on_xml_declaration (buf, attributes)
+								on_xml_declaration (buf, attributes, parse_data)
 								attributes.wipe_out
 							else
 								Result := Error_xml_decl; put_boolean (done, True)
@@ -360,7 +360,7 @@ feature {NONE} -- Token processing
 			if common_case then
 				inspect token
 					when Tok_comment then
-						on_comment (buf, index + 4, tok_end - 4, attributes)
+						on_comment (buf, index + 4, tok_end - 4, parse_data)
 
 					when Tok_invalid then
 						Result := Error_invalid_token
@@ -378,7 +378,7 @@ feature {NONE} -- Token processing
 						end
 
 					when Tok_pi then
-						on_processing_instruction (buf, index + 2, tok_end - 3, attributes)
+						on_processing_instruction (buf, index + 2, tok_end - 3, attributes, parse_data)
 						attributes.wipe_out
 
 					when Tok_prolog_whitespace then
@@ -432,7 +432,7 @@ feature {NONE} -- Event handlers
 								extend_attribute_value_defaults_table (parts_list.element_name, parts_list.name, value)
 							end
 							if attached parts_list.area as part then
-								on_attribute_list_declaration (part [0], part [1], part [2], default_value, parts_list.is_required)
+								on_attribute_list_declaration (part [0], part [1], part [2], default_value, parts_list.is_required, parse_data)
 							end
 							parts_list.reset -- reset to just `element_name'
 						end
@@ -442,7 +442,7 @@ feature {NONE} -- Event handlers
 					if attached element_parts_list as parts_list and then parts_list.is_valid then
 						parts_list.on_close
 						if attached parts_list.particle as model then
-							on_element_declaration (parts_list.name, model)
+							on_element_declaration (parts_list.name, model, parse_data)
 							parts_list.wipe_out
 						else
 							Result := Error_syntax
@@ -453,7 +453,7 @@ feature {NONE} -- Event handlers
 					if attached entity_parts_list as parts_list then
 						if parts_list.is_valid then
 							parts_list.extend_table (entity_table)
-							on_entity (parts_list)
+							on_entity (parts_list, parse_data)
 							parts_list.wipe_out
 						else
 							Result := Error_syntax
@@ -464,7 +464,7 @@ feature {NONE} -- Event handlers
 					if attached document_type_parts_list as parts_list then
 						if parts_list.is_valid then
 							parts_list.set_document_type (doctype_identifiers)
-							on_doctype_declaration_start (parts_list, c_has_dtd_section (parse_data))
+							on_doctype_declaration_start (parts_list, c_has_dtd_section (parse_data), parse_data)
 							parts_list.wipe_out
 						else
 							Result := Error_syntax
@@ -482,7 +482,7 @@ feature {NONE} -- Event handlers
 							else
 								system_id := parts_list [3]
 							end
-							on_notation_declaration (parts_list.name, base, system_id, public_id)
+							on_notation_declaration (parts_list.name, base, system_id, public_id, parse_data)
 							parts_list.wipe_out
 						else
 							Result := Error_syntax
@@ -493,7 +493,7 @@ feature {NONE} -- Event handlers
 					if attached parameter_entity_parts_list as parts_list then
 						if parts_list.is_valid then
 							parameter_entity_table.put (parts_list.new_parameter, as_entity_name (parts_list.name))
-							on_entity (parts_list)
+							on_entity (parts_list, parse_data)
 							parts_list.wipe_out
 						else
 							Result := Error_syntax
@@ -503,14 +503,14 @@ feature {NONE} -- Event handlers
 			end
 		end
 
-	on_entity (parts: XT_ENTITY_PARTS_I)
+	on_entity (parts: XT_ENTITY_PARTS_I; parse_data: POINTER)
 		require
 			is_valid_list: parts.is_valid
 		do
 			if not is_predefined_entity (parts.name) then
 				on_entity_declaration (
 					parts.name, parts.value, base, parts.system_id, parts.public_id, parts.notation_name,
-					parts.is_parameter
+					parts.is_parameter, parse_data
 				)
 			end
 		end
@@ -693,11 +693,14 @@ feature {NONE} -- Implementation
 
 
 	source_type (parse_data: POINTER; a_source_type: NATURAL_8): NATURAL_8
+		local
+			l_count: NATURAL_64
 		do
 			inspect a_source_type when Source_expansion_with_checks then
 				Result := a_source_type
 			else
-				if c_content_count (parse_data) + c_entity_expansion_count (parse_data) > runway_expansion_threshold then
+				l_count := c_content_count (parse_data) + c_entity_expansion_count (parse_data)
+				if l_count > c_exponential_expansion_threshold (parse_data) then
 					Result := Source_expansion_with_checks
 				else
 					Result := Source_expansion
@@ -762,9 +765,5 @@ feature {NONE} -- Internal attributes
 
 	parse_data_memory: MANAGED_POINTER
 		-- allocated memory for C struct `XT_C_PARSE_DATA_STRUCT'
-
-	runway_expansion_threshold: NATURAL_64
-		-- number of bytes processed after which checks for runaway entity expansion
-		-- should be performed
 
 end

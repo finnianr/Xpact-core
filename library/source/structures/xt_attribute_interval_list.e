@@ -38,6 +38,11 @@ inherit
 			copy, is_equal
 		end
 
+	EL_STRING_H_C_API
+		undefine
+			copy, is_equal
+		end
+
 feature {NONE} -- Initialization
 
 	make (n: INTEGER)
@@ -47,6 +52,7 @@ feature {NONE} -- Initialization
 			create attribute_table.make (11)
 			create name_area.make_empty (capacity)
 			create overflow_buffer_area.make_empty (capacity)
+			create expat_c_string_array.make_empty (capacity + 1)
 			create buffer_pool.make (10)
 
 			create entity_cache.make
@@ -101,6 +107,25 @@ feature -- Basic operations
 
 feature {NONE} -- Implementation
 
+	check_value (name: STRING; default_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE])
+		-- if `name' matches some name in `default_values' then check it off
+		local
+			i: INTEGER; value: XT_DEFAULT_ATTRIBUTE_VALUE
+		do
+			from i := 0 until i = default_values.count loop
+				value := default_values [i]
+				if name = value.name then
+					value.check_
+					i := default_values.count -- break
+				else
+					check
+						comparing_by_reference: not name.is_equal (value.name)
+					end
+					i := i + 1
+				end
+			end
+		end
+
 	choose (i: INTEGER; a_buffer: SPECIAL [CHARACTER_8]; overflow_area: like overflow_buffer_area): SPECIAL [CHARACTER_8]
 		-- `a_buffer' if `overflow_area [i // 2] /= Void' else `overflow_area [i // 2]'
 		-- Needed as consequence of possible call to `shift_buffer_left'
@@ -114,10 +139,58 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	has_duplicate_name (name: STRING; a_name_area: like name_area): BOOLEAN
+		local
+			i, i_final: INTEGER
+		do
+			from i := 0; i_final := a_name_area.count until i = i_final or Result loop
+				if a_name_area [i] = name then
+					Result := True
+				else
+					check
+						comparing_by_reference: not a_name_area [i].is_equal (name)
+					end
+					i := i + 1
+				end
+			end
+		end
+
+	not_utf_8_encoded (lower_index, upper_index, utf_8_count: INTEGER): BOOLEAN
+		-- 'True' if `utf_8_count' implies that buffer from `lower_index' to `upper_index'
+		-- is not already valid as UTF-8
+		do
+			Result := utf_8_count > upper_index - lower_index + 1
+		end
+
+	unchecked_count (default_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]): INTEGER
+		-- count of `default_values' that are unchecked
+		local
+			i: INTEGER; value: XT_DEFAULT_ATTRIBUTE_VALUE
+		do
+			from i := 0 until i = default_values.count loop
+				Result := (not default_values [i].checked).to_integer
+				i := i + 1
+			end
+		end
+
+	uncheck_defaults (default_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE])
+		-- mark all defaults as unchecked again
+		local
+			i: INTEGER
+		do
+			from i := 0 until i = default_values.count loop
+				default_values [i].uncheck
+				i := i + 1
+			end
+		end
+
 feature {NONE} -- Internal attributes
 
 	attribute_table: HASH_TABLE [STRING, STRING]
 		-- reuseable table of name-value attribute pairs
+
+	expat_c_string_array: SPECIAL [POINTER]
+		-- eXpat compatible C string array with terminating NUL pointer
 
 	character_swap_area: SPECIAL [CHARACTER_8]
 
@@ -127,10 +200,19 @@ feature {NONE} -- Internal attributes
 
 	buffer_pool: XT_CHARACTER_BUFFER_POOL
 
+feature {NONE} -- Constants
+
+	Shared_checksum: SPECIAL [EL_CRC_32_DIGEST]
+		once
+			create Result.make_filled (create {EL_CRC_32_DIGEST}, 2)
+			Result [1] := create {EL_CRC_32_DIGEST}
+		end
+
 invariant
 	lower_upper_pairs: index_count.integer_remainder (Interval_count) = 0
 	valid_name_area_capacity: name_area.capacity = capacity
 	valid_character_swap_capacity: character_swap_area.capacity = capacity
 	valid_overflow_buffer_capacity: overflow_buffer_area.capacity = capacity
+	valid_expat_c_string_array_capacity: expat_c_string_array.capacity > capacity
 
 end
