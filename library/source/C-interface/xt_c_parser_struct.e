@@ -33,7 +33,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->startCdataSectionHandler;"
+			"((XML_Parser) $ptr)->startCdataSectionHandler"
 		end
 
 	frozen c_on_cdata_section_end (ptr: POINTER): POINTER
@@ -42,7 +42,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->endCdataSectionHandler;"
+			"((XML_Parser) $ptr)->endCdataSectionHandler"
 		end
 
 	frozen c_on_content (ptr: POINTER): POINTER
@@ -51,7 +51,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->characterDataHandler;"
+			"((XML_Parser) $ptr)->characterDataHandler"
 		end
 
 	frozen c_on_comment (ptr: POINTER): POINTER
@@ -60,7 +60,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->commentHandler;"
+			"((XML_Parser) $ptr)->commentHandler"
 		end
 
 	frozen c_on_element_start (ptr: POINTER): POINTER
@@ -69,7 +69,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->startElementHandler;"
+			"((XML_Parser) $ptr)->startElementHandler"
 		end
 
 	frozen c_on_element_end (ptr: POINTER): POINTER
@@ -78,7 +78,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->endElementHandler;"
+			"((XML_Parser) $ptr)->endElementHandler"
 		end
 
 	frozen c_on_processing_instruction (ptr: POINTER): POINTER
@@ -87,7 +87,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->processingInstructionHandler;"
+			"((XML_Parser) $ptr)->processingInstructionHandler"
 		end
 
 	frozen c_on_xml_declaration (ptr: POINTER): POINTER
@@ -96,7 +96,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->xmlDeclHandler;"
+			"((XML_Parser) $ptr)->xmlDeclHandler"
 		end
 
 	frozen c_on_doctype_declaration_start (ptr: POINTER): POINTER
@@ -105,7 +105,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->startDoctypeDeclHandler;"
+			"((XML_Parser) $ptr)->startDoctypeDeclHandler"
 		end
 
 	frozen c_on_element_declaration (ptr: POINTER): POINTER
@@ -114,7 +114,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->elementDeclHandler;"
+			"((XML_Parser) $ptr)->elementDeclHandler"
 		end
 
 	frozen c_on_notation_declaration (ptr: POINTER): POINTER
@@ -123,7 +123,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->notationDeclHandler;"
+			"((XML_Parser) $ptr)->notationDeclHandler"
 		end
 
 	frozen c_on_attribute_list_declaration (ptr: POINTER): POINTER
@@ -132,7 +132,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->attlistDeclHandler;"
+			"((XML_Parser) $ptr)->attlistDeclHandler"
 		end
 
 	frozen c_on_entity_declaration (ptr: POINTER): POINTER
@@ -141,7 +141,7 @@ feature {NONE} -- Parse event callbacks
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->entityDeclHandler;"
+			"((XML_Parser) $ptr)->entityDeclHandler"
 		end
 
 feature {NONE} -- Parse section state
@@ -153,7 +153,7 @@ feature {NONE} -- Parse section state
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->has_dtd_section;"
+			"((XML_Parser) $ptr)->has_dtd_section"
 		end
 
 	frozen c_in_prolog_section (ptr: POINTER): BOOLEAN
@@ -163,7 +163,7 @@ feature {NONE} -- Parse section state
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->in_prolog_section;"
+			"((XML_Parser) $ptr)->in_prolog_section"
 		end
 
 	frozen c_in_dtd_section (ptr: POINTER): BOOLEAN
@@ -173,7 +173,7 @@ feature {NONE} -- Parse section state
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->in_dtd_section;"
+			"((XML_Parser) $ptr)->in_dtd_section"
 		end
 
 	frozen c_in_cdata_section (ptr: POINTER): BOOLEAN
@@ -183,7 +183,7 @@ feature {NONE} -- Parse section state
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->in_CDATA_section;"
+			"((XML_Parser) $ptr)->in_CDATA_section"
 		end
 
 feature {NONE} -- Status query
@@ -194,7 +194,7 @@ feature {NONE} -- Status query
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->hasBillionLaughsMaximumAmplification;"
+			"((XML_Parser) $ptr)->hasBillionLaughsMaximumAmplification"
 		end
 
 	frozen c_has_exponential_expansion_threshold (ptr: POINTER): BOOLEAN
@@ -203,7 +203,7 @@ feature {NONE} -- Status query
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->hasBillionLaughsActivationThreshold;"
+			"((XML_Parser) $ptr)->hasBillionLaughsActivationThreshold"
 		end
 
 feature {NONE} -- Member access
@@ -214,7 +214,7 @@ feature {NONE} -- Member access
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->userData;"
+			"((XML_Parser) $ptr)->userData"
 		end
 
 feature {NONE} -- Measurement
@@ -225,7 +225,7 @@ feature {NONE} -- Measurement
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->lastExternalChildDirectCount;"
+			"((XML_Parser) $ptr)->lastExternalChildDirectCount"
 		end
 
 	frozen c_entity_expansion_count (ptr: POINTER): NATURAL_64
@@ -234,7 +234,7 @@ feature {NONE} -- Measurement
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->lastExternalChildIndirectCount;"
+			"((XML_Parser) $ptr)->lastExternalChildIndirectCount"
 		end
 
 	frozen c_max_expansion_proportion (ptr: POINTER): DOUBLE
@@ -245,7 +245,7 @@ feature {NONE} -- Measurement
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->billionLaughsMaximumAmplification;"
+			"((XML_Parser) $ptr)->billionLaughsMaximumAmplification"
 		end
 
 	frozen c_exponential_expansion_threshold (ptr: POINTER): NATURAL_64
@@ -256,7 +256,7 @@ feature {NONE} -- Measurement
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return ((XML_Parser) $ptr)->billionLaughsActivationThresholdBytes;"
+			"((XML_Parser) $ptr)->billionLaughsActivationThresholdBytes"
 		end
 
 	frozen size_of_parse_data: INTEGER
@@ -264,7 +264,7 @@ feature {NONE} -- Measurement
 		external
 			"C inline use <xpact_native_private.h>"
 		alias
-			"return (EIF_INTEGER_32) sizeof (struct XML_ParserStruct);"
+			"(EIF_INTEGER_32) sizeof (struct XML_ParserStruct)"
 		end
 
 feature {NONE} -- Element change
