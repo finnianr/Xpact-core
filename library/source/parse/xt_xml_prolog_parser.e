@@ -15,13 +15,17 @@ deferred class
 
 inherit
 	XT_PARSING_BUFFERS
+		rename
+			make as make_buffers
 		redefine
-			make, set_defaults, reset
+			set_defaults, reset
 		end
 
 	XT_DOCUMENT_SCANNER
+		rename
+			make as make_scanner
 		redefine
-			make, reset
+			reset
 		end
 
 	XT_PARSE_EVENTS
@@ -36,17 +40,24 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make
+	make_default
 		do
+			make (create {MANAGED_POINTER}.make (c_size_of_parser_struct))
+		end
+
+	make (parse_data: MANAGED_POINTER)
+		require
+			valid_parse_data_size: parse_data.count = c_size_of_parser_struct
+		do
+			parse_data_memory := parse_data
 			create attribute_value_defaults_table.make (37)
-			create parse_data_memory.make (size_of_parse_data)
 			create doctype_declaration_stack.make_empty (2)
 			doctype_identifiers := [Empty_string, Empty_string]
 			create element_context.make (parse_data_memory.item)
 			create parameter_entity_table.make (3)
 			create parameter_name_cache.make
-			Precursor {XT_PARSING_BUFFERS}
-			Precursor {XT_DOCUMENT_SCANNER}
+
+			make_buffers; make_scanner
 
 			create attribute_parts_list.make (name_cache)
 			create document_type_parts_list.make (name_cache)

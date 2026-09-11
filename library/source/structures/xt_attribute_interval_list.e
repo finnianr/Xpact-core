@@ -32,6 +32,8 @@ inherit
 		end
 
 	XT_STRING_8_ROUTINES_I
+		rename
+			index_of as index_of_character
 		export
 			{NONE} all
 		undefine
@@ -72,6 +74,42 @@ feature -- Access
 	name_cache: XT_NAME_CACHE
 		-- efficient lookup of attribute/tag name
 
+	index_of (name: STRING): INTEGER
+		-- index of `name' using comparison by reference
+		-- 0 if not found
+		require
+			name_in_cache: name_cache.item (name.area, 0, name.count - 1, 0) = name
+		local
+			i, i_final: INTEGER; found: BOOLEAN
+		do
+			if attached name_area as l_area then
+				from i := 0; i_final := l_area.count until i = i_final or Result.to_boolean loop
+					if l_area [i] = name then
+						Result := i + 1
+					else
+						i := i + 1
+					end
+				end
+			end
+		end
+
+	value_index_of (name: STRING): INTEGER
+		-- zero based index into `area' for value start index associated with attribute `name'
+		-- using comparison by reference
+		-- -1 if not found
+		require
+			name_in_cache: name_cache.item (name.area, 0, name.count - 1, 0) = name
+		local
+			name_index: INTEGER
+		do
+			name_index := index_of (name)
+			if name_index.to_boolean then
+				Result := (name_index - 1) * 2
+			else
+				Result := (1).opposite
+			end
+		end
+
 feature -- Measurement
 
 	capacity: INTEGER
@@ -106,6 +144,20 @@ feature -- Basic operations
 		end
 
 feature {NONE} -- Implementation
+
+	empty_c_string_array (minimum_capacity: INTEGER): SPECIAL [POINTER]
+		do
+			Result := expat_c_string_array
+			if Result.capacity < minimum_capacity then
+				create Result.make_empty (minimum_capacity)
+				expat_c_string_array := Result
+			else
+				Result.wipe_out
+			end
+		ensure
+			big_enough: Result.capacity >= minimum_capacity
+			zero_count: Result.count = 0
+		end
 
 	check_value (name: STRING; default_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE])
 		-- if `name' matches some name in `default_values' then check it off

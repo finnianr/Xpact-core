@@ -125,7 +125,6 @@ feature -- Measurement
 			end
 		end
 
-
 	Lower: INTEGER = 0
 			-- Minimum index of Current.
 
@@ -550,6 +549,13 @@ feature -- Element change
 		do
 			file.read_to_managed_pointer (Current, 0, n)
 			count := file.bytes_read
+		end
+
+	set_count (n: INTEGER)
+		require
+			big_enough: n <= capacity
+		do
+			count := n
 		end
 
 feature {NONE} -- Implementation

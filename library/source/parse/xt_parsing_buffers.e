@@ -88,7 +88,6 @@ feature -- Element change
 	reset
 		do
 			set_defaults
-
 			if not codec.is_utf_8 then
 				create {XT_UTF_8_CODEC} codec.make_empty
 			end

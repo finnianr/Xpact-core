@@ -63,4 +63,52 @@ feature -- Category Byte types (ordinal matches C enum)
 	BT_other: INTEGER = 28					-- known non-name, non-name-start ASCII character
 	BT_non_ascii: INTEGER = 29				-- upper byte; might be name or name-start (Latin-1)
 
+feature {NONE} -- English names
+
+	BT_names_list: LIST [STRING]
+		once
+			Result := ("[
+				Non xml
+				Malform
+				Less than
+				Ampersand
+				Right square bracket
+				Lead 2 byte
+				Lead 3 byte
+				Lead 4 byte
+				Continuation byte
+				CR
+				Linefeed
+				Greater than
+				Quote
+				Apostrophe
+				Equals
+				Question
+				Exclamation
+				Forward slash
+				Semicolon
+				Hash
+				Left square bracket
+				Whitespace
+				Name start
+				Colon
+				Hex digit
+				Digit
+				Name only
+				Minus
+				Other
+				Non ascii
+				Percent
+				Left parenthesis
+				Right parenthesis
+				Asterisk
+				Plus
+				Comma
+				Pipe symbol
+			]").split ('%N')
+		ensure
+			valid_start_index: Result [Bt_non_xml + 1] ~ "Non xml"
+			valid_end_index: Result [BT_pipe_symbol + 1] ~ "Pipe symbol"
+		end
+
 end

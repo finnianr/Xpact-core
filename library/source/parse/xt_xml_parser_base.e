@@ -23,9 +23,9 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make
+	make (parse_data: MANAGED_POINTER)
 		do
-			Precursor
+			Precursor (parse_data)
 		ensure then
 			set_to_check_encoding: parsing_state = State_check_encoding
 			no_error: error_code = Error_none

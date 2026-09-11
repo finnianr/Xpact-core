@@ -14,6 +14,9 @@ class
 
 inherit
 	XT_XML_PARSER_BASE
+		rename
+			make as make_parser,
+			make_default as make
 		redefine
 			make, put_status
 		end

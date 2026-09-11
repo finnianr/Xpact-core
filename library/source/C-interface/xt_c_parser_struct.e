@@ -1,12 +1,11 @@
 note
 	description: "[
-		Parser state, callback handler functions and running totals of content bytes parsed and content resulting
-		from the expansion of defined entities.
+		Parser state, callback handler functions and running totals of content bytes parsed and
+		content resulting from the expansion of defined entities.
 	]"
 	notes: "[
-		External read/write access to the C structure `XML_Parser' in `<xpact_native_private.h>'
+		External read/write access to the C structure `struct XML_ParserStruct' defined in `<xpact_native_private.h>'
 		
-		Defined:
 			contrib/xpact/native/xpact_native_private.h
 	]"
 
@@ -24,125 +23,6 @@ class
 
 inherit
 	EL_C_API
-
-feature {NONE} -- Parse event callbacks
-
-	frozen c_on_cdata_section_start (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->startCdataSectionHandler"
-		end
-
-	frozen c_on_cdata_section_end (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->endCdataSectionHandler"
-		end
-
-	frozen c_on_content (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->characterDataHandler"
-		end
-
-	frozen c_on_comment (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->commentHandler"
-		end
-
-	frozen c_on_element_start (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->startElementHandler"
-		end
-
-	frozen c_on_element_end (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->endElementHandler"
-		end
-
-	frozen c_on_processing_instruction (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->processingInstructionHandler"
-		end
-
-	frozen c_on_xml_declaration (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->xmlDeclHandler"
-		end
-
-	frozen c_on_doctype_declaration_start (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->startDoctypeDeclHandler"
-		end
-
-	frozen c_on_element_declaration (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->elementDeclHandler"
-		end
-
-	frozen c_on_notation_declaration (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->notationDeclHandler"
-		end
-
-	frozen c_on_attribute_list_declaration (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->attlistDeclHandler"
-		end
-
-	frozen c_on_entity_declaration (ptr: POINTER): POINTER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_native_private.h>"
-		alias
-			"((XML_Parser) $ptr)->entityDeclHandler"
-		end
 
 feature {NONE} -- Parse section state
 
@@ -259,7 +139,7 @@ feature {NONE} -- Measurement
 			"((XML_Parser) $ptr)->billionLaughsActivationThresholdBytes"
 		end
 
-	frozen size_of_parse_data: INTEGER
+	frozen c_size_of_parser_struct: INTEGER
 			-- Size in bytes of one `XML_Parser' record
 		external
 			"C inline use <xpact_native_private.h>"

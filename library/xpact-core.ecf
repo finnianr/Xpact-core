@@ -3,8 +3,7 @@
 	<target name="xpact_core">
 		<description>
 export:
-	XPACT_INCLUDE = "$EIFFEL/library/Xpact-core/contrib/xpact/native"
-	XPACT_CORE_INCLUDE = "$EIFFEL/library/Xpact-core/library/C-source"
+	XPACT_INCLUDE = "$EIFFEL/library/Xpact-core/contrib/xpact/include"
 		</description>
 		<root all_classes="true"/>
 		<option  full_class_checking="false" is_obsolete_routine_type="true"  syntax="standard" warning="warning">
@@ -19,9 +18,8 @@ export:
 		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf" readonly="true"/>
 		<library name="c_zlib" location="$ISE_LIBRARY\C_library\zlib\clibs_zlib.ecf"/>
 		<external_include location="$(XPACT_INCLUDE)"/>
-		<external_include location="$(XPACT_CORE_INCLUDE)"/>
 		<cluster name="eiffel_loop" location="../contrib/Eiffel-Loop" recursive="true"/>
-		<cluster name="xpact-so" location="../contrib/xpact/src" recursive="true"/>
+		<cluster name="xpact-so" location="$EIFFEL/library/xpact/src" recursive="true"/>
 
 		<cluster name="xpact" location="source" recursive="true">
 			<file_rule>

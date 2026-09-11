@@ -47,8 +47,16 @@ feature {NONE} -- Initialisation
 			create scanned_index_x4_buffer.make_empty (4)
 			create attribute_list.make (11)
 			name_cache := attribute_list.name_cache
+			initialize_name_cache
 			entity_cache := attribute_list.entity_cache
 			entity_table := attribute_list.entity_table
+		end
+
+	initialize_name_cache
+		do
+			name_cache.adopt (Xml_declaration.encoding)
+			name_cache.adopt (Xml_declaration.version)
+			name_cache.adopt (Xml_declaration.standalone)
 		end
 
 feature -- Access
@@ -70,7 +78,7 @@ feature -- Element change
 			attribute_list.set_permit_undefined_entities (False)
 			attribute_list.wipe_out
 			entity_cache.reset
-			name_cache.reset
+			name_cache.reset; initialize_name_cache
 			entity_table.wipe_out
 			entity_table.set_predefined (entity_cache)
 		end
@@ -84,12 +92,6 @@ feature {NONE} -- Implementation
 		do
 			upper := (buf.count - 1).min (index + 10)
 			Result := area_substring (buf, index, upper, True)
-		end
-
-	has_chars (end_index, index, count: INTEGER): BOOLEAN
-			-- end_index - index >= count * char_width  (HAS_CHARS macro)
-		do
-			Result := end_index - index >= count
 		end
 
 	new_bt_name (index: INTEGER): STRING

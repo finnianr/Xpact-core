@@ -55,12 +55,12 @@ feature {NONE} -- Standard strings
 
 	Xml_lower: STRING = "xml"
 
-	Xml_declaration: TUPLE [open, encoding, standalone, version: STRING]
+	Xml_declaration: TUPLE [open, version, encoding, standalone: STRING]
 		local
 			s: XT_STRING_8_ROUTINES
 		once
 			create Result
-			s.fill_tuple (Result, "<?xml, encoding, standalone, version")
+			s.fill_tuple (Result, "<?xml, version, encoding, standalone")
 		end
 
 feature {NONE} -- Document definition strings
@@ -112,53 +112,5 @@ feature {NONE} -- Predefined entities
 	Predefined_lt: STRING_8 = "lt"
 
 	Predefined_quot: STRING_8 = "quot"
-
-feature {NONE} -- Constants
-
-	BT_names_list: LIST [STRING]
-		once
-			Result := ("[
-				Non xml
-				Malform
-				Less than
-				Ampersand
-				Right square bracket
-				Lead 2 byte
-				Lead 3 byte
-				Lead 4 byte
-				Continuation byte
-				CR
-				Linefeed
-				Greater than
-				Quote
-				Apostrophe
-				Equals
-				Question
-				Exclamation
-				Forward slash
-				Semicolon
-				Hash
-				Left square bracket
-				Whitespace
-				Name start
-				Colon
-				Hex digit
-				Digit
-				Name only
-				Minus
-				Other
-				Non ascii
-				Percent
-				Left parenthesis
-				Right parenthesis
-				Asterisk
-				Plus
-				Comma
-				Pipe symbol
-			]").split ('%N')
-		ensure
-			valid_start_index: Result [{XT_BYTE_TYPE_CONSTANTS}.Bt_non_xml + 1] ~ "Non xml"
-			valid_end_index: Result [{XT_BYTE_TYPE_CONSTANTS}.BT_pipe_symbol + 1] ~ "Pipe symbol"
-		end
 
 end

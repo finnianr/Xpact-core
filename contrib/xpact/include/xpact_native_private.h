@@ -1,7 +1,7 @@
 #ifndef XPACT_NATIVE_PRIVATE_H
 #define XPACT_NATIVE_PRIVATE_H
 
-#include "../include/xpact.h"
+#include "xpact.h"
 #include <stdlib.h>
 #include <string.h>
 

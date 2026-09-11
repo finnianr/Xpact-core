@@ -75,12 +75,16 @@ feature -- Status query
 			end
 		end
 
-	standalone_code (buffer: SPECIAL [CHARACTER_8]): INTEGER
+	standalone_code (a_buffer: SPECIAL [CHARACTER_8]): INTEGER
+		local
+			i: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
-			if attached item_value (buffer, Xml_declaration.standalone, False) as value then
-				Result := if value [1] = 'y' then 1 else 0 end
+			i := value_index_of (Xml_declaration.standalone)
+			inspect i when -1 then
+				Result := i
 			else
-				Result := (1).opposite
+				buffer := choose (i, a_buffer, overflow_buffer_area)
+				Result := if buffer [area [i]] = 'y' then 1 else 0 end
 			end
 		end
 
@@ -119,10 +123,11 @@ feature -- Access
 			not_empty: count >= 1
 			null_terminated: is_null_terminated
 		do
-			Result := expat_c_string_array
-			Result.wipe_out
-			Result.extend (name_area [0].area.base_address)
-			Result.extend (choose (0, buffer, overflow_buffer_area).item_address (area_v2 [0])) -- value
+			Result := empty_c_string_array (2)
+			if attached area_v2 as a and then a.count > 0 then
+				Result.extend (name_area [0].area.base_address)
+				Result.extend (choose (0, buffer, overflow_buffer_area).item_address (a [0])) -- value
+			end
 		ensure
 			name_value_pair: Result.count = 2
 		end
@@ -187,22 +192,18 @@ feature -- Access
 		end
 
 	item_value (buffer: SPECIAL [CHARACTER_8]; name: STRING; keep_ref: BOOLEAN): detachable STRING
+		-- value associated with attribute `name' using comparison by reference
+		-- `Void' if not found
+		require
+			name_in_cache: name_cache.item (name.area, 0, name.count - 1, 0) = name
 		local
-			i, i_final: INTEGER; found: BOOLEAN
+			i: INTEGER
 		do
-			if attached area_v2 as a and then attached overflow_buffer_area as overflow_area
-				and then attached name_area as l_name_area
-			then
-				from i := 0; i_final := a.count until i = i_final or found loop
-					if l_name_area [i // 2] ~ name then
-						Result := area_substring (choose (i, buffer, overflow_area), a [i], a [i + 1], False)
-						if keep_ref then
-							Result := Result.twin
-						end
-						found := True
-					else
-						i := i + Interval_count
-					end
+			i := value_index_of (name)
+			if i > -1 and then attached area_v2 as a then
+				Result := area_substring (choose (i, buffer, overflow_buffer_area), a [i], a [i + 1], False)
+				if keep_ref then
+					Result := Result.twin
 				end
 			end
 		end
@@ -266,6 +267,7 @@ feature -- Conversion
 					attribute_ := default_values [i]
 					if not attribute_.checked then
 						c_array_capacity := c_array_capacity + 2
+					-- ensure enough capacity
 						if Result.capacity < c_array_capacity then
 							Result := Result.aliased_resized_area (c_array_capacity)
 							expat_c_string_array := Result
@@ -280,6 +282,35 @@ feature -- Conversion
 		ensure
 			filled: Result.count >= (count + unchecked_count (default_values)) * 2 + 1
 			checksums_agree: checksums_agree (buffer, default_values, Result)
+		end
+
+	to_version_encoding_c_array (buffer: SPECIAL [CHARACTER_8]): SPECIAL [POINTER]
+		-- eXpat compatible array of XML declaration version and encoding value as C string pointers
+		require
+			not_empty: count >= 1
+			null_terminated: is_null_terminated
+		local
+			i, j: INTEGER; version_ptr, encoding_ptr: POINTER
+		do
+			Result := empty_c_string_array (2)
+			Result.fill_with (default_pointer, 0, 1)
+			if attached overflow_buffer_area as overflow and then attached area_v2 as a then
+				from i := 0 until i > 1 loop
+					if i = 0 then
+						j := value_index_of (Xml_declaration.version)
+					else
+						j := value_index_of (Xml_declaration.encoding)
+					end
+					inspect j when -1 then
+						do_nothing
+					else
+						Result [i] := choose (j, buffer, overflow).item_address (a [j])
+					end
+					i := i + 1
+				end
+			end
+		ensure
+			name_value_pair: Result.count = 2
 		end
 
 feature -- Status change
@@ -414,14 +445,29 @@ feature -- Appending to CRC-32 checksum
 			end
 		end
 
-	append_xml_declaration_to_crc_32 (buffer: SPECIAL [CHARACTER_8]; checksum: EL_CRC_32_DIGEST)
+	append_xml_declaration_to_crc_32 (a_buffer: SPECIAL [CHARACTER_8]; checksum: EL_CRC_32_DIGEST)
+		local
+			i, j: INTEGER
 		do
-			across << Xml_declaration.version, Xml_declaration.encoding >> as name loop
-				if attached item_value (buffer, name, False) as value then
-					checksum.add_string (value)
+		-- iterate over encoding, standalone, version
+			if attached Xml_declaration as xml and attached overflow_buffer_area as overflow
+				and then attached area_v2 as a
+			then
+				from i := 2 until i > xml.count loop
+					if attached {STRING} xml.reference_item (i) as name then
+						j := value_index_of (name)
+						inspect j when -1 then
+							do_nothing
+						else
+							inspect i when 2, 3 then -- version OR encoding
+								checksum.add_characters (choose (j, a_buffer, overflow), a [j], a [j + 1])
+							else end
+						end
+					end
+					i := i + 1
 				end
 			end
-			checksum.add_integer_32 (standalone_code (buffer))
+			checksum.add_integer_32 (standalone_code (a_buffer))
 		end
 
 feature -- Basic operations

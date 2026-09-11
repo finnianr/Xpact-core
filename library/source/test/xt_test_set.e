@@ -104,6 +104,17 @@ feature -- Tests
 			IO.put_new_line
 		end
 
+	test_empty_stack
+		local
+			stack: ARRAYED_STACK [INTEGER]
+		do
+			create stack.make (0)
+			stack.wipe_out
+			if attached stack.linear_representation as list then
+				list.start
+			end
+		end
+
 	test_file_info
 		local
 			info: FILE_INFO
@@ -196,6 +207,7 @@ feature {NONE} -- Implementation
 				[agent test_buffer_pool, "buffer_pool"],
 				[agent test_chunk_reading, "chunk_reading"],
 				[agent test_date_formatting, "date_formatting"],
+				[agent test_empty_stack, "empty_stack"],
 				[agent test_file_info, "file_info"],
 				[agent test_ntfs_link_detection, "ntfs_link_detection"],
 				[agent test_mount_driver_name, "mount_driver_name"],

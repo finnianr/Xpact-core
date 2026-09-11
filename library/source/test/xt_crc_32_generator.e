@@ -20,7 +20,7 @@ inherit
 		rename
 			make as make_parser
 		redefine
-			make_parser, put_status, reset
+			make_default, put_status, reset
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
@@ -52,10 +52,10 @@ feature {NONE} -- Initialisation
 	make (a_data_type: INTEGER)
 		do
 			data_type := a_data_type
-			make_parser
+			make_default
 		end
 
-	make_parser
+	make_default
 		do
 			Precursor
 			create checksum

@@ -35,8 +35,11 @@ class
 
 inherit
 	XT_XML_PARSER_BASE
+		rename
+			make as make_parser,
+			make_default as make
 		redefine
-			make, on_finish
+			make_parser, on_finish
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
@@ -64,9 +67,9 @@ create
 
 feature {NONE} -- Initialisation
 
-	make
+	make_parser (parse_data: MANAGED_POINTER)
 		do
-			Precursor
+			Precursor (parse_data)
 			create section_path.make_empty
 			create section_name.make (20)
 			create report_file.make_with_name ("Test-files.txt")

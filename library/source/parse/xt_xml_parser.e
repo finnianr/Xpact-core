@@ -30,9 +30,9 @@ inherit
 
 feature {NONE} -- Initialisation
 
-	make
+	make (parse_data: MANAGED_POINTER)
 		do
-			Precursor
+			Precursor (parse_data)
 			create text_buffer.make (0)
 		end
 

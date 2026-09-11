@@ -121,9 +121,19 @@ feature {NONE} -- Access
 		end
 
 	frozen to_list (str: STRING; c: CHARACTER): LIST [STRING]
+		local
+			i: INTEGER; c_string: ANY
 		do
 			Result := str.split (c)
-			Result.do_all (agent {STRING}.left_adjust)
+			from i := 1 until i > Result.count loop
+				if attached Result [i] as item then
+					item.left_adjust
+					c_string := item.to_c -- Null terminate
+				end
+				i := i + 1
+			end
+		ensure
+			null_terminated: across Result as s all s.area [s.count] = '%U' end
 		end
 
 	frozen unescaped (code: INTEGER): like Char_area

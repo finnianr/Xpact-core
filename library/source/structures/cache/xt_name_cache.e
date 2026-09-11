@@ -87,6 +87,17 @@ feature -- Access
 			end
 		end
 
+	adopt (name: like Default_string)
+		-- adopt `name' as the `item' returned when calling `item' with `name' occurring in `buffer' argument
+		do
+			adopted_name := name
+			if attached item (name.area, 0, name.count - 1, 0) as l_name then
+				adopted_name := Void
+			end
+		ensure
+			same_instance: item (name.area, 0, name.count - 1, 0) = name
+		end
+
 	item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like Default_string
 		-- UTF-8 encoded name
 		require
@@ -192,7 +203,11 @@ feature {NONE} -- Implementation
 		local
 			s: XT_STRING_8_ROUTINES
 		do
-			Result := s.new_substring (buffer, start_index, end_index)
+			if attached adopted_name as name then
+				Result := name
+			else
+				Result := s.new_substring (buffer, start_index, end_index)
+			end
 		end
 
 	hash_index, bucket_index (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
@@ -267,6 +282,8 @@ feature {NONE} -- Implementation
 		end
 
 feature {NONE} -- Internal attributes
+
+	adopted_name: detachable like Default_string
 
 	area: SPECIAL [like Default_bucket]
 

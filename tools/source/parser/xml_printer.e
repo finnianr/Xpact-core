@@ -45,6 +45,9 @@ class XML_PRINTER
 
 inherit
 	XT_XML_PARSER
+		rename
+			make as make_parser,
+			make_default as make
 		redefine
 			on_base_start_element
 		end
