@@ -95,8 +95,7 @@ feature -- Access
 
 	value_index_of (name: STRING): INTEGER
 		-- zero based index into `area' for value start index associated with attribute `name'
-		-- using comparison by reference
-		-- -1 if not found
+		-- using comparison by reference. `-1' if not found
 		require
 			name_in_cache: name_cache.item (name.area, 0, name.count - 1, 0) = name
 		local
@@ -106,7 +105,7 @@ feature -- Access
 			if name_index.to_boolean then
 				Result := (name_index - 1) * 2
 			else
-				Result := (1).opposite
+				Result := -1
 			end
 		end
 

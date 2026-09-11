@@ -1,7 +1,9 @@
 note
 	description: "[
-		C callbacks for handler functions registered in `struct XML_ParserStruct' defined in
-		`<xpact_native_private.h>'
+		C callbacks for handler functions registered in `struct XML_ParserStruct'.
+		
+		Include File:
+		 	contrib/xpact/include/xpact_native_private.h
 	]"
 
 	author: "Finnian Reilly"
@@ -17,11 +19,22 @@ class
 
 inherit
 	XT_XML_PARSER_BASE
+		redefine
+			make
+		end
 
 	XT_PARSE_EVENT_C_API
 
 create
 	make
+
+feature {NONE} -- Initialization
+
+	make (parse_data: MANAGED_POINTER)
+		do
+			Precursor (parse_data)
+			create empty_attributes.make_filled (default_pointer, 1)
+		end
 
 feature {NONE} -- Parse event handlers
 
@@ -275,12 +288,11 @@ feature {NONE} -- Declaration event handlers
 			end
 		end
 
-feature {NONE} -- Constants
+feature {NONE} -- Internal attributes
 
-	Empty_attributes: SPECIAL [POINTER]
-		once
-			create Result.make_filled (default_pointer, 1)
-		end
+	empty_attributes: SPECIAL [POINTER]
+
+feature {NONE} -- Constants
 
 	Callback_none: INTEGER = 0
 		-- No callback is currently dispatching.

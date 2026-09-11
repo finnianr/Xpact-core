@@ -73,12 +73,11 @@ struct XML_ParserStruct {
 	int stopCallbackKind;
 	XML_Bool reparseDeferralEnabled;
 	
-// Xpact-core parsing states	
+// Xpact-core parsing states
 	XML_Bool has_dtd_section;
 	XML_Bool in_prolog_section;
 	XML_Bool in_dtd_section;
 	XML_Bool in_CDATA_section;
-	
 };
 
 #define XPACT_CALLBACK_NONE 0

@@ -19,7 +19,7 @@ export:
 		<library name="c_zlib" location="$ISE_LIBRARY\C_library\zlib\clibs_zlib.ecf"/>
 		<external_include location="$(XPACT_INCLUDE)"/>
 		<cluster name="eiffel_loop" location="../contrib/Eiffel-Loop" recursive="true"/>
-		<cluster name="xpact-so" location="$EIFFEL/library/xpact/src" recursive="true"/>
+		<!--cluster name="xpact-so" location="$EIFFEL/library/xpact/src" recursive="true"/-->
 
 		<cluster name="xpact" location="source" recursive="true">
 			<file_rule>

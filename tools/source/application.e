@@ -352,7 +352,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	compile: TUPLE [XP_NATIVE_CALLBACK_HANDLER, XT_EXPAT_CALLBACK_HANDLER]
+	compile: TUPLE [XT_EXPAT_CALLBACK_HANDLER]
 		do
 			create Result
 		end
