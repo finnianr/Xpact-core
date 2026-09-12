@@ -1,9 +1,9 @@
 note
 	description: "[
-		C callbacks for handler functions registered in `struct XML_ParserStruct'.
+		Dispatch parse events as C callbacks to registered handler functions defined in `struct XML_ParserStruct'.
 		
 		Include File:
-		 	contrib/xpact/include/xpact_native_private.h
+		 	contrib/xpact/include/xpact_private.h
 	]"
 
 	author: "Finnian Reilly"
@@ -15,7 +15,7 @@ note
 	revision: "1"
 
 class
-	XT_EXPAT_CALLBACK_HANDLER
+	XT_PARSE_EVENT_DISPATCHER
 
 inherit
 	XT_XML_PARSER_BASE
@@ -39,6 +39,7 @@ feature {NONE} -- Initialization
 feature {NONE} -- Parse event handlers
 
 	on_cdata_section_start (parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_StartCdataSectionHandler) (void *userData);
 		local
 			ptr: POINTER
 		do
@@ -49,6 +50,7 @@ feature {NONE} -- Parse event handlers
 		end
 
 	on_cdata_section_end (parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_EndCdataSectionHandler) (void *userData);
 		local
 			ptr: POINTER
 		do
@@ -58,32 +60,41 @@ feature {NONE} -- Parse event handlers
 			end
 		end
 
-	on_comment (buf: like buffer; lower, upper: INTEGER; parse_data: POINTER)
+	on_comment (buf: like buffer; start_index, end_index: INTEGER; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_CommentHandler) (
+		--		void *userData,
+		-- 	const XML_Char *data
+		-- );
 		local
-			null_index: INTEGER; c, null: CHARACTER; ptr: POINTER
+			ptr: POINTER
 		do
 			ptr := c_on_comment (parse_data)
 			if is_attached (ptr) then
-				null_index := upper + 1
-				c := buf [null_index]; buf [null_index] := null
-				call_on_comment (ptr, c_user_data (parse_data), buf.item_address (lower))
-				buf [null_index] := c
+				null_terminate (buf, end_index, parse_data)
+				call_on_comment (ptr, c_user_data (parse_data), buf.item_address (start_index))
+				undo_null_termination (buf, parse_data)
 			end
 		end
 
-	on_content (buf: SPECIAL [CHARACTER]; lower, upper: INTEGER; parse_data: POINTER)
+	on_content (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
+		--	typedef void (XMLCALL *XML_CharacterDataHandler) (
+		--		void *userData, const XML_Char *s, int len
+		--	);	
 		local
 			ptr: POINTER
 		do
 			ptr := c_on_content (parse_data)
 			if is_attached (ptr) then
 				set_active_callback_kind (parse_data, Callback_character_data)
-				call_on_content (ptr, c_user_data (parse_data), buffer.item_address (lower), upper - lower + 1)
+				call_on_content (ptr, c_user_data (parse_data), buffer.item_address (start_index), end_index - start_index + 1)
 				set_active_callback_kind (parse_data, Callback_none)
 			end
 		end
 
 	on_element_end (name: STRING; parse_data: POINTER)
+		--	typedef void (XMLCALL *XML_EndElementHandler) (
+		--		void *userData, const XML_Char *name
+		--	);	
 		local
 			ptr: POINTER
 		do
@@ -96,6 +107,9 @@ feature {NONE} -- Parse event handlers
 	on_element_start (
 		buf: like buffer; context: XT_ELEMENT_CONTEXT; attributes: XT_ATTRIBUTE_LIST; token: INTEGER; parse_data: POINTER
 	)
+		--	typedef void (XMLCALL *XML_StartElementHandler) (
+		--		void *userData, const XML_Char *name, const XML_Char **atts
+		--	);
 		require else
 			null_terminated_name: context.name.area [context.name.count] = '%U'
 		local
@@ -123,24 +137,27 @@ feature {NONE} -- Parse event handlers
 				end
 			end
 		ensure then
-			buffer_unchanged:
-				attributes.upper_plus_1_characters (buf) ~ old attributes.upper_plus_1_characters (buf)
+			buffer_unchanged: attributes.upper_plus_1_characters (buf) ~ old attributes.upper_plus_1_characters (buf)
 		end
 
-	on_processing_instruction (buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
+	on_processing_instruction (
+		buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER
+	)
+		-- typedef void (XMLCALL *XML_ProcessingInstructionHandler) (
+		--		void *userData, const XML_Char *target, const XML_Char *data
+		--	);
+
 		require else
 			buffer_big_enough: buf.valid_index (end_index + 1)
 		local
-			ptr: POINTER; null_index: INTEGER; c: CHARACTER; c_string_array: SPECIAL [POINTER]
+			ptr: POINTER; c_string_array: SPECIAL [POINTER]
 		do
 			ptr := c_on_processing_instruction (parse_data)
 			if is_attached (ptr) then
 				if attributes.is_empty then
-					null_index := end_index + 1
-					c := buf [null_index]
-					buf [null_index] := '%U'
+					null_terminate (buf, end_index, parse_data)
 					call_on_processing_instruction (ptr, c_user_data (parse_data), buf.item_address (start_index), default_pointer)
-					buf [null_index] := c
+					undo_null_termination (buf, parse_data)
 
 				else
 					attributes.null_terminate_values (buf)
@@ -149,6 +166,8 @@ feature {NONE} -- Parse event handlers
 					attributes.undo_null_terminated_values (buf)
 				end
 			end
+		ensure then
+			buffer_unchanged: attributes.upper_plus_1_characters (buf) ~ old attributes.upper_plus_1_characters (buf)
 		end
 
 feature {NONE} -- Declaration event handlers
@@ -157,9 +176,10 @@ feature {NONE} -- Declaration event handlers
 		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
 		is_required: BOOLEAN; parse_data: POINTER
 	)
-		-- typedef void(XMLCALL *XML_AttlistDeclHandler)(
+		-- typedef void (XMLCALL *XML_AttlistDeclHandler)(
 		--   void *userData, const XML_Char *elname, const XML_Char *attname,
-		--   const XML_Char *att_type, const XML_Char *dflt, int isrequired);
+		--   const XML_Char *att_type, const XML_Char *default, int isrequired
+		-- );
 		local
 			ptr, default_value_ptr: POINTER
 		do
@@ -176,9 +196,9 @@ feature {NONE} -- Declaration event handlers
 		end
 
 	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
-		-- typedef void (
-		-- 	XMLCALL *XML_StartDoctypeDeclHandler)(void *userData,
-		-- 	const XML_Char *doctypeName, const XML_Char *sysid, const XML_Char *pubid, int has_internal_subset
+		-- typedef void (XMLCALL *XML_StartDoctypeDeclHandler)(
+		--		void *userData, const XML_Char *doctypeName, const XML_Char *sysid, const XML_Char *pubid,
+		--		int has_internal_subset
 		-- );
 		local
 			ptr, system_id_ptr, public_id_ptr: POINTER
@@ -199,7 +219,9 @@ feature {NONE} -- Declaration event handlers
 		end
 
 	on_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE; parse_data: POINTER)
-		-- typedef void(XMLCALL *XML_ElementDeclHandler)(void *userData, const XML_Char *name, XML_Content *model);
+		-- typedef void (XMLCALL *XML_ElementDeclHandler)(
+		--		void *userData, const XML_Char *name, XML_Content *model
+		-- );
 		local
 			ptr: POINTER
 		do
@@ -218,7 +240,8 @@ feature {NONE} -- Declaration event handlers
 		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity,
 		-- 	const XML_Char *value, int value_length, const XML_Char *base,
 		-- 	const XML_Char *systemId, const XML_Char *publicId,
-		-- 	const XML_Char *notationName);
+		-- 	const XML_Char *notationName
+		--	);
 		local
 			ptr, value_ptr, base_ptr, system_id_ptr, public_id_ptr, notation_name_ptr: POINTER
 			value_count: INTEGER
@@ -249,8 +272,10 @@ feature {NONE} -- Declaration event handlers
 		end
 
 	on_notation_declaration (name: STRING; a_base, system_id, public_id: detachable STRING; parse_data: POINTER)
-		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
-		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
+		-- typedef void (XMLCALL *XML_NotationDeclHandler)(
+		-- 	void *userData, const XML_Char *notationName,
+		--		const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId
+		-- );
 		local
 			ptr, base_ptr, system_id_ptr, public_id_ptr: POINTER
 		do
@@ -272,8 +297,9 @@ feature {NONE} -- Declaration event handlers
 		end
 
 	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
-		-- typedef void(XMLCALL *XML_XmlDeclHandler)(void *userData,
-		-- const XML_Char *version, const XML_Char *encoding, int standalone);
+		-- typedef void (XMLCALL *XML_XmlDeclHandler)(
+		-- 	void *userData, const XML_Char *version, const XML_Char *encoding, int standalone
+		-- );
 		local
 			ptr: POINTER; c_string_array: SPECIAL [POINTER]
 		do
@@ -286,6 +312,29 @@ feature {NONE} -- Declaration event handlers
 				)
 				attributes.undo_null_terminated_values (buf)
 			end
+		ensure then
+			buffer_unchanged: attributes.upper_plus_1_characters (buf) ~ old attributes.upper_plus_1_characters (buf)
+		end
+
+feature {NONE} -- Implementation
+
+	null_terminate (buf: like buffer; end_index: INTEGER; parse_data: POINTER)
+		require
+			buffer_big_enough: buf.valid_index (end_index + 1)
+		local
+			null_index: INTEGER
+		do
+			null_index := end_index + 1
+			set_null_swap (parse_data, buf [null_index])
+			buf [null_index] := '%U'
+		end
+
+	undo_null_termination (buf: like buffer; parse_data: POINTER)
+		require
+			buffer_big_enough: buf.valid_index (c_null_index (parse_data))
+			null_terminated: buf [c_null_index (parse_data)] = '%U'
+		do
+			buf [c_null_index (parse_data)] := c_null_swap (parse_data)
 		end
 
 feature {NONE} -- Internal attributes

@@ -352,7 +352,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	compile: TUPLE [XT_EXPAT_CALLBACK_HANDLER]
+	compile: TUPLE [XT_PARSE_EVENT_DISPATCHER]
 		do
 			create Result
 		end

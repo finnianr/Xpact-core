@@ -1,7 +1,10 @@
 note
 	description: "[
-		C external callbacks for handler functions registered in `struct XML_ParserStruct' defined in
-		`<xpact_native_private.h>'
+		C external callbacks for handler functions registered in `struct XML_ParserStruct'
+		defined in `<xpact_private.h>'
+
+		Include File:
+		 	contrib/xpact/include/xpact_private.h
 	]"
 
 	author: "Finnian Reilly"
@@ -21,65 +24,77 @@ inherit
 feature {NONE} -- Parse event call backs
 
 	frozen call_on_cdata_section_end (callback, user_data: POINTER)
+		-- typedef void (XMLCALL *XML_EndCdataSectionHandler) (void *userData);
 		require
 			callback_attached: is_attached (callback)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_EndCdataSectionHandler) $callback) ((void *) $user_data);"
 		end
 
 	frozen call_on_cdata_section_start (callback, user_data: POINTER)
+		-- typedef void (XMLCALL *XML_StartCdataSectionHandler) (void *userData);
 		require
 			callback_attached: is_attached (callback)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_StartCdataSectionHandler) $callback) ((void *) $user_data);"
 		end
 
 	frozen call_on_comment (callback, user_data, text: POINTER)
-			-- Invoke native `XML_CommentHandler'.
+		-- typedef void (XMLCALL *XML_CommentHandler) (
+		--		void *userData, const XML_Char *data
+		-- );
 		require
 			callback_attached: is_attached (callback)
 			text_attached: is_attached (text)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_CommentHandler) $callback) ((void *) $user_data, (const char *) $text);"
 		end
 
 	frozen call_on_content (callback, user_data, text: POINTER; length: INTEGER)
-			-- Invoke native `XML_CharacterDataHandler'.
+		--	typedef void (XMLCALL *XML_CharacterDataHandler) (
+		--		void *userData, const XML_Char *s, int len
+		--	);	
 		require
 			callback_attached: is_attached (callback)
 			text_attached: is_attached (text)
 			non_negative_length: length >= 0
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_CharacterDataHandler) $callback) ((void *) $user_data, (const char *) $text, (int) $length);"
 		end
 
 	frozen call_on_element_end (callback, user_data, name: POINTER)
-			-- Invoke native `XML_EndElementHandler'.
+		--	typedef void (XMLCALL *XML_EndElementHandler) (
+		--		void *userData, const XML_Char *name
+		--	);	
 		require
 			callback_attached: is_attached (callback)
 			name_attached: is_attached (name)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_EndElementHandler) $callback) ((void *) $user_data, (const char *) $name);"
 		end
 
 	frozen call_on_element_start (callback, user_data, name, attributes: POINTER)
-			-- Invoke native `XML_StartElementHandler'.
+		--	typedef void (XMLCALL *XML_StartElementHandler) (
+		--		void *userData,
+		--		const XML_Char *name,
+		--		const XML_Char **atts
+		--	);
 		require
 			callback_attached: is_attached (callback)
 			name_attached: is_attached (name)
 			attributes_attached: is_attached (attributes)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"[
 				((XML_StartElementHandler) $callback)(
@@ -95,7 +110,7 @@ feature {NONE} -- Parse event call backs
 			target_attached: is_attached (target)
 			data_attached: is_attached (data)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"[
 				((XML_ProcessingInstructionHandler) $callback)(
@@ -116,7 +131,7 @@ feature {NONE} -- Declaration event call backs
 			attname_attached: is_attached (attribute_name)
 			att_type_attached: is_attached (attribute_type)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"[
 				((XML_AttlistDeclHandler) $callback)(
@@ -134,7 +149,7 @@ feature {NONE} -- Declaration event call backs
 			callback_attached: is_attached (callback)
 			doctype_name_attached: is_attached (doctype_name)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"[
 				((XML_StartDoctypeDeclHandler) $callback)(
@@ -151,7 +166,7 @@ feature {NONE} -- Declaration event call backs
 			name_attached: is_attached (name)
 			model_attached: is_attached (model)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"[
 				((XML_ElementDeclHandler) $callback)(
@@ -169,7 +184,7 @@ feature {NONE} -- Declaration event call backs
 			callback_attached: is_attached (callback)
 			entity_name_attached: is_attached (entity_name)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"[
 				((XML_EntityDeclHandler) $callback)(
@@ -186,7 +201,7 @@ feature {NONE} -- Declaration event call backs
 			callback_attached: is_attached (callback)
 			notation_name_attached: is_attached (notation_name)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"[
 				((XML_NotationDeclHandler) $callback)(
@@ -201,7 +216,7 @@ feature {NONE} -- Declaration event call backs
 		require
 			callback_attached: is_attached (callback)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"[
 				((XML_XmlDeclHandler) $callback)(
@@ -216,7 +231,7 @@ feature {NONE} -- Parse event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->endCdataSectionHandler"
 		end
@@ -225,7 +240,7 @@ feature {NONE} -- Parse event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->startCdataSectionHandler"
 		end
@@ -234,7 +249,7 @@ feature {NONE} -- Parse event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->commentHandler"
 		end
@@ -243,7 +258,7 @@ feature {NONE} -- Parse event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->characterDataHandler"
 		end
@@ -252,7 +267,7 @@ feature {NONE} -- Parse event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->endElementHandler"
 		end
@@ -261,7 +276,7 @@ feature {NONE} -- Parse event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->startElementHandler"
 		end
@@ -270,7 +285,7 @@ feature {NONE} -- Parse event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->processingInstructionHandler"
 		end
@@ -281,7 +296,7 @@ feature {NONE} -- Declaration event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->attlistDeclHandler"
 		end
@@ -290,7 +305,7 @@ feature {NONE} -- Declaration event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->startDoctypeDeclHandler"
 		end
@@ -299,7 +314,7 @@ feature {NONE} -- Declaration event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->elementDeclHandler"
 		end
@@ -308,7 +323,7 @@ feature {NONE} -- Declaration event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->entityDeclHandler"
 		end
@@ -317,7 +332,7 @@ feature {NONE} -- Declaration event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->notationDeclHandler"
 		end
@@ -326,7 +341,7 @@ feature {NONE} -- Declaration event handlers
 		require
 			parser_attached: is_attached (ptr)
 		external
-			"C inline use <xpact_native_private.h>"
+			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->xmlDeclHandler"
 		end

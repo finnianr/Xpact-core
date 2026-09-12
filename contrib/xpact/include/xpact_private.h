@@ -78,6 +78,11 @@ struct XML_ParserStruct {
 	XML_Bool in_prolog_section;
 	XML_Bool in_dtd_section;
 	XML_Bool in_CDATA_section;
+
+// Xpact-core null-termination
+	
+	XML_Char null_swap;
+	int null_index;
 };
 
 #define XPACT_CALLBACK_NONE 0
