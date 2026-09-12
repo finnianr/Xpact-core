@@ -108,7 +108,6 @@ feature -- Basic operations
 		-- Corresponds to XML_Parse() in xmlparse.c.
 		require
 			content_count_at_least_1: parsed_content_count >= 1 -- guards against division by zero later
-			not_in_handler: handler_call_depth = 0
 		local
 			write_start, remaining_count, utf_8_copied_count: INTEGER; parse_data: POINTER
 		do

@@ -493,7 +493,7 @@ feature {NONE} -- Event handlers
 							else
 								system_id := parts_list [3]
 							end
-							on_notation_declaration (parts_list.name, base, system_id, public_id, parse_data)
+							on_notation_declaration (parts_list.name, system_id, public_id, parse_data)
 							parts_list.wipe_out
 						else
 							Result := Error_syntax
@@ -520,7 +520,7 @@ feature {NONE} -- Event handlers
 		do
 			if not is_predefined_entity (parts.name) then
 				on_entity_declaration (
-					parts.name, parts.value, base, parts.system_id, parts.public_id, parts.notation_name,
+					parts.name, parts.value, parts.system_id, parts.public_id, parts.notation_name,
 					parts.is_parameter, parse_data
 				)
 			end
@@ -759,8 +759,6 @@ feature {NONE} -- Tables
 	parameter_entity_table: HASH_TABLE [XT_PARAMETER_ENTITY, XT_ENTITY_NAME]
 
 feature {NONE} -- Internal attributes
-
-	base: detachable STRING
 
 	doctype_identifiers: TUPLE [formal_public, uri: STRING]
 		-- The two literal strings shown in this example:

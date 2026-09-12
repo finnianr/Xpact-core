@@ -95,7 +95,7 @@ feature {NONE} -- Deferred event handlers
 		end
 
 	on_entity_declaration (
-		entity_name: STRING; value, base, system_id, public_id, notation_name: detachable STRING
+		entity_name: STRING; value, system_id, public_id, notation_name: detachable STRING
 		is_parameter_entity: BOOLEAN; parse_data: POINTER
 	)
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
@@ -109,7 +109,7 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
-	on_notation_declaration (name: STRING; base, system_id, public_id: detachable STRING; parse_data: POINTER)
+	on_notation_declaration (name: STRING; system_id, public_id: detachable STRING; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
 		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
 		deferred

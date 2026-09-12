@@ -26,6 +26,15 @@ inherit
 
 feature {NONE} -- Access
 
+	frozen c_base (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->base"
+		end
+
 	frozen c_user_data (ptr: POINTER): POINTER
 		require
 			parser_attached: is_attached (ptr)

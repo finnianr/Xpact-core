@@ -168,7 +168,7 @@ feature {NONE} -- Event handlers
 		end
 
 	on_entity_declaration (
-		entity_name: STRING; value, a_base, system_id, public_id, notation_name: detachable STRING
+		entity_name: STRING; value, system_id, public_id, notation_name: detachable STRING
 		is_parameter_entity: BOOLEAN; parse_data: POINTER
 	)
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
@@ -176,6 +176,8 @@ feature {NONE} -- Event handlers
 		-- 	const XML_Char *value, int value_length, const XML_Char *base,
 		-- 	const XML_Char *systemId, const XML_Char *publicId,
 		-- 	const XML_Char *notationName);
+		local
+			base_ptr: POINTER
 		do
 			inspect data_type when Type_decl_entity then
 				if attached checksum as crc then
@@ -185,8 +187,9 @@ feature {NONE} -- Event handlers
 						crc.add_string (str)
 						crc.add_integer_32 (str.count)
 					end
-					if attached a_base as str then
-						crc.add_string (str)
+					base_ptr := c_base (parse_data)
+					if is_attached (base_ptr) then
+						crc.add_bytes (base_ptr, c_string_8_length (base_ptr))
 					end
 					if attached system_id as str then
 						crc.add_string (str)
@@ -201,15 +204,18 @@ feature {NONE} -- Event handlers
 			else end
 		end
 
-	on_notation_declaration (name: STRING; a_base, system_id, public_id: detachable STRING; parse_data: POINTER)
+	on_notation_declaration (name: STRING; system_id, public_id: detachable STRING; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
 		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
+		local
+			base_ptr: POINTER
 		do
 			inspect data_type when Type_decl_notation then
 				if attached checksum as crc then
 					crc.add_string (name)
-					if attached a_base as str then
-						crc.add_string (str)
+					base_ptr := c_base (parse_data)
+					if is_attached (base_ptr) then
+						crc.add_bytes (base_ptr, c_string_8_length (base_ptr))
 					end
 					if attached system_id as str then
 						crc.add_string (str)

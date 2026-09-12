@@ -62,8 +62,7 @@ feature {NONE} -- Parse event handlers
 
 	on_comment (buf: like buffer; start_index, end_index: INTEGER; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_CommentHandler) (
-		--		void *userData,
-		-- 	const XML_Char *data
+		--		void *userData, const XML_Char *data
 		-- );
 		local
 			ptr: POINTER
@@ -233,7 +232,7 @@ feature {NONE} -- Declaration event handlers
 		end
 
 	on_entity_declaration (
-		entity_name: STRING; value, a_base, system_id, public_id, notation_name: detachable STRING
+		entity_name: STRING; value, system_id, public_id, notation_name: detachable STRING
 		is_parameter_entity: BOOLEAN; parse_data: POINTER
 	)
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
@@ -243,7 +242,7 @@ feature {NONE} -- Declaration event handlers
 		-- 	const XML_Char *notationName
 		--	);
 		local
-			ptr, value_ptr, base_ptr, system_id_ptr, public_id_ptr, notation_name_ptr: POINTER
+			ptr, value_ptr, system_id_ptr, public_id_ptr, notation_name_ptr: POINTER
 			value_count: INTEGER
 		do
 			ptr := c_on_entity_declaration (parse_data)
@@ -251,9 +250,6 @@ feature {NONE} -- Declaration event handlers
 				if attached value as l_value then
 					value_ptr := l_value.area.base_address
 					value_count := l_value.count
-				end
-				if attached a_base as l_base then
-					base_ptr := l_base.area.base_address
 				end
 				if attached system_id as l_system_id then
 					system_id_ptr := l_system_id.area.base_address
@@ -266,24 +262,21 @@ feature {NONE} -- Declaration event handlers
 				end
 				call_on_entity_declaration (
 					ptr, c_user_data (parse_data), entity_name.area.base_address, is_parameter_entity.to_integer,
-					value_ptr, value_count, base_ptr, system_id_ptr, public_id_ptr, notation_name_ptr
+					value_ptr, value_count, c_base (parse_data), system_id_ptr, public_id_ptr, notation_name_ptr
 				)
 			end
 		end
 
-	on_notation_declaration (name: STRING; a_base, system_id, public_id: detachable STRING; parse_data: POINTER)
+	on_notation_declaration (name: STRING; system_id, public_id: detachable STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_NotationDeclHandler)(
 		-- 	void *userData, const XML_Char *notationName,
 		--		const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId
 		-- );
 		local
-			ptr, base_ptr, system_id_ptr, public_id_ptr: POINTER
+			ptr, system_id_ptr, public_id_ptr: POINTER
 		do
 			ptr := c_on_notation_declaration (parse_data)
 			if is_attached (ptr) then
-				if attached a_base as l_base then
-					base_ptr := l_base.area.base_address
-				end
 				if attached system_id as l_system_id then
 					system_id_ptr := l_system_id.area.base_address
 				end
@@ -291,7 +284,7 @@ feature {NONE} -- Declaration event handlers
 					public_id_ptr := l_public_id.area.base_address
 				end
 				call_on_notation_declaration (
-					ptr, c_user_data (parse_data), name.area.base_address, base_ptr, system_id_ptr, public_id_ptr
+					ptr, c_user_data (parse_data), name.area.base_address, c_base (parse_data), system_id_ptr, public_id_ptr
 				)
 			end
 		end
