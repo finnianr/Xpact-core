@@ -102,14 +102,12 @@ feature -- Basic operations
 			end
 		end
 
-	parse (chunk: XT_C_STRING_CODEC; a_offset, a_count: INTEGER; a_is_final: BOOLEAN): INTEGER
+	parse (chunk: XT_C_STRING_CODEC; a_is_final: BOOLEAN): INTEGER
 		-- Accept `a_count' bytes from `chunk[a_offset]' as the next chunk.
 		-- Returns Status_ok, Status_suspended, or Status_error.
 		-- Corresponds to XML_Parse() in xmlparse.c.
 		require
 			content_count_at_least_1: parsed_content_count >= 1 -- guards against division by zero later
-			non_negative_count: a_count >= 0
-			valid_source_range: a_count = 0 or else (a_offset >= 0 and then a_offset + a_count <= chunk.count)
 			not_in_handler: handler_call_depth = 0
 		local
 			write_start, remaining_count, utf_8_copied_count: INTEGER; parse_data: POINTER
@@ -117,11 +115,11 @@ feature -- Basic operations
 			parse_data := parse_data_memory.item
 			inspect parsing_state
 				when State_check_encoding then
-					set_encoding (chunk, a_count)
+					set_encoding (chunk)
 
 					inspect error_code when Error_none then
 						parsing_state := State_initialized
-						Result := parse (codec, 0, codec.count, a_is_final) -- Recurse
+						Result := parse (codec, a_is_final) -- Recurse
 					else
 						status := Status_error
 					end
@@ -136,7 +134,7 @@ feature -- Basic operations
 			else
 			-- State_initialized or State_parsing
 				if codec /= chunk then
-					codec.make_shared (chunk.area, a_count)
+					codec.make_shared (chunk.area, chunk.count)
 				end
 				parsing_state := State_parsing
 				if not call_on_start_parsing then
@@ -147,7 +145,7 @@ feature -- Basic operations
 
 				else
 					write_start := buffer_end
-					if a_count > 0 then
+					if chunk.count > 0 then
 					-- Copy caller's bytes into the internal buffer.
 					-- Destination index < source index is impossible here
 					-- (write_start is past all existing data), so copy_data is safe.

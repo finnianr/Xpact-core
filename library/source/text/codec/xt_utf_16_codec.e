@@ -16,27 +16,18 @@ class
 	XT_UTF_16_CODEC
 
 inherit
+	EL_MANAGED_C_STRING_8
+		export
+			{XT_C_STRING_CODEC} area
+			{STRING_HANDLER} make_shared
+			{NONE} all
+		end
+
 	XT_C_STRING_CODEC
-		rename
-			count as byte_count
 		undefine
 			copy, is_equal
 		redefine
 			character_count, reset
-		end
-
-	MANAGED_POINTER
-		rename
-			count as byte_count,
-			item as area,
-			read_natural_16 as read_natural_16_,
-			share_from_pointer as make_shared
-		export
-			{EL_MANAGED_C_STRING_8} area
-			{STRING_HANDLER} make_shared
-			{NONE} all
-		redefine
-			make_shared
 		end
 
 	EL_EIFFEL_C_API
@@ -45,17 +36,7 @@ inherit
 		end
 
 create
-	make, make_shared
-
-feature {NONE} -- Initialization
-
-	make_shared (a_ptr: POINTER; n: INTEGER)
-		-- Initialize buffer with the contents of `codec'.
-		require else
-			even_byte_count: n.integer_remainder (2) = 0
-		do
-			Precursor (a_ptr, n)
-		end
+	make, make_empty, make_shared, make_from_string
 
 feature -- Access
 
@@ -65,7 +46,7 @@ feature -- Measurement
 
 	character_count: INTEGER
 		do
-			Result := byte_count // 2
+			Result := count // 2
 		end
 
 feature -- Element change
@@ -73,16 +54,6 @@ feature -- Element change
 	reset
 		do
 			partial_code_unit := 0
-		end
-
-feature -- Removal
-
-	remove_head (n: INTEGER)
-		do
-			if is_shared and n <= byte_count then
-				area := area + n
-				byte_count := byte_count - n
-			end
 		end
 
 feature -- Basic operations
@@ -100,7 +71,7 @@ feature -- Basic operations
 			i := 0; j := dest_index
 			if pending_CR then
 			-- The last chunked ended with a CR
-				inspect read_natural_16 (ptr, i).to_integer_32 when {ASCII}.NL then
+				inspect eif_read_natural_16 (ptr, i).to_integer_32 when {ASCII}.NL then
 					do_nothing
 				else
 				-- replace isolated '%R' with '%N'
@@ -114,14 +85,14 @@ feature -- Basic operations
 				inspect partial_unit when 0 then
 				-- try and consume all ASCII characters
 					from break := False until i > i_final or break or dest_full loop
-						code_unit := read_natural_16 (ptr, i)
+						code_unit := eif_read_natural_16 (ptr, i)
 						inspect code_unit when {ASCII}.CR then
 							i := i + 1 -- skip '%R'
 							if i > i_final then
 							-- find out in next chunk if characters is Newline
 								pending_CR := True
 							else
-								inspect read_natural_16 (ptr, i).to_integer_32 when {ASCII}.NL then
+								inspect eif_read_natural_16 (ptr, i).to_integer_32 when {ASCII}.NL then
 									do_nothing
 								else
 								-- replace isolated '%R' with '%N'
@@ -156,7 +127,7 @@ feature -- Basic operations
 
 				else
 					inspect partial_unit when 0 then
-						code_unit := read_natural_16 (ptr, i)
+						code_unit := eif_read_natural_16 (ptr, i)
 					else
 						code_unit := partial_unit -- residual unit from previous call to `copy_as_utf_8'
 						i := i - 1
@@ -187,7 +158,7 @@ feature -- Basic operations
 							inspect remaining_count when 0, 1, 2, 3 then
 								dest_full := True
 							else
-								fill_4_bytes (dest, j, code_unit, read_natural_16 (ptr, i + 1))
+								fill_4_bytes (dest, j, code_unit, eif_read_natural_16 (ptr, i + 1))
 								remaining_count := remaining_count - 4
 								j := j + 4
 								i := i + 2
@@ -242,11 +213,7 @@ feature {NONE} -- Implementation
 			dest [dest_index + 3] := (0x80 | (code_unit & 0x3F)).to_character_8
 		end
 
-	frozen read_natural_16 (a_area: POINTER; i: INTEGER): NATURAL_16
-		require
-			valid_index: i < byte_count - 1
-		do
-			Result := eif_read_natural_16 (a_area, i)
-		end
+feature {NONE} -- Constants
 
+	Code_unit_bytes: INTEGER = 2
 end

@@ -114,7 +114,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	set_encoding (chunk: XT_C_STRING_CODEC; byte_count: INTEGER)
+	set_encoding (chunk: XT_C_STRING_CODEC)
 		-- check encoding in XML header calling `set_scanner (Latin_1)' if required
 		-- also check if document is actually XML or something weird
 		local
@@ -126,7 +126,7 @@ feature {NONE} -- Implementation
 			else
 				create l_chunk.make_empty
 			end
-			l_chunk.make_shared (chunk.area, byte_count)
+			l_chunk.make_shared (chunk.area, chunk.count)
 		-- check for byte order mark if any and remove
 			across << u.utf_8_bom_to_string_8, u.utf_16le_bom_to_string_8 >> as bom until found loop
 				if l_chunk.starts_with_string (bom, 0) then

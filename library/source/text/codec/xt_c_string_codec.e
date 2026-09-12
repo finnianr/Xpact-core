@@ -1,5 +1,5 @@
 note
-	description: "Managed pointer that can write UTF-8 encoded characters into ${SPECIAL [CHARACTER]} array"
+	description: "Writes UTF-8 encoded characters into ${SPECIAL [CHARACTER]} array"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -15,12 +15,18 @@ deferred class
 feature -- Initialization
 
 	make_shared (a_ptr: POINTER; n: INTEGER)
+		require
+			n_is_multiple_of_code_unit_size: n.integer_remainder (code_unit_bytes) = 0
 		deferred
 		end
 
 feature -- Access
 
 	area: POINTER
+		deferred
+		end
+
+	code_unit_bytes: INTEGER
 		deferred
 		end
 
@@ -41,6 +47,10 @@ feature -- Status query
 
 feature -- Measurement
 
+	capacity: INTEGER
+		deferred
+		end
+
 	character_count: INTEGER
 		do
 			Result := count
@@ -54,6 +64,12 @@ feature -- Measurement
 
 feature -- Element change
 
+	remove_head (n: INTEGER)
+		require
+			n_less_than_or_equal: n <= count
+		deferred
+		end
+
 	reset
 		do
 		end
@@ -63,12 +79,6 @@ feature -- Basic operations
 	copy_as_utf_8 (dest: SPECIAL [CHARACTER]; dest_index, n: INTEGER)
 		require
 			big_enough: dest.valid_index (dest_index + n - 1)
-		deferred
-		end
-
-	remove_head (n: INTEGER)
-		require
-			n_less_than_or_equal: n <= count
 		deferred
 		end
 

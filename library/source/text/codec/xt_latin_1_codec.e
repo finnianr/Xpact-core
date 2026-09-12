@@ -16,12 +16,17 @@ class
 
 inherit
 	EL_MANAGED_C_STRING_8
+		export
+			{XT_C_STRING_CODEC} area
+			{STRING_HANDLER} make_shared
+			{NONE} all
+		end
 
 	XT_C_STRING_CODEC
 		undefine
 			copy, is_equal
 		end
-
+		
 create
 	make, make_shared, make_from_string, make_empty, make_filled
 
@@ -66,4 +71,7 @@ feature -- Basic operations
 			last_index := i
 		end
 
+feature {NONE} -- Constants
+
+	Code_unit_bytes: INTEGER = 1
 end
