@@ -5,7 +5,7 @@
 	 <!ENTITY b 'http://www.cogsci.princeton.edu/~wn/schema/'>
 	 <!ENTITY n "100027235">
 ]>
-<rdf:RDF xmlns:rdf="&rdf;" xmlns:a="&a;" xmlns:b="&b;">
+<rdf:RDF rdf:version="2.2" xmlns:rdf="&rdf;" xmlns:a="&a;" xmlns:b="&b;">
 	<rdf:Description rdf:about="&a;#&n;"
 		 b:glossaryEntry="the act of enrolling"/>
 	<rdf:Description rdf:about="&a;100027339">

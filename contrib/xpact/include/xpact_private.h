@@ -11,6 +11,17 @@
 #define XPACT_PRIVATE_UNUSED
 #endif
 
+// Xpact-core "billion laugh hack" accounting defense
+
+typedef unsigned long long XmlBigCount;
+typedef struct accounting {
+  XmlBigCount countBytesDirect;
+  XmlBigCount countBytesIndirect;
+  unsigned long debugLevel;
+  float maximumAmplificationFactor; // >=1.0
+  unsigned long long activationThresholdBytes;
+} ACCOUNTING;
+
 struct XML_ParserStruct {
 	void *userData;
 	XML_Bool useParserAsHandlerArg;
@@ -52,10 +63,6 @@ struct XML_ParserStruct {
 	XML_Bool hasNamespaceSeparator;
 	XML_Char namespaceSeparator;
 	XML_Bool returnNsTriplet;
-	XML_Bool hasBillionLaughsMaximumAmplification;
-	float billionLaughsMaximumAmplification;
-	XML_Bool hasBillionLaughsActivationThreshold;
-	unsigned long long billionLaughsActivationThresholdBytes;
 	XML_UnknownEncodingHandler unknownEncodingHandler;
 	void *unknownEncodingHandlerData;
 	XML_Bool useForeignDTD;
@@ -72,6 +79,10 @@ struct XML_ParserStruct {
 	int activeCallbackKind;
 	int stopCallbackKind;
 	XML_Bool reparseDeferralEnabled;
+
+// Xpact-core "billion laugh hack" accounting defense
+	
+	ACCOUNTING m_accounting;
 	
 // Xpact-core parsing states
 	XML_Bool has_dtd_section;

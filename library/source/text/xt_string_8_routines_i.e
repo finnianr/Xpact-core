@@ -526,6 +526,15 @@ feature {NONE} -- Measurement
 			end
 		end
 
+	local_part_index (start_index, colon_index: INTEGER): INTEGER
+		do
+			inspect colon_index when 0 then
+				Result := start_index
+			else
+				Result := colon_index + 1
+			end
+		end
+
 feature {NONE} -- Basic operations
 
 	frozen append_area (str: STRING_8; area: SPECIAL [CHARACTER_8]; lower, upper: INTEGER)

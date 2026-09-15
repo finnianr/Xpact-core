@@ -142,6 +142,27 @@ feature -- Tests
 			assert ("/ is ext4", Environment.file_system_module (root) ~ "ext4")
 		end
 
+	test_name_space_aware_cache
+		local
+			cache: XT_URI_MAPPED_NAME_CACHE; rdf_element, uri: STRING; name, name_2: XT_URI_MAPPED_NAME
+			colon_index, start_index, end_index: INTEGER
+		do
+			rdf_element := "[
+				<rdf:Description rdf:about="&a;#&n; b:glossaryEntry="the act of enrolling"/>
+			]"
+			uri := "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+			create cache.make
+			cache.set_separator ('|')
+			cache.add_uri (uri, "rdf")
+			start_index := 1
+			end_index := rdf_element.index_of (' ', 1) - 2
+			colon_index := rdf_element.index_of (':', 1) - 1
+			name := cache.item (rdf_element.area, start_index, end_index, colon_index)
+			assert ("name is uri + | + Descriptio", name.same_string (uri + "|Description"))
+			name_2 := cache.item (rdf_element.area, start_index, end_index, colon_index)
+			assert ("same reference", name = name_2)
+		end
+
 	test_ntfs_link_detection
 		local
 			f: EL_NTFS_FILE_INFO; windows_root: STRING; is_symlink, is_reparse_point: BOOLEAN
@@ -209,6 +230,7 @@ feature {NONE} -- Implementation
 				[agent test_date_formatting, "date_formatting"],
 				[agent test_empty_stack, "empty_stack"],
 				[agent test_file_info, "file_info"],
+				[agent test_name_space_aware_cache, "name_space_aware_cache"],
 				[agent test_ntfs_link_detection, "ntfs_link_detection"],
 				[agent test_mount_driver_name, "mount_driver_name"],
 				[agent test_unix_escaping, "unix_escaping"]

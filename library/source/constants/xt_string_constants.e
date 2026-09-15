@@ -42,7 +42,7 @@ feature {NONE} -- Reserved names
 
 	SYSTEM: STRING = "SYSTEM"
 
-feature {NONE} -- Standard strings
+feature {STRING_HANDLER} -- Standard strings
 
 	Cdata_lsqb: STRING
 		once
@@ -51,9 +51,15 @@ feature {NONE} -- Standard strings
 
 	Comment_declaration: STRING = "<!--"
 
+	Default_uri_key: STRING = "<default>"
+		-- key for when xmlns attribute does not have a local name
+		-- eg. <root xmlns="http://names.com/">
+
 	Quote_marks: STRING = "'%""
 
 	Xml_lower: STRING = "xml"
+
+	Xmlns: STRING = "xmlns"
 
 	Xml_declaration: TUPLE [open, version, encoding, standalone: STRING]
 		local
@@ -62,6 +68,8 @@ feature {NONE} -- Standard strings
 			create Result
 			s.fill_tuple (Result, "<?xml, version, encoding, standalone")
 		end
+
+	Xml_namespace_uri: STRING = "http://www.w3.org/XML/1998/namespace"
 
 feature {NONE} -- Document definition strings
 

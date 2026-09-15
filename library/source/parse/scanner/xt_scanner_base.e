@@ -41,22 +41,18 @@ inherit
 
 feature {NONE} -- Initialisation
 
-	make
+	make (is_uri_mapped: BOOLEAN)
 		do
 			create scanned_entity_buffer.make (5)
 			create scanned_index_x4_buffer.make_empty (4)
-			create attribute_list.make (11)
+			if is_uri_mapped then
+				create {XT_URI_MAPPED_ATTRIBUTE_LIST} attribute_list.make (11)
+			else
+				create attribute_list.make (11)
+			end
 			name_cache := attribute_list.name_cache
-			initialize_name_cache
 			entity_cache := attribute_list.entity_cache
 			entity_table := attribute_list.entity_table
-		end
-
-	initialize_name_cache
-		do
-			name_cache.adopt (Xml_declaration.encoding)
-			name_cache.adopt (Xml_declaration.version)
-			name_cache.adopt (Xml_declaration.standalone)
 		end
 
 feature -- Access
@@ -76,9 +72,8 @@ feature -- Element change
 	reset
 		do
 			attribute_list.set_permit_undefined_entities (False)
-			attribute_list.wipe_out
+			attribute_list.reset -- also resets `name_cache'
 			entity_cache.reset
-			name_cache.reset; initialize_name_cache
 			entity_table.wipe_out
 			entity_table.set_predefined (entity_cache)
 		end

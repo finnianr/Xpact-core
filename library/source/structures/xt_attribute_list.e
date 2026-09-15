@@ -22,11 +22,6 @@ inherit
 			copy, is_equal
 		end
 
-	XT_STRING_CONSTANTS
-		undefine
-			copy, is_equal
-		end
-
 	XT_PARSE_ERROR_CONSTANTS
 		export
 			{NONE} all
@@ -66,9 +61,9 @@ feature -- Status query
 
 	has_valid_encoding (buffer: SPECIAL [CHARACTER_8]): BOOLEAN
 		do
-			if attached item_value (buffer, Xml_declaration.encoding, False) as encoding then
+			if attached item_value (buffer, xml_attribute [Encoding], False) as l_encoding then
 				Result := across to_list (Valid_encoding_list, ',') as valid_encoding some
-					encoding.is_case_insensitive_equal (valid_encoding)
+					l_encoding.is_case_insensitive_equal (valid_encoding)
 				end
 			else
 				Result := True
@@ -79,7 +74,7 @@ feature -- Status query
 		local
 			i: INTEGER; buffer: SPECIAL [CHARACTER_8]
 		do
-			i := value_index_of (Xml_declaration.standalone)
+			i := value_index_of (xml_attribute [Standalone])
 			inspect i when -1 then
 				Result := i
 			else
@@ -90,7 +85,7 @@ feature -- Status query
 
 	standalone_value (buffer: SPECIAL [CHARACTER_8]): STRING
 		do
-			if attached item_value (buffer, Xml_declaration.standalone, False) as value then
+			if attached item_value (buffer, xml_attribute [Standalone], False) as value then
 				Result := value
 			else
 				Result := Valid_yes_no [2]
@@ -290,17 +285,13 @@ feature -- Conversion
 			not_empty: count >= 1
 			null_terminated: is_null_terminated
 		local
-			i, j: INTEGER; version_ptr, encoding_ptr: POINTER
+			i, j: INTEGER
 		do
 			Result := empty_c_string_array (2)
 			Result.fill_with (default_pointer, 0, 1)
 			if attached overflow_buffer_area as overflow and then attached area_v2 as a then
-				from i := 0 until i > 1 loop
-					if i = 0 then
-						j := value_index_of (Xml_declaration.version)
-					else
-						j := value_index_of (Xml_declaration.encoding)
-					end
+				from i := Version until i > Encoding loop
+					j := value_index_of (xml_attribute [i])
 					inspect j when -1 then
 						do_nothing
 					else
@@ -450,19 +441,11 @@ feature -- Appending to CRC-32 checksum
 			i, j: INTEGER
 		do
 		-- iterate over encoding, standalone, version
-			if attached Xml_declaration as xml and attached overflow_buffer_area as overflow
-				and then attached area_v2 as a
-			then
-				from i := 2 until i > xml.count loop
-					if attached {STRING} xml.reference_item (i) as name then
-						j := value_index_of (name)
-						inspect j when -1 then
-							do_nothing
-						else
-							inspect i when 2, 3 then -- version OR encoding
-								checksum.add_characters (choose (j, a_buffer, overflow), a [j], a [j + 1])
-							else end
-						end
+			if attached overflow_buffer_area as overflow and then attached area_v2 as a then
+				from i := Version until i > Encoding loop
+					j := value_index_of (xml_attribute [i])
+					if j > -1 then
+						checksum.add_characters (choose (j, a_buffer, overflow), a [j], a [j + 1])
 					end
 					i := i + 1
 				end
@@ -512,6 +495,7 @@ feature -- Basic operations
 		-- transfer contents of `additions' into `area' and contents of `entity_list'
 		-- into `entity_refs_area'
 		require
+			valid_colon_index: colon_index.to_boolean implies additions [0] < colon_index and then colon_index <  additions [1]
 			full_buffer: additions.count = Interval_count * 2
 			valid_intervals: valid_intervals (additions)
 		local

@@ -31,14 +31,13 @@ feature -- Measurement
 	cached_tag_name (buffer: SPECIAL [CHARACTER_8]; lt_index: INTEGER; a_name_cache: XT_NAME_CACHE): STRING_8
 		require
 			last_colon_index_valid: last_colon_index_valid (buffer, lt_index)
-
 		local
 			start_index: INTEGER
 		do
 			start_index := lt_index + 1
 			Result := a_name_cache.item (buffer, start_index, start_index + tag_name_count - 1, last_colon_index)
 		ensure
-			same_tag_length: Result.count = xml_name_count (buffer, lt_index + 1)
+			valid_tag_name_count: a_name_cache.valid_tag_name_count (Result, xml_name_count (buffer, lt_index + 1))
 		end
 
 feature -- Contract support
@@ -284,6 +283,7 @@ feature {NONE} -- Tag scanning
 						else
 							inspect index_buffer.count when 4 then
 								error := attributes.transfer (buf, index_buffer, l_last_colon_index, entity_buffer)
+								l_last_colon_index := 0
 								inspect error when 0 then
 									do_nothing
 								else
@@ -334,7 +334,8 @@ feature {NONE} -- Tag scanning
 			if done then
 				inspect Result when Tok_invalid then
 					attributes.wipe_out; scanned_index_x4_buffer.wipe_out
-				else end
+				else
+				end
 			else
 				Result := Tok_partial
 				attributes.wipe_out; scanned_index_x4_buffer.wipe_out

@@ -30,9 +30,9 @@ create
 
 feature {NONE} -- Initialization
 
-	make (parse_data: MANAGED_POINTER)
+	make (parse_data: MANAGED_POINTER; is_uri_mapped: BOOLEAN)
 		do
-			Precursor (parse_data)
+			Precursor (parse_data, is_uri_mapped)
 			create empty_attributes.make_filled (default_pointer, 1)
 		end
 
@@ -180,16 +180,13 @@ feature {NONE} -- Declaration event handlers
 		--   const XML_Char *att_type, const XML_Char *default, int isrequired
 		-- );
 		local
-			ptr, default_value_ptr: POINTER
+			ptr: POINTER
 		do
 			ptr := c_on_attribute_list_declaration (parse_data)
 			if is_attached (ptr) then
-				if attached default_value as l_default_value then
-					default_value_ptr := l_default_value.area.base_address
-				end
 				call_on_attribute_list_declaration (
 					ptr, c_user_data (parse_data), element_name.area.base_address, attribute_name.area.base_address,
-					attribute_type.area.base_address, default_value_ptr, is_required.to_integer
+					attribute_type.area.base_address, base_address (default_value), is_required.to_integer
 				)
 			end
 		end
@@ -200,18 +197,18 @@ feature {NONE} -- Declaration event handlers
 		--		int has_internal_subset
 		-- );
 		local
-			ptr, system_id_ptr, public_id_ptr: POINTER
+			ptr, system_id, public_id: POINTER
 		do
 			ptr := c_on_doctype_declaration_start (parse_data)
 			if is_attached (ptr) and then attached doctype_identifiers as identifier then
 				if identifier.formal_public /= Empty_string then
-					public_id_ptr := identifier.formal_public.area.base_address
+					public_id := identifier.formal_public.area.base_address
 				end
 				if identifier.uri /= Empty_string then
-					system_id_ptr := identifier.uri.area.base_address
+					system_id := identifier.uri.area.base_address
 				end
 				call_on_doctype_declaration_start (
-					ptr, c_user_data (parse_data), parts_list.name.area.base_address, system_id_ptr, public_id_ptr,
+					ptr, c_user_data (parse_data), parts_list.name.area.base_address, system_id, public_id,
 					has_internal_subset.to_integer
 				)
 			end
@@ -242,8 +239,7 @@ feature {NONE} -- Declaration event handlers
 		-- 	const XML_Char *notationName
 		--	);
 		local
-			ptr, value_ptr, system_id_ptr, public_id_ptr, notation_name_ptr: POINTER
-			value_count: INTEGER
+			ptr, value_ptr: POINTER; value_count: INTEGER
 		do
 			ptr := c_on_entity_declaration (parse_data)
 			if is_attached (ptr) then
@@ -251,18 +247,10 @@ feature {NONE} -- Declaration event handlers
 					value_ptr := l_value.area.base_address
 					value_count := l_value.count
 				end
-				if attached system_id as l_system_id then
-					system_id_ptr := l_system_id.area.base_address
-				end
-				if attached public_id as l_public_id then
-					public_id_ptr := l_public_id.area.base_address
-				end
-				if attached notation_name as l_notation_name then
-					notation_name_ptr := l_notation_name.area.base_address
-				end
 				call_on_entity_declaration (
 					ptr, c_user_data (parse_data), entity_name.area.base_address, is_parameter_entity.to_integer,
-					value_ptr, value_count, c_base (parse_data), system_id_ptr, public_id_ptr, notation_name_ptr
+					value_ptr, value_count, c_base (parse_data), base_address (system_id),
+					base_address (public_id), base_address (notation_name)
 				)
 			end
 		end
@@ -273,18 +261,13 @@ feature {NONE} -- Declaration event handlers
 		--		const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId
 		-- );
 		local
-			ptr, system_id_ptr, public_id_ptr: POINTER
+			ptr: POINTER
 		do
 			ptr := c_on_notation_declaration (parse_data)
 			if is_attached (ptr) then
-				if attached system_id as l_system_id then
-					system_id_ptr := l_system_id.area.base_address
-				end
-				if attached public_id as l_public_id then
-					public_id_ptr := l_public_id.area.base_address
-				end
 				call_on_notation_declaration (
-					ptr, c_user_data (parse_data), name.area.base_address, c_base (parse_data), system_id_ptr, public_id_ptr
+					ptr, c_user_data (parse_data), name.area.base_address, c_base (parse_data),
+					base_address (system_id), base_address (public_id)
 				)
 			end
 		end
@@ -310,6 +293,13 @@ feature {NONE} -- Declaration event handlers
 		end
 
 feature {NONE} -- Implementation
+
+	base_address (a_str: detachable STRING): POINTER
+		do
+			if attached a_str as str then
+				Result := str.area.base_address
+			end
+		end
 
 	null_terminate (buf: like buffer; end_index: INTEGER; parse_data: POINTER)
 		require

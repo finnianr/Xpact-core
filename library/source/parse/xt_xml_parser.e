@@ -30,9 +30,9 @@ inherit
 
 feature {NONE} -- Initialisation
 
-	make (parse_data: MANAGED_POINTER)
+	make (parse_data: MANAGED_POINTER; is_uri_mapped: BOOLEAN)
 		do
-			Precursor (parse_data)
+			Precursor (parse_data, is_uri_mapped)
 			create text_buffer.make (0)
 		end
 

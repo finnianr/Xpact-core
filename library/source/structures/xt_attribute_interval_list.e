@@ -45,6 +45,11 @@ inherit
 			copy, is_equal
 		end
 
+	XT_STRING_CONSTANTS
+		undefine
+			copy, is_equal
+		end
+
 feature {NONE} -- Initialization
 
 	make (n: INTEGER)
@@ -61,6 +66,8 @@ feature {NONE} -- Initialization
 			create entity_table.make (37)
 			entity_table.set_predefined (entity_cache)
 			create name_cache.make
+			create xml_attribute.make_filled (name_cache.default_name, Version, Standalone)
+			initialize_xml_attributes
 		end
 
 feature -- Access
@@ -80,7 +87,7 @@ feature -- Access
 		require
 			name_in_cache: name_cache.item (name.area, 0, name.count - 1, 0) = name
 		local
-			i, i_final: INTEGER; found: BOOLEAN
+			i, i_final: INTEGER
 		do
 			if attached name_area as l_area then
 				from i := 0; i_final := l_area.count until i = i_final or Result.to_boolean loop
@@ -122,7 +129,14 @@ feature -- Constants
 	Interval_count: INTEGER = 2
 		-- number of array items needed to hold upper and lower index for one attribute value
 
-feature -- Basic operations
+feature -- Removal
+
+	reset
+		do
+			name_cache.reset
+			initialize_xml_attributes
+			wipe_out
+		end
 
 	wipe_out
 		local
@@ -190,7 +204,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	has_duplicate_name (name: STRING; a_name_area: like name_area): BOOLEAN
+	has_duplicate_name (name: like name_area.item; a_name_area: like name_area): BOOLEAN
 		local
 			i, i_final: INTEGER
 		do
@@ -206,6 +220,21 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	initialize_xml_attributes
+		-- allows attributes to be searched for by reference rather than object comparison
+		local
+			i: INTEGER
+		do
+			from i := Version until i > Standalone loop
+				if attached {STRING} XML_declaration.reference_item (i + 1) as name then
+					xml_attribute [i] := name_cache.string_item (name)
+				end
+				i := i + 1
+			end
+		ensure
+			standalone_last: xml_attribute [Standalone].same_string (Xml_declaration.standalone)
+		end
+
 	not_utf_8_encoded (lower_index, upper_index, utf_8_count: INTEGER): BOOLEAN
 		-- 'True' if `utf_8_count' implies that buffer from `lower_index' to `upper_index'
 		-- is not already valid as UTF-8
@@ -216,7 +245,7 @@ feature {NONE} -- Implementation
 	unchecked_count (default_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]): INTEGER
 		-- count of `default_values' that are unchecked
 		local
-			i: INTEGER; value: XT_DEFAULT_ATTRIBUTE_VALUE
+			i: INTEGER
 		do
 			from i := 0 until i = default_values.count loop
 				Result := (not default_values [i].checked).to_integer
@@ -250,6 +279,17 @@ feature {NONE} -- Internal attributes
 	overflow_buffer_area: SPECIAL [detachable SPECIAL [CHARACTER_8]]
 
 	buffer_pool: XT_CHARACTER_BUFFER_POOL
+
+	xml_attribute: ARRAY [like name_cache.item]
+		-- In order: <?xml version = "1.0" encoding = "UTF-8" standalone = "yes">
+
+feature {NONE} -- Indices for `xml_attribute'
+
+	Version: INTEGER = 1
+
+	Encoding: INTEGER = 2
+
+	Standalone: INTEGER = 3
 
 feature {NONE} -- Constants
 

@@ -44,10 +44,10 @@ create
 
 feature {NONE} -- Initialisation
 
-	make
+	make (is_uri_mapped: BOOLEAN)
 		do
 			create tag_occurrence_table.make (100)
-			Precursor
+			Precursor (is_uri_mapped)
 		end
 
 feature -- Basic operations

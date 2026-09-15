@@ -105,26 +105,6 @@ feature {NONE} -- Parse section state
 			"((XML_Parser) $ptr)->in_CDATA_section"
 		end
 
-feature {NONE} -- Status query
-
-	frozen c_has_max_expansion_proportion (ptr: POINTER): BOOLEAN
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->hasBillionLaughsMaximumAmplification"
-		end
-
-	frozen c_has_exponential_expansion_threshold (ptr: POINTER): BOOLEAN
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->hasBillionLaughsActivationThreshold"
-		end
-
 feature {NONE} -- Measurement
 
 	frozen c_content_count (ptr: POINTER): NATURAL_64
@@ -133,7 +113,7 @@ feature {NONE} -- Measurement
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"((XML_Parser) $ptr)->lastExternalChildDirectCount"
+			"((XML_Parser) $ptr)->m_accounting.countBytesDirect"
 		end
 
 	frozen c_entity_expansion_count (ptr: POINTER): NATURAL_64
@@ -142,7 +122,7 @@ feature {NONE} -- Measurement
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"((XML_Parser) $ptr)->lastExternalChildIndirectCount"
+			"((XML_Parser) $ptr)->m_accounting.countBytesIndirect"
 		end
 
 	frozen c_max_expansion_proportion (ptr: POINTER): DOUBLE
@@ -153,7 +133,7 @@ feature {NONE} -- Measurement
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"((XML_Parser) $ptr)->billionLaughsMaximumAmplification"
+			"((XML_Parser) $ptr)->m_accounting.maximumAmplificationFactor"
 		end
 
 	frozen c_exponential_expansion_threshold (ptr: POINTER): NATURAL_64
@@ -164,7 +144,7 @@ feature {NONE} -- Measurement
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"((XML_Parser) $ptr)->billionLaughsActivationThresholdBytes"
+			"((XML_Parser) $ptr)->m_accounting.activationThresholdBytes"
 		end
 
 	frozen c_size_of_parser_struct: INTEGER
@@ -185,17 +165,6 @@ feature {NONE} -- Element change
 			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->activeCallbackKind = (int) $kind;"
-		end
-
-	frozen set_exponential_expansion_threshold (ptr: POINTER; threshold_count: NATURAL_64)
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->billionLaughsActivationThresholdBytes = (unsigned long long)$threshold_count;"
-		ensure
-			exponential_expansion_threshold_set: threshold_count = c_exponential_expansion_threshold (ptr)
 		end
 
 	frozen set_null_swap (ptr: POINTER; null_swap: CHARACTER)
@@ -262,13 +231,21 @@ feature {NONE} -- Status change
 			in_cdata_section_set: c_in_cdata_section (ptr) = flag
 		end
 
-feature {NONE} -- Initialization
+feature {NONE} -- Accounting initialization
+
+-- typedef struct accounting {
+-- 	XmlBigCount countBytesDirect;
+-- 	XmlBigCount countBytesIndirect;
+-- 	unsigned long debugLevel;
+-- 	float maximumAmplificationFactor; // >=1.0
+-- 	unsigned long long activationThresholdBytes;
+--} ACCOUNTING;
 
 	frozen set_content_count (ptr: POINTER; value: NATURAL_64)
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"((XML_Parser) $ptr)->lastExternalChildDirectCount = (unsigned long long)$value;"
+			"((XML_Parser) $ptr)->m_accounting.countBytesDirect = (XmlBigCount)$value;"
 		ensure
 			content_count_set: c_content_count (ptr) = value
 		end
@@ -277,21 +254,34 @@ feature {NONE} -- Initialization
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"((XML_Parser) $ptr)->lastExternalChildIndirectCount = (unsigned long long)$value;"
+			"((XML_Parser) $ptr)->m_accounting.countBytesIndirect = (XmlBigCount)$value;"
 		ensure
 			entity_expansion_count_set: c_entity_expansion_count (ptr) = value
 		end
 
-	frozen set_max_expansion_proportion (ptr: POINTER; value: REAL_32)
+	frozen set_exponential_expansion_threshold (ptr: POINTER; threshold_count: NATURAL_64)
+		require
+			parser_attached: is_attached (ptr)
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"((XML_Parser) $ptr)->billionLaughsMaximumAmplification = $value;"
+			"((XML_Parser) $ptr)->m_accounting.activationThresholdBytes = (unsigned long long)$threshold_count;"
+		ensure
+			exponential_expansion_threshold_set: threshold_count = c_exponential_expansion_threshold (ptr)
+		end
+
+	frozen set_max_expansion_proportion (ptr: POINTER; value: REAL_32)
+		require
+			value_gt_1: value >= 1.0
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->m_accounting.maximumAmplificationFactor = $value;"
 		ensure
 			max_expansion_proportion_set: c_max_expansion_proportion (ptr) = value
 		end
 
-feature {NONE} -- Addition operations
+feature {NONE} -- Accounting addition
 
 	frozen add_to_content_count (ptr: POINTER; value: INTEGER)
 		require
@@ -299,7 +289,7 @@ feature {NONE} -- Addition operations
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"((XML_Parser) $ptr)->lastExternalChildDirectCount += (unsigned long long) $value;"
+			"((XML_Parser) $ptr)->m_accounting.countBytesDirect += (XmlBigCount) $value;"
 		ensure
 			added: c_content_count (ptr) = old c_content_count (ptr) + value.to_natural_64
 		end
@@ -310,7 +300,7 @@ feature {NONE} -- Addition operations
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"((XML_Parser) $ptr)->lastExternalChildIndirectCount += (unsigned long long) $value;"
+			"((XML_Parser) $ptr)->m_accounting.countBytesIndirect += (XmlBigCount) $value;"
 		ensure
 			added: c_entity_expansion_count (ptr) = old c_entity_expansion_count (ptr) + value.to_natural_64
 		end

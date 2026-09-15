@@ -36,6 +36,8 @@ feature -- Status report
 
 	values_differ: BOOLEAN
 
+	is_uri_mapped: BOOLEAN
+
 	both_failed: BOOLEAN
 
 	both_agree: BOOLEAN
@@ -73,7 +75,7 @@ feature -- Basic operations
 			crc_32: XT_CRC_32_GENERATOR; description: STRING
 		do
 			across Data_type_table as data_type until values_differ or both_failed loop
-				create crc_32.make (data_type)
+				create crc_32.make (data_type, is_uri_mapped)
 				crc_32.parse_file (file_path, 0, True)
 				call_expat_xml_crc_32 (@ data_type.key)
 				if crc_32.status /= Status_ok and expat_return_code > 0 then

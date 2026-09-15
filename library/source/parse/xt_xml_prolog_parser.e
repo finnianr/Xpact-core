@@ -40,12 +40,12 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make_default
+	make_default (is_uri_mapped: BOOLEAN)
 		do
-			make (create {MANAGED_POINTER}.make (c_size_of_parser_struct))
+			make (create {MANAGED_POINTER}.make (c_size_of_parser_struct), is_uri_mapped)
 		end
 
-	make (parse_data: MANAGED_POINTER)
+	make (parse_data: MANAGED_POINTER; is_uri_mapped: BOOLEAN)
 		require
 			valid_parse_data_size: parse_data.count = c_size_of_parser_struct
 		do
@@ -57,7 +57,7 @@ feature {NONE} -- Initialization
 			create parameter_entity_table.make (3)
 			create parameter_name_cache.make
 
-			make_buffers; make_scanner
+			make_buffers; make_scanner (is_uri_mapped)
 
 			create attribute_parts_list.make (name_cache)
 			create document_type_parts_list.make (name_cache)

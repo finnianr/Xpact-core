@@ -87,18 +87,17 @@ feature -- Access
 			end
 		end
 
-	adopt (name: like Default_string)
-		-- adopt `name' as the `item' returned when calling `item' with `name' occurring in `buffer' argument
+	default_name: like Default_bucket.item
 		do
-			adopted_name := name
-			if attached item (name.area, 0, name.count - 1, 0) as l_name then
-				adopted_name := Void
-			end
-		ensure
-			same_instance: item (name.area, 0, name.count - 1, 0) = name
+			Result := Default_bucket [0]
 		end
 
-	item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like Default_string
+	string_item (str: STRING): like default_name
+		do
+			Result := item (str.area, 0, str.count - 1, 0)
+		end
+
+	item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
 		-- UTF-8 encoded name
 		require
 			valid_range: start_index <= end_index
@@ -108,7 +107,7 @@ feature -- Access
 			i, j, bucket_count: INTEGER; bucket: like area.item
 			found: BOOLEAN;
 		do
-			Result := Default_string
+			Result := default_name
 			inspect colon_index when 0 then
 				i := bucket_index (buffer, start_index, end_index)
 			else
@@ -123,7 +122,7 @@ feature -- Access
 			-- search for match
 				bucket_count := bucket.count
 				from j := 0 until j = bucket_count or found loop
-					if same_string (buffer, start_index, end_index, bucket [j]) then
+					if same_name (buffer, start_index, end_index, colon_index, bucket [j]) then
 						Result := bucket [j]
 						found := True
 					else
@@ -132,7 +131,7 @@ feature -- Access
 				end
 			end
 			if not found then
-				Result := buffer_string_8 (buffer, start_index, end_index)
+				Result := new_name (buffer, start_index, end_index, colon_index)
 				if bucket.count + 1 > bucket.capacity then
 					bucket := bucket.aliased_resized_area (bucket.capacity + bucket.capacity // 2)
 					area [i] := bucket
@@ -144,7 +143,7 @@ feature -- Access
 				end
 			end
 		ensure
-			found_or_created: Result /= Default_string
+			found_or_created: Result /= default_name
 			null_terminated: Result.area [Result.count] = '%U'
 		end
 
@@ -195,20 +194,14 @@ feature -- Basic operations
 			output.put_new_line
 		end
 
-feature {NONE} -- Implementation
+feature -- Contract support
 
-	buffer_string_8 (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): like Default_string
-			-- Buffer bytes [start_index .. end_index) as a STRING_8.
-			-- UTF-8 bytes are copied as-is; correct on UTF-8 terminals.
-		local
-			s: XT_STRING_8_ROUTINES
+	valid_tag_name_count (tag_name: like default_name; expected_count: INTEGER): BOOLEAN
 		do
-			if attached adopted_name as name then
-				Result := name
-			else
-				Result := s.new_substring (buffer, start_index, end_index)
-			end
+			Result := tag_name.count = expected_count
 		end
+
+feature {NONE} -- Implementation
 
 	hash_index, bucket_index (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- very fast well distributed hash with only 3 components
@@ -250,17 +243,36 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	same_string (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; name: STRING_8): BOOLEAN
+	name_area (name: like default_name): SPECIAL [CHARACTER]
+		do
+			Result := name.area
+		end
+
+	name_count (name: like default_name): INTEGER
+		do
+			Result := name.count
+		end
+
+	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
+			-- Buffer bytes [start_index .. end_index) as a STRING_8.
+			-- UTF-8 bytes are copied as-is; correct on UTF-8 terminals.
+		do
+			Result := new_substring (buffer, start_index, end_index)
+		end
+
+	same_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER; name: like default_name): BOOLEAN
 		local
 			i, count: INTEGER
 		do
 			count := end_index - start_index + 1
-			if count = name.count and then attached name.area as l_area then
+			if count = name_count (name) and then attached name_area (name) as l_area then
 				inspect count
-					when 1 .. 4 then
+					when 1 .. 5 then
 						Result := buffer.same_items (l_area, 0, start_index, count)
 				else
-					if buffer [start_index] = l_area [0] and then buffer [end_index] = l_area [count - 1] then
+					if buffer [start_index] = l_area [0] and then buffer [end_index] = l_area [count - 1]
+						and then colon_index > 0 implies l_area [colon_index - start_index] = ':'
+					then
 						from i := 1; Result := True until i = count loop
 							if l_area [i] = buffer [start_index + i] then
 								i := i + 1
@@ -283,15 +295,13 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
-	adopted_name: detachable like Default_string
-
 	area: SPECIAL [like Default_bucket]
 
 feature {NONE} -- Constants
 
-	Default_string: STRING
-		once
-			create Result.make_empty
+	Default_bucket: SPECIAL [STRING]
+		once ("PROCESS")
+			create Result.make_filled (create {like default_name}.make_empty, 1)
 		end
 
 	Golden_ratio: NATURAL = 2654435769
@@ -300,9 +310,6 @@ feature {NONE} -- Constants
 
 	Stats_template: STRING = "has %S items"
 
-	Default_bucket: SPECIAL [STRING]
-		once ("PROCESS")
-			create Result.make_empty (0)
-		end
-
+invariant
+	default_bucket_has_default_item: Default_bucket.count = 1
 end

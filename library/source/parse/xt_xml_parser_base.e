@@ -23,9 +23,12 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make (parse_data: MANAGED_POINTER)
+	make (parse_data: MANAGED_POINTER; is_uri_mapped: BOOLEAN)
 		do
-			Precursor (parse_data)
+			Precursor (parse_data, is_uri_mapped)
+			if not (c_max_expansion_proportion (parse_data.item) >= 1.0) then
+				set_max_expansion_proportion (parse_data_memory.item, Default_max_expansion_proportion)
+			end
 		ensure then
 			set_to_check_encoding: parsing_state = State_check_encoding
 			no_error: error_code = Error_none
@@ -45,7 +48,6 @@ feature {NONE} -- Initialization
 			last_buffer_request_size   := 0
 			partial_token_bytes_before := 0
 			parse_end_byte_index       := 0
-			set_max_expansion_proportion (parse_data_memory.item, Default_max_expansion_proportion)
 		end
 
 feature -- Access

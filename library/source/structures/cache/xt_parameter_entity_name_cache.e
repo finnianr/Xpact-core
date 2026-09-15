@@ -27,7 +27,7 @@ inherit
 		rename
 			item as name_item
 		redefine
-			buffer_string_8, name_item, same_string, Default_string
+			new_name, name_item, same_name, Default_bucket
 		end
 
 create
@@ -35,7 +35,7 @@ create
 
 feature -- Access
 
-	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): like Default_string
+	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): like default_name
 		do
 			Result := name_item (buffer, start_index, end_index, 0)
 		end
@@ -45,17 +45,15 @@ feature -- Access
 			Result := '%%'
 		end
 
-feature {XT_PARSING_BUFFERS} -- Implementation
+feature {NONE} -- Implementation
 
-	buffer_string_8 (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): like Default_string
+	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
 		-- take buffer segment from `start_index' to `end_index' and insert into "&;" at position 2
 		do
 			create Result.make_from_buffer (buffer, start_index, end_index, percent)
 		end
 
-feature {NONE} -- Implementation
-
-	name_item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like Default_string
+	name_item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
 		-- "abc" where `buffer [start_index] = 'a'' and `buffer [end_index] = 'c''
 		-- results in "&abc;"
 		require else
@@ -64,7 +62,7 @@ feature {NONE} -- Implementation
 			Result := Precursor (buffer, start_index, end_index, colon_index)
 		end
 
-	same_string (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; name: STRING_8): BOOLEAN
+	same_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER; name: STRING_8): BOOLEAN
 		local
 			i, count, i_final: INTEGER
 		do
@@ -96,9 +94,9 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Constants
 
-	Default_string: XT_ENTITY_NAME
-		once
-			create Result.make_empty
+	Default_bucket: SPECIAL [XT_ENTITY_NAME]
+		once ("PROCESS")
+			create Result.make_filled (create {like default_name}.make_empty, 1)
 		end
 
 end

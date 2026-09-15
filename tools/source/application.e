@@ -104,7 +104,7 @@ feature {NONE} -- Factory
 			if attached new_argument_8 (0, app_option) as data_type_arg
 				and then attached Data_type_table [data_type_arg] as data_type
 			then
-				create Result.make (data_type)
+				create Result.make (data_type, is_option_enabled (Option.xmlns))
 				if is_option_enabled (Option.trace) then
 					Result.enable_trace
 				end
@@ -128,7 +128,7 @@ feature {NONE} -- Application options
 
 	do_count_tags (app_option: STRING)
 		do
-			do_parsing (create {TAG_COUNTER}.make, last_path_argument, False)
+			do_parsing (create {TAG_COUNTER}.make (False), last_path_argument, False)
 		end
 
 	do_corpus_test (app_option: STRING)
@@ -137,7 +137,7 @@ feature {NONE} -- Application options
 		do
 			file_path := last_path_argument
 			if Environment.file_exists (file_path, IO.Output) then
-				create corpus.make
+				create corpus.make (is_option_enabled (Option.xmlns))
 				corpus.parse_file (file_path, 0, True)
 			end
 		end
@@ -181,7 +181,7 @@ feature {NONE} -- Application options
 		do
 			file_path := last_path_argument
 			if Environment.file_exists (file_path, IO.Output) then
-				do_parsing (create {XML_PRINTER}.make, file_path, False)
+				do_parsing (create {XML_PRINTER}.make (is_option_enabled (Option.xmlns)), file_path, False)
 			else
 				put_usage (app_option)
 			end
@@ -416,13 +416,13 @@ feature {NONE} -- Constants
 
 	Operation_parameter: STRING = "<operation>"
 
-	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, path_prompt, repeat, resume_at, trace: STRING]
+	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, path_prompt, repeat, resume_at, trace, xmlns: STRING]
 		local
 			s: XT_STRING_8_ROUTINES
 		once
 			create Result
 			s.fill_tuple (Result,
-						"compare_to_expat, chunk_size, duration, keep_logs, path_prompt, repeat, resume_at, trace"
+						"compare_to_expat, chunk_size, duration, keep_logs, path_prompt, repeat, resume_at, trace, xmlns"
 			)
 		end
 

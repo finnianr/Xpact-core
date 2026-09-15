@@ -49,15 +49,15 @@ create
 
 feature {NONE} -- Initialisation
 
-	make (a_data_type: INTEGER)
+	make (a_data_type: INTEGER; is_uri_mapped: BOOLEAN)
 		do
 			data_type := a_data_type
-			make_default
+			make_default (is_uri_mapped)
 		end
 
-	make_default
+	make_default (is_uri_mapped: BOOLEAN)
 		do
-			Precursor
+			Precursor (is_uri_mapped)
 			create checksum
 		end
 

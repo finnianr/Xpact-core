@@ -67,9 +67,9 @@ create
 
 feature {NONE} -- Initialisation
 
-	make_parser (parse_data: MANAGED_POINTER)
+	make_parser (parse_data: MANAGED_POINTER; is_uri_mapped: BOOLEAN)
 		do
-			Precursor (parse_data)
+			Precursor (parse_data, is_uri_mapped)
 			create section_path.make_empty
 			create section_name.make (20)
 			create report_file.make_with_name ("Test-files.txt")
