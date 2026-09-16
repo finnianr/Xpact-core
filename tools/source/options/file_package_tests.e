@@ -28,10 +28,10 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_package: XT_XML_PACKAGE)
+	make (a_parse_data: XT_PARSER_DATA; a_package: XT_XML_PACKAGE)
 		do
 			package := a_package
-			make_tree (a_package.path)
+			make_tree (a_parse_data, a_package.path)
 		end
 
 feature -- Access
@@ -108,7 +108,7 @@ feature {NONE} -- Implementation
 
 	new_comparison (file_path: PATH): XT_EXPAT_COMPARISON
 		do
-			create Result.make (file_path, log)
+			create Result.make (parse_data, file_path, log)
 			Result.set_package_name (package_name)
 		end
 
@@ -123,7 +123,7 @@ feature {NONE} -- Implementation
 					make_log
 				else
 					IO.put_string ("Failed to extract ")
-					IO.put_string_32 (package.name)
+					IO.put_string_32 (package.path.name)
 					IO.put_new_line
 				end
 			end

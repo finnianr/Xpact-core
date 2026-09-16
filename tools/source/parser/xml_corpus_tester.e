@@ -35,11 +35,8 @@ class
 
 inherit
 	XT_XML_PARSER_BASE
-		rename
-			make as make_parser,
-			make_default as make
 		redefine
-			make_parser, on_finish
+			make, on_finish
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
@@ -67,9 +64,9 @@ create
 
 feature {NONE} -- Initialisation
 
-	make_parser (parse_data: MANAGED_POINTER; is_uri_mapped: BOOLEAN)
+	make (parse_data: XT_PARSER_DATA)
 		do
-			Precursor (parse_data, is_uri_mapped)
+			Precursor (parse_data)
 			create section_path.make_empty
 			create section_name.make (20)
 			create report_file.make_with_name ("Test-files.txt")
@@ -148,7 +145,7 @@ feature {NONE} -- Implementation
 				IO.put_string ("Test all files: " + pattern)
 				IO.put_new_line
 				if attached dir_path.extended (pattern) as path_pattern then
-					tests := new_tests (path_pattern, True)
+					tests := new_tests (parser_data, path_pattern, True)
 					tests.execute
 					report_results (tests, pattern)
 					last_tests := tests

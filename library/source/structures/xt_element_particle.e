@@ -68,7 +68,7 @@ feature {NONE} -- Initialization
 
 	make_shareable
 		do
-			share_from_pointer (default_pointer, 0)
+			make_shared (default_pointer, 0)
 			particle_list := Default_particle_list
 			c_struct_particle_list := Default_c_struct_particle_list
 		end

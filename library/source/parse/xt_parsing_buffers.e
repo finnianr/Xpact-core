@@ -338,6 +338,13 @@ feature {NONE} -- Internal structures
 
 	new_line: SPECIAL [CHARACTER_8]
 
+feature {NONE} -- Constants
+
+	Memory: MEMORY
+		once
+			create Result
+		end
+
 invariant
 	room_for_null_terminator: buffer.capacity = buffer_limit + 1
 	buffer_indices_consistent:

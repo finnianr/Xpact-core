@@ -74,7 +74,7 @@ feature {NONE} -- Implementation
 					if name.count >= prefix_name.count + 2 and then name [prefix_name.count + 1] = ':'
 						and then name.starts_with (prefix_name)
 					then
-						name.update (uri, name_cache.separator)
+						name.update (name_cache, uri)
 					end
 					i := i + 1
 				end

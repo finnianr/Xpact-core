@@ -18,15 +18,15 @@ inherit
 
 feature {NONE} -- Implementation
 
-	new_tests (file_path: PATH; keep_logs: BOOLEAN): FILE_TREE_TESTS
+	new_tests (parse_data: XT_PARSER_DATA; file_path: PATH; keep_logs: BOOLEAN): FILE_TREE_TESTS
 		local
 			package: XT_XML_PACKAGE
 		do
 			create package.make_with_path (file_path)
 			if package.exists and then package.is_valid then
-				create {FILE_PACKAGE_TESTS} Result.make (package)
+				create {FILE_PACKAGE_TESTS} Result.make (parse_data, package)
 			else
-				create Result.make (file_path)
+				create Result.make (parse_data, file_path)
 			end
 			if keep_logs then
 				Result.keep_logs

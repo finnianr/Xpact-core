@@ -40,13 +40,11 @@ inherit
 			{NONE} all
 		end
 
-	XT_PARSE_CONSTANTS
-
-	XT_DATA_TYPES
-
 	FILE_TREE_TESTS_FACTORY
 
 	XT_SHARED_EXECUTION_ENVIRONMENT
+
+	XT_PARSE_CONSTANTS; XT_DATA_TYPES; XT_NAMING_MODE_CONSTANTS
 
 create make
 
@@ -104,7 +102,7 @@ feature {NONE} -- Factory
 			if attached new_argument_8 (0, app_option) as data_type_arg
 				and then attached Data_type_table [data_type_arg] as data_type
 			then
-				create Result.make (data_type, is_option_enabled (Option.xmlns))
+				create Result.make (new_parser_data, data_type)
 				if is_option_enabled (Option.trace) then
 					Result.enable_trace
 				end
@@ -128,7 +126,7 @@ feature {NONE} -- Application options
 
 	do_count_tags (app_option: STRING)
 		do
-			do_parsing (create {TAG_COUNTER}.make (False), last_path_argument, False)
+			do_parsing (create {TAG_COUNTER}.make (new_parser_data), last_path_argument, False)
 		end
 
 	do_corpus_test (app_option: STRING)
@@ -137,7 +135,7 @@ feature {NONE} -- Application options
 		do
 			file_path := last_path_argument
 			if Environment.file_exists (file_path, IO.Output) then
-				create corpus.make (is_option_enabled (Option.xmlns))
+				create corpus.make (new_parser_data)
 				corpus.parse_file (file_path, 0, True)
 			end
 		end
@@ -157,7 +155,7 @@ feature {NONE} -- Application options
 		do
 			file_path := last_path_argument
 			if Environment.file_exists (file_path, IO.Output) then
-				create comparison.make (file_path, IO.Output)
+				create comparison.make (new_parser_data, file_path, IO.Output)
 				comparison.execute
 				if comparison.both_agree then
 					if comparison.both_failed then
@@ -181,7 +179,7 @@ feature {NONE} -- Application options
 		do
 			file_path := last_path_argument
 			if Environment.file_exists (file_path, IO.Output) then
-				do_parsing (create {XML_PRINTER}.make (is_option_enabled (Option.xmlns)), file_path, False)
+				do_parsing (create {XML_PRINTER}.make (new_parser_data), file_path, False)
 			else
 				put_usage (app_option)
 			end
@@ -210,7 +208,7 @@ feature {NONE} -- Application options
 				path_exists := Environment.file_exists (path, IO.Output)
 			end
 			if path_exists then
-				tests := new_tests (path, is_option_enabled (Option.keep_logs))
+				tests := new_tests (new_parser_data, path, is_option_enabled (Option.keep_logs))
 				tests.execute
 			else
 				put_usage (app_option)
@@ -223,7 +221,7 @@ feature {NONE} -- Application options
 		do
 			dir_path := last_path_argument
 			if Environment.directory_exists (dir_path, IO.Output) then
-				create hunter.make (dir_path, new_integer_argument (Option.resume_at, 0))
+				create hunter.make (new_parser_data, dir_path, new_integer_argument (Option.resume_at, 0))
 				if hunter.valid_driver then
 					hunter.execute
 				else
@@ -252,6 +250,40 @@ feature {NONE} -- Factory
 			>>)
 		end
 
+	new_parser_data: XT_PARSER_DATA
+		local
+			naming_mode: INTEGER
+		do
+			if is_option_enabled (Option.xmlns) then
+				if is_option_enabled (Option.ns_triplets) then
+					naming_mode := NM_uri_SEP_localname_SEP_prefix
+				else
+					naming_mode := NM_uri_SEP_localname
+				end
+				if attached new_argument_8 (0, Option.xmlns) as str and then str.count = 1 then
+					create Result.make (naming_mode, str [1])
+				else
+					create Result.make (naming_mode, '|')
+				end
+			else
+				create Result.make_default
+			end
+		end
+
+	new_option_description_table: HASH_TABLE [STRING, STRING]
+		do
+			create Result.make_from_iterable_tuples (<<
+				["<separator>: Map names to URI defined by xmlns declarations. Separator defaults to '|' if not specified.", Option.xmlns],
+				["Apply xmlns mapping format: URI SEP localname SEP prefix", Option.ns_triplets],
+				["Trace all CRC-32 stages step by step for debugging", Option.trace],
+				["Repeat parse a 2nd time to test parser reset", Option.repeat],
+				["Keep logs files for inspection after application exit", Option.keep_logs],
+				["<file-count>: Resume XML hunt from specified file count number", Option.resume_at],
+				["<block-size>: Specify file block size in bytes to read. Defaults to 4096", Option.chunk_size],
+				["<millisecs>: Specify windows of time in milliseconds to benchmark count of parse passes", Option.duration]
+			>>)
+		end
+
 	new_usage_table: HASH_TABLE [STRING, STRING]
 		local
 			usage, word: STRING; s: XT_STRING_8_ROUTINES
@@ -261,45 +293,66 @@ feature {NONE} -- Factory
 			across new_application_table.current_keys as l_option loop
 				word := l_option.split ('_').first; word.remove_head (1)
 				if word ~ "benchmark" then
-					usage := new_usage_text (l_option, "<benchmark-dir-path>")
+					usage := new_usage_text (l_option, "<benchmark-dir-path>", << Option.xmlns, Option.ns_triplets >>)
 				elseif word ~ "crc" then
 					usage := new_usage_text (l_option, "<data-type> " + Bench_mark_options +
-						"%NOPTIONAL: -trace. Trace all CRC-32 stages step by step for debugging" +
-						"%NOPTIONAL: -repeat. Repeat parse a 2nd time to test parser reset" +
-						"%NValid XML data types: " + s.key_set_string (Data_type_table.current_keys, False)
+						"%NValid XML data types: " + s.key_set_string (Data_type_table.current_keys, False),
+						<< Option.duration, Option.chunk_size, Option.trace, Option.repeat, Option.xmlns, Option.ns_triplets >>
 					)
 				elseif word ~ "count" then
-					usage := new_usage_text (l_option, Bench_mark_options)
+					usage := new_usage_text (l_option, Bench_mark_options, << Option.duration, Option.chunk_size >>)
 
 				elseif word ~ "corpus" then
-					usage := new_usage_text (l_option, "<corpus-xml-config-path>")
+					usage := new_usage_text (l_option, "<corpus-xml-config-path>", << Option.xmlns, Option.ns_triplets >>)
 
 				elseif word ~ "expat" then
-					usage := new_usage_text (l_option, "<xml-path>")
+					usage := new_usage_text (l_option, "<xml-path>", << Option.xmlns, Option.ns_triplets >>)
 
 				elseif word ~ "print" then
-					usage := new_usage_text (l_option, "<xml-file-path>")
+					usage := new_usage_text (l_option, "<xml-file-path>", << Option.xmlns, Option.ns_triplets >>)
 
 				elseif l_option ~ ("test_files") then
-					usage := new_usage_text (l_option, "[-keep_logs] (<XML-file-path> | <dir-pattern>)" +
-						"%N eg. %"~/Documents/*.docx%""
+					usage := new_usage_text (
+						l_option, "(<XML-file-path> | <dir-pattern>)%N eg. %"~/Documents/*.docx%"",
+						<< Option.keep_logs, Option.xmlns, Option.ns_triplets >>
 					)
 
 				elseif word ~ ("test") then
-					usage := new_usage_text (l_option, "<test-name>")
+					usage := new_usage_text (l_option, "<test-name>", Empty_options)
 
 				elseif word ~ ("xml") then
-					usage := new_usage_text (l_option, "[-resume_at <file-count>] <dir-path>")
+					usage := new_usage_text (
+						l_option, "<dir-path>", << Option.resume_at, Option.xmlns, Option.ns_triplets >>
+					)
 				else
-					usage := new_usage_text (l_option, "<dir-path>")
+					usage := new_usage_text (l_option, "<dir-path>", << Option.xmlns, Option.ns_triplets >>)
 				end
 				Result.extend (usage, l_option)
 			end
 		end
 
-	new_usage_text (app_option, parameters: STRING): STRING
+	new_usage_text (app_option, parameters: STRING; optional_arguments: ARRAY [STRING]): STRING
+		local
+			n: INTEGER
 		do
 			Result := Usage_base + app_option + " " + parameters
+			if optional_arguments.count > 0 and then attached new_option_description_table as table then
+				Result.append ("%NOptional Arguments:")
+				across optional_arguments as name loop
+					if attached table [name] as description then
+						n := n + 1
+						Result.append ("%N  ")
+						Result.append_integer (n)
+						Result.append (". -" + name)
+						if description [1] = '<' then
+							Result.append_character (' ')
+							Result.append (description)
+						else
+							Result.append (": " + description)
+						end
+					end
+				end
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -407,22 +460,28 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Constants
 
+	Empty_options: ARRAY [STRING]
+		once
+			create Result.make_empty
+		end
+
 	Bench_mark_options: STRING = "[
 		[-chunk_size <value>] [-duration <duration-window-ms>] <XML-file-path>
-		
-		OPTIONAL: -chunk_size. Defaults to: 4096
-		OPTIONAL: -duration. Defaults to: 500
 	]"
 
 	Operation_parameter: STRING = "<operation>"
 
-	Option: TUPLE [compare_to_expat, chunk_size, duration, keep_logs, path_prompt, repeat, resume_at, trace, xmlns: STRING]
+	Option: TUPLE [
+		compare_to_expat, chunk_size, duration, keep_logs, ns_triplets,
+		path_prompt, repeat, resume_at, trace, xmlns: STRING
+	]
 		local
 			s: XT_STRING_8_ROUTINES
 		once
 			create Result
 			s.fill_tuple (Result,
-						"compare_to_expat, chunk_size, duration, keep_logs, path_prompt, repeat, resume_at, trace, xmlns"
+				"compare_to_expat, chunk_size, duration, keep_logs, ns_triplets,%
+				%path_prompt, repeat, resume_at, trace, xmlns"
 			)
 		end
 

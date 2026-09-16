@@ -43,6 +43,9 @@ typedef struct {
 	int         event_count;
 	int         in_cdata;
 	XML_Parser  parser; /* needed to free XML_Content models handed to on_element_decl */
+	int         use_ns; /* non-zero: create the parser with XML_ParserCreateNS */
+	char        ns_separator; /* namespace separator character, when use_ns */
+	int         ns_triplets; /* non-zero: call XML_SetReturnNSTriplet after creation */
 } crc_ctx_t;
 
 static uint32_t crc32_table[256];
@@ -360,7 +363,9 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 		exit(1);
 	}
 
-	XML_Parser parser = XML_ParserCreate(NULL);
+	XML_Parser parser = ctx->use_ns
+		? XML_ParserCreateNS(NULL, ctx->ns_separator)
+		: XML_ParserCreate(NULL);
 	if (!parser) {
 		fprintf(stderr, "Error: could not create expat parser\n");
 		fclose(fp);
@@ -368,6 +373,9 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	}
 
 	ctx->parser = parser;
+
+	if (ctx->ns_triplets)
+		XML_SetReturnNSTriplet(parser, 1);
 
 	XML_SetUserData(parser, ctx);
 	XML_SetParamEntityParsing(parser, XML_PARAM_ENTITY_PARSING_ALWAYS);
@@ -415,7 +423,8 @@ static void usage(const char *prog) {
 	fprintf(stderr,
 			"Usage: %s -type <text|cdata|comment|tag|attribute|"
 			"processing|xml-decl|doctype|attlist|entity|notation|element> "
-			"[-duration <time-window-ms>] [-trace] <xml-file-path>\n",
+			"[-duration <time-window-ms>] [-trace] [-xmlns [<separator>]] [-ns_triplets] "
+			"<xml-file-path>\n",
 			prog);
 }
 
@@ -455,6 +464,9 @@ int main(int argc, char **argv) {
 	const char *file_path = NULL;
 	long duration_ms = 0;
 	int trace = 0;
+	int use_ns = 0;
+	char ns_separator = '|'; /* default when -xmlns is given without a separator */
+	int ns_triplets = 0;
 
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-type") == 0) {
@@ -465,6 +477,16 @@ int main(int argc, char **argv) {
 			duration_ms = strtol(argv[i], NULL, 10);
 		} else if (strcmp(argv[i], "-trace") == 0) {
 			trace = 1;
+		} else if (strcmp(argv[i], "-xmlns") == 0) {
+			use_ns = 1;
+			/* the separator is itself optional: only consume the next argument
+			 * as the separator when it looks like exactly one character, so a
+			 * following flag or the file path is never swallowed by mistake. */
+			if (i + 1 < argc && strlen(argv[i + 1]) == 1) {
+				ns_separator = argv[++i][0];
+			}
+		} else if (strcmp(argv[i], "-ns_triplets") == 0) {
+			ns_triplets = 1;
 		} else {
 			file_path = argv[i];
 		}
@@ -504,6 +526,9 @@ int main(int argc, char **argv) {
 	crc_ctx_t ctx;
 	ctx.type = type;
 	ctx.trace = trace;
+	ctx.use_ns = use_ns;
+	ctx.ns_separator = ns_separator;
+	ctx.ns_triplets = ns_triplets;
 
 	ctx.verbose_output = 1;
 	uint32_t checksum = run_pass(file_path, &ctx);

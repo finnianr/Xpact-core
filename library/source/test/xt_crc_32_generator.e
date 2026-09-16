@@ -20,7 +20,7 @@ inherit
 		rename
 			make as make_parser
 		redefine
-			make_default, put_status, reset
+			make_parser, put_status, reset
 		end
 
 	XT_DEFAULT_PARSE_EVENTS
@@ -49,15 +49,15 @@ create
 
 feature {NONE} -- Initialisation
 
-	make (a_data_type: INTEGER; is_uri_mapped: BOOLEAN)
+	make (parse_data: XT_PARSER_DATA; a_data_type: INTEGER)
 		do
+			make_parser (parse_data)
 			data_type := a_data_type
-			make_default (is_uri_mapped)
 		end
 
-	make_default (is_uri_mapped: BOOLEAN)
+	make_parser (parse_data: XT_PARSER_DATA)
 		do
-			Precursor (is_uri_mapped)
+			Precursor (parse_data)
 			create checksum
 		end
 

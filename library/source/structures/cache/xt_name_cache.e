@@ -77,6 +77,11 @@ feature -- Measurement
 
 feature -- Access
 
+	attribute_item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
+		do
+			Result := cached_item (buffer, start_index, end_index, colon_index, True)
+		end
+
 	bucket_distribution_gt_1: XT_NAME_OCCURRENCE_COUNT_TABLE
 		do
 			create Result.make (50)
@@ -92,59 +97,14 @@ feature -- Access
 			Result := Default_bucket [0]
 		end
 
-	string_item (str: STRING): like default_name
+	item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
 		do
-			Result := item (str.area, 0, str.count - 1, 0)
+			Result := cached_item (buffer, start_index, end_index, colon_index, False)
 		end
 
-	item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
-		-- UTF-8 encoded name
-		require
-			valid_range: start_index <= end_index
-			not_empty: not is_empty
-			valid_colon_index: colon_index > 0 implies buffer [colon_index] = ':'
-		local
-			i, j, bucket_count: INTEGER; bucket: like area.item
-			found: BOOLEAN;
+	string_item (str: STRING): like default_name
 		do
-			Result := default_name
-			inspect colon_index when 0 then
-				i := bucket_index (buffer, start_index, end_index)
-			else
-			-- proveably better distribution if you use character after ':'
-				i := bucket_index (buffer, colon_index + 1, end_index)
-			end
-			bucket := area [i]
-			if bucket = Default_bucket then
-				create bucket.make_empty (5)
-				area [i] := bucket
-			else
-			-- search for match
-				bucket_count := bucket.count
-				from j := 0 until j = bucket_count or found loop
-					if same_name (buffer, start_index, end_index, colon_index, bucket [j]) then
-						Result := bucket [j]
-						found := True
-					else
-						j := j + 1
-					end
-				end
-			end
-			if not found then
-				Result := new_name (buffer, start_index, end_index, colon_index)
-				if bucket.count + 1 > bucket.capacity then
-					bucket := bucket.aliased_resized_area (bucket.capacity + bucket.capacity // 2)
-					area [i] := bucket
-				end
-				bucket.extend (Result)
-				check
-				-- Tested mandarin-names-and-text.xsl
-					well_distributed_hash_indices: bucket.count <= 4
-				end
-			end
-		ensure
-			found_or_created: Result /= default_name
-			null_terminated: Result.area [Result.count] = '%U'
+			Result := cached_item (str.area, 0, str.count - 1, 0, True)
 		end
 
 feature -- Status report
@@ -163,7 +123,9 @@ feature -- Basic operations
 		do
 			if attached area as a then
 				from i := 0 until i = Size loop
-					a [i].wipe_out
+					if attached a [i] as bucket and then bucket /= Default_bucket then
+						bucket.wipe_out
+					end
 					i := i + 1
 				end
 			end
@@ -202,6 +164,58 @@ feature -- Contract support
 		end
 
 feature {NONE} -- Implementation
+
+	cached_item (
+		buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER; is_attribute: BOOLEAN
+	): like default_name
+		-- UTF-8 encoded name
+		require
+			valid_range: start_index <= end_index
+			not_empty: not is_empty
+			valid_colon_index: colon_index > 0 implies buffer [colon_index] = ':'
+		local
+			i, j, bucket_count: INTEGER; bucket: like area.item
+			found: BOOLEAN;
+		do
+			Result := default_name
+			inspect colon_index when 0 then
+				i := bucket_index (buffer, start_index, end_index)
+			else
+			-- proveably better distribution if you use character after ':'
+				i := bucket_index (buffer, colon_index + 1, end_index)
+			end
+			bucket := area [i]
+			if bucket = Default_bucket then
+				create bucket.make_empty (5)
+				area [i] := bucket
+			else
+			-- search for match
+				bucket_count := bucket.count
+				from j := 0 until j = bucket_count or found loop
+					if same_name (buffer, start_index, end_index, colon_index, bucket [j]) then
+						Result := bucket [j]
+						found := True
+					else
+						j := j + 1
+					end
+				end
+			end
+			if not found then
+				Result := new_name (buffer, start_index, end_index, colon_index, is_attribute)
+				if bucket.count + 1 > bucket.capacity then
+					bucket := bucket.aliased_resized_area (bucket.capacity + bucket.capacity // 2)
+					area [i] := bucket
+				end
+				bucket.extend (Result)
+				check
+				-- Tested mandarin-names-and-text.xsl
+					well_distributed_hash_indices: bucket.count <= 4
+				end
+			end
+		ensure
+			found_or_created: Result /= default_name
+			null_terminated: Result.area [Result.count] = '%U'
+		end
 
 	hash_index, bucket_index (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- very fast well distributed hash with only 3 components
@@ -253,7 +267,7 @@ feature {NONE} -- Implementation
 			Result := name.count
 		end
 
-	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
+	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER; is_attribute: BOOLEAN): like default_name
 			-- Buffer bytes [start_index .. end_index) as a STRING_8.
 			-- UTF-8 bytes are copied as-is; correct on UTF-8 terminals.
 		do

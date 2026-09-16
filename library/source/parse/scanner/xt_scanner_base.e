@@ -31,24 +31,29 @@ deferred class XT_SCANNER_BASE
 inherit
 	XT_UTF_8_VALIDATION
 
-	XT_TOKEN_CONSTANTS
-
-	XT_STRING_CONSTANTS
-
 	XT_STRING_8_ROUTINES_I
 
 	EL_STRING_H_C_API
 
+	XT_C_PARSER_STRUCT
+
+	XT_NAMING_MODE_CONSTANTS; XT_TOKEN_CONSTANTS; XT_STRING_CONSTANTS
+
 feature {NONE} -- Initialisation
 
-	make (is_uri_mapped: BOOLEAN)
+	make (parser_data: XT_PARSER_DATA)
+		local
+			URI_mapped_attribute_list: XT_URI_MAPPED_ATTRIBUTE_LIST
 		do
 			create scanned_entity_buffer.make (5)
 			create scanned_index_x4_buffer.make_empty (4)
-			if is_uri_mapped then
-				create {XT_URI_MAPPED_ATTRIBUTE_LIST} attribute_list.make (11)
-			else
+
+			inspect parser_data.naming_mode when NM_prefix_SEP_localname then
 				create attribute_list.make (11)
+			else
+				create URI_mapped_attribute_list.make (11)
+				URI_mapped_attribute_list.name_cache.set_naming (parser_data)
+				attribute_list := URI_mapped_attribute_list
 			end
 			name_cache := attribute_list.name_cache
 			entity_cache := attribute_list.entity_cache

@@ -5,7 +5,11 @@
 
 echo Testing against tools/data/\*.\*
 
-xml_reader -test_files "tools/data/*.*"
+if [ "$1" == "xmlns" ]; then
+	xml_reader -test_files -xmlns "tools/data/*.*"
+else
+	xml_reader -test_files "tools/data/*.*"
+fi
 
 if [ "$1" == "large" ]; then
 	echo

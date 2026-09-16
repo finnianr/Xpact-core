@@ -34,10 +34,11 @@ create
 
 feature {NONE} -- Initialization
 
-	make (dir_path: PATH; a_resume_at_count: INTEGER)
+	make (a_parse_data: XT_PARSER_DATA; dir_path: PATH; a_resume_at_count: INTEGER)
 		local
 			log_path: PATH
 		do
+			parse_data := a_parse_data
 			resume_at_count := a_resume_at_count
 
 			if Environment.is_ntfs_path (dir_path) then
@@ -133,7 +134,7 @@ feature {NONE} -- Implementation
 					IO.put_string (file_path.utf_8_name)
 					IO.put_new_line
 					archive_occurrence_table.put (extension)
-					create package_tests.make (package)
+					create package_tests.make (parse_data, package)
 					package_tests.set_file_handler (Current)
 
 					testing_package := True
@@ -142,7 +143,7 @@ feature {NONE} -- Implementation
 
 					fail_count := fail_count + package_tests.sum_fail_count
 				else
-					create comparison.make (file_path, log)
+					create comparison.make (parse_data, file_path, log)
 					comparison.execute
 					if not comparison.both_agree then
 						fail_count := fail_count + 1
@@ -168,6 +169,8 @@ feature {NONE} -- Internal attributes
 	archive_occurrence_table: XT_NAME_OCCURRENCE_COUNT_TABLE
 
 	occurrence_table: XT_NAME_OCCURRENCE_COUNT_TABLE
+
+	parse_data: XT_PARSER_DATA
 
 	directory: XT_DIRECTORY_WALKER
 

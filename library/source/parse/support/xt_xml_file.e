@@ -57,8 +57,6 @@ feature -- Access
 	parse_status: INTEGER
 		-- one of `XT_PARSE_CONSTANTS' parse Status_* constants
 
-	gc_enabled: BOOLEAN
-
 feature -- Eleement change
 
 	set_chunk_size (chunk_size: INTEGER)
@@ -70,30 +68,12 @@ feature -- Status report
 
 	is_utf_16: BOOLEAN
 
-feature -- Status setting
-
-	collection_off
-		-- Disables garbage collection temporarily until the parse has finished
-		-- (useful for Xpact C bridge)
-		do
-			gc_enabled := False
-		end
-
-	collection_on
-		-- Enable garbage collection all the time.
-		do
-			gc_enabled := True
-		end
-
 feature -- Basic operations
 
 	parse
 		local
 			final_chunk: BOOLEAN
 		do
-			if not gc_enabled then
-				Memory.collection_off
-			end
 			if file_readable then
 				from parse_status := Status_ok until final_chunk or parse_status /= Status_OK loop
 					read_to_managed_pointer (chunk, 0, chunk.capacity)
@@ -110,10 +90,6 @@ feature -- Basic operations
 			else
 				parse_status := parser.parse (chunk, True)
 			end
-			if not gc_enabled then
-				Memory.collection_on
-				Memory.full_collect
-			end
 			close
 		end
 
@@ -124,10 +100,5 @@ feature {NONE} -- Internal attributes
 feature {NONE} -- Constants
 
 	Default_chunk_size: INTEGER = 4096
-
-	Memory: MEMORY
-		once
-			create Result
-		end
 
 end

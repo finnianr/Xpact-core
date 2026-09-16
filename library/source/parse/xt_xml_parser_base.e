@@ -21,13 +21,15 @@ inherit
 			make, set_defaults
 		end
 
+	XT_NAMING_MODE_CONSTANTS
+
 feature {NONE} -- Initialization
 
-	make (parse_data: MANAGED_POINTER; is_uri_mapped: BOOLEAN)
+	make (a_parse_data: XT_PARSER_DATA)
 		do
-			Precursor (parse_data, is_uri_mapped)
-			if not (c_max_expansion_proportion (parse_data.item) >= 1.0) then
-				set_max_expansion_proportion (parse_data_memory.item, Default_max_expansion_proportion)
+			Precursor (a_parse_data)
+			if not (a_parse_data.max_expansion_proportion >= 1.0) then
+				parser_data.set_max_expansion_proportion (Default_max_expansion_proportion)
 			end
 		ensure then
 			set_to_check_encoding: parsing_state = State_check_encoding
@@ -73,7 +75,7 @@ feature -- Measurement
 
 	parsed_content_count: NATURAL_64
 		do
-			Result := c_content_count (parse_data_memory.item)
+			Result := parser_data.content_count
 		end
 
 feature -- Status query
@@ -88,9 +90,6 @@ feature -- Basic operations
 			file: XT_XML_FILE
 		do
 			create file.make (file_path, Current)
-			if collection_off then
-				file.collection_off
-			end
 			if chunk_size > 0 then
 				file.set_chunk_size (chunk_size)
 			end
@@ -113,9 +112,10 @@ feature -- Basic operations
 		local
 			write_start, remaining_count, utf_8_copied_count: INTEGER; parse_data: POINTER
 		do
-			parse_data := parse_data_memory.item
+			parse_data := parser_data.self_ptr
 			inspect parsing_state
 				when State_check_encoding then
+					Memory.collection_off
 					set_encoding (chunk)
 
 					inspect error_code when Error_none then
@@ -176,9 +176,12 @@ feature -- Basic operations
 						end
 					end
 				end
-				if a_is_final and then error_code = Error_none and then not element_context.reached_depth_zero then
-					error_code := Error_no_elements
-					Result := Status_error
+				if a_is_final then
+					if error_code = Error_none and then not element_context.reached_depth_zero then
+						error_code := Error_no_elements
+						Result := Status_error
+					end
+					Memory.collection_on; Memory.full_collect
 				end
 			end
 		ensure
@@ -605,7 +608,7 @@ feature {NONE} -- Implementation
 
 	in_cdata_section: BOOLEAN
 		do
-			Result := c_in_cdata_section (parse_data_memory.item)
+			Result := parser_data.in_cdata_section
 		end
 
 	increment_handler_depth

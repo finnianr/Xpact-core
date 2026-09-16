@@ -44,6 +44,35 @@ feature {NONE} -- Access
 			"((XML_Parser) $ptr)->userData"
 		end
 
+	frozen c_naming_mode (ptr: POINTER): INTEGER
+		-- set class `XT_NAMING_MODE_CONSTANTS'
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				XML_Parser p = (XML_Parser) $ptr;
+				int result = 1; // NM_prefix_SEP_localname
+				if (p->is_uri_mapped_ns){
+					if (p->returnNsTriplet)
+						result = 3; // NM_uri_SEP_localname_SEP_prefix
+					else
+						result = 2; // NM_uri_SEP_localname
+				}
+				return result;
+			]"
+		end
+
+	frozen c_namespace_separator (ptr: POINTER): CHARACTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->namespaceSeparator"
+		end
+
 	frozen c_null_index (ptr: POINTER): INTEGER
 		require
 			parser_attached: is_attached (ptr)
@@ -167,6 +196,33 @@ feature {NONE} -- Element change
 			"((XML_Parser) $ptr)->activeCallbackKind = (int) $kind;"
 		end
 
+	frozen c_set_naming_mode (ptr: POINTER; naming_mode: INTEGER; separator: CHARACTER)
+		-- set class `XT_NAMING_MODE_CONSTANTS'
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				XML_Parser p = (XML_Parser) $ptr;
+				int naming_mode = (int)$naming_mode;
+
+				switch (naming_mode) {
+					case 2: // NM_uri_SEP_localname
+					case 3: // NM_uri_SEP_localname_SEP_prefix
+						p->returnNsTriplet = naming_mode == 3 ? 1 : 0;
+						p->is_uri_mapped_ns = 1;
+						p->namespaceSeparator =	(XML_Char)$separator;
+						break;
+					default: // NM_prefix_SEP_localname
+						p->returnNsTriplet = 0;
+						p->is_uri_mapped_ns = 0;
+						p->namespaceSeparator =	'\0';
+						break;
+				}
+			]"
+		end
+
 	frozen set_null_swap (ptr: POINTER; null_swap: CHARACTER)
 		require
 			parser_attached: is_attached (ptr)
@@ -241,7 +297,29 @@ feature {NONE} -- Accounting initialization
 -- 	unsigned long long activationThresholdBytes;
 --} ACCOUNTING;
 
-	frozen set_content_count (ptr: POINTER; value: NATURAL_64)
+	frozen c_set_exponential_expansion_threshold (ptr: POINTER; threshold_count: NATURAL_64)
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->m_accounting.activationThresholdBytes = (unsigned long long)$threshold_count;"
+		ensure
+			exponential_expansion_threshold_set: threshold_count = c_exponential_expansion_threshold (ptr)
+		end
+
+	frozen c_set_max_expansion_proportion (ptr: POINTER; value: REAL_32)
+		require
+			value_gt_1: value >= 1.0
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->m_accounting.maximumAmplificationFactor = $value;"
+		ensure
+			max_expansion_proportion_set: c_max_expansion_proportion (ptr) = value
+		end
+
+	frozen c_set_content_count (ptr: POINTER; value: NATURAL_64)
 		external
 			"C inline use <xpact_private.h>"
 		alias
@@ -257,28 +335,6 @@ feature {NONE} -- Accounting initialization
 			"((XML_Parser) $ptr)->m_accounting.countBytesIndirect = (XmlBigCount)$value;"
 		ensure
 			entity_expansion_count_set: c_entity_expansion_count (ptr) = value
-		end
-
-	frozen set_exponential_expansion_threshold (ptr: POINTER; threshold_count: NATURAL_64)
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.activationThresholdBytes = (unsigned long long)$threshold_count;"
-		ensure
-			exponential_expansion_threshold_set: threshold_count = c_exponential_expansion_threshold (ptr)
-		end
-
-	frozen set_max_expansion_proportion (ptr: POINTER; value: REAL_32)
-		require
-			value_gt_1: value >= 1.0
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.maximumAmplificationFactor = $value;"
-		ensure
-			max_expansion_proportion_set: c_max_expansion_proportion (ptr) = value
 		end
 
 feature {NONE} -- Accounting addition

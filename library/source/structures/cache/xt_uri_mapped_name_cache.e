@@ -19,7 +19,7 @@ inherit
 			Default_bucket
 		end
 
-	XT_STRING_CONSTANTS
+	XT_STRING_CONSTANTS; XT_NAMING_MODE_CONSTANTS
 
 create
 	make
@@ -31,11 +31,14 @@ feature {NONE} -- Initialization
 			create area.make_filled (Default_bucket, Size)
 			create uri_table.make (11); add_xml_uri
 			separator := Default_separator
+			naming_mode := NM_uri_SEP_localname
 		end
 
 feature -- Access
 
 	separator: CHARACTER
+
+	naming_mode: INTEGER
 
 feature -- Basic operations
 
@@ -64,6 +67,17 @@ feature -- Element change
 			separator := a_separator
 		end
 
+	set_naming_mode (a_naming_mode: INTEGER)
+		do
+			naming_mode := a_naming_mode
+		end
+
+	set_naming (parser_data: XT_PARSER_DATA)
+		do
+			set_naming_mode (parser_data.naming_mode)
+			set_separator (parser_data.namespace_separator)
+		end
+
 feature -- Contract support
 
 	valid_tag_name_count (tag_name: like default_name; expected_count: INTEGER): BOOLEAN
@@ -78,21 +92,25 @@ feature {XT_PARSING_BUFFERS} -- Implementation
 			add_uri ({XT_STRING_CONSTANTS}.Xml_namespace_uri, {XT_STRING_CONSTANTS}.Xml_lower)
 		end
 
-	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
+	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER; is_attribute: BOOLEAN): like default_name
 		-- take buffer segment from `start_index' to `end_index' and insert into "&;" at position 2
 		local
 			name: STRING
 		do
 			inspect colon_index when 0 then
-				name := Default_uri_key
+				name := if is_attribute then Empty_string else Default_uri_key end
 			else
 				name := empty_buffer
 				append_area (name, buffer, start_index, colon_index - 1)
 			end
-			if attached uri_table [name] as uri then
-				create Result.make_from_uri (buffer, start_index, end_index, colon_index, uri, separator)
+			if name.is_empty then
+				create Result.make_from_buffer (buffer, start_index, end_index, NM_prefix_SEP_localname)
+
+			elseif attached uri_table [name] as uri then
+				create Result.make_from_uri (buffer, start_index, end_index, colon_index, naming_mode, uri, separator)
+
 			else
-				create Result.make_from_buffer (buffer, start_index, end_index)
+				create Result.make_from_buffer (buffer, start_index, end_index, naming_mode)
 			end
 		end
 

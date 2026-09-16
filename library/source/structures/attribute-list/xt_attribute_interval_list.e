@@ -85,7 +85,7 @@ feature -- Access
 		-- index of `name' using comparison by reference
 		-- 0 if not found
 		require
-			name_in_cache: name_cache.item (name.area, 0, name.count - 1, 0) = name
+			name_in_cache: name_cache.attribute_item (name.area, 0, name.count - 1, 0) = name
 		local
 			i, i_final: INTEGER
 		do
@@ -104,7 +104,7 @@ feature -- Access
 		-- zero based index into `area' for value start index associated with attribute `name'
 		-- using comparison by reference. `-1' if not found
 		require
-			name_in_cache: name_cache.item (name.area, 0, name.count - 1, 0) = name
+			name_in_cache: name_cache.attribute_item (name.area, 0, name.count - 1, 0) = name
 		local
 			name_index: INTEGER
 		do

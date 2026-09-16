@@ -14,9 +14,6 @@ class
 
 inherit
 	XT_XML_PARSER_BASE
-		rename
-			make as make_parser,
-			make_default as make
 		redefine
 			make, put_status
 		end
@@ -44,10 +41,10 @@ create
 
 feature {NONE} -- Initialisation
 
-	make (is_uri_mapped: BOOLEAN)
+	make (parse_data: XT_PARSER_DATA)
 		do
 			create tag_occurrence_table.make (100)
-			Precursor (is_uri_mapped)
+			Precursor (parse_data)
 		end
 
 feature -- Basic operations

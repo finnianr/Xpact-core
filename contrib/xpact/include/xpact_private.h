@@ -24,60 +24,77 @@ typedef struct accounting {
 
 struct XML_ParserStruct {
 	void *userData;
-	XML_Bool useParserAsHandlerArg;
 	void *eiffelParser;
 	const struct XPACT_EiffelBridge *bridge;
 	XML_Memory_Handling_Suite memory;
-	XML_Bool hasCustomMemory;
 	enum XML_ParamEntityParsing paramEntityParsing;
 	XML_Char *base;
 	char *buffer;
 	int bufferCapacity;
 	enum XML_Error errorCode;
 	enum XML_Parsing parsing;
-	XML_Bool finalBuffer;
-	XML_StartElementHandler startElementHandler;
-	XML_EndElementHandler endElementHandler;
-	XML_CharacterDataHandler characterDataHandler;
-	XML_ProcessingInstructionHandler processingInstructionHandler;
-	XML_XmlDeclHandler xmlDeclHandler;
-	XML_CommentHandler commentHandler;
-	XML_StartCdataSectionHandler startCdataSectionHandler;
-	XML_EndCdataSectionHandler endCdataSectionHandler;
-	XML_DefaultHandler defaultHandler;
-	XML_Bool defaultHandlerExpands;
-	XML_StartDoctypeDeclHandler startDoctypeDeclHandler;
-	XML_EndDoctypeDeclHandler endDoctypeDeclHandler;
-	XML_NotStandaloneHandler notStandaloneHandler;
-	XML_ElementDeclHandler elementDeclHandler;
-	XML_NotationDeclHandler notationDeclHandler;
-	XML_AttlistDeclHandler attlistDeclHandler;
-	XML_EntityDeclHandler entityDeclHandler;
-	XML_UnparsedEntityDeclHandler unparsedEntityDeclHandler;
-	XML_ExternalEntityRefHandler externalEntityRefHandler;
+
 	void *externalEntityRefArg;
-	XML_Bool hasExternalEntityRefArg;
 	XML_SkippedEntityHandler skippedEntityHandler;
-	XML_StartNamespaceDeclHandler startNamespaceDeclHandler;
-	XML_EndNamespaceDeclHandler endNamespaceDeclHandler;
-	XML_Bool hasNamespaceSeparator;
 	XML_Char namespaceSeparator;
-	XML_Bool returnNsTriplet;
 	XML_UnknownEncodingHandler unknownEncodingHandler;
 	void *unknownEncodingHandlerData;
-	XML_Bool useForeignDTD;
 	XML_Parser parentParser;
+	int externalChildParseCount;
+	unsigned long long lastExternalChildDirectCount;
+	unsigned long long lastExternalChildIndirectCount;
+	int activeCallbackKind;
+	int stopCallbackKind;
+	
+// Handlers
+
+	XML_CharacterDataHandler characterDataHandler;
+	XML_CommentHandler commentHandler;
+	XML_DefaultHandler defaultHandler;
+	XML_EndElementHandler endElementHandler;
+	XML_EndCdataSectionHandler endCdataSectionHandler;
+	XML_ExternalEntityRefHandler externalEntityRefHandler;
+	XML_NotStandaloneHandler notStandaloneHandler;
+	XML_ProcessingInstructionHandler processingInstructionHandler;
+	XML_StartCdataSectionHandler startCdataSectionHandler;
+	XML_StartElementHandler startElementHandler;
+
+// Declaration handlers
+
+	XML_AttlistDeclHandler attlistDeclHandler;
+
+	XML_ElementDeclHandler elementDeclHandler;
+	XML_EndDoctypeDeclHandler endDoctypeDeclHandler;
+	XML_EndNamespaceDeclHandler endNamespaceDeclHandler;
+	XML_EntityDeclHandler entityDeclHandler;
+
+	XML_NotationDeclHandler notationDeclHandler;
+	XML_StartNamespaceDeclHandler startNamespaceDeclHandler;
+	XML_StartDoctypeDeclHandler startDoctypeDeclHandler;
+	XML_UnparsedEntityDeclHandler unparsedEntityDeclHandler;
+	XML_XmlDeclHandler xmlDeclHandler;
+
+
+// Separator can be null for RDF parsing compatibility
+//	XML_Bool hasNamespaceSeparator; 
+
+
+// Status query
+
+	XML_Bool useParserAsHandlerArg;
+	XML_Bool hasCustomMemory;
+	XML_Bool finalBuffer;
+	XML_Bool defaultHandlerExpands;
+	XML_Bool hasExternalEntityRefArg;
+	XML_Bool is_uri_mapped_ns; // m_ns in eXpat
+	XML_Bool returnNsTriplet;
+	XML_Bool useForeignDTD;
 	XML_Bool nextExternalEntityIsParameter;
 	XML_Bool nextExternalEntityIsParameterLiteral;
 	XML_Bool externalEntityIsParameter;
 	XML_Bool externalEntityIsParameterLiteral;
-	int externalChildParseCount;
-	unsigned long long lastExternalChildDirectCount;
-	unsigned long long lastExternalChildIndirectCount;
 	XML_Bool stopRequested;
 	XML_Bool stopResumable;
-	int activeCallbackKind;
-	int stopCallbackKind;
 	XML_Bool reparseDeferralEnabled;
 
 // Xpact-core "billion laugh hack" accounting defense

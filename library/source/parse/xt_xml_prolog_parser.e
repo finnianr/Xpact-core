@@ -30,8 +30,6 @@ inherit
 
 	XT_PARSE_EVENTS
 
-	XT_C_PARSER_STRUCT
-
 	XT_PARSE_CONSTANTS
 		rename
 			ENTITY as ENTITY_,
@@ -40,24 +38,19 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make_default (is_uri_mapped: BOOLEAN)
-		do
-			make (create {MANAGED_POINTER}.make (c_size_of_parser_struct), is_uri_mapped)
-		end
-
-	make (parse_data: MANAGED_POINTER; is_uri_mapped: BOOLEAN)
+	make (a_parser_data: XT_PARSER_DATA)
 		require
-			valid_parse_data_size: parse_data.count = c_size_of_parser_struct
+			valid_parse_data_size: a_parser_data.count = c_size_of_parser_struct
 		do
-			parse_data_memory := parse_data
+			parser_data := a_parser_data
 			create attribute_value_defaults_table.make (37)
 			create doctype_declaration_stack.make_empty (2)
 			doctype_identifiers := [Empty_string, Empty_string]
-			create element_context.make (parse_data_memory.item)
+			element_context := parser_data.new_element_context
 			create parameter_entity_table.make (3)
 			create parameter_name_cache.make
 
-			make_buffers; make_scanner (is_uri_mapped)
+			make_buffers; make_scanner (a_parser_data)
 
 			create attribute_parts_list.make (name_cache)
 			create document_type_parts_list.make (name_cache)
@@ -75,26 +68,15 @@ feature {NONE} -- Initialization
 
 		ensure then
 			in_prolog_section: in_prolog_section
-			content_count_is_one: c_content_count (parse_data_memory.item) = 1
+			content_count_is_one: parser_data.content_count = 1
 		end
 
 	set_defaults
-		local
-			ptr: POINTER
 		do
 			Precursor
 			is_standalone					:= False
-			set_exponential_expansion_threshold (parse_data_memory.item, Default_exponential_expansion_threshold)
-
-			ptr := parse_data_memory.item
-			if not ptr.is_default_pointer then
-				set_has_dtd_section (ptr, False)
-				set_in_prolog_section (ptr, True)
-				set_in_cdata_section (ptr, False)
-				set_in_dtd_section (ptr, False)
-				set_content_count (ptr, 1) -- prevent divide by zero error
-				set_entity_expansion_count (ptr, 0)
-			end
+			parser_data.set_exponential_expansion_threshold (Default_exponential_expansion_threshold)
+			parser_data.set_defaults
 		end
 
 feature -- Status query
@@ -546,7 +528,7 @@ feature {NONE} -- Implementation
 
 	in_prolog_section: BOOLEAN
 		do
-			Result := c_in_prolog_section (parse_data_memory.item)
+			Result := parser_data.in_prolog_section
 		end
 
 	in_doctype_definition: BOOLEAN
@@ -685,7 +667,7 @@ feature {NONE} -- Implementation
 
 			attribute_value_defaults_table.wipe_out
 			if element_context.has_default_values then
-				create element_context.make (parse_data_memory.item)
+				create element_context.make (parser_data.self_ptr)
 			else
 				element_context.reset
 			end
@@ -772,7 +754,7 @@ feature {NONE} -- Internal attributes
 	parameter_name_cache: XT_PARAMETER_ENTITY_NAME_CACHE
 		-- efficient lookup of parameter entity names
 
-	parse_data_memory: MANAGED_POINTER
+	parser_data: XT_PARSER_DATA
 		-- allocated memory for C struct `XT_C_PARSE_DATA_STRUCT'
 
 end

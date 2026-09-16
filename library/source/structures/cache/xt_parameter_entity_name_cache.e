@@ -27,7 +27,7 @@ inherit
 		rename
 			item as name_item
 		redefine
-			new_name, name_item, same_name, Default_bucket
+			new_name, same_name, Default_bucket
 		end
 
 create
@@ -36,8 +36,12 @@ create
 feature -- Access
 
 	item (buffer: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): like default_name
+		-- "abc" where `buffer [start_index] = 'a'' and `buffer [end_index] = 'c''
+		-- results in "&abc;"
+		require
+			ampersand_and_semicolon_excluded: buffer [start_index] /= Percent and buffer [end_index] /= ';'
 		do
-			Result := name_item (buffer, start_index, end_index, 0)
+			Result := cached_item (buffer, start_index, end_index, 0, False)
 		end
 
 	Percent: CHARACTER
@@ -47,19 +51,10 @@ feature -- Access
 
 feature {NONE} -- Implementation
 
-	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
+	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER; is_attribute: BOOLEAN): like default_name
 		-- take buffer segment from `start_index' to `end_index' and insert into "&;" at position 2
 		do
 			create Result.make_from_buffer (buffer, start_index, end_index, percent)
-		end
-
-	name_item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
-		-- "abc" where `buffer [start_index] = 'a'' and `buffer [end_index] = 'c''
-		-- results in "&abc;"
-		require else
-			ampersand_and_semicolon_excluded: buffer [start_index] /= Percent and buffer [end_index] /= ';'
-		do
-			Result := Precursor (buffer, start_index, end_index, colon_index)
 		end
 
 	same_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER; name: STRING_8): BOOLEAN

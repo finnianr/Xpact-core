@@ -24,9 +24,9 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_path: PATH)
+	make (a_parse_data: XT_PARSER_DATA; a_path: PATH)
 		do
-			path := a_path
+			parse_data := a_parse_data; path := a_path
 			wild_card := "*.xml"
 			if attached a_path.entry as entry then
 				wild_card := entry.utf_8_name
@@ -193,7 +193,7 @@ feature {NONE} -- Factory
 
 	new_comparison (file_path: PATH): XT_EXPAT_COMPARISON
 		do
-			create Result.make (file_path, log)
+			create Result.make (parse_data, file_path, log)
 		end
 
 	new_log_path: PATH
@@ -222,6 +222,8 @@ feature {NONE} -- Internal attributes
 
 	path: PATH
 		-- directory or file path
+
+	parse_data: XT_PARSER_DATA
 
 	parse_status: INTEGER
 

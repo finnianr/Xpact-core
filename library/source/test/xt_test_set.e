@@ -16,6 +16,8 @@ class
 inherit
 	XT_SHARED_EXECUTION_ENVIRONMENT
 
+	XT_NAMING_MODE_CONSTANTS
+
 create
 	make
 
@@ -158,9 +160,16 @@ feature -- Tests
 			end_index := rdf_element.index_of (' ', 1) - 2
 			colon_index := rdf_element.index_of (':', 1) - 1
 			name := cache.item (rdf_element.area, start_index, end_index, colon_index)
-			assert ("name is uri + | + Descriptio", name.same_string (uri + "|Description"))
+			assert ("formatted as uri_SEP_localname", name.same_string (uri + "|Description"))
 			name_2 := cache.item (rdf_element.area, start_index, end_index, colon_index)
 			assert ("same reference", name = name_2)
+
+		-- Test NS triplets
+			cache.reset
+			cache.add_uri (uri, "rdf")
+			cache.set_naming_mode (NM_uri_SEP_localname_SEP_prefix)
+			name := cache.item (rdf_element.area, start_index, end_index, colon_index)
+			assert ("formatted as uri_SEP_localname_SEP_prefix", name.same_string (uri + "|Description|rdf"))
 		end
 
 	test_ntfs_link_detection

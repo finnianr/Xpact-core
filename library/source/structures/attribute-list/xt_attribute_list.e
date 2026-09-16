@@ -190,7 +190,7 @@ feature -- Access
 		-- value associated with attribute `name' using comparison by reference
 		-- `Void' if not found
 		require
-			name_in_cache: name_cache.item (name.area, 0, name.count - 1, 0) = name
+			name_in_cache: name_cache.attribute_item (name.area, 0, name.count - 1, 0) = name
 		local
 			i: INTEGER
 		do
@@ -529,7 +529,7 @@ feature -- Basic operations
 				normalize_whitespace (buffer, additions [2], additions [3])
 				newline_or_tab_found := False
 			end
-			name := name_cache.item (buffer, additions [0], additions [1], colon_index)
+			name := name_cache.attribute_item (buffer, additions [0], additions [1], colon_index)
 			if has_duplicate_name (name, l_name_area) then
 				Result := Error_duplicate_attribute
 			else

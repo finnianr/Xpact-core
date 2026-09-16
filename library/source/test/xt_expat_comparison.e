@@ -16,18 +16,16 @@ class
 inherit
 	XT_STRING_8_ROUTINES_I
 
-	XT_PARSE_CONSTANTS
-
-	XT_DATA_TYPES
+	XT_PARSE_CONSTANTS; XT_NAMING_MODE_CONSTANTS; XT_DATA_TYPES
 
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (a_file_path: PATH; a_log: PLAIN_TEXT_FILE)
+	make (a_parse_data: XT_PARSER_DATA; a_file_path: PATH; a_log: PLAIN_TEXT_FILE)
 		do
-			file_path := a_file_path; log := a_log
+			parse_data := a_parse_data; file_path := a_file_path; log := a_log
 			expat_error := Empty_string; package_name := Empty_string
 			xpact_error := Empty_string
 		end
@@ -35,8 +33,6 @@ feature {NONE} -- Initialization
 feature -- Status report
 
 	values_differ: BOOLEAN
-
-	is_uri_mapped: BOOLEAN
 
 	both_failed: BOOLEAN
 
@@ -75,7 +71,7 @@ feature -- Basic operations
 			crc_32: XT_CRC_32_GENERATOR; description: STRING
 		do
 			across Data_type_table as data_type until values_differ or both_failed loop
-				create crc_32.make (data_type, is_uri_mapped)
+				create crc_32.make (parse_data, data_type)
 				crc_32.parse_file (file_path, 0, True)
 				call_expat_xml_crc_32 (@ data_type.key)
 				if crc_32.status /= Status_ok and expat_return_code > 0 then
@@ -129,7 +125,7 @@ feature {NONE} -- Implementation
 			output_file: XT_COMMAND_OUTPUT_FILE; done: BOOLEAN; index: INTEGER
 		do
 			expat_checksum := 0
-			create output_file.make_with_output (Xml_crc_32, << type, file_path >>)
+			create output_file.make_with_output (Xml_crc_32, << type, namespace_options, file_path >>)
 			expat_return_code := output_file.return_code
 			if expat_return_code > 0 then
 				expat_error := output_file.error_lines.first
@@ -161,6 +157,21 @@ feature {NONE} -- Implementation
 			log.put_new_line; log.put_new_line
 		end
 
+	namespace_options: STRING
+		require
+			xmlns_has_trailing_space: Option_xmlns [Option_xmlns.count] = ' '
+		do
+			inspect parse_data.naming_mode
+				when NM_uri_SEP_localname then
+					Result := Option_xmlns
+					
+				when NM_uri_SEP_localname_SEP_prefix then
+					Result := Option_xmlns + Option_ns_triplets
+			else
+				Result := Empty_string
+			end
+		end
+
 feature {NONE} -- Internal attributes
 
 	expat_checksum: NATURAL
@@ -175,6 +186,8 @@ feature {NONE} -- Internal attributes
 
 	package_name: STRING
 
+	parse_data: XT_PARSER_DATA
+
 	xpact_error: STRING
 
 feature {NONE} -- Constants		
@@ -185,6 +198,10 @@ feature {NONE} -- Constants
 
 	Values_differ_template: STRING = "VALUES DIFFER (%S): %S"
 
-	Xml_crc_32: STRING = "xml_crc_32 -type %S -duration 0 %S"
+	Xml_crc_32: STRING = "xml_crc_32 -type %S %S -duration 0 %S"
+
+	Option_xmlns: STRING = "-xmlns "
+
+	Option_ns_triplets: STRING = "-ns_triplets"
 
 end
