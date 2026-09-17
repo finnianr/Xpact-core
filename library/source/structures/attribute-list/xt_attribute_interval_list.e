@@ -124,6 +124,14 @@ feature -- Measurement
 			Result := index_capacity // Interval_count
 		end
 
+feature -- Basic operations
+
+	check_forward (prefix_name, uri: STRING)
+		-- check forward references of new xmlns declaration
+		do
+			-- does something in `XT_URI_MAPPED_ATTRIBUTE_LIST'
+		end
+
 feature -- Constants
 
 	Interval_count: INTEGER = 2

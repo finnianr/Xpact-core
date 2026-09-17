@@ -1,0 +1,1799 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- test URI mapping parser with nested scopes like xmlns='http://www.w3.org/1999/xhtml' -->
+<feed xmlns='http://www.w3.org/2005/Atom'
+      xmlns:thr='http://purl.org/syndication/thread/1.0'
+      xml:lang='en-us'>
+ <title>ongoing by Tim Bray</title>
+ <link rel='hub' href='http://pubsubhubbub.appspot.com/' />
+ <id>https://www.tbray.org/ongoing/</id>
+ <link href='https://www.tbray.org/ongoing/' />
+ <link rel='self' href='https://www.tbray.org/ongoing/ongoing.atom' />
+ <link rel='replies'       thr:count='101'       href='https://www.tbray.org/ongoing/comments.atom' />
+ <logo>rsslogo.jpg</logo>
+ <icon>/favicon.ico</icon>
+ <updated>2026-09-08T19:03:40-07:00</updated>
+ <author><name>Tim Bray</name></author>
+ <subtitle>ongoing fragmented essay by Tim Bray</subtitle>
+ <rights>All content written by Tim Bray and photos by Tim Bray Copyright Tim Bray, some rights reserved, see /ongoing/misc/Copyright</rights>
+ <generator uri='/misc/Colophon'>Generated from XML source code using Perl, Expat, Emacs, Mysql, Ruby, and ImageMagick. Industrial-strength technology, baby.</generator>
+
+<entry>
+ <title>Canceling Emily</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/09/08/Emily-Got-Canceled' />
+ <link rel='replies'        thr:count='0'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/09/08/Emily-Got-Canceled#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/09/08/Emily-Got-Canceled</id>
+ <published>2026-09-08T12:00:00-07:00</published>
+ <updated>2026-09-08T19:03:37-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World/Politics' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Politics' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>Meet     <a href='https://emilyartist.ca'>Emily van Lidth de Jeude</a>, an     <a href='https://emilyartist.ca/projects/'>artist</a> who lives on an island and has     <a href='https://emilyartist.ca/2026/09/we-built-our-chickens-a-vacation-home/'>the most adorable chicken coop</a> you’ll ever see.     Those URLs start with <code>emilyartist.ca</code> now; until recently it was <code>emilyvanartist.noblogs.org</code>. But     that site, there for many years, is down now, and not coming back up. Why? Well, her email address used to end with     <code>@autistici.org</code> (it’s broken too now), and therein lies the story</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>Meet
+    <a href="https://emilyartist.ca">Emily van Lidth de Jeude</a>, an
+    <a href="https://emilyartist.ca/projects/">artist</a> who lives on an island and has
+    <a href="https://emilyartist.ca/2026/09/we-built-our-chickens-a-vacation-home/">the most adorable chicken coop</a> you’ll ever see.
+    Those URLs start with <code>emilyartist.ca</code> now; until recently it was <code>emilyvanartist.noblogs.org</code>. But
+    that site, there for many years, is down now, and not coming back up. Why? Well, her email address used to end with
+    <code>@autistici.org</code> (it’s broken too now), and therein lies the story.</p>
+    <p>It’s because the Trump administration declared that the “Autistici/Inventati” collective hosting Emily’s website and email was a
+    terrorist organization, and blasted them off the Internet with legal nuclear weapons.
+    <a href="https://www.inventati.org/campaign/press">Here</a> is the A/I collective’s statement. A more compact
+    journalist narrative is
+    <a href="https://www.nrc.nl/nieuws/2026/09/01/vs-zetten-italiaanse-internetprovider-op-terrorismelijst-burgerrechtenorganisaties-bezorgd-a4935569?gift_token=4935569~1789002643~esOkZ2WwTW6O7qQ53wxWjw~-Fy-zw2V1GTATLWZo73E_6AsYUyk_zLYN5qIckj3g88">Als
+    de Amerikaanse regering je tot terrorist heeft bestempeld: deze Italiaanse internetprovider kwam vorige week op de
+    sanctielijst</a> which is in Dutch but it machine-translates nicely. Emily’s own take, on her blog, is
+    <a href="https://emilyartist.ca/2026/09/canaries-of-hope/">Canaries of Hope</a>.</p>
+    <p>It’s been
+    professionally and personally devastating, vanishing Emily’s online
+    history and nuking her email network.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/09/08/emily-painting.png" alt="Emily van Lidth de Jeude painting" />
+    <div class='caption'><p>Canadian eco-social practice artist Emily van Lidth de Jeude in her studio, 2023, working on a series
+    about wildfires. Beside her on the floor stands a portrait of her Ukrainian grandmother.</p></div>
+    <p>I suppose most people reading this saw the Autistici/Inventati news story and shook their head at yet more MAGA
+    malfeasance. Me too. But then I found out about Emily’s story, initially on
+    <a href="https://cosocial.ca/@emilyvanartist@mastodon.social">her Fediverse feed</a>, and that made it concrete. The wastrels in
+    Washington can reach across the ocean and silence a Canadian creator on an Italian website. With no prior legal process, nor any
+    way to resist, and without fear of consequences.</p>
+    <p>They can probably do the same to you if you displease them sufficiently. They’ve done it once now and from their point of view it
+    went flawlessly, so why not again and again and again?  The only reasonable prediction is that they will.</p>
+    <p>It <em>might</em> be the case that if A/I had been in the US, they could have mounted a defense based on
+    <a href="https://en.wikipedia.org/wiki/Section_230">Section 230</a>, but I’m no lawyer.</p>
+    <p>I’m also no DNS expert; but I know some good ones. So I asked if there were any countermeasures available to non-US entities.
+    The answer: “Nope.” I asked “What about a national domain like <code>.ca</code>?” Still nope, any national registry could be
+    targeted by US legal warheads.</p>
+    <p>So, I could be taken down by this time tomorrow, just like Emily was. And like her, I’d have no comeback. You too, maybe.
+    I remember, back
+    during the Cold War, we described our part of the planet as “The Free World”.  Every year it gets harder to believe that label.</p>
+    <p>This is a politics and policy problem. So in the big picture, the only way to prevent this kind of abuse is for the
+    Americans to stop electing ignorant corrupt lawless narcissists. Starting this fall of 2026.</p>
+    <p>In the meantime, follow Emily online, she’s fun.  And have a look at her art, some of it might look good where you live.</p>
+</div></content></entry>
+
+<entry>
+ <title>Clankers and Data Races</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/09/01/Un-Racing' />
+ <link rel='replies'        thr:count='2'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/09/01/Un-Racing#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/09/01/Un-Racing</id>
+ <published>2026-09-01T12:00:00-07:00</published>
+ <updated>2026-09-02T10:26:30-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology/Quamina Diary' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Quamina Diary' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology/AI' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='AI' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>I just landed a PR that fixed a nasty data race in     <a href='https://github.com/timbray/quamina'>Quamina</a>.  Which shouldn’t have been technically challenging, but I took     side-trips into Erlang, unit test footguns, whether or not I should go on accepting LLM-generated PRs, and programming while aging</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>I just landed a PR that fixed a nasty data race in
+    <a href="https://github.com/timbray/quamina">Quamina</a>.  Which shouldn’t have been technically challenging, but I took
+    side-trips into Erlang, unit test footguns, whether or not I should go on accepting LLM-generated PRs, and programming while aging.</p>
+    <p>Let’s address that last issue first.</p>
+    <h2 id='p-1'>“No” on clanker PRs</h2>
+    <p>In late 2026 we know that:</p>
+    <ol>
+      <li><p>Claude and its competitors can write perfectly decent code, particularly where the task at hand can be
+      narrowly focused.</p></li>
+      <li><p>They’re also good-to-excellent at detecting vulnerabilities.</p></li>
+      <li><p>The underlying GenAI technology has serious negative externalities in (at least) the domains of environmental impact
+      and intellectual property.</p></li>
+      <li><p>Using this technology might enrich and empower people about whom I feel contempt and
+      fear.</p></li>
+      <li><p>The vast majority of people whom I care about and respect are experiencing real unhappiness about the GenAI
+      big picture.</p></li>
+    </ol>
+    <p>I’ve never personally put clankers seriously to work and for now I’ll continue not to. I <em>have</em> been
+    accepting Claude-authored PRs but, to the extent I can detect them, I’m stopping.  This will have a real cost; some of
+    those PRs yielded big performance boosts.  Also, they were built much
+    faster than I could have managed.</p>
+    <p>But the picture is mixed. Specifically, I have to admit that I don’t really understand the 500 or so lines of clanker
+    <a href="https://github.com/timbray/quamina/blob/main/epsi_closure.go">code</a> and
+    <a href="https://github.com/timbray/quamina/blob/main/epsi_closure_test.go">test</a> that compute epsilon closures for
+    nondeterministic finite automata. Sufficiently so that I’ve
+    <a href="https://github.com/timbray/quamina/issues/580">written an issue</a> to think it over, understand it, and with any luck,
+    simplify it.</p>
+    <p>Interestingly, we got to the current epsilon-closure code in a sequence of reasonable-looking PRs that I reviewed,
+    asking for changes in most.  But in the big picture my reviewing was
+    ineffective, because it ended with a large lump of code that I don’t understand or, at the end of the day, trust. I wonder how
+    typical that outcome is?</p>
+    <p>There’s an exception to my new policy: Vulnerability reports. I think it’d be irresponsible to ignore them and penalize
+    Quamina’s users because I don’t like the source. Somebody
+    <a href="https://github.com/timbray/quamina/issues/437">did a Claude scan</a> which found 14 problems at various levels of criticality.
+    I’ve created issues and hope to retire them all soon.</p>
+    <h2 id='p-3'>Pruner race</h2>
+    <p>The ugliest problem the clanker found was a data race in a piece of Quamina called
+    <a href="https://github.com/timbray/quamina/blob/main/pruner.go">pruner</a> (that most people don’t use).  So I bashed out a
+    quick unit test that ran several
+    thousand read operations in one goroutine and the same number of updates in another. Sure enough,
+    on its first run it instantly exploded in a flurry of data-race complaints.</p>
+    <p>The problem wasn’t complex and my first cut at a fix worked fine, the unit test running flawlessly. But, also
+    very slowly. I (reasonably, I thought) went looking for contention problems around the mutexes I’d just added.
+    The profiler seemed to be saying that the slowdown was in Quamina’s core matching methods, but that made no
+    sense at all, so I dug deeper and deeper into the Go sync primitives. And found nothing useful.</p>
+    <p>Concurrency bugs are extra irritating. Also, I’m
+    semi-retired and doing this for fun, so I put it down and ignored it for a few weeks.</p>
+    <h2 id='p-4'>Functional love</h2>
+    <p>There was a bright spot in this sad story. I mistakenly thought I’d found my problem in
+    a statistics-gathering type with several mutexed fields. So, cackling gleefully, I turned them into
+    <a href="https://github.com/timbray/quamina/blob/main/pruner_stats.go">Erlang-flavored accumulators</a>
+    updated with Go channel messages, a programming idiom that’s always given me a warm glow.</p>
+    <p>It didn’t make any performance difference but the code was smaller and prettier.</p>
+    <p><i>[Update: It’s subtly buggy in a way that doesn’t impair its usefulness; created an issue, will fix.]</i></p>
+    <h2 id='p-5'>Unit tests are good except when they’re not</h2>
+    <p>When I got over my grumpiness and went back to the problem, I started by looking at the unit test. Oops. Turns out the
+    read-only thread was (unsurprisingly) running twenty times as fast as the update thread and since they were doing the same
+    number of operations, it finished up instantly and the updater-thread kept thundering away. For reasons that need not concern
+    us, in this specific benchmark scenario a stream of heavy add and delete operations without any stats-gathering read operations
+    leads to massive, horribly complex
+    NFAs. Then the matching runs slow<span class='dashes'> —</span> exactly what the profiler had been trying to tell
+    me, only I thought I was smart enough to know better.</p>
+    <p>So I forced the reader thread to keep running until the other finished and hey-presto, the race was still fixed and
+    everything ran at typical Quamina speeds, which is to say very fast.</p>
+    <p>(I didn’t get rid of the Erlangified stats package though, I just liked it too much.)</p>
+    <p>I’m
+    <a href="/ongoing/When/202x/2021/05/15/Testing-in-2021#p-8">normally tolerant</a>
+    of a certain amount of sloppy informal YOLO power-coding while constructing unit
+    tests<span class='dashes'> —</span> more are better!<span class='dashes'> —</span> and I think I still am. But this was a
+    painful experience that I’d like to avoid in future. So, is there a lesson here? Maybe there are two: First, believe what the
+    profiler is telling you!  Second, if you’re having trouble understanding unit test output, dig around a
+    bit and make sure it’s doing what you think it is.</p>
+    <h2 id='p-6'>Grey-haired programmer</h2>
+    <p>Even when I’m mad at my software, I’m grateful that I still enjoy working on it. I think it supports my main post-employment
+    objective, which is to keep my brain working.  And who knows, the software might help somebody somewhere.</p>
+    <p>And best of all, when nobody’s
+    paying you to work on something, you can take a few weeks off whenever you’re not in the mood.</p>
+</div></content></entry>
+
+<entry>
+ <title>Text Watermarking</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/08/24/Text-Watermarking' />
+ <link rel='replies'        thr:count='0'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/08/24/Text-Watermarking#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/08/24/Text-Watermarking</id>
+ <published>2026-08-24T12:00:00-07:00</published>
+ <updated>2026-08-25T08:45:30-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology/Software' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Software' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology/AI' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='AI' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>There’s been a lot of discussion recently about the GenAI giants “watermarking” their output, which to say inserting     data so you can tell that it’s been generated by ChatGPT or Gemini or Claude or whatever. The technology for watermarking     images is as old as dirt, works as advertised, and doesn’t affect image quality.     What’s new and controversial is a claim that they can watermark <em>text</em>     output cheaply, simply, and without harming the quality of the text</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>There’s been a lot of discussion recently about the GenAI giants “watermarking” their output, which to say inserting
+    data so you can tell that it’s been generated by ChatGPT or Gemini or Claude or whatever. The technology for watermarking
+    images is as old as dirt, works as advertised, and doesn’t affect image quality.
+    What’s new and controversial is a claim that they can watermark <em>text</em>
+    output cheaply, simply, and without harming the quality of the text.</p>
+    <p>I was curious how they did this so I dug in a bit. I’m mostly convinced that
+    it works and is pretty clever. However, all the explanations are full of Computer-Science jargon that you need to be a
+    professional developer to understand. So here’s an attempt to explain to non-insiders and then, indirectly, opinions on
+    whether it’s good and what it means and doesn’t mean.</p>
+    <h2 id='p-1'>How it works</h2>
+    <p><i>[To professionals: The following is vastly oversimplified but not, I think, misleading.]</i></p>
+    <p>LLM software generates output a word at a time. The way it works is, it takes the last few words it’s generated and feeds
+    them to the Large-Language-Model process, and what comes out is a list of plausible next words, and a number which represents
+    just how plausible they are. So if the last few words were “my favorite tropical fruit is” the LLM might come back with
+    “mango”:30, “lychee”:20, “papaya”:10.</p>
+    <p>You might think that LLMs always choose the most-plausible next word, but that turns out to give lousy results. So they
+    randomly select from the list in a way that respects those numbers. First, note that the numbers add up to 60.
+    So in this case, you’d want it to select “mango” 30 out of 60 attempts, i.e. half the time, “lychee” 20/60 or a third, and 
+    “papaya” 10/60 or a sixth.</p>
+    <p>In that sentence, the word “randomly” is doing a lot of work. Let’s look a little closer at one way you might do this. Your
+    computer program could make a list with 60 entries, fill the first 30 with “mango”, then 20 with “lychee” and 10 with
+    “papaya”. Then you’d ask your computer to give you a random number between 1 and 60. Suppose you got 33, so you pick the
+    33<sup>rd</sup> list entry and return “lychee”.</p>
+    <p>And in that sentence, the phrase “ask your computer” is hard-working. It turns out that computer programmers need random
+    numbers like this all the time (let’s ignore why). They get the numbers from a built-in function called a “PRNG” (let’s
+    ignore what that stands for). The way a PRNG works is you fire one up by giving it a “seed”, which can
+    simply be another number that you get by bashing randomly at the top row on your keyboard or by asking a co-worker to pick a
+    number or whatever.</p>
+    <p>Once seeded, the PRNG is happy to go on giving you an endless series of random numbers. But (this is important) they depend
+    on the seed. By which I mean that if you fire up a second PRNG with the same seed, it’ll produce exactly the same endless
+    series.</p>
+    <p>Now we’re almost there. If you think about it, the LLM’s next word depends on, and only on:</p>
+    <ol>
+      <li><p>The previous few words and the model’s “context”, i.e. the prompts and anything it’s been asked to load up,</p></li>
+      <li><p>The internal workings of the LLM, and</p></li>
+      <li><p>The random number used to select from the list of candidate words. Which in turn depends on the seed
+      that the LLM fired up its PRNG with.</p></li>
+    </ol>
+    <p>So, suppose you want to test whether some text was generated by an LLM.
+    Well, IF you have access to the LLM, and IF you know which PRNG they used, and IF you know the PRNG’s seed, then you can look at
+    the LLM output and see if the words are the ones that the LLM would have generated. This works even if the output text was
+    edited a bit; if a high proportion of the words are those that the LLM would pick given the preceding ones and the PRNG
+    output, that’s a signal that yes, it was probably LLM-generated.</p>
+    <h2 id='p-2'>Secrecy</h2>
+    <p>This only works if you know the details of how the candidate next-words are generated, which PRNG, and what seed was
+    used. It would be technically possible for an LLM provider to share this information, then anyone could check the watermark.
+    In fact, all they have to keep secret is the PRNG seed. So at the end of the day, this “text watermark” means something like
+    “Remember the seed”.</p>
+    <p>I don’t watch the GenAI sector that closely so I don’t know if any of the providers actually do disclose this stuff.  My
+    impression is that generally speaking they’ll provide an API to do this checking for you. Or not, if they decide you’re not
+    entitled to do that, or haven’t paid enough, or whatever.</p>
+    <h2 id='p-3'>Resources</h2>
+    <p><a href="https://x.com/tenobrus/status/2089080656026566806">Here</a> (on X, unfortunately) is an explanation that is slightly
+    less oversimplified than mine above; still, I think, inaccessible to non-professionals, but perhaps useful to some.</p>
+    <p><a href="https://www.nature.com/articles/s41586-024-08025-4">Scalable watermarking for identifying large language model
+    outputs</a> is the upstream science, from <cite>Nature</cite> in October 2024. Strong stuff.</p>
+    <p><a href="https://thezvi.substack.com/p/ai-text-watermarking-is-free-and">AI Text Watermarking Is Free And Good</a>,
+    by Zvi Mowshowitz, also offers a how-it-works, but then includes commentary around the “… And Good” part of that title.
+    I don’t agree with some of it but the arguments are useful to know and quite clearly written.
+    I’m going to steal a phrase from Mowshowitz’s piece to serve as the title of my next section…</p>
+    <h2 id='p-4'>Anthropic Derangement Syndrome</h2>
+    <p>Quite a few people, some very smart, have reacted to this watermarking idea with fear and loathing.
+    Mowshowitz scoffs at them.  He (correctly) observes that the hostility is in large part due to people assuming
+    that anything the AI vendors say is probably a lie and that anything they do is probably greedy and dangerous bubble fodder.
+    But he (incorrectly) opines that this take is unreasonable.</p>
+    <p>So sue me: I too think those businesses lie a lot, that
+    their product vision is damaging to civil society, and that they are inflating what is starting to smell like a truly
+    apocalyptic financial bubble.</p>
+    <h2 id='p-5'>Having said that</h2>
+    <p>I do think the watermarking can work as described and won’t slow things down and won’t degrade the quality
+    of the output.</p>
+    <p>Sometime in the last year I gave up on making predictions about the impact of GenAI on the world. So don’t ask me what the
+    effect of ubiquitous watermarking will be.</p>
+</div></content></entry>
+
+<entry>
+ <title>Happiness Bookmarks</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/08/13/Happiness' />
+ <link rel='replies'        thr:count='0'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/08/13/Happiness#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/08/13/Happiness</id>
+ <published>2026-08-13T12:00:00-07:00</published>
+ <updated>2026-08-22T10:16:23-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>It’s been a rough few years, for the earth, for the societies that populate it, and for my family. Like they say, “sandwich     generation”.  There’ve been weeks when I’ve struggled for a smile. I suspect more than a few folk reading this are also feeling     stretched thin these days. Happiness has not entirely departed our lives, and waiting for a happier future is a really bad     idea. So we should notice and bookmark those moments and hours when smiles come to our faces</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>It’s been a rough few years, for the earth, for the societies that populate it, and for my family. Like they say, “sandwich
+    generation”.  There’ve been weeks when I’ve struggled for a smile. I suspect more than a few folk reading this are also feeling
+    stretched thin these days. Happiness has not entirely departed our lives, and waiting for a happier future is a really bad
+    idea. So we should notice and bookmark those moments and hours when smiles come to our faces.</p>
+    <p>If you share your life online, write the good times down and share them already. I used to do this a
+    lot; here are three out-takes ranging between 2003 and 2011. Maybe one or two of them will cheer you up?</p>
+    <ul>
+      <li><p><a href="/ongoing/When/200x/2003/06/09/Happiness">The Picture of Happiness</a> (2003/06/09)</p></li>
+      <li><p><a href="/ongoing/When/200x/2007/10/13/Chestnuts">Chestnut Dusk</a> (2007/10/13)</p></li>
+      <li><p><a href="/ongoing/When/201x/2011/11/14/Thanksgiving">Thanks</a> (2011/11/14)</p></li>
+    </ul>
+    <p>I should do that more. Starting now.</p>
+    <h2 id='p-1'>Pleasant Day</h2>
+    <p>We live near a street called Main (which it’s not) and a neighborhood called Mount Pleasant (there’s no mountain but it’s
+    mostly pretty nice).  Three weeks back, under the rubric “Pleasant Day”, they blocked cars off nine blocks of Main, and the
+    street was repopulated with retail stands (mostly from the street’s merchants), eat/drink patios, and live music.</p>
+    <p>It was sunny and everyone was happy, me too for a couple of hours. I also enjoyed taking pictures and editing them.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/13/TXT56758.png" alt="Woman pats a hairy white dog at a grooming vendor stand" />
+    <div class='caption'><p>There was a dog-grooming stand with a big white dreadlocked beast that enjoyed everyone’s attention.</p></div>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/13/TXT56764.png" alt="Lucky’s Books and Comics features the Odyssey" />
+    <div class='caption'><p><a href="https://luckys.ca/?srsltid=AfmBOoqD-PGngvmea0_j0mnXtabJtRfNEPTk2T67NUwssNH0IEJ3sQfn">Lucky’s
+    Books and Comics</a> is an excellent bookstore. Their selection echoed the summer-2026 zeitgeist.</p></div>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/13/TXT56766.png" alt="Racks and racks of Indian-flavored clothing" />
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/13/TXT56770.png" alt="Indian-flavored clothing vendor makes a sale" />
+    <div class='caption'><p>There were a couple of stands selling India-flavored garments
+    , they seemed to be doing
+    good business.</p></div>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/13/TXT56771.png" alt="Selling trinkets at the street fair" />
+    <div class='caption'><p>Chinese-flavored trinkets too.<br/>Check out the dog.</p></div>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/13/TXT56768.png" alt="Woman shopping at a flower truck" />
+    <div class='caption'><p>Who couldn’t smile at a flower truck?</p></div>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/13/TXT56776.png" alt="Little Sun Studios live printing has a banner saying “BE GAY DO ART" />
+    <div class='caption'><p>BE GAY DO ART they said.</p></div>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/13/TXT56779.png" alt="Gaily-costumed fellas at the honey shop" />
+    <div class='caption'><p>Or just chill at the honey shop.</p></div>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/13/TXT56780.png" alt="Woman singing karaoke at the Eddie Lam piano lessons stand" />
+    <div class='caption'><p>She was pretty terrible but everyone enjoyed it.</p></div>
+    <p>There’s nothing I can think of that would improve the message on that T-shirt.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/13/TXT56790.png" alt="A man wears a T-shirt reading “International Drummers for Jesus Celebration 2004" />
+    <h2 id='p-2'>I didn’t shoot the deputy</h2>
+    <p>Yesterday I was out on an errand with a pretty severe eldercare hangover<span class='dashes'> —</span> man, that can
+    get you down<span class='dashes'> —</span> when I heard <cite>I Shot the Sheriff</cite> playing. I first thought it was a radio
+    or something, but no, it was
+    <a href="https://www.cambievillage.ca/event-details/reggae-night-with-mostly-marley-1">Reggae Night with Mostly Marley</a>
+    and they were freaking excellent, razor sharp.</p>
+    <p>I felt a smile welling up from inside, the first in days. Now I’ve bookmarked it.</p>
+</div></content></entry>
+
+<entry>
+ <title>Five Views of the Wilcox Prairie</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/08/17/Prairie-Views' />
+ <link rel='replies'        thr:count='4'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/08/17/Prairie-Views#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/08/17/Prairie-Views</id>
+ <published>2026-08-17T12:00:00-07:00</published>
+ <updated>2026-08-18T07:37:06-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts/Photos' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Photos' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World/Places/Saskatchewan' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Places' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Saskatchewan' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>Fools have said that the Prairies are boring. This cannot be true, because in the absence of hills and trees there’s     more distance in each direction you might look. Also, Prairie landscapes include the skies above them which, whether blue,     star-spangled, or cloudy, aren’t boring.  Herewith photoevidence from the vicinity of     <a href='https://en.wikipedia.org/wiki/Wilcox,_Saskatchewan'>Wilcox, Saskatchewan</a>, with which I claim no other connection</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>Fools have said that the Prairies are boring. This cannot be true, because in the absence of hills and trees there’s
+    more distance in each direction you might look. Also, Prairie landscapes include the skies above them which, whether blue,
+    star-spangled, or cloudy, aren’t boring.  Herewith photoevidence from the vicinity of
+    <a href="https://en.wikipedia.org/wiki/Wilcox,_Saskatchewan">Wilcox, Saskatchewan</a>, with which I claim no other connection.</p>
+    <p>The nearby highway is distinguished by an adjacent railway line that carries really big trains; you really don’t want to be
+    waiting on a crossing while one of them spends tens of minutes reversing back and forth lackadaisically, to what purpose I can’t
+    imagine.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/17/TXT56800.png" alt="Prairie with clouds above and a train-crossing sign" />
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/17/TXT56803.png" alt="Prairie train-tracks with clouds above" />
+    <p>See what I said about the sky not being boring?</p>
+    <p>This corner of Saskatchewan has less absence of human construction than Prairie-typical. Below, four distinct
+    structures rise from the fields, marked by the clusters of trees which surround every locus of human activity here, there to offer
+    shelter from the endless Prairie wind.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/17/TXT56805.png" alt="Green Prairie grass with a telephone pole and buildings in the distance" />
+    <p>I was out for a drive with my mother, now 96. She asked “How many people wonder what it looks like where the makings of
+    the bread on their table come from?”  Below, what it looks like after the harvest. The ground’s less
+    pretty than before the wheat was cut but the dirt/cloud antiphony lured my camera out of the bag.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/17/TXT56807.png" alt="Recently-harvested Prairie landscape" />
+    <p>Prairie photography is right up there with Rock-Concert photography in that there’s all the light and visual drama you could
+    want, just get in a good place and point the camera in a good direction.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/17/TXT56808.png" alt="Prairie field with cloud drama above" />
+    <p>Remove distractions, highlight the clouds, and you can’t go wrong.</p>
+</div></content></entry>
+
+<entry>
+ <title>Dununba, Sangban, Kenkini (and Stands)</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/08/08/Kenkini-Sangban-Dununba' />
+ <link rel='replies'        thr:count='0'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/08/08/Kenkini-Sangban-Dununba#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/08/08/Kenkini-Sangban-Dununba</id>
+ <published>2026-08-08T12:00:00-07:00</published>
+ <updated>2026-08-08T12:00:00-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts/Music' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Music' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>Those first three words in the title name the members of the      <a href='https://en.wikipedia.org/wiki/Dunun'>Dunun</a> family,  cylindrical West-African drums that you usually put     on a stand to play. Think of those sizes as Papa bear, Mama bear, and Baby bear; the names are a bit     <a href='https://en.wikipedia.org/wiki/Onomatopoeia'>onomatopoeic</a>.     I bought a set and, separately,  stands to put them on.     They’re pretty enough that I want to post their pictures, which gives me an excuse to share     West-African drumming vibes. And recommend products</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>Those first three words in the title name the members of the 
+    <a href="https://en.wikipedia.org/wiki/Dunun">Dunun</a> family,  cylindrical West-African drums that you usually put
+    on a stand to play. Think of those sizes as Papa bear, Mama bear, and Baby bear; the names are a bit
+    <a href="https://en.wikipedia.org/wiki/Onomatopoeia">onomatopoeic</a>.
+    I bought a set and, separately,  stands to put them on.
+    They’re pretty enough that I want to post their pictures, which gives me an excuse to share
+    West-African drumming vibes. And recommend products.</p>
+    <h2 id='p-1'>Motivation</h2>
+    <p>I’ve been studying West-African (and a bit of Afro-Cuban) drumming for decades.  This kind of music relies on dununs,
+    <a href="https://en.wikipedia.org/wiki/Djembe">djembés</a>, and bells. Djembés are goatskin and played with bare hands, dununs
+    cowhide and with sticks.
+    In class, we play the dununs in traditional style, one drum per person, one hand playing the drum sideways on a stand, the other
+    tapping (with a stick) a bell strapped to its top.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/08/horizontal.png" alt="horizontal dunun" />
+    <div class='caption'><p>Dunun on a stand (but no bell attached).<br/>Courtesy of Drumskulls (see below).</p></div>
+    <p>I’m reasonably proficient on the djembé but nobody would call me a star; I can keep to the beat at a reasonably
+    fast pace and even improvise a bit.  On the single sideways dunun, I can get along.</p>
+    <p>For the last couple of years, I’ve been in an invite-only weekly drum jam; a dozen or fewer of us gather in an
+    old church and create rhythms together for a couple of hours. For me, this has become a major mental-health crutch.</p>
+    <p>One of our regulars, guy named Mark, brings along three dununs
+    mounted side-by-side vertically so you can play rhythms across all three.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/08/les-ballets.png" alt="Les Ballets Africains homepage" />
+    <p>That setup is called “ballet style” because it was was popularized by
+    <a href="https://en.wikipedia.org/wiki/Les_Ballets_Africains">Les Ballets Africains</a> (that site is worth a visit, as is
+    <a href="https://www.youtube.com/watch?v=dL4dFUUTotc&amp;list=PLZRNAphgsuVJvdrYmtJRRtKGD9vGRHo3J">this documentary</a>).</p>
+    <p>Anyhow, Mark plays djembé sometimes and welcomes others playing his dunums when he’s not, assuming they ask first.</p>
+    <p>I’d lacked the nerve to ask <span class='dashes'> —</span> Mark is a pretty elite
+    drummer<span class='dashes'> —</span> but one time a few months ago I felt daring and gave it a try.</p>
+    <p>Which awoke an unsuspected internal demon. I found playing along with the rhythm effortless,
+    then improvising on top of it; my hands went to
+    surprising places, it seemed of their own accord. Eventually I got excited and was leaping around a bit while playing.  After,
+    two of our crew called me out and said that’d been excellent. I love consuming music but very rarely as in never before get
+    compliments about performing it.</p>
+    <p>I took my turn standing in on Mark’s drums for the next few weeks and had similar fun every time. So I decided to get
+    some.  Obviously this involved a lot of research and asking around; I generally prefer to buy used instruments, but
+    couldn’t turn anything up.  Mark told me, and others concurred, that a really good source would be
+    <a href="https://drumskulldrums.com">Drumskull</a>, where Mark had got his, now 15 years old and still
+    sounding sweet.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/08/drumskull2.png" alt="Drumskull drums logo" />
+    <h2 id='p-2'>Acquisition</h2>
+    <p>There was a small problem, namely that I’m currently boycotting products from the United States of MAGA. But when I emailed
+    and talked with the Drumskullers, it turned out they were old-school hippies from Santa Cruz, which, I decided, earned them an
+    exception.</p>
+    <p>Then there was a big problem, namely shipping.  Somehow Purolator broke the
+    three drums into two shipments with different addresses, both wrong.
+    Multiple phone calls and emails and support-bot interactions occurred
+    and I got seriously bent out of shape.  Purolator, you had one job.</p>
+    <p>Finally I got them, here they are.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/08/PXL_20260804_193701205.png" alt="Three dununs on ballet-style stands on uncut grass" />
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/08/TXT56792.png" alt="Three dununs on ballet-style stands by a kitchen island" />
+    <p>I think they’re handsome. Also, they sound wonderful, although Drumskull tells me it’ll take a while for them to break in
+    properly.
+    I also got cases for each from Drumskull and those are superb, I’d feel confident checking them in on an airplane or tossing them into
+    the back of a truck. They also came with three pairs of drumsticks.</p>
+    <p>I strongly recommend Drumskull. Thanks, guys.</p>
+    <p>The downside is they’re really freaking heavy, in particular that big Papa-bear drum. By the time I get them out of the house
+    into the car, then out of the car into the church, I’m panting. I’m thinking that on some evenings I could get leave Papa bear
+    behind and get along with the
+    two higher-voiced dununs.</p>
+    <h2 id='p-4'>Stands</h2>
+    <p>The observant reader will have noticed that in the
+    pictures, the dununs are sitting on nice wooden stands.  These are from
+    <a href="https://shawpercussion.com">Shaw Percussion</a>, located in rural Ontario. They’re good people;I recommend them.</p>
+    <p>The great thing is that they’re adjustable
+    to fit your drums, look nice, and very stable. The bad thing is that, because of being adjustable, they’re heavy and have pointy
+    bits. We have a friend/contractor who’s a gifted carpenter, I may ask him to build a custom set which should be lighter and
+    simpler.</p> 
+    <h2 id='p-5'>Give it a try!</h2>
+    <p>Most cities have an African (and less often Afro-Cuban) drumming community and/or teachers. Most teachers provide drums so the
+    barrier to entry is low. It’s energetic, fun, and will probably change the way you think about rhythm. Also, strikingly
+    gender-balanced both on the teaching and learning side.</p>
+    <p>If we ever meet at a drumming event feel free to ask for a turn on my dununs.</p>
+</div></content></entry>
+
+<entry>
+ <title>Upside Down</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/08/03/Upside-Down' />
+ <link rel='replies'        thr:count='2'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/08/03/Upside-Down#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/08/03/Upside-Down</id>
+ <published>2026-08-03T12:00:00-07:00</published>
+ <updated>2026-08-04T09:00:31-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts/Photos' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Photos' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>The world is, I mean. Bottom-up. Maybe that’s just me not understanding?     It doesn’t surprise me that there are people who are stupid and/or evil. The surprise is, the others not     voting them out of office, passing legislation outlawing what they’ve been doing,     and sending the ones who don’t stop to prison</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>The world is, I mean. Bottom-up. Maybe that’s just me not understanding?
+    It doesn’t surprise me that there are people who are stupid and/or evil. The surprise is, the others not
+    voting them out of office, passing legislation outlawing what they’ve been doing,
+    and sending the ones who don’t stop to prison.</p>
+    <p>But anyhow, I got some amusing photographs at a local garden that are, um, reflective, wanted to blog them, picked the obvious
+    title, then the paragraph above came out. Don’t forgive me. Weird times, bad craziness, etc.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/03/TXT56707.png" alt="Pond surface featuring lily pads and the reflection of a tree" />
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/03/TXT56712.png" alt="Pond surface with lily pads and a network of branches between the pond and sky" />
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/08/03/TXT56719.png" alt="Trees and a complex plant assortment are reflected in a murky water surface" />
+    <p>In an upside-down world, reasonable people won’t be. Eventually. I hope.</p>
+    <p>Calm water helps me calm down. Try pointing your camera at it sometime.</p>
+</div></content></entry>
+
+<entry>
+ <title>Six Summer Days of Music</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/07/26/Music-Camp' />
+ <link rel='replies'        thr:count='3'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/07/26/Music-Camp#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/07/26/Music-Camp</id>
+ <published>2026-07-26T12:00:00-07:00</published>
+ <updated>2026-07-28T13:11:40-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts/Music' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Music' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>I spent last week at a summer music camp put on by WCAMS, the West Coast Amateur Musicians Society, pronounced     “Wickams”.     My goal in writing this is to influence a few readers in the direction of attending this sort of thing if there’s one     near you. You might be a candidate if you partake of some subset of: Loving music, getting old, being female,     worrying about mental fitness, and having time available to invest as you please rather than as you must</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>I spent last week at a summer music camp put on by WCAMS, the West Coast Amateur Musicians Society, pronounced
+    “Wickams”.
+    My goal in writing this is to influence a few readers in the direction of attending this sort of thing if there’s one
+    near you. You might be a candidate if you partake of some subset of: Loving music, getting old, being female,
+    worrying about mental fitness, and having time available to invest as you please rather than as you must.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/26/camp-booklet-cover.png" alt="Cover of the WCAMS 2026 camp booklet" />
+    <h2 id='p-1'>The facts</h2>
+    <p>250 attendees, a couple of dozen faculty (all professional musicians), a lovely waterfront venue at a swanky
+    boarding school campus in an 
+    <a href="https://en.wikipedia.org/wiki/Mill_Bay,_British_Columbia">isolated small town</a>.
+    The picture above is the cover of the
+    <a href="https://www.wcams.ca/PDFs/CAMP%20BOOKLET%202026.pdf">camp booklet</a>.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/26/PXL_20260719_184302214.png" alt="View from the Malahat highway to Mill Bay" />
+    <div class='caption'><p>On the way to the camp.</p></div>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/26/PXL_20260720_015242804.png" alt="well-manicured lawns stretch down to the Pacific" />
+    <div class='caption'><p>This space, while the camp is running,<br/>usually contains at least one person<br/> or group emitting
+    music.</p></div>
+    <p>Let me should expand on that list above.</p>
+    <ol>
+      <li><p>If you love music, there are multiple concerts per day, some quickies by whoever wants to between sessions, some highly
+      polished offerings from the faculty. They all offer
+      <a href="/ongoing/When/202x/2026/03/16/Pure-Sound-Please">pure sound</a>; unamplified and in music-friendly spaces. The volume
+      and balance and tone are achieved by the performers’ technique and love, nothing is digitized or amplified.</p>
+      <p>Then there are the concerts you’ll be practicing for and playing in.</p></li>
+      <li><p>The most common hair color was gray. I mean, there were kids and teens and thirtysomethings, but I’d say
+      more than half the
+      people were at least semi-retired. Not sure why, but it may have to do with retirees having spare time and
+      no childcare duties, and music having been more widely taught back when us Olds were kids, and the price, $1300 Canadian
+      (about a thousand US) per person, bed and board and music all-in. The venue was a private boarding school, thus “bed and board” was
+      of a school-dorm standard, clean and complete but very basic.</p>
+      <p>There were attendees who were unsteady on their feet and needed a golf-cart to get around and help on the stairs, but they
+      could still play the hell out of their fiddle or trombone or whatever.</p></li>
+      <li><p>The place was a matriarchy. My small string ensemble had three men and ten women, my cello seminar eight and two.
+      Don’t have a glib explanation except that music teachers were plentiful, and women are over-represented in the teaching
+      professions. So, it’s a space where (I’m guessing of course) women are less likely to feel crowded out
+      or bossed around.</p></li> 
+      <li><p>As for mental fitness while aging, the research is in and it’s not subtle. Music, both listening and performing, is
+      good for your mind/brain generally, and specifically
+      <a href="https://www.monash.edu/medicine/news/latest/2025-articles/music-can-stave-off-dementia-by-up-to-40-per-cent,-monash-study-finds">reduces
+      the risk of dementia</a>.</p></li>
+    </ol>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/26/PXL_20260723_164158227.png" alt="A woman is towing a large horn behind her in a small cart" />
+    <div class='caption'><p>For privacy reasons, we were all asked not to share photos from the camp in public, but I think this
+    one is safe.</p></div> 
+    <h2 id='p-4'>The music</h2>
+    <p>I found the choice of tunes contrarian; did not hear a single Mozart chestnut.
+    I think this works because everyone at the place is musically literate and many are erudite; they’ve heard enough Mozart
+    classics.
+    Let me sort the choices.
+    One basket: Works written in the
+    attendees’ lifetimes, including a lot of female composers and Canadian stuff. Another: Oddments from the back pages of the usual
+    titans, for example Beethoven’s 
+    <a href="https://en.wikipedia.org/wiki/Septet_(Beethoven)">Septet</a> (his first big hit, he came to hate it), and
+    the graceful but weird second movement of Stravinsky’s
+    <a href="https://en.wikipedia.org/wiki/Concerto_in_D_(Stravinsky)">Concerto in D</a>.
+    Another: Popular-music classics arranged for acoustic instruments. I heard (and will have more to say about) <cite>Bohemian
+    Rhapsody</cite> for woodwind quintet, Cohen’s <cite>Hallelujah</cite> for seven violas, and the Cowboy Junkies’ <cite>Cold Tea
+    Blues</cite> for four female voices and ukulele.</p>
+    <p>The big final choir-and-orchestra blowout, with 110 people on stage, was
+    <a href="https://en.wikipedia.org/wiki/Schicksalslied">Brahms’ <cite>Schicksalslied</cite></a>, which I bet almost none of the people
+    reading this have ever heard of (I hadn’t).</p>
+    <p>And also Bach. Because of course.</p>
+    <h2 id='p-6'>How it works</h2>
+    <p>You join as many ensembles as you care to. Most people will find themselves in one chamber group or another, an orchestra or choir,
+    and some sideline track like for instance, Early Music, Celtic, or Vocal Jazz. The organizers try to get the music mailed out a
+    few weeks before the camp, but some lags and some only arrives when you hit the first session on Monday. You get five hours
+    of rehearsal and then you perform it on Friday night or Saturday.</p>
+    <p>Obviously this calls for quite a bit of practice; there’s plenty of space for that. As you walk from wherever to wherever
+    around the joint, you always hear the call of some instrument or voice, often running repeatedly through a tricky bit. 
+    Noobs join as many groups as they can fit in the schedule.
+    Veterans have learned to dial it back a bit; I took their advice, signed up for only five tracks and performed only twice.</p>
+    <p>All this is a pretty fucking intense experience, let me tell you.  And here’s what I’ll take away: The radiant and heartfelt
+    smile on the face of nearly every musician when they finish their performance. And
+    basically every piece gets thunderous applause, with hollering. Usually but not always deserved.</p>
+    <h2 id='p-2'>My adventure</h2>
+    <p>I am not particularly gifted at music.  I’m old and have pursued the cello on and off since I was a kid, with much more off
+    than on and multiple no-cello decades.
+    What happened was, my wife Lauren is a gifted singer with a powerful soprano who enjoys participating in choral music.  Her
+    choir buddies have been encouraging her to come to WCAMS for years. I wanted to support her and it sounded like fun, so I ended a
+    25-year gap and started cello lessons again last October. It’s been painful clawing my way back toward my previous level of
+    skill, which was never that great.  But WCAMS makes it clear that beginners are welcome, will be encouraged and
+    supported. So we signed up.</p>
+    <p>Anyhow, my cello skills were solidly in the bottom quartile of the couple of dozen cellists in attendance. Which was humbling
+    but not a problem actually, because of that encouragement and support I just mentioned.</p>
+    <p>But during that 25-year cello gap I took up the study of West-African and Afro-Cuban drumming, with weekly lessons, and
+    then for the last year or so, regular participation in a multi-hour by-invitation-only weekly drum jam. Judging one’s own
+    talents is tough, but I seem to get musically further with less work on the drumming side. I even get the occasional spontaneous compliment
+    that isn’t just politeness; something that has rarely-to-never happened in my cello career. So I see drums as my primary musical
+    hobby.</p>
+    <p>But WCAMS doesn’t have an African-music group; thus my cello lessons. Then when we got the initial program I spotted
+    the Celtic track, and I know that music comes with drums.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/26/Bodhran.png" alt="A basic bodhrán" class="inline" />
+    <p>So, without asking anyone whether it was a good idea, the week before
+    the camp I rented a
+    <a href="https://en.wikipedia.org/wiki/Bodhrán">bodhrán</a>. It came with a “how to play” DVD that I watched all of, then I went
+    and typed “bodhrán practice music” into YouTube and of course there’s plenty. After a few hours I was
+    confident that I could keep up if they didn’t go too fast (they didn’t).
+    It’s pretty easy to play even though the actual strike-the-drum
+    motion is eccentric, unlike any other percussion instrument of my acquaintance.</p>
+    <p>I should mention that “bodhrán” is pronounced with the “dh” silent, “bo” as in “bother” and “rán” as in “roan”.</p>
+    <p>At the opening-night gathering, I tracked down Amy, the Celtic-track leader, and asked if it would be OK if I
+    showed up with the drum. She was welcoming (<em>everyone</em> at WCAMS seems permanently welcoming).
+    When we struck up the first tune at the beginning of our Monday gathering, she looked a little nervous but when I joined in
+    she nodded emphatically; it turned out the last time a fresh face equipped with a bodhrán had turned up, they couldn’t actually
+    find or stay with the beat.</p>
+    <p>Anyhow, I joined Amy’s Beginner and Advanced classes, learned a whole lot about Celtic music (starting from
+    zero helps), and had more fun than ought to be legal. Got unsolicited compliments.
+    Our performance was at the wind-up party after
+    the big final Brahmstravaganza, and the crowd yelled and whistled, dancing broke out. I was full of
+    joy<span class='dashes'> —</span> I think the whole band was. I’ll never forget it.</p>
+    <h2 id='p-7'>Musical take-aways</h2>
+    <p>Here are the ones that I can still hear when I think back on them.</p>
+    <p>The woodwind quintet (who came to camp together as a group) played <cite>Bohemian Rhapsody</cite> on that little waterfront
+    auditorium in the picture above. The arrangement was respectful and skilful and it highlighted what a wonderful, complex, piece
+    of music that is.  100% by Freddy Mercury, who we all think of as Queen’s muscle, but this is a masterpiece by one of the last
+    century’s top composers, any genre.</p>
+    <p>Arvo Pärt’s <cite>Spiegel in Spiegel</cite> by faculty cellist
+    <a href="https://marinahasselberg.com">Marina Hasselberg</a> and percussion pro
+    <a href="https://www.rcmusic.com/teachers/g/greg-samek">Greg Samek</a>, the latter on vibraphone. Exquisite, the notes suspended
+    in space like rays of light.</p>
+    <p><cite>Krunk</cite>, an Armenian folk song full of tragedy, on solo flute. Impossible to keep your eyes dry.</p>
+    <p>A Ukrainian song, lyrics by Shevchenko (there are lots, not sure which) delivered by Eric Hominick, a great singer and
+    pianist who is about to retire from the West to East coast, and will be much missed.</p>
+    <p><a href="https://thesession.org/tunes/82">Pride of Petravore</a> is a hornpipe, the song that the awesome
+    <a href="https://www.amystephenmusic.com">Amy Stephen</a> used to launch the Celtic-music track. She projected the music on the
+    whiteboard but wouldn’t make a print-out, insisting that we learn it so that when we opened our set we’d be focused on the music
+    not the notes. It’s the song that Amy used to teach me I could get along on bodhrán.</p>
+    <p>I’ll be honest, I’ve always liked
+    Irish-traditional music, have even been lucky enough to hear it in its natural habitat, a rundown pub in a remote corner of
+    Ireland. But I’d never actually 
+    <em>thought</em> about it much.  Now I have, and it’s deeper and stranger than I’d imagined. I’m pretty sure I’ll be investing
+    time in it.</p>
+    <p>I really hope I get a chance to learn from Amy again, one way or another.</p>
+    <p><a href="https://www.didchoi.com">D.I.D. Choi</a> is a young Canadian composer who, in his twenties, is off in LA, working on
+    music for films and games and so on. His
+    <a href="https://www.didchoi.com/remembrance">Remembrance</a>, written in 2019, played by a wind ensemble,
+    created a cloud of music magic in the air over the stage. I found my eyes closed, better to take it in. I’m going to suggest if
+    you notice a concert anywhere near you with something by Choi, run don’t walk to the ticket booth.</p>
+    <p>I already mentioned the Cowboy Junkies’ <cite>Cold Tea Blues</cite> and it’s the one that hit me the hardest. The four
+    singers had lovely light voices, the ukulele swung gracefully, and they did a bit of gentle choreography. The harmonies were
+    fabulous. Anyone who’s heard this (and you can guess from the title) knows it’s not a happy song, but they shuffled
+    that under the 
+    covers, casting a spell of light-hearted romance. Then when they planted the cruel razor sharp-hook at the end of the line of lyrics
+    they’d been dangling so invitingly, there were audible gasps and cries of sorrow from the crowd. Never experienced anything 
+    like it.</p>
+    <h2 id='p-8'>Big band!</h2>
+    <p>I’m old, but this is the music my parents listened to. I’d always thought of it as boring fuddy-duddy stuff. That was,
+    until I got in a theater with good acoustics and a live 20-piece brass band. This stuff is loud and aggressive at a level that
+    approaches Rock&amp;roll, the arrangements are better, and the tunes are strong.</p>
+    <p>The way it works is, the different horn sections hand the melody and chorus back and forth, never the same twice, then
+    somebody stands up and plays a solo, a pre-assigned number of bars. There was this one solo by a young trombonist that pretty
+    well melted my mind.  I wonder if this stuff retains any commercial viability, as in, is there somewhere I can go out and see it?</p>
+    <h2 id='p-9'>Anyhow…</h2>
+    <p>Earlier today I bought the rental bodhrán, it’s a basic model and was pretty cheap.  I think it’s full of happiness.</p>
+</div></content></entry>
+
+<entry>
+ <title>Sports and Truth</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/07/10/Summer-Sports' />
+ <link rel='replies'        thr:count='3'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/07/10/Summer-Sports#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/07/10/Summer-Sports</id>
+ <published>2026-07-10T12:00:00-07:00</published>
+ <updated>2026-07-16T10:08:37-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Sports/Soccer' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Sports' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Soccer' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Sports/Baseball' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Baseball' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>This summer has been very sporting; in the course of a couple of weeks I attended a World Cup match and a minor-league     baseball game. Took pictures and thought about enjoying this stuff</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>This summer has been very sporting; in the course of a couple of weeks I attended a World Cup match and a minor-league
+    baseball game. Took pictures and thought about enjoying this stuff.</p>
+    <h2 id='p-1'>“Haha, sportsball…</h2>
+    <p>I know that a whole lot of people, including not a few among my online audience, see neither joy nor virtue in fandom.
+    That’s an attitude they’re entitled to have assuming they realize the absence of joy is a them thing.</p>
+    <p>After joy there’s virtue. Yes, organized professional sport raises serious ethical issues. That’s putting
+    it politely. Many-to-most branches of commercial sport are rife with exploitation, oppression, and corruption. I’m not going to
+    push back, and in fact I sometimes feel guilty about enjoying the spectacle as much as I do.</p>
+    <p>More to come on that.</p>
+    <h2 id='p-2'>On hating FIFA</h2>
+    <p>I’m not going to re-tell the tales of galaxy-scale corruption, the ostentatious displays of wealth and privilege,
+    and the cozying-up to dictators, both real and wannabe. Attending the 2026 World Cup gave me more reasons to
+    hate; in particular the ticket-buying experience.</p>
+    <p>I have always loved fútbol generally and the World Cup in particular, as witness the
+    <a href="/ongoing/What/Sports/Soccer/">plentiful digital ink</a> I’ve spilled on the subject here on the blog. So when we
+    learned that there were going to be games in Vancouver, I determined that I’d attend one. It was obvious they’d be
+    popular so I decided to pounce on the first opportunity. Which is how I ended up buying (no, really) an NFT.</p>
+    <p>FIFA’s first round of sales wasn’t tickets, but NFTs, some of which came in packages that included a right to buy tickets for
+    a game, participants unknown.
+    <a href="https://collect.fifa.com/collectible/427320121710592">Here</a><span class='dashes'> —</span> the first and
+    I fervently hope the last time I link to an NFT<span class='dashes'> —</span> is part of the
+    package. Can’t show you the right-to-buy NFT because I had to “burn it” to turn it into tickets.</p>
+    <p>Neither the NFT nor the tickets were cheap; my son and I attending that game cost well over a thousand
+    (Canadian) bucks. (At this point, other attendees are scoffing at me for having paid so little.)
+    For what it’s worth, the seats were good.</p>
+    <p>And let’s further enhance our basket of reasons to hate FIFA by noting that the ticket prices exclude everyone who’s not
+    a member of a very privileged demographic.</p>
+    <h2 id='p-3'>The match</h2>
+    <p>It was
+    <a href="https://www.fifa.com/en/match-centre/match/17/285023/289273/400021480">Egypt vs New Zealand</a>, played at Vancouver’s
+    “BC Place” stadium on June 21st.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/10/PXL_20260622_005115695.png" alt="Preparation for Egypt vs New Zealand at the 2026 World Cup" />
+    <div class='caption'><p>The march-in ceremonies.</p></div>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/10/PXL_20260622_010008011.png" alt="New Zealand kicks off vs Egypt at the 2026 World Cup" />
+    <div class='caption'><p>New Zealand kicks off.</p></div>
+    <p>Confession: My son and I had a blast, can’t think of it without smiling.  Most of downtown Vancouver had become a swirl of
+    happiness, people dressed up in all sorts of fanciful outfits, singing, chanting, drinking, dancing, photographing. I
+    particularly liked the pharaoh’s-headdress the Egypt fans were wearing.</p>
+    <p>The game was great fun<span class='dashes'> —</span> <a href="https://www.fifa.com/en/watch/30AjAOgeWPeCcjnTx6hdH0">watch
+    the highlights</a>. NZ played better than their international rating would suggest and we got to watch
+    <a href="https://en.wikipedia.org/wiki/Mohamed_Salah">Mo Salah</a> carve his way
+    into the defense and put away a lethal strike.</p>
+    <p>There were way more fans from Egypt than from NZ, but the Kiwis had better-organized cheering; they’ve figured out how to set the
+    syllables of “Aotearoa” to the <cite>Seven Nation Army</cite> riff, and does it ever sound great.</p>
+    <p>And, while FIFA are assholes, those assholes really know how to run a
+    tournament. They had sold out BC Place to the last seat, but never for a moment did I feel scarily crowded. I even managed
+    to grab a decent beer and sandwich at half-time without feeling crushed or catching Covid; it helped that I masked up.</p>
+    <p>I’ve watched a lot of the tournament on TV and enjoyed it. The games, to be frank, have become less and less
+    interesting as the idiosyncratic minor players (in particular the non-European ones) get eliminated by the better-funded Euros with
+    their crushingly-precise and often-boring game. It would’ve been nice if the final four included an outsider.</p>
+    <p>And if you can set that FIFA issue aside, at some level it’s a beautiful thing; nations competing against each other in a
+    framework built on raw aggression, physical virtuosity, disciplined teamwork, and kicking a ball around.</p>
+    <h2 id='p-7'>World Cup without FIFA?</h2>
+    <p>It could be done and it’d be politically popular. The nations of the world get together, dissolve FIFA on the evidence of its
+    many sins, and run the tourney on some sort of co-op basis. They could slash most of the ticket prices and
+    there’d still be buckets of money to go around to the national associations and some selected charities, based on the
+    sponsorships and TV rights.  Some of it would go to peacekeeping and Doctors Without Borders.</p>
+    <p>I can dream.</p>
+    <h2 id='p-4'>The game</h2>
+    <p>(One says “football match” and “baseball game”. Sounds wrong the other way around. Yay English.)</p>
+    <p>It was my son’s birthday so nine of us went off to watch the
+    <a href="https://en.wikipedia.org/wiki/Vancouver_Canadians">Vancouver Canadians</a> host the
+    <a href="https://en.wikipedia.org/wiki/Eugene_Emeralds">Eugene Emeralds</a> in what’s called the “High-A” minor league.
+    Oh my goodness, you can actually watch
+    <a href="https://www.milb.com/live-stream-games/g819076">video of the whole game</a>. I don’t recommend it.
+    The tickets for nine, decent seats, cost $276 all in.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/10/TXT56290.png" alt="Vancouver Canadians vs Eugene Emeralds, July 1, 2026" />
+    <p>It was an OK game. Vancouver leapt to an early lead, then the pitching collapsed and the Emeralds got 12 runs; the home team
+    brought it back to within three by game’s end.</p>
+    <p>But, what a happy place! Kids everywhere, dressed in hot-dog condiments and pop stains. Snuggling couples. Beer
+    vendors. Hollering hosers.</p>
+    <p>Since, in baseball, nothing is happening most of the time, the emphasis is on chit-chat and eating and drinking and
+    people-watching. I noticed that when I wasn’t talking I was usually smiling.</p>
+    <p>This happened: My son’s partner, let’s call them “X”, is of East-Asian
+    extraction<span class='dashes'> —</span> a Richmond kid, for the Vancouver-savvy.
+    Born here, perfectly Canadian, but sports-oblivious and had never been to a ball game.
+    When the seventh-inning stretch came along, I tapped X’s shoulder and said “time to get up and sing”. The crowd charged lustily
+    into <cite>Take me out to the ball game</cite>, and X’s face got this absolutely hilarious I’m-on-an-alien-planet look.
+    Later, X told me “That’s the whitest thing I’ve ever seen.”</p>
+    <p>After the game, fireworks. They were pretty minor-league.</p>
+    <h2 id='p-5'>So MLB is OK?</h2>
+    <p>I have a bit of back story. While working at Sun and then for AWS, I helped MLB evaluate and use various
+    bits of Internet technology. Of all the world’s sports organizations, MLB is apparently the leader in using the Net to
+    promote and deliver their product. Plus the people I worked with were nice and highly competent. It was one of the highlights
+    of my career.</p>
+    <p>You will have noticed an absence of the sort of ranting that FIFA provoked above.  Does this mean that the MLB
+    organization is honorable and nice?  Not at all. They are a gaggle of billionaires
+    with <a href="https://en.wikipedia.org/wiki/Federal_Baseball_Club_v._National_League">an explicit grant</a> of monopoly
+    privileges in the USA.</p>
+    <p>The Vancouver Canadians are the only surviving minor-league team in Canada; MLB has shut down many minor-league teams because
+    while they make people happy they don’t make much money. Baseball is a big business and, just like any other big business
+    these days, often acts in ways that most people would consider unethical.</p>
+    <p>There’s what looks like a really good book about all this, 
+    <a href="https://www.penguinrandomhouse.ca/books/719997/homestand-by-will-bardenwerper/9780385549653">Homestand:
+    Small Town Baseball and the Fight for the Soul of America</a> by Will Bardenwerper. I haven’t read it yet, but you can get the
+    gist in
+    <a href="https://walkingtheworld.substack.com/p/two-interviews-an-author-and-a-painter">this conversation</a> between
+    Bardenwerper and Chris Arnade.</p>
+    <h2 id='p-6'>The problem is…</h2>
+    <p>…not baseball, nor fútbol, it’s late-stage capitalism, which reliably makes anything it gets its hands on worse.
+    If we don’t like the way those guys behave, and in particular if
+    we think some of it should be illegal (it should!) that’s a political problem that has to be addressed with politics.
+    Feels like it would be a pretty popular party platform plank.</p>
+    <p>I’m not one who’ll preach “no ethical consumption under capitalism” at you, but I don’t have a good come-back when someone
+    challenges me on sending money to the FIFA or MLB scum. Is there anyone reading this who is entirely comfortable with all the
+    places and practices that bring them enjoyment?</p>
+    <h2 id='p-8'>The truth is on the field</h2>
+    <p>The worlds of business and politics never contain a sentence that’s unscripted or incautious. The substrate of
+    trust that a society needs to function is today weakened and still weakening. There’s a pervasive belief
+    that what’s on our screen is at least in part self-interested untruth or, put another way, marketing.  I often think of this as
+    “The LinkedIn pathology”.</p>
+    <p>Not out on the field. When Mo Salah’s got the ball at his feet and charges at the NZ back line,
+    nobody in the world knows what’s going to happen in the next few seconds. When the Canadians’ pitcher walks in the fifth run of
+    the inning, nobody can tell which way his search for the strike zone will turn.</p>
+    <p>It’s unpackaged, unvarnished, and unedited. It’s physical truth, being created in real time.</p>
+    <p>Put another way: Live unscripted improvised drama. It’s not like anything else in most people’s lives; the only thing I
+    can think of that comes close is an instrumental break in a jam, whether that’s in your basement on a stage before thousands.</p>
+    <p>It thrills and entertains me. I make no apologies for that. I’d sure like to improve the societal basis that poisons it,
+    and increasingly more and more aspects of our lives, so I don’t have to feel bad about being a fan.</p>
+    <p>In the meantime, 🎵<i>Take me out to the ball game…</i>🎵</p>
+</div></content></entry>
+
+<entry>
+ <title>Mastodon, The Only Good Choice</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/07/05/Choose-Mastodon' />
+ <link rel='replies'        thr:count='0'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/07/05/Choose-Mastodon#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/07/05/Choose-Mastodon</id>
+ <published>2026-07-05T12:00:00-07:00</published>
+ <updated>2026-07-09T11:23:45-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Business/Publishing' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Business' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Publishing' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World/Social Media' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Social Media' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>Dear World: Now is a good time to get off social media that’s going downhill. Where by “downhill” I mean     any combination of less useful, less safe, or less fun.     It’s time for something better, and by “something better” I mean Mastodon.  Which, I’m here to say,     offers a better social-media experience than the alternatives. Furthermore, the alternatives are fatally flawed</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>Dear World: Now is a good time to get off social media that’s going downhill. Where by “downhill” I mean
+    any combination of less useful, less safe, or less fun.
+    It’s time for something better, and by “something better” I mean Mastodon.  Which, I’m here to say,
+    offers a better social-media experience than the alternatives. Furthermore, the alternatives are fatally flawed.</p>
+    <p>By “Mastodon” I mean the many servers, mostly (but not all) running the
+    <a href="https://github.com/mastodon/mastodon">Mastodon software</a>, that
+    communicate using the
+    <a href="https://en.wikipedia.org/wiki/ActivityPub">ActivityPub protocol</a>. Now I’ll try to convince you to start using one of
+    them.</p> 
+    <p><i>[I posted an earlier version of this essay called
+    <a href="/ongoing/When/202x/2025/11/03/Time-to-Migrate">Time To Migrate</a> last year, but enough things have changed
+    that it’s worthwhile revising and reposting.]</i></p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/05/join-mastodon.png" alt="join-mastodon.org" />
+    <div class='caption'><p>Start at
+    <a href="https://joinmastodon.org">joinmastodon.org</a></p></div>
+    <h2 id='p-4'>The simplest argument</h2> 
+    <p>Have you noticed that social-media products, in the long term, seem inevitably to enshittify?
+    I have.  But there’s a major exception, a tool that’s been serving billions of us for
+    decades, and works about as well as it ever did.  I’m talking about email.</p>
+    <p>Why does email stay reasonably healthy? Because nobody owns it. Anyone on any server can communicate with anyone else on any
+    other. Nobody can buy it and make it a vehicle for their politics. Nobody can crank up the ads or
+    make things worse to improve their profit margin.</p> 
+    <p>Mastodon’s like email that way. Plus it does all the Post and Repost and Quote and Follow and Reply and Like and Block stuff
+    that you’re used to, and there are thousands of servers. Anyone can run one and nobody can own the whole thing.  It doesn’t have
+    ads and it won’t. It’s dead easy to use and it’s fun and you should
+    <a href="https://joinmastodon.org">give it a try</a>.</p>
+    <p>The rest of this essay goes into detail about why Mastodon is generally great and why the alternatives have little future.
+    But if the pitch sounds good so far, stop reading,
+    <a href="https://joinmastodon.org/">go get an account</a>, and climb on board.</p>
+    <!--
+    <p>But first…</p>
+    <h2 id='p-5'>Is social media worth saving?</h2>
+    <p>I regularly read that it’s pernicious and evil, damaging the mental health of young people,
+    and should be stamped out or foregone. I disagree. I think the problem is late-stage capitalism; every company that
+    offers a social-media product is under relentless financial pressure to yield steadily-growing profits, going on forever.</p>
+    <p>Since
+    there’s a global limit to the number of customers that any service can attract, that means they have to suck more out of each
+    user. Where by “suck more out of” I mean what social-media professionals call “increase engagement”.</p>
+    <p>So, engagement is increased at literally any cost, notably including the
+    <a href="https://erinkissane.com/meta-in-myanmar-part-i-the-setup">slaughter of the Rohingya</a>.</p>
+    <p>I for one do <em>not</em> agree that there’s anything essentially pernicious about having networked online
+    conversations. Once again, I appeal to email, which generally doesn’t exhibit the usual social-media pathologies.</p>
+    <p>I’d even appeal to Twitter-that-was, when authoritative voices were
+    talking about any subject from every angle, and when you could find out if you’d just felt an earthquake and be horrified or overjoyed
+    about Maple Leafs playoff collapse. It was fun and useful and educational.</p>
+    <p>So, Social Media? Yes. Centralized corporate social media? No.</p> 
+    <p>Now, here are a bunch of great things about Mastodon, if that pitch above didn’t quite convince you to switch now.</p> -->
+    <h2 id='p-18'>Why now?</h2>
+    <p>Along with that “can’t be owned” and “no ads” stuff, 
+    the software is getting really good, particularly in the last couple of releases. It’s got cool features you won’t find
+    elsewhere, and there’s very little cool stuff from elsewhere that’s not here.</p>
+    <p>There was a time when newly-arrived people had
+    confusing or unfriendly experiences, or missed features that were important to them.
+    It looks to me like those days are over.</p> 
+    <h2 id='p-6'>Migration</h2>
+    <p>Mastodon is many thousands of servers, and you can join the biggest,
+    <a href="https://mastodon.social/explore">mastodon.social</a>, or
+    <a href="https://joinmastodon.org/servers">shop around for another</a>. But here’s the magic thing: If you end up disliking the
+    server you’re on, or find a better one, you can migrate and <em>take your followers with you</em>! You can’t ever get locked
+    in.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/05/serveres.png" alt="Choosing a Mastodon server" />
+    <div class='caption'><p>The server-selection menu has lots of options.</p></div>
+    <p>Migration is probably Mastodon’s most important feature. It’s why no billionaire can buy it and no corporation can enshittify it.  As
+    far as I know, Mastodon is the first widely-adopted social software ever to offer it.</p> 
+    <h2 id='p-7'>Interaction</h2>
+    <p>You hear it over and over: “I had &lt;a big number> of followers on Twitter and now I have &lt;a less-big number> on
+    Mastodon, but I get so much more conversation and interaction when I post here.”</p>
+    <p>One of the people you’ll hear that from is me.
+    My follower count is a bit less than half the 45K I had on Twitter-that-was, but I get immensely more intelligent, friendly
+    interaction than I ever got there.  (And sometimes I get told firmly that I’m completely wrong, but hey.)  It’s
+    the best social-media experience I’ve ever had.</p>
+    <p>Dunno about you, but conversation and interaction
+    seem like a big deal to me.  One reason things are lively is…</p>
+    <h2 id='p-8'>Sex</h2>
+    <p>Here’s an axiom: An ad-supported service can’t have sex-positive or explicit content. Advertisers simply won’t tolerate
+    having their message appear beside NSFW images or Gay-Leatherman tales or exuberant trans-positivity. Mastodon
+    has all that stuff.</p>
+    <p>Of course, you gotta be reasonable, posting anything actually illegal will get your ass perma-blocked and your account
+    suspended. So will posting anything that’s NSFW etc without a “Content Warning”. That’s a built-in feature of Mastodon which
+    puts a little warning (“#NSFW” and “#Lewd” are popular) above your post, which is tastefully blurred-out until whoever’s
+    looking at it clicks on “Show content”.
+    I use these all the time when 
+    I post about #baseball or #fútbol because a lot of the geeks and greens who follow me are pointedly uninterested in sports.</p>
+    <p>(Oh, typing that in reminds me that you can subscribe to hashtags on Mastodon: Let’s see, I currently subscribe to, among
+    others,
+    <a href="https://mastodon.social/tags/vancouver">#Vancouver</a>,
+    <a href="https://mastodon.social/tags/murderbot">#Murderbot</a>, and
+    <a href="https://mastodon.social/tags/Fujifilm">#Fujifilm</a>.)</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/05/ivory.png" alt="The Ivory For Mastodon app for Apple platforms" />
+    <div class='caption'><p>The “Ivory for Mastodon” app for Apple platforms,<br/>one of the many fine alternative clients.</p></div>
+    <h2 id='p-9'>Moderation and defederation</h2>
+    <p>Did I just mention, two paragraphs up, getting blocked? Mastodon isn’t free of griefers, but the tools to fight them are good
+    and getting better.</p>
+    <p>The good news is that each server moderates its own members. There’s variation
+    of the standards from server to server, but less than you’d think. Since there are thousands of servers, there are
+    thousands of moderators, which is a lot.</p>
+    <p>If you act in a way that others find offensive, you’ll probably get blocked by the offended people and also reported; the
+    report can come from any server and it’ll go to the moderators on yours. On a well-run server, those mods will have a look and
+    if you’ve actually been bad, your post might get yanked and you might get warned, or in an extreme case, booted off.</p>
+    <p>(I’ve been reported for saying unkind things about Bibi Netanyahu and for posting too many photos of my
+    cats (no, really) but that kind of thing is cheerfully ignored by good moderation teams.)</p>
+    <p>Then there’s Mastodon’s nuclear weapon: Defederation.
+    Suppose you’re prone to nasty bigotry in public and you get reported a lot and your server’s moderators <em>don’t</em> rein
+    you in. Eventually, word will get around, and if things aren’t cleaned up, most servers will defederate yours, so that
+    <em>nobody</em> on their server can see posts from anyone on yours. Your site is no longer part of the “Fediverse”; this is a powerful
+    incentive for server owners to take moderation seriously.</p>
+    <p>The effect is that the haters and scammers and Nazis who show up mostly get shuffled off-stage PDQ. Not
+    always, unfortunately; a couple of years ago a wave of incoming Black people had bad experiences with racist abuse. Ouch. Is
+    there <em>anywhere</em> in the world that a loud-voiced Black woman won’t provoke a chud eruption? <i>[sigh]</i></p>
+    <p>But the good news is that recent Mastodon releases have been shutting prone-to-abuse channels
+    down, so things are better than then and should continue to improve.</p>
+    <h2 id='p-11'>Links are good</h2>
+    <p>Corporate social-media services like to
+    <a href="https://talkingpointsmemo.com/tpm-25/how-elon-musks-changes-to-x-made-our-discourse-far-stupider">downrank posts with
+    links</a>.
+    Which makes me want
+    to scream, because my favorite thing to post is a link+reaction to something cool, and so are my favorite posts to read.</p>
+    <p>On Mastodon, when your post has a link, the software automatically fetches a preview of whatever you linked to and uses
+    it to decorate the post.
+    I mean, it’s the damn Internet, it only got interesting to non-geeks when we figured out how to turn millions of servers
+    into a great big honking searchable hypertext.</p>
+    <h2 id='p-12'>Search</h2>
+    <p>Speaking of which, Mastodon search is pretty good these days. It’s become, just like this blog, part of my outboard
+    memory, and I’m always typing things like “telephoto from:me has:media” into the search box. Fast enough, too.</p>
+    <h2 id='p-13'>Great clients</h2>
+    <p>Another good thing about Mastodon is that there is plenty of good client software
+    to choose from, mostly open-source. The best ones are miles ahead of Xitter and Threads and
+    Bluesky and, really, anything.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/05/Screenshot_20251110-104045.png" alt="A post from Brian Krebs in the Tusky app" />
+    <div class='caption'><p>Anniversary post in the Android “Tusky” app.</p></div>
+    <p>There are official Web and mobile clients from the Mastodon team and they’re fine, especially for admin and moderation work.
+    But iOS people should check out
+    <a href="https://apps.apple.com/us/app/ivory-for-mastodon-by-tapbots/">Ivory</a>, Androiders should look at
+    <a href="https://tusky.app">Tusky</a>, and everyone should try
+    <a href="https://phanpy.social">Phanpy</a>. I live in Phanpy on both my Mac and my Pixel<span class='dashes'> —</span> it’s a
+    Web thing but installable as a PWA.</p>
+    <p>Commercial products, especially social-media services, have <em>never</em> been at peace with third-party clients.
+    Twitter used to be, but then it stabbed those developers in the back. It’s easy to
+    understand why; every product manager has it drilled into them that they <em>must control the user experience</em>. This ignores
+    the ancient wisdom (I first heard it from
+    <a href="https://en.wikipedia.org/wiki/Bill_Joy">Bill Joy</a>) “Wherever you work, most of the smart people are somewhere else.”</p>
+    <p>Mastodon doesn’t have that kind of product manager, but it does have a
+    <a href="https://docs.joinmastodon.org/api/">fully-capable API</a>, developed in the open and with no
+    hidden or restricted features. Which means you’re going to get better clients.</p>
+    <h2 id='p-14'>Algorithms</h2>
+    <p>The algorithms that commercial social-media services use to sort your feed have one goal only: Maximize engagement and thus
+    revenue. They have no concern for quality or morality, and have been widely condemned by people who think about this
+    stuff. So much so that there’s a feeling that Algorithms Are Bad.</p>
+    <p>Mastodon has an algorithm: Show the posts from the accounts you follow, latest first. It works pretty
+    well. It also has “Trending” feeds of the most popular posts, hashtags, and links.  I hit those once a
+    day or so to get a feeling for what’s going on in the world.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/07/05/Trending.png" alt="Trending screen in PhanPy" />
+    <div class='caption'><p>The “Trending” display in Phanpy.</p></div>
+    <p>I do think there’s room for improvement here; Bluesky has shown off the idea of pluggable feed-ranking algorithms, with many to
+    choose from, and I like it. No reason in principle we couldn’t have the same thing on Mastodon.</p>
+    <h2 id='p-15'>Money</h2>
+    <p>Every other social network has started with a big pot of money, whether from venture-capital investors (Twitter, Instagram,
+    Bluesky) or from a Big Tech corporate parent (Google+, Threads).  The people who provided that money want it back, plus a whole
+    lot more.
+    Thus, the manic drive for “engagement” and growth at all costs. They need to build huge data centers and employ an elite
+    operations team plus an even more elite marketing group.</p>
+    <p>Mastodon, eh… a gaggle of nonprofits and co-ops and unincorporated affinity groups, financed by Patreon or low annual dues
+    or Some Random Geek who likes running a server.</p>
+    <p>Since nobody owns it, nobody can extract a profit from it. Which means that from the big-money point of view, it’s entirely
+    non-investable. The goal isn’t for anybody to make money, it’s to be instructive and intense and fun. It’s run on the cheap.
+    You know what they call systems that are cheap and diversified? Resilient. Sustainable. Long-lived.</p>
+    <p>Last year
+    <a href="https://www.tbray.org/ongoing/When/202x/2024/11/15/Not-Bluesky">I wrote</a>: 
+    “Think of the Fediverse not as just one organism, but a population of mammals, scurrying around the ankles of the bigger and
+    richer alternatives. And when those alternatives enshittify and fall, the Fediversians will still be there.” After
+    “scurrying” I should have added “and evolving”.</p>
+    <h2 id='p-19'>But Bluesky!</h2>
+    <p>I like the Bluesky people and their software and some of their ideas. But I don’t see it as a good long-term
+    option, for two reasons.  First, it’s not decentralized, in that it couldn’t survive if
+    <a href="https://bsky.social/about/faq">Bluesky Social PBC</a> fell on bad times. Yes, I know about
+    <a href="https://blackskyweb.xyz">BlackSky</a> (am a fan) and
+    <a href="https://eurosky.tech">Eurosky</a> (dunno enough yet) and they don’t change my opinion.</p>
+    <p>Second, I think it’s inevitable that Bluesky-the-company will indeed go sour.  They have raised
+    <a href="https://techcrunch.com/2026/03/19/bluesky-announces-100m-series-b-after-ceo-transition/">a total of $123M</a> in
+    venture-capital investments. The biggest chunk, $100M from
+    <a href="https://baincapitalcrypto.com">Bain</a> and friends, was signed in April 2025 but not disclosed
+    until a year later. Why not, I wonder? Actually, I don’t wonder at all: Because they knew perfectly well that long-term
+    survivors like me would be horrified.</p>
+    <p>You, see the people who coughed up all those millions didn’t do it out of pure love or idealism, they want Bluesky to become
+    a money machine that emits a fountain of gold so they get a payback in the billions. 
+    Which, OK; that’s what Venture Capital is for. Except for, I see no evidence that Bluesky has anything resembling a business
+    model. See the problem?</p>
+    <p>I see two possible outcomes: The company craters when the money runs out, or it builds a
+    lucrative income stream, probably based on advertising. Which means we can expect to see the pathologies that make X and
+    Facebook and friends so loathsome.</p>
+    <h2 id='p-16'>Mastodon’s the only option</h2>
+    <p>The only social-media option, I mean, that’s decentralized, not owned or controlled by anyone, and working well today as you
+    read this. It’s intense and interactive and fun. Why settle for less?</p>
+    <p><i>(Disclosure: I have no formal connections with the Mastodon organization, aside from being a low-level supporter on
+    Patreon.)</i></p>
+</div></content></entry>
+
+<entry>
+ <title>Automata, Built For Comfort or Speed</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/06/14/DFA-Costs' />
+ <link rel='replies'        thr:count='0'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/06/14/DFA-Costs#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/06/14/DFA-Costs</id>
+ <published>2026-06-14T12:00:00-07:00</published>
+ <updated>2026-06-16T14:10:08-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology/Quamina Diary' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Quamina Diary' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>It’s been a while. February was the last entry in this     <a href='/ongoing/What/Technology/Quamina%20Diary/'>Quamina Diary</a>; I never stopped working on it but there hasn’t been      much blogworthy. This piece offers a progress update for those who’ve been entertained by Quamina, and also a     pleasing (well, to me anyhow) dip into finite-automata theory and practice. With numbers and graphs and a bluesman!</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>It’s been a while. February was the last entry in this
+    <a href="/ongoing/What/Technology/Quamina%20Diary/">Quamina Diary</a>; I never stopped working on it but there hasn’t been 
+    much blogworthy. This piece offers a progress update for those who’ve been entertained by Quamina, and also a
+    pleasing (well, to me anyhow) dip into finite-automata theory and practice. With numbers and graphs and a bluesman!</p>
+    <p>Since it’s been so long, here’s what Quamina, a Go-language library, does: You can add “Patterns” to a Quamina instance, they
+    match the values of fields in JSON objects, and then you show Quamina a JSON “Event” and it’ll tell you which Patterns matched
+    it. It’s pleasingly fast and in many cases the speed is not strongly affected by the number of Patterns you’re trying to
+    match.</p>
+    <p>The last release, V2.0.2 back in March, marked the arrival of a reasonably-full regular-expression dialect into Quamina’s
+    pattern language, so you can say, for example, that the <code>Filename</code> field has to match
+    <code>map-[0-9]+.(png|pdf|jpe?g)</code>.
+    Regular expressions were a lot of work and a lot of fun.</p>
+    <h2 id='p-1'>Finite-automaton wrangling</h2>
+    <p>Quamina works by compiling the Patterns into finite automata, then matching the Event fields by traversing them.
+    To handle multiple Patterns, Quamina merges the automata together, a technique that’s been well-studied in Computer Science for
+    decades. From a set-theoretic point of view it’s a union; an OR through Boolean lenses.  There’s really no limit in theory
+    for how many patterns you can merge, and Quamina has no problem at all with thousands.</p>
+    <p>There are two flavors of finite automata: Deterministic (DFAs) and Nondeterministic (NFAs). If you have a university
+    degree in CS they probably made you study this at some point. Weirdly, many people find the subject boring.</p> 
+    <p>I’m not going to explain the differences, if you want to know it’s easy to look up, and anyhow the story I want to tell
+    doesn’t need it. Here’s what the story needs:</p>
+    <ol>
+      <li><p>To implement wildcards and regular expressions, you need NFAs.</p></li>
+      <li><p>Matching data with DFAs is generally a whole lot faster than with NFAs.</p></li>
+      <li><p>There’s a well-known algorithm for transforming any NFA into a DFA that matches exactly the same data. It’s really a
+      lovely algorithm, you want to tickle it under its adorable little chin.</p></li>
+      <li><p>In some cases, the algorithm can be brutally expensive, along the lines of <code>O(2<sup>N</sup>)</code>.</p></li>
+    </ol>
+    <h2 id='p-2'>The benchmark from Hell</h2>
+    <p>I found a data file in the Wordle source code with 13K or so 5-letter words. I inserted a <code>*</code> at a random location
+    in each. To illustrate, here are the first five results: <code>aah*ed</code>, <code>aalii*</code>, <code>*aargh</code>,
+    <code>aar*ti</code>, and <code>abaca*</code>.</p>
+    <p>The benchmark is, you load these into a Quamina instance and measure how fast it is to load them, how much memory the
+    merged NFA consumes, and how many Patterns per second you can match.  Then you repeat the exercise, converting each NFA into
+    a DFA.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/06/14/Willie.png" alt="Willie Dixon" class="inline" />
+    <p>I loaded 10K Patterns in NFA form, but the NFA-to-DFA conversion got so brutal my patience only allowed me to load and
+    measure 300 in DFA form. (Which kind of gives away this article’s punchline but stick with me, the details are fun).</p>
+    <h2 id='p-5'>Willie Dixon</h2>
+    <p>He was a famous bluesman and I need help from him to explain my APIs.</p>
+    <p>Quamina’s latest PR adds APIs
+    to turn the NFA-to-DFA conversion on and off; it’s off by default. There are two <code>MatcherBuildMode</code> values,
+    <code>BuiltForComfort</code> and <code>BuiltForSpeed</code>. Which are out-takes from Willie’s 1959 song <cite>Built For
+    Comfort</cite>, and the lyrics go like this:</p>
+    <blockquote>
+      <p>Some people built like this, some people built like that,<br/>
+      The way I’m built, don’t you call me fat<br/>
+      Cause I’m built for comfort, I ain’t built for speed<br/>
+      …</p>
+    </blockquote>
+    <p>Willie was a big guy, way over six feet and not exactly slender. I know this because I interviewed him once, but that’s
+    another story.  Lots of others have covered this tune, most of whom are, um, well-rounded.</p>
+    <p>Speaking of which… here is Quamina’s memory consumption in NFA mode.</p>
+    <img src="Comfort-size-in-mb.png" alt="Memory cost of many merged NFAs" />
+    <p>The memory cost is pretty well linear in the number of patterns. For 10K patterns Quamina uses something over 25M which feels
+    kind of reasonable to me.</p>
+    <p>Here’s the story for DFAs.</p>
+    <img src="Speed-size-in-mb.png" alt="Memory cost of many merged DFAs" />
+    <p>I haven’t run regressions or anything and I don’t think that’s actually <code>O(2<sup>N</sup>)</code>, but the second
+    derivative is solidly positive, which in simple English means “doesn’t scale”.</p>
+    <p>Now let’s look at the Pattern-addition time for NFAs and then DFAs.</p>
+    <img src="Comfort-msec-per-AddPattern.png" alt="Time cost of merging many NFAs" />
+    <img src="Speed-msec-per-AddPattern.png" alt="Time cost of merging many DFAs" />
+    <p>Once again, the NFA cost increases more or less linearly (albeit interestingly jagged), while for DFAs, look at that
+    second derivative.  This was what eventually made my patience give out and limit the DFA run to 300 Patterns.</p>
+    <p>Now let’s look at the payoff, the number of Event matches/second in NFA- and DFA-land.</p>
+    <img src="Comfort-matches-per-second.png" alt="Matching speed of many merged NFAs" />
+    <img src="Speed-matches-per-second.png" alt="Matching speed of many merged DFAs" />
+    <p>The NFA performance degrades at something like <code>O(N<sup>-1</sup>)</code>, but DFAs just don’t care. After a few lurches
+    it rolls along at between 500 and 600K/second. Not bad, and based on experience with huge DFAs that were built from
+    exact string matches, my belief is that the matching speed would eventually drift down, but slowly, not remotely a linear
+    function of the number of Patterns.</p>
+    <h2 id='p-3'>Not just pictures but numbers too</h2>
+    <p>It was maybe a little unfair to compare 10K NFAs against only 300 DFAs, so let’s focus in.
+    (This is on a 2023 M2 MacBook Pro.)</p>
+    <table>
+      <tr valign="top" align="center"><td class="empty"></td><th colspan="3">300 Patterns</th></tr>
+      <tr valign="top"><td class="empty"></td><th>Memory</th><th>Add-Pattern time</th><th>Matches/sec</th></tr>
+      <tr align="center"><td>NFAs</td><td>860K</td><td>0.1 ms</td><td>222K</td></tr>
+      <tr align="center"><td>DFAs</td><td>45M</td><td>7.7 sec</td><td>404K</td></tr>
+      <tr valign="top" align="center"><td class="empty"></td><th colspan="3">10K Patterns</th></tr>
+      <tr align="center"><td>NFAs</td><td>27M</td><td>2.3 ms</td><td>21K</td></tr>
+    </table>
+    <p>That’s pretty shocking stuff. 10K NFAs occupy less memory than the DFAs equivalent to 300 NFAs.
+    And the Add-Pattern time, which is totally dominated by the NFA-to-DFA logic, is getting into intractable territory.
+    So why would anyone mess with the DFA conversion? Because it matches data twice as fast!</p>
+    <h2 id='p-4'>Practical advice for Quamina users</h2>
+    <p>First, if you’re a normal human being and only matching a handful of patterns against a few Events/second, ignore all this
+    and just take the defaults, Quamina latency will vanish in the static.
+    If you’re matching lots of numeric and string values against many Events/second, don’t lose any sleep, keep on packing in the Patterns
+    and Quamina probably won’t slow down enough for you to even notice.</p>
+    <p>In theory you’d eventually get into memory trouble but in my considerable experience with Quamina and its AWS-built predecessor
+    <a href="/ongoing/When/202x/2022/09/02/Hello-Ruler">Event Ruler</a>, you have to be venturing into
+    extreme-craziness territory for that to happen. (It did happen. An Amazon group added literally a million Patterns. It 
+    still ran way faster than anything else they could find.)</p>
+    <p>If you need to match wildcards or regexps, adding Patterns stops being free. The slowdown is roughly linear in the number of
+    Patterns and isn’t actually terrible, see the data above. But if you’re using a relatively small number of regexp Patterns, go
+    right ahead and turn on DFA conversion with “BuiltForSpeed” mode.</p>
+    <h2 id='p-6'>What next?</h2>
+    <p>There’s one minor Quamina feature that’s disabled in BuiltForSpeed mode, so I’ll need to fix that and do a release.</p>
+    <p>I bet there are still low-hanging fruits that could speed up the Hell benchmark, but anyone looking for those should
+    bear in mind that they’re fighting settled Computer Science, you’re never going to make NFA-to-DFA conversion reliably
+    linear.</p>
+    <p>But to be honest, Quamina is starting to feel fairly feature-complete.
+    I’d like to see a few adapters so you could use Quamina with Protobufs and Thrift and CBOR and other formats that
+    aren’t JSON.</p>
+    <p>But in fact Quamina doesn’t have that many users; I’ve only heard from a handful.  Who knows, maybe the problems you learn to solve
+    when you’re working at AWS, and most of the groups think millions of events per seconds is an ordinary workload, aren’t widely
+    applicable in the broader world of Open Source?</p>
+    <p>Which is to say, me working on Quamina isn’t helping that many people. At one level, I don’t care, because it’s been fun and
+    instructive.
+    I’d probably enjoy turning this “Quamina Diary” series into a monograph or small book if there were an interested publisher.</p>
+    <p>And thanks to everyone who’s been reading along.</p>
+</div></content></entry>
+
+<entry>
+ <title>Long Links (AI-free)</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/06/05/Long-Links' />
+ <link rel='replies'        thr:count='4'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/06/05/Long-Links#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/06/05/Long-Links</id>
+ <published>2026-06-05T12:00:00-07:00</published>
+ <updated>2026-06-10T11:40:51-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>Hey everyone, I know you’re overloaded because everything has      <a href='/ongoing/When/202x/2020/07/05/Too-Efficient'>become overly efficient</a>.  Long-form reading or writing     or art or music, who’s got time for that? Fortunately there are those who still do and here’s some if it. I hope one or two of the     link targets can chisel their way into your jammed schedule and bring with them joy or rage or another appropriate     feeling. Today’s curation has a lot of books and music and way more humor than usual. Also, a good electric wok</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>Hey everyone, I know you’re overloaded because everything has 
+    <a href="/ongoing/When/202x/2020/07/05/Too-Efficient">become overly efficient</a>.  Long-form reading or writing
+    or art or music, who’s got time for that? Fortunately there are those who still do and here’s some if it. I hope one or two of the
+    link targets can chisel their way into your jammed schedule and bring with them joy or rage or another appropriate
+    feeling. Today’s curation has a lot of books and music and way more humor than usual. Also, a good electric wok.</p>
+    <p>Now, let’s all take a couple of breaths and gingerly approach the A-word, namely “AI” (as understood in 2026).
+    Which is occupying much more of my attention and cognition than I would like, and there are gems embedded 
+    in the flood; granted, sparsely but they still add up.
+    I respect that many of you will have just fucking had it with that subject. So I shuffled that material off into 
+    <a href="/ongoing/When/202x/2026/06/08/Long-Links-AI">Long Links (AI)</a>, which you can drop by (or not) as you please.</p>
+    <h2 id='p-1'>Books</h2>
+    <p>One of the weirdest and flawed but still good things I’ve read this year is
+    <a href="https://en.wikipedia.org/wiki/The_Luminaries">The Luminaries</a>, written by Eleanor Catton back in 2013, a pretty dark
+    tale of murder and theft and love and oppression in a not-so-great corner of New Zealand during an 1866 gold rush. Really super
+    intense and hard to put down; even though it’s 900+ pages I never got bored.
+    But freakishly complicated and I was left puzzled by multiple plot elements. Fortunately (yay
+    Internet!) there’s 
+    <a href="https://115journals.com/2014/04/05/deconstructing-the-luminaries-a-timeline">Deconstructing The
+    Luminaries</a>, an explainer.</p>
+    <p>Other recent books: <cite>Platform Decay</cite>, minor Murderbot, but still worth reading. <cite>The Incandescent</cite> by
+    Emily Tesh, yet another highschool-for-magic book, only with the grownups in the foreground and the kids behind them.  Way more fun
+    than the last few instances of that genre. Also, sex. Finally worth mentioning: <cite>The Everlasting</cite> by Alix Harrow,
+    which started slow but eventually got a real grip on me; recommended.</p>
+    <p>I was in the library today and I always cruise past the “featured” table, where I saw
+    <a href="https://en.wikipedia.org/wiki/Nobody%27s_Girl_(memoir)">Nobody’s Girl</a> by Epstein victim Virginia Giuffre (R.I.P.)
+    and
+    <a href="https://en.wikipedia.org/wiki/Empire_of_AI">Empire of AI</a>, Karen Hao’s huge takedown of OpenAI and Altman. But
+    I just now do not have the spoons. Maybe later.</p>
+    <p>Hmm, they tell me men can write books too. Must look into some.</p>
+    <h2 id='p-2'>Political economy</h2>
+    <p>I and many others are deeply discontented with the current flavor of late-stage capitalism, that “late-stage” a
+    conscious callout to terminal illness. So do we really want to do away with Capitalism as
+    such, or retain it but try to regulate away inhumane behaviors and effects? Or what? Let’s not forget that there are still
+    people out there proud to call themselves Socialists and their take is that Capitalism can’t be fixed and must be replaced. With
+    what?</p>
+    <p>Anyhow, if you want to hear what these people are saying the place to go is
+    <a href="https://jacobin.com">Jacobin</a>. I’m not a regular visitor but when I do drop by I’m starting to hear the phrase
+    “market socialism”. Thus
+    <a href="https://jacobin.com/2026/05/market-socialism-capitalism-ownership-exploitation">How Socialism in the 21st Century
+    Could Work</a>. The tone is kind of nonspecific and academic but it’s part of a conversation that
+    I think the (large, growing) mad-at-Capitalism demographic needs to have.</p>
+    <p>Speaking of the pathologies of late-stage capitalsm, Paul Krugman’s
+    <a href="https://paulkrugman.substack.com/p/bezos-backlash-and-zombies">Bezos, Backlash and Zombies</a> describes a Bezos TV
+    appearance in which Jeff said some really dumb things. Which is a bit surprising because while fewer and fewer people seem to like
+    him, most people think he’s pretty smart. Krugman tears apart Bezos’s deep and broad misunderstanding of how taxation works. He
+    attributes it to what he calls “Billionaire Brain”; the notion is plausible. The discussion goes on into popular perceptions
+    of business in general, technology in particular. And (*sigh*) AI. Good stuff.</p>
+    <p>People like reading books on screens and most public libraries now support that. I believe a high proportion of such loans go
+    through <a href="https://libbyapp.com/">Libby</a>, which is what I use.
+    But the publishers don’t actually sell e-books to libraries, they rent them,
+    a price for a fixed number of loans.  And as you might expect, that price keeps going up, to the point that public libraries all
+    over the world are hurting. So,
+    <a href="https://www.publishersweekly.com/pw/by-topic/industry-news/libraries/article/100488-library-organizations-urge-big-five-to-address-digital-pricing.html">Library Orgs Urge Big Five to Address Digital Pricing</a>.
+    Paper books are looking better and better.</p>
+    <p>It turns out that America’s capital is a good experimental platform for crime research. Check out
+    <a href="https://www.niskanencenter.org/washington-dc-crime-decline-and-its-lessons-for-american-policing/">Washington, D.C.’s
+    crime decline and its lessons for American policing</a> from the Niskanen Center. Guess what: There’s little correlation
+    between the number of cops and the amount of crime.  Also, when Trump sent in the National Guard to stand around with their
+    thumbs up their asses being visible, the effect was tiny and only on “property crimes of opportunity”. Does that mean graffiti?</p>
+    <h2 id='p-4'>Funnies</h2>
+    <p>Staying in the political lanes, here’s an
+    <a href="https://talkingpointsmemo.com/where-things-stand/bessent-forced-to-defend-treasurys-prep-work-for-a-250-bill-with-trumps-face-on-it">evening
+    briefing</a> from <cite>Talking Points Memo</cite>, my favorite US-Politics blog.  It’s got two unintentional jokes. First of
+    all, this little sequence on the subject of Trump wanting to print a $250 bill with his face on it.</p>
+    <blockquote><p>… two political appointees at the Treasury Department … repeatedly urged staff at the agency’s Bureau of Engraving
+    and Printing to prepare prototypes of the note, according to the employees, who said the move raised concerns because federal
+    law currently allows only deceased people to appear on bills.</p></blockquote>
+    <p>There’s more than one way to read that… I’m suddenly starting to see the advantages of printing that bill.</p>
+    <p>Then, a little further down, it turns out JD Vance gave a speech at the Air Force Academy, from which:</p>
+    <blockquote><p>So as AI transforms the battlefield — in some ways positively, in some ways not — I ask that you be jealous and
+    selfish about your role as a decision-maker in warfare,” he continued. “Use technology to make you better, but never submit to
+    it. You are the masters of warfare…</p></blockquote>
+    <p>Yeah well Bob wrote a whole song about
+    <a href="https://www.bobdylan.com/songs/masters-war-mono/">Masters Of War</a> and got the trade-offs about right.
+    JD’s cluelessness is mountainous.</p>
+    <p>OK, here’s an organized-crime story that makes me smile because it’s just so hilariously blatant. It’s like this: Worldwide,
+    cricket is a big-money sport. Any readers who come from India or English-speaking southern-hemisphere countries are nodding
+    because well of course. Cricket in Canada is <em>not</em> a big deal; our South Asian and Caribbean immigrants may be seen
+    playing in the park on weekends with nobody but spouses and kids are watching.</p>
+    <p>Nonetheless the International Cricket Council has been sending a few million dollars a year to Cricket Canada to develop the sport
+    hereabouts. But no longer. It seems that Cricket Canada has been a comical hotbed of theft, fraud, extortion, and
+    match-fixing. Recently gunshots were fired at its president’s house. The TV segments have been hilarious, with
+    leaders of Canada’s cricket establishment sweatily denying everything while looking over their shoulders. Anyhow, if you like
+    colorful true-crime drama, start with
+    <a href="https://www.cbc.ca/news/canada/icc-suspends-cricket-canada-9.7218815?cmp=rss">Cricket Canada surprised after
+    “unexpected” suspension by governing body over breaches of membership</a>.</p>
+    <h2 id='p-6'>Photography</h2>
+    <p>I visit <a href="https://petapixel.com">Petapixel</a> more days than not; it’s got the goods in the world of cameras and
+    photography. There are solid camera and lens reviews, and a lot of focus on individual photographers. Here’s
+    <a href="https://www.dpreview.com/articles/8507786637/the-photographer-who-never-stopped-chasing-the-perfect-shot">The
+    photographer who never stopped chasing the perfect shot</a> (and, on the evidence, got plenty). Next, Jeff Austin has been
+    shooting the same parts of Tokyo through vintage glass for decades; he contributed
+    <a href="https://petapixel.com/2026/06/06/twenty-years-one-city-what-tokyo-taught-me-about-patience-and-glass/">Twenty Years,
+    One City: What Tokyo Taught Me About Patience and Glass</a> and has a Web site,
+    <a href="https://www.tokyoforgeries.com/">Tokyo Forgeries</a>.</p>
+    <p>Not just metal and glass; here’s an interesting camera bag: 
+    <a href="https://petapixel.com/2026/05/21/the-pilot-88-is-a-limited-edition-wotancraft-messenger-designed-by-chris-niccolls/">The
+    Pilot 88 Is a Limited Edition Wotancraft Messenger Designed by Chris Niccolls</a>. Finally, the story of Edith
+    Tudor-Hart, in
+    <a href="https://petapixel.com/2026/05/03/edith-tudor-hart-photographer-cambridge-five-soviet-spy/">The Hidden History of a
+    British Female Photographer Turned Soviet Agent</a>.</p>
+    <h2 id='p-7'>Disturbing Evidence</h2>
+    <p>Now, I said I liked Petapixel, and I do. But there’s a dark side; one 
+    can’t help notice the many <em>many</em> stories about the terrible
+    things that happen to photographers. Then there’s the sub-genre of terrible things that
+    happen in the context of wedding photography, which seems a swamp of suffering and pain. Well… why not both?
+    <a href="https://petapixel.com/2026/05/26/wedding-photographer-seriously-injured-after-being-stabbed-by-guest/">Wedding
+    Photographer Seriously Injured After Being Stabbed by Guest</a>.  I mean, it goes on and on:
+    <a href="https://petapixel.com/2026/05/26/photographer-bitten-by-shark-or-sea-lion-during-surf-competition/">Photographer
+    Bitten by “Shark or Sea Lion” During Surf Competition</a> and
+    <a href="https://petapixel.com/2026/06/04/woman-pleads-guilty-to-manslaughter-after-gun-themed-polaroid-photo-shoot-ends-with-photographers-death/">Woman Pleads Guilty to Manslaughter After Gun-Themed Polaroid Photo Shoot Ends with Photographer’s Death</a>!
+    Mommas, don’t let your babies grow up to be photogs.</p>
+    <h2 id='p-3'>Personalities &amp; misc</h2>
+    <p>In the world of Big Biz generally and Big Tech specifically, PR leaders are very near the center of everything. CxOs are
+    basically never allowed to say anything that isn’t carefully scripted in advance; PR does the scripting. When somebody fucks up
+    and things (including the share price) go off the rails, PR owns the problem.</p>
+    <p>During the years when I was a blogging in a
+    relatively unsupervised way while employed in BigTech, I
+    became pretty intimate with some of those PR folks.
+    I remember not too long after I joined Amazon, my manager, a really good person who’d gone to lots of work to hire me,
+    grabbed me in the hallway and said “PR is pissed about what you wrote about Microsoft” and I said “Don’t worry, talking PR
+    people down off the ledge is one of my core competences.” He looked worried: “Well, good luck.” But it was OK.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/06/05/dont-be-evil.png" alt="Cover of Don’t Be Evil by claire Stapleton" class="inline" />
+    <p>Anyhow, Claire Stapleton was in PR at Google during the glory years, and was close to the center of things. She got laid off
+    in 2023 and wrote <a href="https://techsupport.substack.com/p/game-over">game over - some thoughts on layoffs and life</a>.
+    A few things in there widened my eyes and I suspect they’ll do the same for anyone else who’s been in the Google ecosystem.
+    Anyhow, recently she
+    <a href="https://techsupport.substack.com/p/the-returning-cog">wrote a book</a> which I have to say looks pretty promising.</p>
+    <p>JA Westenberg’s <a href="https://www.joanwestenberg.com/p/on-wintering">On wintering</a> speaks to me. One of the nice things
+    about being (mostly) retired is I get lots of time for this. It’s hard to see how the machineries of Late Capitalism could allow
+    this kind of space though; another reason to find something better.</p>
+    <p>At least once a year I point excitedly at something by Paul Ford; this time it’s
+    <a href="https://ftrain.com/canons">Canons</a>. Beautiful stuff.</p>
+    <h2 id='p-11'>Product pitch</h2>
+    <p>For the last few years, we’ve had induction stovetops, which I totally love: Responsive, hot, easy to clean, low carbon load.
+    but, I like to stir-fry and you can’t really balance a wok on an induction top. So we picked up an
+    <a href="https://abangdun.com/products/induction-wok-cooktop-induction-burner-1700w-85v120v-electric-wok-curved-surface-electronic-cooker-concave-stoves">Abangdun 1700W 100V～185V Induction Cooktop Concave Curved Surface 2026 New Electric Stove Wok</a>.
+    It’s great; I stir-fry a couple times a month and get good reviews. Its built-in fan is kinda noisy.</p>
+    <h2 id='p-8'>Music</h2>
+    <p>Recently I ran across
+    <a href="https://thesleeveens.com/tour/">The Sleeveens</a>, Irish punks in Nashville. I said “punk” and I mean it, it’s nearly
+    the pure stuff, somewhere on the Clash-to-Ramones axis, and like those bands, the tunes are good, and like the Clash, the lyrics
+    are political and gonna make you sit up. Their recent outing
+    <a href="https://thesleeveens.bandcamp.com/album/national-anthem">National Anthem</a> is just one banger after another. My
+    favorites are <cite>If I Was A Casual</cite> and <cite>Cowboy Queen</cite> and then there’s the title track, which begins “Burn
+    your fuckin’ country to the ground in the name of love…” oh yeah.</p> 
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/06/05/Sleeveens.png" alt="The Sleeveens" />
+    <p>Now let’s lean into a fertile field of musicological scholarship: Guitar solos!  <cite>Rolling Stone</cite> let their dimbulb
+    flag fly with 
+    <a href="https://www.rollingstone.com/music/music-lists/best-guitar-solos-1235519961/st-vincent-rattlesnake-1235520236/">The
+    100 Greatest Guitar Solos Of All Time</a>, which unforgivably omits Ry Cooder on <cite>Amandrai</cite>, Susan Tedeschi on
+    <cite>Pity the Fool</cite>, David Lindley on <cite>Do Ya Wanna Dance</cite>, Neil Young on <cite>Love To Burn</cite>, Megan
+    Lovell on <cite>Preachin’ Blues</cite>, also <i>[Tim, enough -Ed.]</i>.</p>
+    <p>But wait, there’s more. Not to be outdone,
+    <a href="https://consequence.net">Consequence</a> (of which I know nothing) came up with
+    <a href="https://consequence.net/list/best-guitar-riffs-21st-century/">70 Best Guitar Riffs of the 21st Century (So
+    Far)</a>, which is full of smiles. I have to confess that I’d heard less than 10% of these.</p>
+    <p>But anyhow Japanese metallistas Boris, about whom I’ve blogged not
+    <a href="/ongoing/When/201x/2011/10/13/Pictures-of-Wata">once</a>, not
+    <a href="/ongoing/When/201x/2018/05/17/SotD-Attention-Please">twice</a>, but
+    <a href="/ongoing/When/201x/2017/10/13/Live-Metal">thrice</a>, are on both lists! #61 on the solos, #7 on the riffs.
+    Which they noticed, and took a bow. Here’s
+    <a href="https://boris.bandcamp.com/album/akuma-no-uta-2">Akuma no Uta</a> and also
+    <a href="https://www.youtube.com/watch?v=QZ-BTzNsHnA">a pretty hot live capture</a>.</p>
+    <p>Finally, if you like Arvo Pärt and art that strains at the edges (what other kind is worth liking?) check out
+    <a href="https://www.youtube.com/watch?v=XvEEeGqPsVA">Robert Wilson’s “Adam’s Passion” (Music of Arvo Pärt)</a>. An hour and a
+    half of fine music, well-played, and live human movement following Pärt’s slow pulse. Nakedness is involved.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/06/05/Adams-Passion.png" alt="Perfomers in Robert Wilson’s “Adam’s Passion”" /> 
+    <h2 id='p-9'>Tech</h2>
+    <p>I gather that Marcin Wichary is name to conjure with in design circles; he’s recently launched
+    <a href="https://unsung.aresluna.org">Unsung, my blog about software craft and quality</a> and boy, it’s outstanding.
+    A lot of it is simple celebrations of typographical or UI excellence, but what got my attention was a polite-but-savage takedown
+    of a recent Photoshop release: Parts
+    <a href="https://unsung.aresluna.org/photoshops-challenges-with-focus-pt-1/">1</a> and
+    <a href="https://unsung.aresluna.org/photoshops-challenges-with-focus-pt-2/">2</a>.
+    You’ll learn a lot about how to think about UI construction by reading this.</p>
+    <p>Armin Ronacher, to whom it seems I’ve been linking a lot recently, offers
+    <a href="https://lucumr.pocoo.org/2026/4/28/before-github/">Before GitHub</a>, which to be fair contains equal parts of Current GitHub
+    and After GitHub thinking, pretty well all of which seems good to me. Single points of failure are just bad, we should know
+    that now, particularly when they start failing.</p>
+    <p>Finally, have a look at 
+    <a href="https://www.construction-physics.com/p/the-age-of-the-amplifier">The Age of the Amplifier</a> by Brian Potter at a Web
+    site called “Construction Physics”. There are several different kinds of amplifiers, and most of the interesting ones were developed
+    at Bell Labs during the 20<sup>th</sup> century. This is a history of that, based on the premise that “Amplifiers in general are
+    important”. They are! The history is interesting, assuming you know what “voltage” and “current” are. It pleases me that people
+    will still write long-winded pieces about narrow slices of history and apparently have fun doing it.</p>
+    <h2 id='p-10'>That’s all folks</h2>
+    <p>Well except for the companion aggregation of <a href="/ongoing/When/202x/2026/06/08/Long-Links-AI">Long AI-related Links</a>.</p>
+    <p>Until next time.</p>
+    
+</div></content></entry>
+
+<entry>
+ <title>Long Links (AI)</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/06/08/Long-Links-AI' />
+ <link rel='replies'        thr:count='5'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/06/08/Long-Links-AI#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/06/08/Long-Links-AI</id>
+ <published>2026-06-08T12:00:00-07:00</published>
+ <updated>2026-06-10T11:35:01-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology/AI' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='AI' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>The piece you’re now looking at exists because     <a href='/ongoing/When/202x/2026/06/05/Long-Links'>my latest “Long Links”</a> curation of interesting not-lightweight material     included quite a few focused on our dominant malaise, namely you-know-what, I mean it’s in the title.  Plenty of people     have had more than enough of this discourse and I thought I’d spare them by moving these bits over here</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>The piece you’re now looking at exists because
+    <a href="/ongoing/When/202x/2026/06/05/Long-Links">my latest “Long Links”</a> curation of interesting not-lightweight material
+    included quite a few focused on our dominant malaise, namely you-know-what, I mean it’s in the title.  Plenty of people
+    have had more than enough of this discourse and I thought I’d spare them by moving these bits over here.</p>
+    <p>Let’s start with raw data: Is AI improving people’s lives?
+    <a href="https://dustycloud.org">Christine Lemmer-Webber</a> was kind enough to
+    <a href="https://social.coop/@cwebber/116698488515037678">ask the world</a> or at least the Mastodon part of it, and the results
+    weren’t subtle or nuanced at all.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/06/08/CL-W-poll.png" alt="“genAI has made my life” poll by Christine Lemmer-Webber" />
+    <p>I encourage everyone to follow the link and read the conversation that broke out around that poll. It will not cheer you
+    up.</p>
+    <p>And for my money that’s the most important take-away I’m offering today. Whether we’re using it or not, “AI” is not a thing
+    that is making us happy.</p>
+    <h2 id='p-1'>Where I stand</h2>
+    <p>Currently, I’m a contra. GenAI is being pushed by terrible people who are trafficking in lies and abusing the planet, and
+    should their far-fetched dreams come true the consequences would be terrible for most people. Because they want to
+    disempower knowledge workers, remove them from the economy, and cast them loose on the tender mercies of the market.</p>
+    <p>The reason for that “Currently” in the paragraph above is that we’re living in a liminal space where everybody I know who has
+    any brains is convinced that there’s a bubble inflated by trillions of dollars of speculative and likely doomed investment.  It’s <!---->
+    very near popping, and the consequent miasma of fear and greed makes it absolutely impossible to have a reasonable
+    discussion of what GenAI might be good for and might not.</p>
+    <p>The onrushing terrible trio of IPOs (SpaceX, OpenAI, Anthropic) feels to me like when there’s a 9.2 earthquake 50km offshore and
+    so far no tsunami has been detected but everyone’s glancing nervously at the horizon.</p>
+    <p>So anyhow, for now I’m not going to use any GenAI tools myself. Post-pop, it may develop that there ways it can be
+    ethical and useful, albeit at an immensely smaller scale than the LLM edgelords are pitching. We’ll see.</p>
+    <p>I have been accepting human-curated Claude-driven PRs on my Quamina hobby project. For which I’ve already been called a Nazi
+    by someone whose views I take seriously. (But I really don’t think I am.) I do think that when the dust settles,
+    there will be a role for LLMs in software development, but I also think we haven’t figured out yet what it is.  I
+    absolutely do not believe for a second the claims of 10x improvements in “productivity” (I do not think that word means what you
+    think it means).</p>
+    <p>Having said all that, here are morsels of gold from the torrent of AI dross that wants to flood every fucking one of my
+    input channels.</p>
+    <h2 id='p-3'>Critiques</h2>
+    <p>Bram Cohen says 
+    <a href="https://bramcohen.com/p/the-cult-of-vibe-coding-is-insane">The Cult Of Vibe Coding Is Insane</a>. Yup.
+    Kyle Kingsbury writes a long sad series: <a href="https://aphyr.com/posts/411-the-future-of-everything-is-lies-i-guess">The
+    Future of Everything is Lies, I Guess</a>. He seems to come out about where I do: Not going there for now.</p>
+    <p>Dr Bethan Tovey-Walsh offers us <a href="https://linguacelta.com/blog/2026/05/LLMs.html">The Community is the
+    Achievement; the Achievement is the Community</a>, subtitled <cite>An ethical love-letter to distributed technology
+    communities</cite>.
+    It’s long and defies summarization, but light-hearted, a pleasant read. Its bottom line is, and I quote: “The right thing, in my
+    view, for tech communities and projects to do is to reject contributions of LLM-generated content.” Recommended even if you
+    disagree.</p>
+    <p>Wow, here’s one that hits hard, academic output from big-name universities:
+    <a href="https://www.researchgate.net/publication/403562106_AI_Assistance_Reduces_Persistence_and_Hurts_Independent_Performance?utm_source=substack&amp;utm_medium=email">AI Assistance Reduces Persistence and Hurts Independent Performance</a>.
+    What’s shocking is that it doesn’t take that much AI exposure before the symptoms start appearing.</p>
+    <p>Corey Quinn’s day job is helping people lower their AWS bills, and he markets it (very successfully) by writing snark-heavy
+    essays on more or less anything cloud-related generally and AWS-focused specifically. It seems he’s got a new AI-oriented platform
+    called “Artificial Confidence”, whence
+    <a href="https://artificialconfidence.com/p/artificial-confidence-xai-the-neocloud">Artificial Confidence: xAI, the
+    Neocloud</a>. Corey is a gifted polemicist and xAI is a soft target. It does not come off well. Since xAI is a major chunk of
+    the looming SpaceX IPO, this piece is highly relevant, possibly to your retirement savings.</p>
+    <p>I know
+    <a href="https://nooneshappy.com/article/appearing-productive-in-the-workplace/">Appearing Productive in The Workplace</a>
+    was widely posted and quite likely you’ve seen it; if you haven’t, go read it and if you already have, another visit
+    might be beneficial.</p>
+    <h2 id='p-2'>Bug finding</h2>
+    <p>From the Linux-kernel world, there’s
+    <a href="https://www.theregister.com/software/2026/03/26/linux-kernel-czar-says-ai-bug-reports-arent-slop-anymore/5226256">AI
+    bug reports went from junk to legit overnight, says Linux kernel czar</a> and
+    <a href="https://lwn.net/Articles/1065620/">Significant raise of reports</a>, which says about the same thing with a couple of
+    plausible and important conclusions.
+    There was a report about Linus Torvalds criticizing the inflow,
+    (<a href="https://lkml.org/lkml/2026/5/17/896">see here</a>) but it turns out he was after the practice of LLM-script
+    kiddies reporting them to the “secret” mailing list. Which is a no-brainer because if an LLM that everyone can run finds a bug,
+    then it’s obviously not a secret.</p>
+    <p>Anyhow, looks like GenAI can be put to good use finding vulnerabilities.</p>
+    <h2 id='p-5'>War stories and advice</h2>
+    <p>Assuming that post-bubble it becomes possible to use AI in coding without being called a Nazi, we have to face the fact
+    that we really don’t have any consensus best practices for doing that.  So I enjoy reading narratives of people who describe
+    what they did, in detail (no architecture astronautics) what worked, and what didn’t.</p>
+    <p>Lalit Maganti’s
+    <a href="https://lalitm.com/post/building-syntaqlite-ai/">Eight years of wanting, three months of building with AI</a> which
+    centers around building an SQL parser that exactly matches SQLite’s. That’s a freaking hard problem and I think Maganti’s
+    narrative has pointers to a plausible future.</p>
+    <p>The redoubtable and loud-voiced Daniel Stenberg of Curl fame offers us
+    <a href="https://daniel.haxx.se/blog/2026/06/10/a-human-in-control/">A Human In Control</a>, which says about what the title
+    does, with feeling.</p>
+    <p>Nelson Minar posted
+    <a href="https://nelsonslog.wordpress.com/2026/03/18/first-impressions-of-jules-googles-coding-agent/">First impressions of
+    Jules, Google’s coding agent</a>; this will probably be interesting to those living in the Claude or Copilot territory.</p>
+    <p>Rails is regarded as a good framework for building certain classes of Web site. Normally, it is considered as Ruby code and
+    executed using the Ruby runtime. Sam Ruby (the surname is a coincidence) has been doing remarkable work arranging for
+    Rails app specifications to be executed by other runtime platforms, notably including Typescript, Rust, and Elixir
+    with no ruby (except for Sam) involved.</p>
+    <p>He relies heavily on GenAI and describes his findings in 
+    <a href="https://intertwingly.net/blog/2026/05/22/The-Drucker-Inversion.html">The Drucker Inversion</a>.
+    It’s deep, thoughtful stuff.</p>
+    <p>Joe Magerramov’s
+    <a href="https://blog.joemag.dev/2026/05/the-valley-of-calm.html">The Valley of Calm</a> makes perfect sense to me because I
+    spent some years inside AWS. His basic point is that if GenAI ends up increasing the number of commits, your CI/CD pipeline is
+    likely to cave under pressure. Looks to me like he’s right, and his proposals for how to address the problem sound plausible.
+    “Plausible” isn’t good enough, this is another area where we just don’t yet know what the best practices are, and there’s only one way
+    to find out.</p>
+    <p>Hey, two AWS people in a row: Brooke Jamieson is a Developer Advocate, what I used to be at Google.
+    <a href="https://medium.com/@brookejamieson/make-your-coding-agent-opinionated-10ca175801a9">Make Your Coding Agent
+    Opinionated</a> begins “I’ve been using coding agents daily for over a year across Kiro, Claude Code, Cursor, and Codex.”
+    Here are her lessons.</p>
+    <h2 id='p-6'>That’s all folks</h2>
+    <p>We can argue with each other about how best (or if at all) to use this technology. Maybe it’s all irrelevant or (I think) at
+    best a side-show until the AI-bubble greed and fear dissipates. Which can’t come too soon. Maybe it’s useful to work
+    on the problem in standby mode while we wait for the bubble to collapse.</p>
+    <p>I’m pretty sure it will.</p>
+</div></content></entry>
+
+<entry>
+ <title>XML and JSON in 2026</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/06/01/XML-and-JSON-in-2026' />
+ <link rel='replies'        thr:count='15'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/06/01/XML-and-JSON-in-2026#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/06/01/XML-and-JSON-in-2026</id>
+ <published>2026-06-01T12:00:00-07:00</published>
+ <updated>2026-06-02T16:08:22-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology/XML' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='XML' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology/Software' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Software' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>The best thing about long-lived incumbent technologies like JSON and XML     is that nobody really has to think about them much any more. Except for, I do occasionally, because     while I’m <a href='/ongoing/When/200x/2008/11/22/Not-the-Inventor-of-XML'>not the inventor</a> of either, my     name’s on the front of both official specifications. Hey, it’s JSON’s 25th birthday, what a run!     And what ever happened to XML? Let’s shake off the dust and have a look</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>The best thing about long-lived incumbent technologies like JSON and XML
+    is that nobody really has to think about them much any more. Except for, I do occasionally, because
+    while I’m <a href="/ongoing/When/200x/2008/11/22/Not-the-Inventor-of-XML">not the inventor</a> of either, my
+    name’s on the front of both official specifications. Hey, it’s JSON’s 25th birthday, what a run!
+    And what ever happened to XML? Let’s shake off the dust and have a look.</p>
+    <h2 id='p-1'>JSONiana</h2>
+    <p><a href="https://datatracker.ietf.org/doc/html/rfc8259">RFC 8259</a> is now nine years old and, like all the RFCs, is
+    immutable. And, as is usually the case, a
+    <a href="https://errata.rfc-editor.org/search/?rfc_number=8259">list of errata</a> has built up over the years.</p>
+    <p>Until a few days ago, many of the errata apparently hadn’t ever been looked at for a period
+    measured in years. Now they’ve all been rejected or accepted. Despite a couple having been marked “Held for Document Update”,
+    nobody is interested in writing a superseding RFC. There are already enough other JSON specs
+    [<a href="https://www.json.org/json-en.html">1</a>][<a href="https://ecma-international.org/publications-and-standards/standards/ecma-404/">2</a>]
+    but fortunately they all say the same thing.</p> 
+    <p>Which is to say, JSON is what it is and will never be improved or changed in any way. Among other things, there are literally
+    billions of instances of JSON-reading software out there, most of them embedded in dumb low-rent devices that will never be
+    updated.</p>
+    <p>Granted, it’s irritating that JSON doesn’t have comments (ProTip: Add a “comment” field to your messages) and makes it
+    hard to get the commas right and doesn’t distinguish between the different flavors of numbers and doesn’t have date/time literals and
+    <a href="https://www.rfc-editor.org/rfc/rfc9839.html">allows junk Unicode</a>. Not gonna be fixed. Which is OK because
+    empirically, it’s good enough.  Probably a few megabytes of JSON will have flowed back and forth between your phone or computer
+    and the Net while you’ve been reading this.</p>
+    <p>Of course, there’s YAML and TOML and CBOR and Thrift and Avro and Protobufs and Markdown and more. Maybe for your app one of
+    them is a better choice than JSON.</p>
+    <p>Oh wait, I forgot, there is a new thing:
+    <a href="https://datatracker.ietf.org/wg/jsonschema/about/">Work is under way</a> to write an RFC specifying JSON Schema,
+    which is quite widely used but not well specified.  Good luck to the people working on that; I’m not one of them.</p>
+    <p>The best thing about JSON is nobody really has to think about it any more.</p>
+    <h2 id='p-2'>XMLitude</h2>
+    <p>Last month, on the “xml-dev” mailing list,
+    <a href="https://en.wikipedia.org/wiki/Elliotte_Rusty_Harold">Elliotte Rusty Harold</a> remarked, on the subject of XML
+    generally: “Count me as one
+    of the people who thinks it’s mostly obsolete and ultimately a failed experiment. People don’t want or need markup
+    that’s designed to make documents easier for computers to read but harder for humans to write.”</p>
+    <p>I replied and here’s an expanded version of what I wrote:</p>
+    <p>Irrespective of the current uptake, and seen as an experiment, XML has been 
+    a success.  It proved that:</p>
+    <ol>
+      <li><p>You can have a data interchange format that is radically independent
+      of your computer architecture, operating system, programming language, and
+      application.</p></li>
+      <li><p>The only sane text standard for modern computing is Unicode, which in
+      practice is affordable and reasonably straightforward to use.</p></li>
+    </ol>
+    <p>Prior to 1996, neither of these things were widely believed. The only
+    “interoperable” data format was ASN.1, which is horrible and lacked quality
+    software support.  The resistance to Unicode was significant and
+    widespread, and adoption was disappointing. Today, #1 and #2 above are the
+    (low) bar to entry for any data packaging technology.</p>
+    <p>As for current use, I guess “office" document formats are XML for the long
+    haul
+    [<a href="https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">3</a>]
+    [<a href="https://en.wikipedia.org/wiki/OpenDocument#Application_support">4</a>], but relatively few developers ever have to
+    look inside them (thank goodness).  XML remains a de-facto standard for text-oriented humanities computing
+    [<a href="https://tei2026.tei-c.org">5</a>], and for
+    legislative data processing [<a href="https://www.legislation.gov.uk/developer/formats/xml">6</a>][<a
+    href="https://www.elegislation.gov.hk/datagovhk/hkel_data-dictionary_en.pdf">7</a>][<a href="https://www.govinfo.gov/app/search/curated/uslm">8</a>].
+    At one point it dominated things like
+    aircraft maintenance manuals, don’t know if that’s still true. RSS and Atom
+    aren’t what they once were, but are far from gone; they’re how I drive my own personal news-reading.
+    Then of course there’s
+    <a href="https://en.wikipedia.org/wiki/EPUB">EPUB</a>; do you read books on screens?
+    And are
+    <a href="https://en.wikipedia.org/wiki/XBRL#Lack_of_accuracy">XBRL</a> and
+    <a href="https://en.wikipedia.org/wiki/Universal_Business_Language#Global_Adoption_and_Implementation">UBL</a> still things?</p>
+    <p>It is true that there are few-to-no new applications that I know
+    of that have much reliance on XML.</p>
+    <p>Eh, it’s OK, it had a good run and moved the needle.  It’ll keep a few
+    folks employed for the foreseeable future.</p>
+    <p>Like JSON, the best thing about XML is nobody has to think about it any more.  Oops, if you got here I guess you just
+    did. Sorry bout that.</p>
+</div></content></entry>
+
+<entry>
+ <title>Tab Trick</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/05/24/Tab-Lore' />
+ <link rel='replies'        thr:count='5'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/05/24/Tab-Lore#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/05/24/Tab-Lore</id>
+ <published>2026-05-24T12:00:00-07:00</published>
+ <updated>2026-05-24T11:36:06-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology/Web' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Web' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>A person watching over my shoulder asked “How are you switching     around so fast?” and I realized that while most readers here know this trick,     some may not, and it’s awfully useful</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>A person watching over my shoulder asked “How are you switching
+    around so fast?” and I realized that while most readers here know this trick,
+    some may not, and it’s awfully useful.</p>
+    <p><i>[Update: I published an earlier version of this
+    <a href="/ongoing/When/201x/2012/04/22/Tab-Lore">in 2012</a> but have got that “How do you” question a couple times recently, so
+    maybe it’ll still be new news to a few people.]</i></p>
+    <p>In all the browers I use, Command-1 takes you to your leftmost tab,
+    command-2 to the next one over, and so on up to Command-8. Command-9 selects the
+    rightmost tab. Also, you can right-click on a
+    tab and “pin” it; which shrinks it down to just the favicon, and moves it as far left as
+    it can go.</p>
+    <p>So the trick is, pin the same heavily-used tabs in the same place, and
+    leave them there forever.  In my main browser (currently Safari) it’s like
+    this: </p>
+    <ol>
+      <li><p><a href="https://messages.google.com/web/">SMS/RCS texts, linked to my Pixel.</a> This is a Google thing, not sure if you need to be on
+      Android for it to work. But for those serious conversations that remain in text-land, it’s awfully nice when you can resort to
+      an actual keyboard.</p></li>
+      <li><p>Calendar.</p></li>
+      <li><p>Mastodon (<a href="https://cosocial.ca/home">CoSocial</a> via the
+      <a href="https://phanpy.social/">Phanpy</a> client).</p></li>
+      <li><p>The local staging version of this blog, where I review and edit articles.</p></li>
+      <li><p>What you are now reading.</p></li>
+      <li><p>Blog comment review/approval.</p></li>
+      <li><p><a href="https://github.com/timbray/quamina">Quamina</a> (probably moving to Codeberg soon).</p></li>
+      <li><p>Bluesky; but it seems I never go there any more unless I’m following links from elsewhere. To be honest, not sure what
+      I’d replace it with.</p></li>
+    </ol>
+    <p>Have fun!</p>
+</div></content></entry>
+
+<entry>
+ <title>Declining America</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/05/19/Declining-America' />
+ <link rel='replies'        thr:count='11'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/05/19/Declining-America#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/05/19/Declining-America</id>
+ <published>2026-05-19T12:00:00-07:00</published>
+ <updated>2026-05-20T12:08:48-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World/Politics' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Politics' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology/AI' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Technology' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='AI' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>Recently I got an invitation from an organization I respect, to a gathering of senior people, unconference format. Yes, it’s     mostly about AI. No, it doesn’t reek of boosterism. My guess is that the discussions would be relatively intelligent and     unbeliever contributions would be welcome.     I declined, because it’s in the USA</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>Recently I got an invitation from an organization I respect, to a gathering of senior people, unconference format. Yes, it’s
+    mostly about AI. No, it doesn’t reek of boosterism. My guess is that the discussions would be relatively intelligent and
+    unbeliever contributions would be welcome.
+    I declined, because it’s in the USA.</p>
+    <p>Here’s the text; maybe someone in a similar situation might find it useful.</p>
+    <hr/>
+    <p>Thanks to whoever thought of me for the kind invitation, which I must regretfully decline.</p>
+    <p>I’m Canadian and as a matter of principle feeling negative about visiting a neighboring country whose leader has repeatedly
+    threatened our sovereignty and shown massive disrespect for our nationhood. Particularly when that leader has followed up
+    similar statements about other nations with military action.</p>
+    <p>I could probably work around that. But there’s also the issue of entering the US; if I roll up at the border and am asked to
+    disclose my social media output, there’s a significant risk of an extremely negative outcome. I have a family to support and
+    really can’t afford that risk.</p>
+    <p>I still consider myself a friend of your organization, and one with strong opinions about the subjects scheduled for
+    discussion; my regrets about having to decline are entirely sincere.</p>
+    <p>—Regards, Tim</p>
+</div></content></entry>
+
+<entry>
+ <title>Life During Class Wartime</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/05/03/Life-During-Class-Wartime' />
+ <link rel='replies'        thr:count='6'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/05/03/Life-During-Class-Wartime#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/05/03/Life-During-Class-Wartime</id>
+ <published>2026-05-03T12:00:00-07:00</published>
+ <updated>2026-05-06T10:28:35-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World/Politics' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='The World' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Politics' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>War is bad. Don’t start one. But we’re already in a class war and we’re losing.     Where by “we” I mean most people; the winning side comprises,     roughly, the richest 0.1% of the population, who are morphing into a hereditary aristocracy. [I mean that, see below.]     So, what to do in a war one didn’t choose?</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>War is bad. Don’t start one. But we’re already in a class war and we’re losing.
+    Where by “we” I mean most people; the winning side comprises,
+    roughly, the richest 0.1% of the population, who are morphing into a hereditary aristocracy. [I mean that, see below.]
+    So, what to do in a war one didn’t choose?</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/05/03/Oxfam-distribution-of-wealth.png" alt="Share of global wealth 2010-2015" class="inline" />
+    <h2 id='p-1'>How bad is it?</h2>
+    <p>It’s really bad, and getting worse fast. I recommend cruising through Wikipedia’s excellent
+    article on
+    <a href="https://en.wikipedia.org/wiki/Distribution_of_wealth">Distribution of wealth</a>; maybe jump straight to the
+    <a href="https://en.wikipedia.org/wiki/Distribution_of_wealth#Wealth_inequality">Wealth inequality</a> section.
+    I’ve pulled one helpful graph,
+    sourced from Oxfam, into the margin. The article has loads of other statements of the form “The richest X compared to the
+    poorest Y have Z times️ as much.” The values of X, Y, and Z are uniformly saddening.</p>
+    <p>As a resident of a wealthy West-Coast New-World city, the effects of pathological inequality are in my face every day:
+    Bentleys gleaming on the road, ragged people huddled in the rain cadging cash outside the drugstores,
+    <a href="https://homelesshub.ca/community_profile/vancouver/">thousands homeless</a>.</p>
+    <h2 id='p-5'>Why is that bad?</h2>
+    <p>It’s not only sinful by any sane definition of sin, but stupid, inefficient, and damaging. I turn once again to
+    Wikipedia: <a href="https://en.wikipedia.org/wiki/Effects_of_economic_inequality">Effects of economic equality</a>.
+    I’ll add one pointer to an effect that is less obvious: It
+    <a href="https://talkingpointsmemo.com/cafe/inquality-affordability-tax-wealthy">exacerbates the unaffordability crisis</a>.</p>
+    <p>One effect of the increasing imbalance between the ultra-wealthy and
+    everyone else is the emergence of, effectively, a hereditary aristocracy. “Wait!” you exclaim, “How about high income-tax rates for
+    the wealthy, and inheritance taxes?” You might well ask. It turns out those are no longer operative. I’ll get into
+    details about that, but first…</p>
+    <h2 id='p-3'>A parable: Grant Gustavson</h2>
+    <p>I am, as previously related (see
+    <a href="/ongoing/When/202x/2025/05/04/Southsiders">Southsiders</a> and
+    <a href="/ongoing/When/202x/2025/11/23/Soccer-vs-Football">Fútbol Joy</a>) a fan of the Vancouver Whitecaps Football Club (VWFC)
+    who play in
+    <a href="https://www.mlssoccer.com">Major League Soccer</a>.  It’s affordable, light-hearted, high-drama, high-quality
+    entertainment and has lifted my spirits notably in the recent dark years.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/05/03/PXL_20260426_023555451.png" alt="Fans with a “Save the Caps” message" />
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/05/03/PXL_20260426_023603197.png" alt="Fans with a “Save the Caps” message" />
+    <div class='caption'><p>Vancouver Whitecaps fans bring the love</p></div>						     
+    <p>However, it appears that Vancouver’s about to lose the Whitecaps, at the whim of a Vegas-based purchaser, of whom
+    <a href="https://www.nytimes.com/athletic/7244005/2026/04/30/las-vegas-vancouver-whitecaps-mls-buyer-gustavson/">The Athletic
+    writes</a>:</p>
+    <blockquote><p>The potential buyer is Grant Gustavson, the son of Kentucky billionaire Tamara Gustavson and grandson of B. Wayne
+    Hughes, founder of Public Storage, according to multiple sources with knowledge of the discussions. Forbes estimates Tamara
+    Gustavson’s net worth at $8.5 billion.</p>
+    <p>Gustavson, 30, lives in Las Vegas. A graduate of the University of Southern California, he has been involved with the
+    athletic department at his alma mater and helped to develop the Name, Image and Likeness (NIL) program there. He continues to
+    work with the USC basketball program and is also involved in the management of his family’s farm, “the country’s premier
+    thoroughbred farm with decades of storied champions throughout the stables.”</p>
+    </blockquote>
+    <p>So this fucking youngster, who has life experience working at the gym at USC (where his Mom’s
+    <a href="https://boardoftrustees.usc.edu/trustees/">on the Board of Trustees</a>) and helping out at the family farm, can reach out
+    his mighty hand and snatch away a popular pleasure from another nation. <i>Droit du seigneur</i> in action.</p>
+    <h2 id='p-6'>Staying rich</h2>
+    <p>I highly, highly recommend
+    <a href="https://www.nytimes.com/2026/04/17/opinion/ezra-klein-podcast-ray-madoff.html">Our Tax System Should Make You
+    Furious</a> from the <cite>NYT</cite>. By “our” they mean America’s. First, it addresses the canard that the tax system is
+    actually progressive; people who like things the way they are like to say “Forty percent of people pay no federal income taxes,
+    and then the top 1 percent pay 40 percent of the income taxes.” (Tl;dr: Somewhere between highly misleading and a big fat lie.)</p>
+    <p>Second, it explains the mechanisms by which
+    generational wealth is accumulated and preserved, effectively in perpetuity. People like Bezos and Musk pay basically no
+    income tax, and the way they do it isn’t complicated or hard to understand.</p>
+    <p>There is actually a family of financial products called
+    <a href="https://en.wikipedia.org/wiki/Dynasty_trust">Dynasty Trusts</a>. The first ad that popped
+    up in response to my Web search had the marketing copy “Dynasty trusts: preserving family assets for future generations”.
+    Or, put another way, “Dynasty trusts: Starving beggars in your neighborhood.”</p>
+    <h2 id='p-2'>Revenue from the rich</h2>
+    <p>So what can we do about it? Tax expert Ray Madoff, the interviewee in the “Should Make You Furious” piece, has smart things to
+    say. Then there’s 
+    <a href="https://www.lemonde.fr/en/opinion/article/2025/06/14/thomas-piketty-opponents-of-the-tax-on-the-ultra-wealthy-lack-historical-perspective_6742333_23.html">Thomas 
+    Piketty: “Opponents of the tax on the ultra-wealthy lack historical perspective”</a>.</p>
+    <p>The common thread is taxation of wealth not income, because the arcane abstractions of accounting make income too easy to
+    hide.  The argument is that a wealth tax of say 2%/year, starting at a threshold of a few tens of millions, won’t
+    impair the lifestyles of the seriously wealthy, but still yield systemically important public-sector revenue</p>
+    <p>Also worth reading, from the International Monetary Fund:
+    <a href="https://www.imf.org/en/blogs/articles/2018/02/13/game-changers-and-whistle-blowers-taxing-wealth">Game-Changers and
+    Whistle-Blowers: Taxing Wealth</a>.
+    Among other things, it reports that the proportion of wealth that is hidden in one offshore tax shelter or another is pretty small,
+    ranging from 8% in the developed countries up to 30% in poor nations. Apparently it’s harder to hide wealth than income.</p>
+    <h2 id='p-7'>Good karma</h2>
+    <p>If wealth taxation won’t touch wealthy lifestyles and will help build a safer, calmer, happier society, it feels
+    sort of irrational to oppose it.  And some of the wealthy don’t. My favorite example of this is Avi Bryant. Check out
+    <a href="https://macleans.ca/politics/tax-the-rich/">I’m a Millionaire. Tax Me More, Please</a> and
+    <a href="https://thenarwhal.ca/canada-wealth-tax/">Meet a millionaire who wants Canada to tax the rich</a>. [Disclosure: I made
+    a nice little chunk of money when my tiny investment in Avi’s startup turned into pre-IPO Twitter shares.] I’m also interested in
+    <a href="https://patrioticmillionaires.ca">Patriotic Millionaires</a>, which Avi founded.</p>
+    <p>Also worth checking out: Jeff Atwood’s
+    <a href="https://blog.codinghorror.com/stay-gold-america/">Stay Gold, America</a> and
+    <a href="https://blog.codinghorror.com/launching-the-rural-guaranteed-minimum-income-initiative/">Launching The Rural Guaranteed
+    Minimum Income Initiative</a>. So, not all of the 0.1% are The Enemy.</p>
+    <h2 id='p-8'>It’s not complicated</h2>
+    <p>Around the world, governments are running up huge debts and cutting back social programs because the taxation revenue doesn’t
+    come near the amount it requires to provide a livable society. So the choice is stark: Cut and slash deeper (read: starving beggars)
+    or find more money. There’s lots of money out there basically just playing financial
+    games; it needs to be put to work doing something useful.</p>
+    <p>This package of ideas should be easy to sell to voters. Of course, resistance will be ferocious and
+    extremely well-funded. But the currently-winning side in our class war is actually a soft target. Target for what weapon, you ask?
+    Democracy. No need for tumbrils and guillotines. Yet.</p>
+</div></content></entry>
+
+<entry>
+ <title>Corey’s Captives</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/04/26/Coreys-Captives' />
+ <link rel='replies'        thr:count='0'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/04/26/Coreys-Captives#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/04/26/Coreys-Captives</id>
+ <published>2026-04-26T12:00:00-07:00</published>
+ <updated>2026-04-27T12:05:14-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts/Books' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Books' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>That’s     <a href='https://en.wikipedia.org/wiki/James_S._A._Corey'>James S.A. Corey</a>, which is to say Daniel Abraham and Ty Franck,     and their new series     <a href='https://en.wikipedia.org/wiki/The_Captive%27s_War'>The Captive’s War</a>, an in-progress work comprising 2¼     or so novels. The Coreys are of course best-known for their deservedly wildly popular <cite>The Expanse</cite> series and the     subsequent success of the streaming-video version.  The new series is… different. If you’re wondering whether or not you should     wade in, the following is for you</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>That’s
+    <a href="https://en.wikipedia.org/wiki/James_S._A._Corey">James S.A. Corey</a>, which is to say Daniel Abraham and Ty Franck,
+    and their new series
+    <a href="https://en.wikipedia.org/wiki/The_Captive%27s_War">The Captive’s War</a>, an in-progress work comprising 2¼
+    or so novels. The Coreys are of course best-known for their deservedly wildly popular <cite>The Expanse</cite> series and the
+    subsequent success of the streaming-video version.  The new series is… different. If you’re wondering whether or not you should
+    wade in, the following is for you.</p>
+    <h2 id='p-1'>Minor and meta spoilers</h2>
+    <p>Don’t worry, you can go on reading this even if you plan to read the books. Here’s a spoiler that has appeared in every public
+    mention of the book, which I’ll give away with a quote from page 102: “I think some important scientific questions have finally
+    been answered. Alien life exists, and they are assholes.” Which is to say, it doesn’t go well for the humans.</p>
+    <p>Now for the meta-spoilers. The novels are <cite>The Mercy of Gods</cite> and <cite>The Faith of Beasts</cite>, then there’s a
+    novella, <cite>Livesuit</cite>. I found <cite>The Mercy of Gods</cite> a bit of a grind, and if that’s all I’d read I would have
+    been pretty negative about this project. There is a major, <em>major</em> reveal partway into <cite>The Faith of Beasts</cite>
+    that changed my whole outlook on the series; it makes the storytelling velocity really pick up.  It’s a little annoying that
+    <cite>Livesuit</cite> was published between the two full novels because it only really makes sense if you’ve finished both of
+    them. So do like I did, and read the novella last.</p>
+    <p>I have to ask why the Coreys couldn’t have pulled the curtain aside a little earlier on. And while I’m griping, let me add
+    that the sped-up storytelling runs into a big honking cliffhanger ending at high velocity. Harumph.</p>
+    <h2 id='p-2'>My take-away</h2>
+    <p>It could go off the rails but if they can maintain their <cite>Expanse</cite> form, I suspect this series is going to be
+    pretty great. The characters are fun to know and the narrative revolves around the great mother of all trolley-problem ethical
+    challenges, which was not nearly resolved at cliffhanger-ending time.</p>
+    <p>Those of us who are fussy about the plausibility of future technologies (hey, Charlie Stross) should avert their eyes from
+    the Coreys’ fairly low-effort attempts to explain how the aliens and humans in this story accomplish the things they do. Doesn’t
+    bother me much, though.</p>
+    <p>Having said all that, this series is not cheerful stuff; I do <em>not</em> recommend it to those who, like many in these
+    troubled times, are having trouble seeing the bright side of, well, anything.</p>
+    <h2 id='p-3'>Will I read the next volume?</h2>
+    <p>Yep, no hesitation. And they’ve already started working on a streaming version. Unfortunately it’s going to be on Amazon
+    Prime, which I haven’t missed since unsubscribing a couple years ago.  Getting this thing on the screen is
+    going to be an extended, difficult, task. There are multiple species of aliens that the show is going to have to absolutely nail, with
+    emotional credibility, for the story to work. Don’t hold your breath.</p>
+</div></content></entry>
+
+<entry>
+ <title>Spring Evening</title>
+ <link href='https://www.tbray.org/ongoing/When/202x/2026/04/13/Modern-Cameras' />
+ <link rel='replies'        thr:count='0'        type='application/xhtml+xml'        href='/ongoing/When/202x/2026/04/13/Modern-Cameras#comments' />
+ <id>https://www.tbray.org/ongoing/When/202x/2026/04/13/Modern-Cameras</id>
+ <published>2026-04-13T12:00:00-07:00</published>
+ <updated>2026-04-15T22:23:17-07:00</updated>
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts/Photos' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Arts' />
+ <category scheme='https://www.tbray.org/ongoing/What/' term='Photos' />
+ <summary type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>On impulse, Lauren and I went out for a short walk<span class="dashes"> —</span> around just a few     blocks<span class="dashes"> —</span> as the grey Spring afternoon shaded to dusk. On a second impulse, I grabbed the camera     on the way out the door</div></summary>
+<content type='xhtml'><div xmlns='http://www.w3.org/1999/xhtml'>
+    <p>On impulse, Lauren and I went out for a short walk<span class='dashes'> —</span> around just a few
+    blocks<span class='dashes'> —</span> as the grey Spring afternoon shaded to dusk. On a second impulse, I grabbed the camera
+    on the way out the door.</p>
+    <p>In our local community garden, here’s (I think) a
+    <a href="https://en.wikipedia.org/wiki/Chard">chard</a>.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/04/13/TXT56259.png" alt="Looking down on a vegetable plant with glossy green leaves and orange-yellow stalks" />
+    <p>That was in Vancouver’s Mount Pleasant park, small but nice and apparently never not used. Also this old blackened
+    fruit tree, we’re a bit past the fruit-blossom peak for this year. Nice to see I’m not the only old citizen trying to brighten
+    things up.</p> 
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/04/13/TXT56264.png" alt="Fruit-tree blossoms on a blackened branch" />
+    <p>Now we’re walking up a locally-main street called Main Street or “The Main” if you’re trying to sound
+    hip. Someone put work into that window! I’ve bought my daughter a couple of cool birthday presents from the store behind it. My
+    thanks to the building across the street for providing a dark background reflection.</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/04/13/TXT56265.png" alt="Used-fashion store window " />
+    <p>Back to the next block over from ours. A while ago a bunch of people were building little fairy/elf/hobbit villages at the
+    bottoms of the big old trees.  This isn’t that. What is it?</p>
+    <img src="https://www.tbray.org/ongoing/When/202x/2026/04/13/TXT56270.png" alt="Dolls and related tree artifacts at the base of a tree in dim light" />
+    <p>The colors of the natural surfaces are real.</p>
+    <h2 id='p-1'>Cameras</h2>
+    <p>When I shot these, it
+    was getting dark but I didn’t think much, mostly just pointed and shot. (Fiddled with the aperture dial a bit.) Then I came
+    home and pulled them into Lightroom and didn’t need to do really anything about colors. A bit of contrast and highlights here
+    and there. Oh, and fairly brutal cropping, especially on that fruit-tree-flowers pic. Because like I said, I didn’t think very
+    much when I was shooting and I didn’t have to because on a Twenties camera you don’t.</p>
+    <p>I could take that heavily-cropped fruit-tree
+    picture and print it big enough to occupy any domestic wall in your place and yeah, there’d be grain but it wouldn’t
+    bother your eyes.</p>
+    <p>Anyhow, modern cameras are pretty great. The lowest ISO in today’s set is 2500 and the highest is 6400; the apertures range
+    from 2.8 to 5.6.
+    Bet you can’t tell the differences. My camera is a reasonably modern Fujifilm but not remotely
+    bleeding-edge in camera tech. (Note: 35mm F1.4, now all the Fuji fanfolk are smiling and nodding.)</p>
+    <p>Anyhow, there are very <em>very</em> few photographers for whom the camera they carry is the limiting factor in the
+    goodness of their pictures. Certainly not me.</p>
+    <p>Consider getting a camera. Used is fine, anything built in the last five years, maybe more, will effortlessly take brilliant
+    pictures in almost any conditions. Sure, your phone can take great shots too, but the feeling of walking along with something
+    that fits your hand and you only have to press one physical button once, that feeling, it helps you see the good pictures when they happen.</p>
+    <p>Then go out after and take a walk in the Spring dusk.</p>
+</div></content></entry>
+
+</feed>

@@ -18,7 +18,7 @@ class
 inherit
 	XT_ATTRIBUTE_LIST
 		redefine
-			name_cache, name_area, transfer
+			check_forward, is_xmlns_declaration, name_cache, name_area, transfer
 		end
 
 	XT_STRING_CONSTANTS
@@ -34,31 +34,24 @@ feature -- Access
 	name_cache: XT_URI_MAPPED_NAME_CACHE
 		-- efficient lookup of attribute/tag name
 
+feature -- Status query
+
+	is_xmlns_declaration (buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER): BOOLEAN
+		do
+			Result := is_namespace_declaration (buffer, additions [0], additions [1], colon_index)
+		end
+
 feature -- Basic operations
 
 	transfer (
 		buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER; entity_list: ARRAYED_LIST [XT_ENTITY_NAME]
 	): INTEGER
-		local
-			start_index: INTEGER
 		do
-			if is_namespace_declaration (buffer, additions [0], additions [1], colon_index) then
-			-- add xmlns declaration to `name_cache'
-				start_index := local_part_index (additions [0], colon_index)
-				if attached new_substring (buffer, additions [2], additions [3]) as uri then
-					inspect colon_index when 0 then
-						name_cache.add_uri_default (uri)
-					else
-						if attached new_substring (buffer, start_index, additions [1]) as name_key then
-							name_cache.add_uri (uri, name_key)
-							check_forward (name_key, uri)
-						end
-					end
-				end
-				additions.wipe_out
-			else
-				Result := Precursor (buffer, additions, colon_index, entity_list)
-			end
+		-- Needed to compile in Precursor:
+		-- 	1. l_name_area.extend (name)
+		-- 	2. if has_duplicate_name (name, l_name_area) then
+
+			Result := Precursor (buffer, additions, colon_index, entity_list)
 		end
 
 feature {NONE} -- Implementation

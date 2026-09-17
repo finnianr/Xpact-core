@@ -37,7 +37,10 @@ class
 
 inherit
 	XT_STRING_8_ROUTINES_I
+		rename
+			to_list as new_list
 		export
+			{ANY} valid_substring_intervals
 			{NONE} all
 		end
 
@@ -55,22 +58,30 @@ feature -- Measurement
 
 	average_bucket_item_count: INTEGER
 		local
-			count, item_count: INTEGER
+			count, item_count, i, i_final: INTEGER
 		do
-			across area as bucket loop
-				if bucket.count > 0 then
-					count := count + 1
-					item_count := item_count + bucket.count
+			if attached area as l_area then
+				from i := 0; i_final := l_area.count - 1 until i = i_final loop
+					if attached l_area [i] as bucket and then bucket /= Default_bucket then
+						count := count + 1
+						item_count := item_count + bucket.count
+					end
+					i := i + 1
 				end
 			end
 			Result := (item_count / count).rounded
 		end
 
 	buckets_used_count: INTEGER
+		local
+			i, i_final: INTEGER
 		do
-			across area as bucket loop
-				if bucket.count > 0 then
-					Result := Result + 1
+			if attached area as l_area then
+				from i := 0; i_final := l_area.count - 1 until i = i_final loop
+					if attached l_area [i] as bucket and then bucket /= Default_bucket then
+						Result := Result + 1
+					end
+					i := i + 1
 				end
 			end
 		end
@@ -105,6 +116,26 @@ feature -- Access
 	string_item (str: STRING): like default_name
 		do
 			Result := cached_item (str.area, 0, str.count - 1, 0, True)
+		end
+
+feature -- Conversion
+
+	to_list: ARRAYED_LIST [like default_name]
+		local
+			i, i_final, j, j_final: INTEGER
+		do
+			create Result.make ((buckets_used_count * 1.05).rounded)
+			if attached area as l_area then
+				from i := 0; i_final := l_area.count - 1 until i = i_final loop
+					if attached l_area [i] as bucket and then bucket /= Default_bucket then
+						from j := 0; j_final := bucket.count - 1 until j = j_final loop
+							Result.extend (bucket [j])
+							j := j + 1
+						end
+					end
+					i := i + 1
+				end
+			end
 		end
 
 feature -- Status report
@@ -154,6 +185,28 @@ feature -- Basic operations
 				end
 			end
 			output.put_new_line
+		end
+
+	transfer (
+		buffer: SPECIAL [CHARACTER_8]; additions: SPECIAL [INTEGER]; attribute_list: XT_ATTRIBUTE_LIST
+		colon_index, element_depth, tag_name_lower, tag_name_upper: INTEGER
+	)
+		-- add xmlns declaration
+		require
+			full_buffer: additions.count = 4
+			valid_colon_index: colon_index.to_boolean implies additions [0] < colon_index and then colon_index <  additions [1]
+			valid_intervals: valid_substring_intervals (additions)
+			is_xmlns_declaration: attribute_list.is_xmlns_declaration (buffer, additions, colon_index)
+		do
+		-- redefined in `XT_URI_MAPPED_ATTRIBUTE_LIST'
+		end
+
+feature -- Event handler
+
+	on_pop (element_context: XT_ELEMENT_CONTEXT)
+		-- notification after `element_context.pop' was called
+		do
+			-- redefined in `XT_URI_MAPPED_NAME_CACHE'
 		end
 
 feature -- Contract support

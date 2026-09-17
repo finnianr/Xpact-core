@@ -510,6 +510,11 @@ feature {NONE} -- Event handlers
 
 feature {NONE} -- Implementation
 
+	element_depth: INTEGER
+		do
+			Result := element_context.depth
+		end
+
 	extend_attribute_value_defaults_table (element_name, attribute_name, value: STRING)
 		local
 			default_values_list: ARRAYED_LIST [STRING]

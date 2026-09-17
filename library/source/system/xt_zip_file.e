@@ -63,8 +63,6 @@ feature {NONE} -- Implementation
 
 	read_header
 		-- Read archive header into `Header'
-		local
-			file: RAW_FILE
 		do
 			open_read
 			if file_readable and count > Header_size then

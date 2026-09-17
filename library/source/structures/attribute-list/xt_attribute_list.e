@@ -16,6 +16,9 @@ class
 
 inherit
 	XT_ATTRIBUTE_INTERVAL_LIST
+		export
+			{ANY} valid_substring_intervals
+		end
 
 	XT_ENCODING_TYPE_CONSTANTS
 		undefine
@@ -40,6 +43,11 @@ create
 	make
 
 feature -- Status query
+
+	is_xmlns_declaration (buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER): BOOLEAN
+		do
+			Result := False -- redefined in `XT_URI_MAPPED_ATTRIBUTE_LIST'
+		end
 
 	has_value (buffer: SPECIAL [CHARACTER_8]; name, value: STRING): BOOLEAN
 		local
@@ -109,6 +117,71 @@ feature -- Status query
 		end
 
 	newline_or_tab_found: BOOLEAN
+
+feature -- Status change
+
+	null_terminate_values (a_buffer: SPECIAL [CHARACTER_8])
+		-- temporarily insert null string terminators in `buffer' for later
+		-- restoration by `undo_null_terminated_values'
+		require
+			buffer_not_null_terminated: not is_null_terminated
+			swap_area_big_enough: swap_area_big_enough
+		local
+			i, i_final, upper_plus_1: INTEGER
+		do
+			if attached character_swap_area as swap_area and attached area_v2 as a
+				and then attached overflow_buffer_area as overflow_area
+			then
+				from i := 0; i_final := a.count until i = i_final loop
+					upper_plus_1 := a [i + 1] + 1
+					if attached overflow_area [i // 2] as overflow then
+						overflow [upper_plus_1] := '%U'
+					else
+						swap_area [i // 2] := a_buffer [upper_plus_1] -- store current value in swap area
+						a_buffer [upper_plus_1] := '%U'
+					end
+					i := i + Interval_count
+				end
+			end
+			is_null_terminated := True
+		end
+
+	undo_null_terminated_values (buffer: SPECIAL [CHARACTER_8])
+		require
+			buffer_null_terminated: is_null_terminated
+			swap_area_big_enough: swap_area_big_enough
+		local
+			i, j, i_final: INTEGER
+		do
+			if attached character_swap_area as swap_area and attached area_v2 as a then
+				from i := 0; i_final := a.count until i = i_final loop
+					j := i // 2
+					inspect swap_area [j]
+						when '%U' then
+							do_nothing
+					else
+						buffer [a [i + 1] + 1] := swap_area [j] -- restore original value
+						swap_area [j] := '%U'
+					end
+					i := i + Interval_count
+				end
+			end
+			is_null_terminated := False
+		ensure
+			character_swap_area_in_default_state: character_swap_area.filled_with ('%U', 0, count - 1)
+		end
+
+	report_newline_or_tab
+		-- report the presence of LF OR tab characters in next attribute name/value pair
+		-- to be transfered (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
+		do
+			newline_or_tab_found := True
+		end
+
+	set_permit_undefined_entities (yes: BOOLEAN)
+		do
+			permit_undefined_entities := yes
+		end
 
 feature -- Access
 
@@ -304,71 +377,6 @@ feature -- Conversion
 			name_value_pair: Result.count = 2
 		end
 
-feature -- Status change
-
-	null_terminate_values (a_buffer: SPECIAL [CHARACTER_8])
-		-- temporarily insert null string terminators in `buffer' for later
-		-- restoration by `undo_null_terminated_values'
-		require
-			buffer_not_null_terminated: not is_null_terminated
-			swap_area_big_enough: swap_area_big_enough
-		local
-			i, i_final, upper_plus_1: INTEGER
-		do
-			if attached character_swap_area as swap_area and attached area_v2 as a
-				and then attached overflow_buffer_area as overflow_area
-			then
-				from i := 0; i_final := a.count until i = i_final loop
-					upper_plus_1 := a [i + 1] + 1
-					if attached overflow_area [i // 2] as overflow then
-						overflow [upper_plus_1] := '%U'
-					else
-						swap_area [i // 2] := a_buffer [upper_plus_1] -- store current value in swap area
-						a_buffer [upper_plus_1] := '%U'
-					end
-					i := i + Interval_count
-				end
-			end
-			is_null_terminated := True
-		end
-
-	undo_null_terminated_values (buffer: SPECIAL [CHARACTER_8])
-		require
-			buffer_null_terminated: is_null_terminated
-			swap_area_big_enough: swap_area_big_enough
-		local
-			i, j, i_final: INTEGER
-		do
-			if attached character_swap_area as swap_area and attached area_v2 as a then
-				from i := 0; i_final := a.count until i = i_final loop
-					j := i // 2
-					inspect swap_area [j]
-						when '%U' then
-							do_nothing
-					else
-						buffer [a [i + 1] + 1] := swap_area [j] -- restore original value
-						swap_area [j] := '%U'
-					end
-					i := i + Interval_count
-				end
-			end
-			is_null_terminated := False
-		ensure
-			character_swap_area_in_default_state: character_swap_area.filled_with ('%U', 0, count - 1)
-		end
-
-	report_newline_or_tab
-		-- report the presence of LF OR tab characters in next attribute name/value pair
-		-- to be transfered (XML §3.3.3 attribute-value normalisation: replace %N %T with space)
-		do
-			newline_or_tab_found := True
-		end
-
-	set_permit_undefined_entities (yes: BOOLEAN)
-		do
-			permit_undefined_entities := yes
-		end
-
 feature -- Measurement
 
 	count: INTEGER
@@ -496,8 +504,8 @@ feature -- Basic operations
 		-- into `entity_refs_area'
 		require
 			valid_colon_index: colon_index.to_boolean implies additions [0] < colon_index and then colon_index <  additions [1]
-			full_buffer: additions.count = Interval_count * 2
-			valid_intervals: valid_intervals (additions)
+			full_buffer: additions.count = 4
+			valid_intervals: valid_substring_intervals (additions)
 		local
 			i, new_capacity, value_count, l_capacity: INTEGER; l_area: like area_v2; overflow: like overflow_buffer_area
 			l_name_area: like name_area; expanded_value, name: STRING
@@ -584,7 +592,7 @@ feature -- Contract support
 	all_valid: BOOLEAN
 		-- `True' if all intervals are valid
 		do
-			Result := valid_intervals (area_v2)
+			Result := valid_substring_intervals (area_v2)
 		end
 
 	checksums_agree (
@@ -606,21 +614,6 @@ feature -- Contract support
 				i := i + 2
 			end
 			Result := checksum_1.value = checksum_2.value
-		end
-
-	valid_intervals (a_area: like area): BOOLEAN
-		-- `True' if all intervals are valid
-		local
-			i, l_count: INTEGER
-		do
-			l_count := a_area.count
-			from Result := True until i = l_count or not Result loop
-				if (a_area [i + 1] + 1) >= a_area [i] then
-					i := i + 2
-				else
-					Result := False
-				end
-			end
 		end
 
 feature {NONE} -- Implementation

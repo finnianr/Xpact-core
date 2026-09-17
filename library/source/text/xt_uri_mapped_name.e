@@ -48,7 +48,7 @@ feature {NONE} -- Initialization
 		require
 			has_colon: colon_index > 0 implies buffer [colon_index] = ':'
 		local
-			mid_index, index: INTEGER; s: XT_STRING_8_ROUTINES
+			mid_index: INTEGER; s: XT_STRING_8_ROUTINES
 		do
 			inspect colon_index when 0 then
 				mid_index := start_index

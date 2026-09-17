@@ -492,6 +492,7 @@ feature {NONE} -- Processor dispatch
 							inspect context.pop (tag_name) when Error_tag_mismatch then
 								Result := Error_tag_mismatch; done := True
 							else
+								names.on_pop (context)
 							end
 
 						when Tok_end_tag then
@@ -500,6 +501,7 @@ feature {NONE} -- Processor dispatch
 							inspect context.pop (tag_name) when Error_tag_mismatch then
 								Result := Error_tag_mismatch; done := True
 							else
+								names.on_pop (context)
 							end
 
 						when Tok_comment then

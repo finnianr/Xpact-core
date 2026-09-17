@@ -223,7 +223,7 @@ feature {NONE} -- Factory
 		-- 	2. discarding trailing white space, and
 		-- 	3. replacing every internal run of white space with a single space character.
 		local
-			count, leading_count, trailing_count, i, j,  lower, upper: INTEGER
+			count, leading_count, i, j,  lower, upper: INTEGER
 			c: CHARACTER
 		do
 			count := a_upper - a_lower + 1
@@ -454,6 +454,23 @@ feature {NONE} -- Status report
 			definition: Result implies new_substring (area, lower, upper).same_caseless_characters (string, 1, string.count, 1)
 		end
 
+	valid_substring_intervals (a_area: SPECIAL [INTEGER]): BOOLEAN
+		-- `True' if all alternating (lower then upper) substring bounds are valid
+		local
+			i, l_count: INTEGER
+		do
+			l_count := a_area.count
+			if l_count.integer_remainder (2) = 0 then
+				from Result := True until i = l_count or not Result loop
+					if (a_area [i + 1] + 1) >= a_area [i] then
+						i := i + 2
+					else
+						Result := False
+					end
+				end
+			end
+		end
+
 feature {NONE} -- Measurement
 
 	frozen index_of (area: SPECIAL [CHARACTER_8]; c: CHARACTER_8; start_index, end_index: INTEGER): INTEGER
@@ -523,15 +540,6 @@ feature {NONE} -- Measurement
 				else
 					i := string_count -- break
 				end
-			end
-		end
-
-	local_part_index (start_index, colon_index: INTEGER): INTEGER
-		do
-			inspect colon_index when 0 then
-				Result := start_index
-			else
-				Result := colon_index + 1
 			end
 		end
 

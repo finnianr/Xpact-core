@@ -26,16 +26,16 @@ inherit
 
 feature -- Measurement
 
-	tag_name_count: INTEGER
+	tag_name_lower: INTEGER
+
+	tag_name_upper: INTEGER
 
 	cached_tag_name (buffer: SPECIAL [CHARACTER_8]; lt_index: INTEGER; a_name_cache: XT_NAME_CACHE): STRING_8
 		require
+			valid_lt_bracket_index: lt_index + 1 = tag_name_lower
 			last_colon_index_valid: last_colon_index_valid (buffer, lt_index)
-		local
-			start_index: INTEGER
 		do
-			start_index := lt_index + 1
-			Result := a_name_cache.item (buffer, start_index, start_index + tag_name_count - 1, last_colon_index)
+			Result := a_name_cache.item (buffer, lt_index + 1, tag_name_upper, last_colon_index)
 		ensure
 			valid_tag_name_count: a_name_cache.valid_tag_name_count (Result, xml_name_count (buffer, lt_index + 1))
 		end
@@ -46,7 +46,7 @@ feature -- Contract support
 		local
 			index_colon: INTEGER
 		do
-			if attached new_substring (buffer, lt_index + 1, lt_index + tag_name_count) as str then
+			if attached new_substring (buffer, tag_name_lower, tag_name_upper) as str then
 				index_colon := str.index_of (':', 1)
 				if index_colon = 0 then
 					Result := last_colon_index = 0
@@ -121,11 +121,11 @@ feature {NONE} -- Tag scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, name_lower, name_upper, bt_code, byte_count, l_last_colon_index: INTEGER; done: BOOLEAN
+			index, name_upper, bt_code, byte_count, l_last_colon_index: INTEGER; done: BOOLEAN
 			buf_ptr: POINTER
 		do
 			buf_ptr := buf.base_address; index := start_index
-			name_lower := start_index; name_upper := Unset
+			tag_name_lower := start_index; name_upper := Unset
 			if index >= end_index then
 				Result := Tok_partial
 			else
@@ -174,7 +174,7 @@ feature {NONE} -- Tag scanning
 
 							when BT_whitespace, BT_CR, BT_LF then
 								inspect name_upper when Unset then
-									name_upper := index - 1
+									name_upper := index - 1; tag_name_upper := name_upper
 								else end
 								index := index + 1
 								from until index >= end_index or done loop
@@ -196,7 +196,7 @@ feature {NONE} -- Tag scanning
 								end
 							when BT_gt then
 								inspect name_upper when Unset then
-									name_upper := index - 1
+									name_upper := index - 1; tag_name_upper := name_upper
 								else end
 								next_token_index := index + 1
 								Result := Tok_end_tag
@@ -208,7 +208,6 @@ feature {NONE} -- Tag scanning
 						end
 					end
 					if done then
-						tag_name_count := name_upper - name_lower + 1
 						last_colon_index := l_last_colon_index
 					else
 						Result := Tok_partial
@@ -282,7 +281,14 @@ feature {NONE} -- Tag scanning
 								attributes.wipe_out; index_buffer.wipe_out; entity_buffer.wipe_out
 						else
 							inspect index_buffer.count when 4 then
-								error := attributes.transfer (buf, index_buffer, l_last_colon_index, entity_buffer)
+								if attributes.is_xmlns_declaration (buf, index_buffer, l_last_colon_index) then
+									name_cache.transfer (
+										buf, index_buffer, attributes, l_last_colon_index, element_depth,
+										tag_name_lower, tag_name_upper
+									)
+								else
+									error := attributes.transfer (buf, index_buffer, l_last_colon_index, entity_buffer)
+								end
 								l_last_colon_index := 0
 								inspect error when 0 then
 									do_nothing
@@ -347,14 +353,16 @@ feature {NONE} -- Tag scanning
 
 feature {NONE} -- Tag sub-helpers
 
-	scan_start_tag_name (buf: SPECIAL [CHARACTER]; start_index, end_index, lead_count: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
+	scan_start_tag_name (
+		buf: SPECIAL [CHARACTER]; start_index, end_index, lead_count: INTEGER; BT_table: SPECIAL [INTEGER]
+	): INTEGER
 		-- After consuming name-start char(s); scan rest of start tag name.
 		local
-			index, name_lower, name_upper, byte_count, bt_code, l_last_colon_index: INTEGER; done: BOOLEAN
+			index, name_upper, byte_count, bt_code, l_last_colon_index: INTEGER; done: BOOLEAN
 			buf_ptr: POINTER
 		do
 			buf_ptr := buf.base_address; index := start_index
-			name_lower := start_index - lead_count; name_upper := Unset
+			tag_name_lower := start_index - lead_count; name_upper := Unset
 			from until index >= end_index or done loop
 				bt_code := BT_table [c_read_character_8 (buf_ptr, index).code]
 				inspect bt_code
@@ -378,7 +386,7 @@ feature {NONE} -- Tag sub-helpers
 						end
 					when BT_whitespace, BT_CR, BT_LF then
 						inspect name_upper when Unset then
-							name_upper := index - 1
+							name_upper := index - 1; tag_name_upper := name_upper
 						else end
 						index := index + 1
 						from until index >= end_index or done loop
@@ -409,14 +417,14 @@ feature {NONE} -- Tag sub-helpers
 						end
 					when BT_gt then
 						inspect name_upper when Unset then
-							name_upper := index - 1
+							name_upper := index - 1; tag_name_upper := name_upper
 						else end
 						next_token_index := index + 1
 						Result := tok_start_tag_no_attributes; done := True
 
 					when BT_forward_slash then
 						inspect name_upper when Unset then
-							name_upper := index - 1
+							name_upper := index - 1; tag_name_upper := name_upper
 						else end
 						index := index + 1
 						if index >= end_index then
@@ -432,7 +440,6 @@ feature {NONE} -- Tag sub-helpers
 				end
 			end
 			if done then
-				tag_name_count := name_upper - name_lower + 1
 				last_colon_index := l_last_colon_index
 			else
 				Result := Tok_partial
@@ -559,6 +566,10 @@ feature {NONE} -- Implementation
 		end
 
 feature {NONE} -- Deferred
+
+	element_depth: INTEGER
+		deferred
+		end
 
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
 			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
