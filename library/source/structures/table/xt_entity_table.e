@@ -88,7 +88,7 @@ feature -- Access
 		local
 			amp_index, start_index, i: INTEGER; done, undefined_found: BOOLEAN
 		do
-			Result := output_buffer; Result.wipe_out
+			Result := Output_buffer; Result.wipe_out
 			from i := 0; start_index := lower_index; amp_index := lower_index; done := False until done loop
 				amp_index := index_of (buffer, '&', start_index, upper_index)
 				if amp_index > -1 then

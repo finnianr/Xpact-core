@@ -500,7 +500,7 @@ feature -- Basic operations
 	transfer (
 		buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER; entity_list: ARRAYED_LIST [XT_ENTITY_NAME]
 	): INTEGER
-		-- transfer contents of `additions' into `area' and contents of `entity_list'
+		-- transfer contents of `additions' into `bucket_area' and contents of `entity_list'
 		-- into `entity_refs_area'
 		require
 			valid_colon_index: colon_index.to_boolean implies additions [0] < colon_index and then colon_index <  additions [1]

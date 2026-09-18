@@ -52,11 +52,17 @@ feature {NONE} -- Initialization
 
 			make_buffers; make_scanner (a_parser_data)
 
-			create attribute_parts_list.make (name_cache)
-			create document_type_parts_list.make (name_cache)
-			create element_parts_list.make (name_cache)
+			inspect a_parser_data.naming_mode when NM_prefix_SEP_localname then
+				doctype_name_cache := name_cache
+			else
+				create doctype_name_cache.make
+			end
+
+			create attribute_parts_list.make (doctype_name_cache)
+			create document_type_parts_list.make (doctype_name_cache)
+			create element_parts_list.make (doctype_name_cache)
 			create entity_parts_list.make (entity_cache)
-			create notation_parts_list.make (name_cache)
+			create notation_parts_list.make (doctype_name_cache)
 			create parameter_entity_parts_list.make (parameter_name_cache)
 
 			create declaration_parts.make_filled (document_type_parts_list, PARAMETER_ENTITY)
@@ -510,11 +516,6 @@ feature {NONE} -- Event handlers
 
 feature {NONE} -- Implementation
 
-	element_depth: INTEGER
-		do
-			Result := element_context.depth
-		end
-
 	extend_attribute_value_defaults_table (element_name, attribute_name, value: STRING)
 		local
 			default_values_list: ARRAYED_LIST [STRING]
@@ -677,6 +678,9 @@ feature {NONE} -- Implementation
 				element_context.reset
 			end
 			parameter_name_cache.reset
+			if name_cache /= doctype_name_cache then
+				doctype_name_cache.reset
+			end
 
 			from i := 0 until i = declaration_parts.count loop
 				declaration_parts [i].wipe_out
@@ -747,6 +751,11 @@ feature {NONE} -- Tables
 
 feature {NONE} -- Internal attributes
 
+	doctype_name_cache: XT_NAME_CACHE
+		-- name cache for use in all DOCTYPE declarations
+		-- Normally refers to `name_cache' unless xmlns declarations are resolved
+		-- with URI mapping then created separately
+
 	doctype_identifiers: TUPLE [formal_public, uri: STRING]
 		-- The two literal strings shown in this example:
 		-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
@@ -761,5 +770,12 @@ feature {NONE} -- Internal attributes
 
 	parser_data: XT_PARSER_DATA
 		-- allocated memory for C struct `XT_C_PARSE_DATA_STRUCT'
+
+invariant
+	name_cache_same_as_declarations_name_cache:
+		parser_data.naming_mode = NM_prefix_SEP_localname implies name_cache = doctype_name_cache
+
+	not_name_cache_same_as_declarations_name_cache:
+		parser_data.naming_mode /= NM_prefix_SEP_localname implies name_cache /= doctype_name_cache
 
 end

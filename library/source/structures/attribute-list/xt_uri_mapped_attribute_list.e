@@ -47,7 +47,7 @@ feature -- Basic operations
 		buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER; entity_list: ARRAYED_LIST [XT_ENTITY_NAME]
 	): INTEGER
 		do
-		-- Needed to compile in Precursor:
+		-- Redefinition needed to compile in Precursor:
 		-- 	1. l_name_area.extend (name)
 		-- 	2. if has_duplicate_name (name, l_name_area) then
 

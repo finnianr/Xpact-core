@@ -200,7 +200,7 @@ feature -- Element change
 			end
 		ensure
 			name_set: name = a_name
-			c_name_agrees: attached name as l_name implies new_c_name.to_string ~ l_name
+			c_name_agrees: attached name as l_name implies new_c_name.same_string (l_name)
 		end
 
 	recycle (particle_pool: ARRAYED_STACK [XT_ELEMENT_PARTICLE])
@@ -263,7 +263,7 @@ feature {XT_ELEMENT_PARTICLE} -- Implementation
 	same_as (other: XT_ELEMENT_PARTICLE): BOOLEAN
 		do
 			if type = other.type and then quantifier = other.quantifier and then list_count = other.list_count then
-				Result := attached_name ~ other.attached_name
+				Result := attached_name.same_string (other.attached_name)
 			end
 		end
 

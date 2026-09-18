@@ -113,6 +113,10 @@ feature -- Element change
 			reached_depth_zero := False
 		end
 
+	update_default_attribute_names (name_cache: XT_NAME_CACHE)
+		do
+		end
+
 feature {NONE} -- Internal attributes
 
 	empty_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]

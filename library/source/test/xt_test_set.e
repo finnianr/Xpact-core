@@ -146,16 +146,17 @@ feature -- Tests
 
 	test_name_space_aware_cache
 		local
-			cache: XT_URI_MAPPED_NAME_CACHE; rdf_element, uri: STRING; name, name_2: XT_URI_MAPPED_NAME
-			colon_index, start_index, end_index: INTEGER
+			cache: XT_URI_MAPPED_NAME_CACHE; rdf_element, uri, rdf: STRING; name, name_2: XT_URI_MAPPED_NAME
+			colon_index, start_index, end_index: INTEGER; uri_table: HASH_TABLE [STRING, STRING]
 		do
 			rdf_element := "[
 				<rdf:Description rdf:about="&a;#&n; b:glossaryEntry="the act of enrolling"/>
 			]"
+			rdf := "rdf"
 			uri := "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 			create cache.make
 			cache.set_separator ('|')
-			cache.add_uri (uri, "rdf")
+			cache.put_uri (uri, rdf)
 			start_index := 1
 			end_index := rdf_element.index_of (' ', 1) - 2
 			colon_index := rdf_element.index_of (':', 1) - 1
@@ -166,10 +167,17 @@ feature -- Tests
 
 		-- Test NS triplets
 			cache.reset
-			cache.add_uri (uri, "rdf")
+			cache.put_uri (uri, rdf)
 			cache.set_naming_mode (NM_uri_SEP_localname_SEP_prefix)
 			name := cache.item (rdf_element.area, start_index, end_index, colon_index)
 			assert ("formatted as uri_SEP_localname_SEP_prefix", name.same_string (uri + "|Description|rdf"))
+
+		-- Test hash table `copy'
+			create uri_table.make (0)
+			uri_table [rdf] := uri
+			if attached uri_table.twin as table then
+				assert ("same content", table [rdf] = uri)
+			end
 		end
 
 	test_ntfs_link_detection

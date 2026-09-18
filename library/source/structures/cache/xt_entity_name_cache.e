@@ -62,7 +62,7 @@ feature -- Element change
 			from table.start until table.after loop
 				if attached table.key_for_iteration as name then
 					index := bucket_index (name.area, 1, name.count - 2)
-					area [index].extend (name)
+					bucket_area [index].extend (name)
 				end
 				table.forth
 			end

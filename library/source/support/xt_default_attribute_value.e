@@ -31,6 +31,13 @@ feature -- Access
 
 	value: STRING
 
+feature -- Element change
+
+	set_name (a_name: STRING)
+		do
+			name := a_name
+		end
+
 feature -- Status query
 
 	checked: BOOLEAN

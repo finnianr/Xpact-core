@@ -226,7 +226,7 @@ feature {NONE} -- Tag scanning
 		require
 			valid_range: start_index <= end_index
 		local
-			index, bt_code, byte_count, l_last_colon_index, error: INTEGER; done: BOOLEAN
+			index, bt_code, byte_count, l_last_colon_index, error: INTEGER; done, xmlns_declaration_found: BOOLEAN
 			index_buffer: SPECIAL [INTEGER]; entity_buffer: ARRAYED_LIST [XT_ENTITY_NAME]
 			buf_ptr: POINTER
 		do
@@ -282,10 +282,8 @@ feature {NONE} -- Tag scanning
 						else
 							inspect index_buffer.count when 4 then
 								if attributes.is_xmlns_declaration (buf, index_buffer, l_last_colon_index) then
-									name_cache.transfer (
-										buf, index_buffer, attributes, l_last_colon_index, element_depth,
-										tag_name_lower, tag_name_upper
-									)
+									Result := name_cache.transfer (buf, index_buffer, l_last_colon_index, attributes, entity_buffer)
+									xmlns_declaration_found := True
 								else
 									error := attributes.transfer (buf, index_buffer, l_last_colon_index, entity_buffer)
 								end
@@ -341,6 +339,9 @@ feature {NONE} -- Tag scanning
 				inspect Result when Tok_invalid then
 					attributes.wipe_out; scanned_index_x4_buffer.wipe_out
 				else
+					if xmlns_declaration_found then
+						name_cache.on_xmlns_declaration_end (buf, tag_name_lower, tag_name_upper, element_context, attributes)
+					end
 				end
 			else
 				Result := Tok_partial
@@ -567,7 +568,11 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Deferred
 
-	element_depth: INTEGER
+	attribute_value_defaults_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING]
+		deferred
+		end
+
+	element_context: XT_ELEMENT_CONTEXT
 		deferred
 		end
 

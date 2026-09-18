@@ -299,7 +299,7 @@ feature {NONE} -- Factory
 feature {NONE} -- Internal attributes
 
 	state: INTEGER
-		-- parsing state of either extending `area'
+		-- parsing state of either extending `bucket_area'
 		-- or building a name choice expression like (gif|jpg|png)
 
 	last_name: STRING

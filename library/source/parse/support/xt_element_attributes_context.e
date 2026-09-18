@@ -17,7 +17,7 @@ inherit
 		rename
 			make as make_context
 		redefine
-			default_attribute_values, has_attributes, Has_default_values
+			default_attribute_values, has_attributes, update_default_attribute_names, Has_default_values
 		end
 
 create
@@ -26,36 +26,15 @@ create
 feature {NONE} -- Initialization
 
 	make (a_parse_data: POINTER; a_default_value_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING])
-		require
-			even_number_of_name_value_pairs:
-				across a_default_value_table as name_value_list all
-					name_value_list.count.integer_remainder (2) = 0
-				end
-		local
-			attribute_array: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]; i: INTEGER
 		do
 			make_context (a_parse_data)
-			create default_value_table.make (a_default_value_table.count)
-			if attached a_default_value_table as table then
-				from table.start until table.after loop
-					if attached table.item_for_iteration as name_value_list then
-						create attribute_array.make_empty (name_value_list.count // 2)
-						from i := 1 until i > name_value_list.count loop
-							if name_value_list.valid_index (i + 1) then
-								attribute_array.extend (create {XT_DEFAULT_ATTRIBUTE_VALUE}.make_from_i_th (name_value_list, i))
-							end
-							i := i + 2
-						end
-						default_value_table.extend (attribute_array, table.key_for_iteration)
-					end
-					table.forth
-				end
-			end
+			create default_value_table.make (a_default_value_table, c_naming_mode (a_parse_data))
 		end
 
 feature -- Access
 
 	default_attribute_values: SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE]
+		-- unchecked default attribute values for element `name'
 		local
 			i: INTEGER
 		do
@@ -79,9 +58,36 @@ feature -- Status query
 
 	Has_default_values: BOOLEAN = True
 
+feature {NONE} -- Implementation
+
+	update_default_attribute_names (name_cache: XT_NAME_CACHE)
+		-- called from `XT_URI_MAPPED_NAME_CACHE.on_xmlns_declaration_end' to update tag and attribute names
+		-- with URI mapping
+		local
+			i, j, colon_index: INTEGER; tag_name: STRING
+		do
+			if attached default_value_table as table and then attached table.current_keys as key_array then
+				from i := 1 until i > key_array.count loop
+					tag_name := key_array [i]
+					if attached table [tag_name] as default_attributes then
+						from j := 0 until j = default_attributes.count loop
+							if attached default_attributes [j] as l_default and then attached l_default.name as l_name then
+								colon_index := l_name.index_of (':', 1)
+								l_default.set_name (name_cache.attribute_item (l_name.area, 0, l_name.count - 1, colon_index))
+							end
+							j := j + 1
+						end
+						colon_index := tag_name.index_of (':', 1)
+						table.replace_key (name_cache.item (tag_name.area, 0, tag_name.count - 1, colon_index), tag_name)
+					end
+					i := i + 1
+				end
+			end
+		end
+
 feature {NONE} -- Internal attributes
 
-	default_value_table: HASH_TABLE [SPECIAL [XT_DEFAULT_ATTRIBUTE_VALUE], STRING]
+	default_value_table: XT_DEFAULT_ATTRIBUTE_VALUE_TABLE
 		-- lookup default attribute values by tag name
 
 end

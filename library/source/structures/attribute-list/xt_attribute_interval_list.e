@@ -101,7 +101,7 @@ feature -- Access
 		end
 
 	value_index_of (name: STRING): INTEGER
-		-- zero based index into `area' for value start index associated with attribute `name'
+		-- zero based index into `bucket_area' for value start index associated with attribute `name'
 		-- using comparison by reference. `-1' if not found
 		require
 			name_in_cache: name_cache.attribute_item (name.area, 0, name.count - 1, 0) = name

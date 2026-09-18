@@ -1,40 +1,39 @@
 note
-	description: "Pool of reusable buffers"
+	description: "List of character/string buffers in ascending order of capacity"
+
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
 	contact: "finnian at eiffel hyphen loop dot com"
 
 	license: "MIT license (See: en.wikipedia.org/wiki/MIT_License)"
-
-	date: "2026-06-28 6:31:14 GMT (Sunday 28th June 2026)"
+	date: "2026-09-17 18:04:00 GMT (Thursday 17th September 2026)"
 	revision: "1"
 
-class
-	XT_CHARACTER_BUFFER_POOL
+deferred class
+	XT_SORTED_BUFFER_POOL [G]
 
 inherit
-	ARRAYED_LIST [SPECIAL [CHARACTER_8]]
+	ARRAYED_LIST [G]
 		export
 			{NONE} all
 			{ANY} count
+		undefine
+			new_filled_list
 		end
 
-create
-	make
-
-feature -- Status report
+feature -- Contract support
 
 	is_sorted_ascending: BOOLEAN
 		-- `True' if items sorted in order of size
 		local
 			i, i_final: INTEGER; previous: like item
 		do
-			previous := Default_buffer
+			previous := Empty_buffer
 			if attached area_v2 as l_area then
 				i_final := l_area.count
 				Result := True
 				from i := 0 until i = i_final or not Result loop
-					if l_area [i].capacity >= previous.capacity then
+					if capacity_of (l_area [i]) >= capacity_of (previous) then
 						previous := l_area [i]
 						i := i + 1
 					else
@@ -44,18 +43,18 @@ feature -- Status report
 			end
 		end
 
-feature -- Access
+feature -- Element change
 
 	borrow_item (size: INTEGER): like item
 		local
-			i, i_final, size_plus: INTEGER; found: BOOLEAN
+			i, i_final, l_size: INTEGER; found: BOOLEAN
 		do
-			size_plus := size + 1 -- include 1 extra for possible null termination
-			Result := Default_buffer
+			l_size := size_plus (size)
+			Result := empty_buffer
 			if attached area_v2 as l_area then
 				i_final := l_area.count
 				from i := 0 until i = i_final or found loop
-					if l_area [i].capacity >= size_plus then
+					if capacity_of (l_area [i]) >= l_size then
 						Result := l_area [i]
 						found := True
 					else
@@ -68,12 +67,12 @@ feature -- Access
 					l_area.remove_tail (1)
 
 				else
-					create Result.make_empty (size_plus)
+					Result := new_buffer (l_size)
 				end
 			end
 		ensure
-			not_default: Result /= Default_buffer
-			room_for_null_terminator: Result.capacity >= size + 1
+			not_default: Result /= Empty_buffer
+			big_enough: capacity_of (Result) >= size_plus (size)
 			ascending_order: is_sorted_ascending
 		end
 
@@ -90,7 +89,7 @@ feature -- Access
 			end
 			i_final := l_area.count
 			from i := 0 until i = i_final or found loop
-				if buffer.capacity < l_area [i].capacity then
+				if capacity_of (buffer) < capacity_of (l_area [i]) then
 					found := True
 				else
 					i := i + 1
@@ -107,11 +106,22 @@ feature -- Access
 			ascending_order: is_sorted_ascending
 		end
 
-feature {NONE} -- Constants
+feature {NONE} -- deferred
 
-	Default_buffer: SPECIAL [CHARACTER_8]
-		once
-			create Result.make_empty (0)
+	capacity_of (buffer: like item): INTEGER
+		deferred
+		end
+
+	empty_buffer: like item
+		deferred
+		end
+
+	new_buffer (size: INTEGER): like item
+		deferred
+		end
+
+	size_plus (size: INTEGER): INTEGER
+		deferred
 		end
 
 end

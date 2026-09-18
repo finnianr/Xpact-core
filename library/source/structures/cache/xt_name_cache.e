@@ -51,7 +51,7 @@ feature {NONE} -- Initialization
 
 	make
 		do
-			create area.make_filled (Default_bucket, Size)
+			create bucket_area.make_filled (Default_bucket, Size)
 		end
 
 feature -- Measurement
@@ -60,7 +60,7 @@ feature -- Measurement
 		local
 			count, item_count, i, i_final: INTEGER
 		do
-			if attached area as l_area then
+			if attached bucket_area as l_area then
 				from i := 0; i_final := l_area.count - 1 until i = i_final loop
 					if attached l_area [i] as bucket and then bucket /= Default_bucket then
 						count := count + 1
@@ -76,7 +76,7 @@ feature -- Measurement
 		local
 			i, i_final: INTEGER
 		do
-			if attached area as l_area then
+			if attached bucket_area as l_area then
 				from i := 0; i_final := l_area.count - 1 until i = i_final loop
 					if attached l_area [i] as bucket and then bucket /= Default_bucket then
 						Result := Result + 1
@@ -96,7 +96,7 @@ feature -- Access
 	bucket_distribution_gt_1: XT_NAME_OCCURRENCE_COUNT_TABLE
 		do
 			create Result.make (50)
-			across area as bucket loop
+			across bucket_area as bucket loop
 				if bucket.count > 1 then
 					Result.put (substitute (Stats_template, << bucket.count.out >>))
 				end
@@ -125,7 +125,7 @@ feature -- Conversion
 			i, i_final, j, j_final: INTEGER
 		do
 			create Result.make ((buckets_used_count * 1.05).rounded)
-			if attached area as l_area then
+			if attached bucket_area as l_area then
 				from i := 0; i_final := l_area.count - 1 until i = i_final loop
 					if attached l_area [i] as bucket and then bucket /= Default_bucket then
 						from j := 0; j_final := bucket.count - 1 until j = j_final loop
@@ -143,7 +143,7 @@ feature -- Status report
 	is_empty: BOOLEAN
 			-- Is structure empty?
 		do
-			Result := area.count = 0
+			Result := bucket_area.count = 0
 		end
 
 feature -- Basic operations
@@ -152,7 +152,7 @@ feature -- Basic operations
 		local
 			i: INTEGER
 		do
-			if attached area as a then
+			if attached bucket_area as a then
 				from i := 0 until i = Size loop
 					if attached a [i] as bucket and then bucket /= Default_bucket then
 						bucket.wipe_out
@@ -188,9 +188,9 @@ feature -- Basic operations
 		end
 
 	transfer (
-		buffer: SPECIAL [CHARACTER_8]; additions: SPECIAL [INTEGER]; attribute_list: XT_ATTRIBUTE_LIST
-		colon_index, element_depth, tag_name_lower, tag_name_upper: INTEGER
-	)
+		buffer: SPECIAL [CHARACTER_8]; additions: SPECIAL [INTEGER]; colon_index: INTEGER
+		attribute_list: XT_ATTRIBUTE_LIST; entity_list: ARRAYED_LIST [XT_ENTITY_NAME]
+	): INTEGER
 		-- add xmlns declaration
 		require
 			full_buffer: additions.count = 4
@@ -205,6 +205,15 @@ feature -- Event handler
 
 	on_pop (element_context: XT_ELEMENT_CONTEXT)
 		-- notification after `element_context.pop' was called
+		do
+			-- redefined in `XT_URI_MAPPED_NAME_CACHE'
+		end
+
+	on_xmlns_declaration_end (
+		buffer: SPECIAL [CHARACTER_8]; tag_name_lower, tag_name_upper: INTEGER
+		element_context: XT_ELEMENT_CONTEXT; attribute_list: XT_ATTRIBUTE_LIST
+	)
+		-- notification after reading list of attributes containing xmlns declaration
 		do
 			-- redefined in `XT_URI_MAPPED_NAME_CACHE'
 		end
@@ -227,7 +236,7 @@ feature {NONE} -- Implementation
 			not_empty: not is_empty
 			valid_colon_index: colon_index > 0 implies buffer [colon_index] = ':'
 		local
-			i, j, bucket_count: INTEGER; bucket: like area.item
+			i, j, bucket_count: INTEGER; bucket: like bucket_area.item
 			found: BOOLEAN;
 		do
 			Result := default_name
@@ -237,10 +246,10 @@ feature {NONE} -- Implementation
 			-- proveably better distribution if you use character after ':'
 				i := bucket_index (buffer, colon_index + 1, end_index)
 			end
-			bucket := area [i]
+			bucket := bucket_area [i]
 			if bucket = Default_bucket then
 				create bucket.make_empty (5)
-				area [i] := bucket
+				bucket_area [i] := bucket
 			else
 			-- search for match
 				bucket_count := bucket.count
@@ -257,7 +266,7 @@ feature {NONE} -- Implementation
 				Result := new_name (buffer, start_index, end_index, colon_index, is_attribute)
 				if bucket.count + 1 > bucket.capacity then
 					bucket := bucket.aliased_resized_area (bucket.capacity + bucket.capacity // 2)
-					area [i] := bucket
+					bucket_area [i] := bucket
 				end
 				bucket.extend (Result)
 				check
@@ -362,7 +371,8 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Internal attributes
 
-	area: SPECIAL [like Default_bucket]
+	bucket_area: SPECIAL [like Default_bucket]
+		-- array of buckets holding names with same hash value
 
 feature {NONE} -- Constants
 
