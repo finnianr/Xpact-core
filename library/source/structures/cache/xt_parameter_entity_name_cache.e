@@ -41,7 +41,7 @@ feature -- Access
 		require
 			ampersand_and_semicolon_excluded: buffer [start_index] /= Percent and buffer [end_index] /= ';'
 		do
-			Result := cached_item (buffer, start_index, end_index, 0, False)
+			Result := name_item (buffer, start_index, end_index, 0)
 		end
 
 	Percent: CHARACTER
@@ -51,7 +51,7 @@ feature -- Access
 
 feature {NONE} -- Implementation
 
-	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER; is_attribute: BOOLEAN): like default_name
+	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
 		-- take buffer segment from `start_index' to `end_index' and insert into "&;" at position 2
 		do
 			create Result.make_from_buffer (buffer, start_index, end_index, percent)

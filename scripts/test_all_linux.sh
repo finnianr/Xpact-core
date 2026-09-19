@@ -3,4 +3,8 @@
 
 . scripts/install_xml_reader.sh
 
-xml_reader -xml_hunt $* "/home/finnian/Documents/Programming/XML/Albert Chew samples"
+if [ -e /tmp/xml_reader ]; then
+	rm -r /tmp/xml_reader
+fi
+
+xml_reader -xml_hunt $* /

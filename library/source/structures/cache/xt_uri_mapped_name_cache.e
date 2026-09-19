@@ -15,7 +15,7 @@ class
 inherit
 	XT_NAME_CACHE
 		redefine
-			make, name_area, name_count, new_name, on_pop, on_xmlns_declaration_end,
+			attribute_item, make, name_area, name_count, new_name, on_pop, on_xmlns_declaration_end,
 			reset, transfer, valid_tag_name_count, Default_bucket
 		end
 
@@ -44,6 +44,11 @@ feature -- Access
 	separator: CHARACTER
 
 	naming_mode: INTEGER
+
+	attribute_item (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
+		do
+			Result := item (buffer, start_index, end_index, colon_index).as_attribute
+		end
 
 feature -- Basic operations
 
@@ -202,21 +207,18 @@ feature -- Contract support
 
 feature {NONE} -- Factory
 
-	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER; is_attribute: BOOLEAN): like default_name
+	new_name (buffer: SPECIAL [CHARACTER]; start_index, end_index, colon_index: INTEGER): like default_name
 		-- take buffer segment from `start_index' to `end_index' and insert into "&;" at position 2
 		local
 			name: STRING
 		do
 			inspect colon_index when 0 then
-				name := if is_attribute then Empty_string else Default_uri_key end
+				name := Default_uri_key
 			else
 				name := empty_buffer
 				append_area (name, buffer, start_index, colon_index - 1)
 			end
-			if name.is_empty then
-				create Result.make_from_buffer (buffer, start_index, end_index, NM_prefix_SEP_localname)
-
-			elseif attached uri_table [name] as uri then
+			if attached uri_table [name] as uri then
 				create Result.make_from_uri (buffer, start_index, end_index, colon_index, naming_mode, uri, separator)
 
 			else

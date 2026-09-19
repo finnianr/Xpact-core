@@ -116,7 +116,11 @@ feature -- Basic operations
 			inspect parsing_state
 				when State_check_encoding then
 					Memory.collection_off
-					set_encoding (chunk)
+					if chunk.count = 0 then
+						error_code := Error_no_elements
+					else
+						set_encoding (chunk)
+					end
 
 					inspect error_code when Error_none then
 						parsing_state := State_initialized

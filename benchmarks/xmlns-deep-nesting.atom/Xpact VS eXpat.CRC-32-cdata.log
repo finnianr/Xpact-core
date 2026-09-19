@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: xmlns-deep-nesting.atom
+
+2026 18 SEP 18:57
+xmlns-deep-nesting.atom: eXpat passes = 5283; Xpact-core passes = 6229 (x1.18 to eXpat)

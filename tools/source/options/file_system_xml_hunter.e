@@ -130,9 +130,7 @@ feature {NONE} -- Implementation
 
 				elseif attached new_package (file_path) as package and then package.is_valid then
 					IO.put_new_line
-					IO.put_string ("Package: ")
-					IO.put_string (file_path.utf_8_name)
-					IO.put_new_line
+					put_package_info (IO.Output, file_path, 0)
 					archive_occurrence_table.put (extension)
 					create package_tests.make (parse_data, package)
 					package_tests.set_file_handler (Current)
@@ -142,6 +140,9 @@ feature {NONE} -- Implementation
 					testing_package := False
 
 					fail_count := fail_count + package_tests.sum_fail_count
+					if package_tests.sum_fail_count > 0 then
+						put_package_info (log, file_path, package_tests.sum_fail_count)
+					end
 				else
 					create comparison.make (parse_data, file_path, log)
 					comparison.execute
@@ -156,6 +157,22 @@ feature {NONE} -- Implementation
 	new_package (path: PATH): XT_XML_PACKAGE
 		do
 			create Result.make_with_path (path)
+		end
+
+	put_package_info (output: PLAIN_TEXT_FILE; file_path: PATH; a_fail_count: INTEGER)
+		do
+			if attached output as o then
+				if a_fail_count > 0 then
+					o.put_string ("Package has "); log.put_integer (a_fail_count)
+					o.put_string (" failures:")
+					o.put_new_line
+				else
+					o.put_string ("Package: ")
+				end
+				o.put_string (file_path.utf_8_name)
+				o.put_new_line
+				o.put_new_line
+			end
 		end
 
 feature {NONE} -- Internal attributes

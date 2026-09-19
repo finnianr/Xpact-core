@@ -19,6 +19,10 @@ sudo mkdir $mount_dir
 sudo modprobe ntfs3
 sudo mount -t ntfs3 $dev_ntfs $mount_dir -o ro,noatime,uid=$(id -u),gid=$(id -g)
 
+if [ -e /tmp/xml_reader ]; then
+	rm -r /tmp/xml_reader
+fi
+
 xml_reader -xml_hunt $* $mount_dir
 # /Windows/WinSxS
 

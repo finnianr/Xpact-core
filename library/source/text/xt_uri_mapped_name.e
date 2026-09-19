@@ -60,6 +60,8 @@ feature {NONE} -- Initialization
 			else
 				make (end_index - mid_index + uri.count + 2)
 			end
+			has_prefix := colon_index.to_boolean
+
 			append_uri (uri, separator)
 			s.append_area (Current, buffer, mid_index, end_index)
 			if colon_index > 0 then
@@ -93,9 +95,39 @@ feature {NONE} -- Initialization
 		do
 			Precursor (n)
 			name_area := Default_area
+			unprefixed_attribute := Current
+		end
+
+feature -- Status query
+
+	has_prefix: BOOLEAN
+
+	starts_with_prefix (a_name: STRING): BOOLEAN
+		do
+			if count >= a_name.count + 2 and then area [a_name.count] = ':' then
+				Result := starts_with (a_name)
+			end
 		end
 
 feature -- Access
+
+	as_attribute: XT_URI_MAPPED_NAME
+		-- `Current' if `has_prefix' is true or else a lazily computed
+		-- `unprefixed_attribute'
+		do
+			if has_prefix then
+				Result := Current
+			else
+				Result := unprefixed_attribute
+				if Result = Current then
+					create Result.make_from_buffer (name_area, 0, name_count - 1, NM_prefix_SEP_localname)
+					unprefixed_attribute := Result
+				end
+			end
+		ensure
+			no_colon: not has_prefix implies not Result.has (':')
+			has_colon: has_prefix implies Result.has (':')
+		end
 
 	name_count: INTEGER
 
@@ -113,10 +145,10 @@ feature -- Access
 			wipe_out
 			append_uri (uri, name_cache.separator)
 			s.append_area (Current, name_area, colon_index + 1, name_count - 1)
-			inspect name_cache.naming_mode when NM_uri_SEP_localname_SEP_prefix then
+			if name_cache.naming_mode = NM_uri_SEP_localname_SEP_prefix then
 				append_character (name_cache.separator)
 				s.append_area (Current, name_area, 0, colon_index - 1)
-			else end
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -170,6 +202,10 @@ feature {NONE} -- Contract support
 				Result := s.Empty_string
 			end
 		end
+
+feature {NONE} -- Internal attributes
+
+	unprefixed_attribute: XT_URI_MAPPED_NAME
 
 feature {XT_URI_MAPPED_NAME_CACHE} -- Constants
 

@@ -1,7 +1,7 @@
 note
 	description: "[
 		${XT_ATTRIBUTE_LIST} with type of name cache changed to ${XT_URI_MAPPED_NAME_CACHE}
-		for name space aware parsing.
+		for namespace aware parsing.
 	]"
 
 	author: "Finnian Reilly"
@@ -17,6 +17,8 @@ class
 
 inherit
 	XT_ATTRIBUTE_LIST
+		rename
+			make as make_list
 		redefine
 			check_forward, is_xmlns_declaration, name_cache, name_area, transfer
 		end
@@ -27,7 +29,15 @@ inherit
 		end
 
 create
-	make
+	make, make_list
+
+feature {NONE} -- Initialization
+
+	make (n: INTEGER; parser_data: XT_PARSER_DATA)
+		do
+			make_list (n)
+			name_cache.set_naming (parser_data)
+		end
 
 feature -- Access
 
@@ -47,9 +57,9 @@ feature -- Basic operations
 		buffer: SPECIAL [CHARACTER_8]; additions: like area; colon_index: INTEGER; entity_list: ARRAYED_LIST [XT_ENTITY_NAME]
 	): INTEGER
 		do
-		-- Redefinition needed to compile in Precursor:
-		-- 	1. l_name_area.extend (name)
-		-- 	2. if has_duplicate_name (name, l_name_area) then
+		-- Redefinition needed to compile these lines `Precursor':
+		--   1. l_name_area.extend (name)
+		--   2. if has_duplicate_name (name, l_name_area) then
 
 			Result := Precursor (buffer, additions, colon_index, entity_list)
 		end
@@ -59,14 +69,11 @@ feature {NONE} -- Implementation
 	check_forward (prefix_name, uri: STRING)
 		-- check forward references of new xmlns declaration
 		local
-			i, i_final: INTEGER; name: XT_URI_MAPPED_NAME
+			i, i_final: INTEGER
 		do
 			if attached name_area as l_area then
 				from i := 0; i_final := l_area.count until i = i_final loop
-					name := l_area [i]
-					if name.count >= prefix_name.count + 2 and then name [prefix_name.count + 1] = ':'
-						and then name.starts_with (prefix_name)
-					then
+					if attached l_area [i] as name and then name.starts_with_prefix (prefix_name) then
 						name.update (name_cache, uri)
 					end
 					i := i + 1

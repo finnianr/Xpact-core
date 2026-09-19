@@ -42,19 +42,10 @@ inherit
 feature {NONE} -- Initialisation
 
 	make (parser_data: XT_PARSER_DATA)
-		local
-			URI_mapped_attribute_list: XT_URI_MAPPED_ATTRIBUTE_LIST
 		do
 			create scanned_entity_buffer.make (5)
 			create scanned_index_x4_buffer.make_empty (4)
-
-			inspect parser_data.naming_mode when NM_prefix_SEP_localname then
-				create attribute_list.make (11)
-			else
-				create URI_mapped_attribute_list.make (11)
-				URI_mapped_attribute_list.name_cache.set_naming (parser_data)
-				attribute_list := URI_mapped_attribute_list
-			end
+			attribute_list := new_attribute_list (parser_data)
 			name_cache := attribute_list.name_cache
 			entity_cache := attribute_list.entity_cache
 			entity_table := attribute_list.entity_table
@@ -94,6 +85,15 @@ feature {NONE} -- Implementation
 			Result := area_substring (buf, index, upper, True)
 		end
 
+	new_attribute_list (parser_data: XT_PARSER_DATA): XT_ATTRIBUTE_LIST
+		do
+			inspect parser_data.naming_mode when NM_prefix_SEP_localname then
+				create Result.make (Default_attributes_capacity)
+			else
+				create {XT_URI_MAPPED_ATTRIBUTE_LIST} Result.make (Default_attributes_capacity, parser_data)
+			end
+		end
+
 	new_bt_name (index: INTEGER): STRING
 		require
 			valid_index: BT_names_list.valid_index (index + 1)
@@ -123,5 +123,9 @@ feature {NONE} -- Internal attributes
 
 	bad_char_index: INTEGER
 			-- Set by `is_public_id' on failure: index of the bad character.
+
+feature {NONE} -- Constants
+
+	Default_attributes_capacity: INTEGER = 11
 
 end

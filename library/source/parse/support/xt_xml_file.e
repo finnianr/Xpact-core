@@ -88,6 +88,7 @@ feature -- Basic operations
 					end
 				end
 			else
+				chunk.set_count (0)
 				parse_status := parser.parse (chunk, True)
 			end
 			close

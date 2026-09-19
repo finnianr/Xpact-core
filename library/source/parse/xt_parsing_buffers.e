@@ -117,6 +117,8 @@ feature {NONE} -- Implementation
 	set_encoding (chunk: XT_C_STRING_CODEC)
 		-- check encoding in XML header calling `set_scanner (Latin_1)' if required
 		-- also check if document is actually XML or something weird
+		require
+			chunk_has_content: chunk.count > 0
 		local
 			l_chunk: XT_UTF_8_CODEC; u: UTF_CONVERTER
 			found, assumed_utf_8: BOOLEAN; declaration: STRING; declared_encoding: NATURAL_8
@@ -301,9 +303,8 @@ feature {NONE} -- Implementation
 
 	valid_encoding (a_encoding: INTEGER): BOOLEAN
 		do
-			inspect a_encoding
-				when ASCII .. UTF_16 then
-					Result := True
+			inspect a_encoding when ASCII .. UTF_16 then
+				Result := True
 			else
 			end
 		end

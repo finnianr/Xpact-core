@@ -235,7 +235,7 @@ feature {NONE} -- Implementation
 		do
 			from i := Version until i > Standalone loop
 				if attached {STRING} XML_declaration.reference_item (i + 1) as name then
-					xml_attribute [i] := name_cache.string_item (name)
+					xml_attribute [i] := name_cache.attribute_name (name)
 				end
 				i := i + 1
 			end
