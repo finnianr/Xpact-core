@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: word-document.xml
+
+2026 20 SEP 8:45
+word-document.xml: eXpat passes = 869; Xpact-core passes = 904 (x1.04 to eXpat)

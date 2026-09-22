@@ -13,13 +13,21 @@ else
 	opt_xmlns=
 fi
 
-xml_reader -test_files $opt_xmlns "tools/data/*.*"
+for dir_name in data data-large; do
+	xml_reader -test_files $opt_xmlns "tools/$dir_name/*.*"
+done
 
-if [ "$1" == "large" ]; then
+if [ "${!#}" == "large" ]; then
 	echo
-	echo Testing against libexpat/testdata/largefiles/\*.xml
-	xml_reader -test_files "$HOME/Dev/C/libexpat/testdata/largefiles/*.xml"
+	pushd .
+	
+	cd $HOME/Dev/C/libexpat/testdata
+	echo Testing against eXpat test data\: largefiles/\*.xml
+	xml_reader -test_files $opt_xmlns "largefiles/*.xml"
+	
+	popd
+
 else
-	echo Skipped large eXpat test files
+	echo Skipped large test files
 fi
 

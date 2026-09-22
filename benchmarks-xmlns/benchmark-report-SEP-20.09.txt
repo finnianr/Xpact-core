@@ -1,0 +1,14 @@
+[x1.61 to eXpat] steam_icon_500.svg CRC-32-comment: eXpat passes = 257; Xpact-core passes = 415
+[x1.60 to eXpat] steam_icon_500.svg CRC-32-text: eXpat passes = 254; Xpact-core passes = 406
+[x1.58 to eXpat] steam_icon_500.svg CRC-32-tag: eXpat passes = 253; Xpact-core passes = 401
+[x1.49 to eXpat] steam_icon_500.svg CRC-32-attribute: eXpat passes = 201; Xpact-core passes = 300
+[x1.47 to eXpat] xmlns-mandarin-stylesheet.xsl CRC-32-comment: eXpat passes = 2073; Xpact-core passes = 3053
+[x1.39 to eXpat] xmlns-mandarin-stylesheet.xsl CRC-32-tag: eXpat passes = 2028; Xpact-core passes = 2824
+[x1.38 to eXpat] xmlns-mandarin-stylesheet.xsl CRC-32-text: eXpat passes = 1980; Xpact-core passes = 2725
+[x1.32 to eXpat] xmlns-mandarin-stylesheet.xsl CRC-32-attribute: eXpat passes = 1892; Xpact-core passes = 2494
+[x1.11 to eXpat] word-document.xml CRC-32-text: eXpat passes = 904; Xpact-core passes = 1003
+[x1.11 to eXpat] word-document.xml CRC-32-comment: eXpat passes = 973; Xpact-core passes = 1083
+[x1.04 to eXpat] word-document.xml CRC-32-attribute: eXpat passes = 869; Xpact-core passes = 904
+[x1.03 to eXpat] word-document.xml CRC-32-tag: eXpat passes = 952; Xpact-core passes = 983
+
+Average performance: x1.344 relative to eXpat

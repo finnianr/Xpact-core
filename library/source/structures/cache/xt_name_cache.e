@@ -315,9 +315,8 @@ feature {NONE} -- Implementation
 		do
 			count := end_index - start_index + 1
 			if count = name_count (name) and then attached name_area (name) as l_area then
-				inspect count
-					when 1 .. 5 then
-						Result := buffer.same_items (l_area, 0, start_index, count)
+				inspect count when 1 .. 5 then
+					Result := buffer.same_items (l_area, 0, start_index, count)
 				else
 					if buffer [start_index] = l_area [0] and then buffer [end_index] = l_area [count - 1]
 						and then (colon_index > 0 implies l_area [colon_index - start_index] = ':')

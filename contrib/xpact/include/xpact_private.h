@@ -35,9 +35,7 @@ struct XML_ParserStruct {
 	enum XML_Parsing parsing;
 
 	void *externalEntityRefArg;
-	XML_SkippedEntityHandler skippedEntityHandler;
 	XML_Char namespaceSeparator;
-	XML_UnknownEncodingHandler unknownEncodingHandler;
 	void *unknownEncodingHandlerData;
 	XML_Parser parentParser;
 	int externalChildParseCount;
@@ -51,13 +49,19 @@ struct XML_ParserStruct {
 	XML_CharacterDataHandler characterDataHandler;
 	XML_CommentHandler commentHandler;
 	XML_DefaultHandler defaultHandler;
-	XML_EndElementHandler endElementHandler;
+
 	XML_EndCdataSectionHandler endCdataSectionHandler;
+	XML_EndElementHandler endElementHandler;
 	XML_ExternalEntityRefHandler externalEntityRefHandler;
+
 	XML_NotStandaloneHandler notStandaloneHandler;
 	XML_ProcessingInstructionHandler processingInstructionHandler;
+
+	XML_SkippedEntityHandler skippedEntityHandler;
 	XML_StartCdataSectionHandler startCdataSectionHandler;
 	XML_StartElementHandler startElementHandler;
+
+	XML_UnknownEncodingHandler unknownEncodingHandler;
 
 // Declaration handlers
 
@@ -78,24 +82,23 @@ struct XML_ParserStruct {
 // Separator can be null for RDF parsing compatibility
 //	XML_Bool hasNamespaceSeparator; 
 
-
 // Status query
 
-	XML_Bool useParserAsHandlerArg;
-	XML_Bool hasCustomMemory;
-	XML_Bool finalBuffer;
 	XML_Bool defaultHandlerExpands;
-	XML_Bool hasExternalEntityRefArg;
-	XML_Bool is_uri_mapped_ns; // m_ns in eXpat
-	XML_Bool returnNsTriplet;
-	XML_Bool useForeignDTD;
-	XML_Bool nextExternalEntityIsParameter;
-	XML_Bool nextExternalEntityIsParameterLiteral;
 	XML_Bool externalEntityIsParameter;
 	XML_Bool externalEntityIsParameterLiteral;
+	XML_Bool finalBuffer;
+	XML_Bool hasCustomMemory;
+	XML_Bool hasExternalEntityRefArg;
+	XML_Bool is_uri_mapped_ns; // m_ns in eXpat
+	XML_Bool nextExternalEntityIsParameter;
+	XML_Bool nextExternalEntityIsParameterLiteral;
+	XML_Bool reparseDeferralEnabled;
+	XML_Bool returnNsTriplet;
 	XML_Bool stopRequested;
 	XML_Bool stopResumable;
-	XML_Bool reparseDeferralEnabled;
+	XML_Bool useForeignDTD;
+	XML_Bool useParserAsHandlerArg;
 
 // Xpact-core "billion laugh hack" accounting defense
 	
@@ -103,8 +106,8 @@ struct XML_ParserStruct {
 	
 // Xpact-core parsing states
 	XML_Bool has_dtd_section;
-	XML_Bool in_prolog_section;
 	XML_Bool in_dtd_section;
+	XML_Bool in_prolog_section;
 	XML_Bool in_CDATA_section;
 
 // Xpact-core null-termination

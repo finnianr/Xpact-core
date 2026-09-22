@@ -1,0 +1,4 @@
+Log of benchmarks for parsing file: xmlns-mandarin-stylesheet.xsl
+
+2026 20 SEP 8:41
+xmlns-mandarin-stylesheet.xsl: eXpat passes = 2028; Xpact-core passes = 2824 (x1.39 to eXpat)
