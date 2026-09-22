@@ -11,7 +11,7 @@
 #define XPACT_PRIVATE_UNUSED
 #endif
 
-// Xpact-core "billion laugh hack" accounting defense
+// Xpact-core "billion-laugh"  hack accounting defense
 
 typedef unsigned long long XmlBigCount;
 typedef struct accounting {
@@ -21,6 +21,8 @@ typedef struct accounting {
   float maximumAmplificationFactor; // >=1.0
   unsigned long long activationThresholdBytes;
 } ACCOUNTING;
+
+// Wrapped by class XT_PARSER_DATA 
 
 struct XML_ParserStruct {
 	void *userData;
@@ -78,7 +80,6 @@ struct XML_ParserStruct {
 	XML_UnparsedEntityDeclHandler unparsedEntityDeclHandler;
 	XML_XmlDeclHandler xmlDeclHandler;
 
-
 // Separator can be null for RDF parsing compatibility
 //	XML_Bool hasNamespaceSeparator; 
 
@@ -100,7 +101,7 @@ struct XML_ParserStruct {
 	XML_Bool useForeignDTD;
 	XML_Bool useParserAsHandlerArg;
 
-// Xpact-core "billion laugh hack" accounting defense
+// Xpact-core "billion-laugh" hack accounting defense
 	
 	ACCOUNTING m_accounting;
 	
@@ -118,6 +119,8 @@ struct XML_ParserStruct {
 
 #define XPACT_CALLBACK_NONE 0
 #define XPACT_CALLBACK_CHARACTER_DATA 1
+
+// Possibly obsolete routines
 
 static XPACT_PRIVATE_UNUSED XML_Bool
 xp_private_append_utf8(char **buffer, int *length, int *capacity, int codepoint) {
