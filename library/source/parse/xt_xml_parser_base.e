@@ -477,22 +477,26 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_start_tag_no_attributes then
 							context.push (cached_tag_name (buf, index, names))
+							names.on_element_start (Current, parse_data)
 							on_element_start (buf, context, attributes, token, parse_data)
 
 						when Tok_start_tag_with_attributes then
 							context.push (cached_tag_name (buf, index, names))
+							names.on_element_start (Current, parse_data)
 							on_element_start (buf, context, attributes, token, parse_data)
 							attributes.wipe_out
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
 							tag_name := cached_tag_name (buf, index, names)
 							context.push (tag_name)
+							names.on_element_start (Current, parse_data)
 							on_element_start (buf, context, attributes, token, parse_data)
 							inspect token when Tok_empty_element_with_attributes then
 								attributes.wipe_out
 							else
 							end
 							on_element_end (tag_name, parse_data)
+							names.on_element_end (Current, parse_data)
 							inspect context.pop (tag_name) when Error_tag_mismatch then
 								Result := Error_tag_mismatch; done := True
 							else
@@ -502,6 +506,7 @@ feature {NONE} -- Processor dispatch
 						when Tok_end_tag then
 							tag_name := cached_tag_name (buf, index + 1, names)
 							on_element_end (tag_name, parse_data)  -- skip '</'
+							names.on_element_end (Current, parse_data)
 							inspect context.pop (tag_name) when Error_tag_mismatch then
 								Result := Error_tag_mismatch; done := True
 							else

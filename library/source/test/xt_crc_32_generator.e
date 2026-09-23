@@ -97,7 +97,7 @@ feature -- Status report
 
 	trace_enabled: BOOLEAN
 
-feature {NONE} -- Event handlers
+feature {NONE} -- Declaration event handlers
 
 	on_attribute_list_declaration (
 		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
@@ -114,29 +114,6 @@ feature {NONE} -- Event handlers
 					end
 					crc.add_boolean (is_required)
 				end
-			else
-			end
-		end
-
-	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
-		do
-			inspect data_type when Type_comment then
-				checksum.add_characters (area, start_index, end_index)
-			else
-			end
-		end
-
-	on_content (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
-		do
-			inspect data_type
-				when Type_cdata then
-					if c_in_cdata_section (parse_data) then
-						checksum.add_characters (area, start_index, end_index)
-					end
-				when Type_text then
-					if not c_in_cdata_section (parse_data) then
-						checksum.add_characters (area, start_index, end_index)
-					end
 			else
 			end
 		end
@@ -204,6 +181,20 @@ feature {NONE} -- Event handlers
 			else end
 		end
 
+	on_namespace_declaration_end (prefix, uri: STRING; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
+		-- 	void *userData, const XML_Char *prefix
+		-- );
+		do
+		end
+
+	on_namespace_declaration_start (prefix, uri: STRING; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_StartNamespaceDeclHandler) (
+		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri
+		-- );
+		do
+		end
+
 	on_notation_declaration (name: STRING; system_id, public_id: detachable STRING; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
 		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
@@ -225,6 +216,38 @@ feature {NONE} -- Event handlers
 					end
 				end
 			else end
+		end
+
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
+		do
+			inspect data_type when Type_xml_declaration then
+				attributes.append_xml_declaration_to_crc_32 (buf, checksum)
+			else end
+		end
+
+feature {NONE} -- Parse event handlers
+
+	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
+		do
+			inspect data_type when Type_comment then
+				checksum.add_characters (area, start_index, end_index)
+			else
+			end
+		end
+
+	on_content (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
+		do
+			inspect data_type
+				when Type_cdata then
+					if c_in_cdata_section (parse_data) then
+						checksum.add_characters (area, start_index, end_index)
+					end
+				when Type_text then
+					if not c_in_cdata_section (parse_data) then
+						checksum.add_characters (area, start_index, end_index)
+					end
+			else
+			end
 		end
 
 	on_element_start (
@@ -263,13 +286,6 @@ feature {NONE} -- Event handlers
 				end
 			else
 			end
-		end
-
-	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
-		do
-			inspect data_type when Type_xml_declaration then
-				attributes.append_xml_declaration_to_crc_32 (buf, checksum)
-			else end
 		end
 
 feature -- Factory

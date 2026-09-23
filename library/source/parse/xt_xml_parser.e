@@ -18,6 +18,8 @@ inherit
 			on_attribute_list_declaration as on_base_attribute_list_declaration,
 			on_content as on_base_content,
 			on_comment as on_base_commment,
+			on_namespace_declaration_end as on_base_namespace_declaration_end,
+			on_namespace_declaration_start as on_base_namespace_declaration_start,
 			on_element_declaration as on_base_element_declaration,
 			on_element_start as on_base_start_element,
 			on_element_end as on_base_end_element,
@@ -84,6 +86,20 @@ feature {NONE} -- Base event handlers
 				end
 				content_call_count := content_call_count + 1
 			end
+		end
+
+	on_base_namespace_declaration_end (prefix, uri: STRING; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
+		-- 	void *userData, const XML_Char *prefix
+		-- );
+		do
+		end
+
+	on_base_namespace_declaration_start (prefix, uri: STRING; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_StartNamespaceDeclHandler) (
+		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri
+		-- );
+		do
 		end
 
 	on_base_element_declaration (name: STRING; model: XT_ELEMENT_PARTICLE; parse_data: POINTER)

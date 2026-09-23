@@ -120,8 +120,6 @@ struct XML_ParserStruct {
 #define XPACT_CALLBACK_NONE 0
 #define XPACT_CALLBACK_CHARACTER_DATA 1
 
-// Possibly obsolete routines
-
 static XPACT_PRIVATE_UNUSED XML_Bool
 xp_private_append_utf8(char **buffer, int *length, int *capacity, int codepoint) {
 	int needed;

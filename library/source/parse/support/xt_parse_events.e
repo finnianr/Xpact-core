@@ -52,7 +52,7 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-feature {NONE} -- Deferred event handlers
+feature {NONE} -- Declaration event handlers
 
 	on_attribute_list_declaration (
 		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
@@ -61,22 +61,6 @@ feature {NONE} -- Deferred event handlers
 		-- typedef void(XMLCALL *XML_AttlistDeclHandler)(
 		--   void *userData, const XML_Char *elname, const XML_Char *attname,
 		--   const XML_Char *att_type, const XML_Char *dflt, int isrequired);
-		deferred
-		end
-
-	on_cdata_section_start (parse_data: POINTER)
-		deferred
-		end
-
-	on_cdata_section_end (parse_data: POINTER)
-		deferred
-		end
-
-	on_comment (buf: like buffer; start_index, end_index: INTEGER; parse_data: POINTER)
-		deferred
-		end
-
-	on_content (buf: like buffer; start_index, end_index: INTEGER; parse_data: POINTER)
 		deferred
 		end
 
@@ -109,9 +93,47 @@ feature {NONE} -- Deferred event handlers
 		deferred
 		end
 
+	on_namespace_declaration_end (prefix, uri: STRING; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
+		-- 	void *userData, const XML_Char *prefix
+		-- );
+		deferred
+		end
+
+	on_namespace_declaration_start (prefix, uri: STRING; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_StartNamespaceDeclHandler) (
+		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri
+		-- );
+		deferred
+		end
+
 	on_notation_declaration (name: STRING; system_id, public_id: detachable STRING; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
 		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
+		deferred
+		end
+
+	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
+		require
+			valid_attribute_indices_count: attributes.is_valid_count
+		deferred
+		end
+
+feature {NONE} -- Parse event handlers
+
+	on_cdata_section_start (parse_data: POINTER)
+		deferred
+		end
+
+	on_cdata_section_end (parse_data: POINTER)
+		deferred
+		end
+
+	on_comment (buf: like buffer; start_index, end_index: INTEGER; parse_data: POINTER)
+		deferred
+		end
+
+	on_content (buf: like buffer; start_index, end_index: INTEGER; parse_data: POINTER)
 		deferred
 		end
 
@@ -129,12 +151,6 @@ feature {NONE} -- Deferred event handlers
 	on_processing_instruction (
 		buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER
 	)
-		deferred
-		end
-
-	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
-		require
-			valid_attribute_indices_count: attributes.is_valid_count
 		deferred
 		end
 

@@ -255,6 +255,20 @@ feature {NONE} -- Declaration event handlers
 			end
 		end
 
+	on_namespace_declaration_end (prefix, uri: STRING; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
+		-- 	void *userData, const XML_Char *prefix
+		-- );
+		do
+		end
+
+	on_namespace_declaration_start (prefix, uri: STRING; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_StartNamespaceDeclHandler) (
+		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri
+		-- );
+		do
+		end
+
 	on_notation_declaration (name: STRING; system_id, public_id: detachable STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_NotationDeclHandler)(
 		-- 	void *userData, const XML_Char *notationName,

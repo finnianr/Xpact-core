@@ -28,6 +28,8 @@ inherit
 			on_doctype_declaration_start_ as on_doctype_declaration_start,
 			on_element_declaration_ as on_element_declaration,
 			on_entity_declaration_ as on_entity_declaration,
+			on_namespace_declaration_end_ as on_namespace_declaration_end,
+			on_namespace_declaration_start_ as on_namespace_declaration_start,
 			on_notation_declaration_ as on_notation_declaration,
 			on_element_end_ as on_element_end,
 			on_processing_instruction_ as on_processing_instruction,
