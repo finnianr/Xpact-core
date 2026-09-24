@@ -155,6 +155,11 @@ feature {NONE} -- Application options
 		do
 			file_path := last_path_argument
 			if Environment.file_exists (file_path, IO.Output) then
+				if attached file_path.entry as base then
+					IO.put_string ("Testing: ")
+					IO.put_string_32 (base.name)
+					IO.put_new_line
+				end
 				create comparison.make (new_parser_data, file_path, IO.Output)
 				comparison.execute
 				if comparison.both_agree then

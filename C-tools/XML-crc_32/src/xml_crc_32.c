@@ -26,13 +26,14 @@ typedef enum {
 	TYPE_ATTLIST,
 	TYPE_ENTITY,
 	TYPE_NOTATION,
-	TYPE_ELEMENT
+	TYPE_ELEMENT,
+	TYPE_XMLNS_DECL
 } data_type_t;
 
 static const char *data_type_name[] = {
 	"text", "cdata", "comment", "tag", "attribute",
 	"processing", "xml-decl", "doctype", "attlist", "entity", "notation",
-	"element"
+	"element", "xmlns-decl"
 };
 
 typedef struct {
@@ -348,6 +349,32 @@ static void XMLCALL on_element_decl(void *userData, const XML_Char *name,
 		XML_FreeContentModel(ctx->parser, model);
 }
 
+/* Combines the namespace declaration's fields, left to right as supplied to
+ * XML_StartNamespaceDeclHandler / XML_EndNamespaceDeclHandler, into the
+ * running checksum: prefix then uri for a start event, just prefix for an
+ * end event. prefix is NULL for a default (unprefixed) "xmlns" declaration;
+ * uri is NULL for an "xmlns=''" declaration undeclaring the default
+ * namespace; both are skipped when NULL. These handlers only ever fire when
+ * the parser was created with XML_ParserCreateNS (see -xmlns), since
+ * namespace processing must be enabled for expat to recognize xmlns
+ * declarations as such rather than as ordinary attributes. */
+static void XMLCALL on_start_namespace_decl(void *userData, const XML_Char *prefix,
+                                             const XML_Char *uri) {
+	crc_ctx_t *ctx = (crc_ctx_t *) userData;
+	if (ctx->type != TYPE_XMLNS_DECL) return;
+	if (prefix)
+		crc32_update(ctx, (const unsigned char *) prefix, strlen(prefix));
+	if (uri)
+		crc32_update(ctx, (const unsigned char *) uri, strlen(uri));
+}
+
+static void XMLCALL on_end_namespace_decl(void *userData, const XML_Char *prefix) {
+	crc_ctx_t *ctx = (crc_ctx_t *) userData;
+	if (ctx->type != TYPE_XMLNS_DECL) return;
+	if (prefix)
+		crc32_update(ctx, (const unsigned char *) prefix, strlen(prefix));
+}
+
 #define CHUNK_SIZE 4096
 
 /* Parses the file incrementally in 4096-byte chunks, feeding events into ctx.
@@ -391,6 +418,7 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	XML_SetEntityDeclHandler(parser, on_entity_decl);
 	XML_SetNotationDeclHandler(parser, on_notation_decl);
 	XML_SetElementDeclHandler(parser, on_element_decl);
+	XML_SetNamespaceDeclHandler(parser, on_start_namespace_decl, on_end_namespace_decl);
 
 	char buf[CHUNK_SIZE];
 	int done = 0;
@@ -422,7 +450,7 @@ static long now_ms(void) {
 static void usage(const char *prog) {
 	fprintf(stderr,
 			"Usage: %s -type <text|cdata|comment|tag|attribute|"
-			"processing|xml-decl|doctype|attlist|entity|notation|element> "
+			"processing|xml-decl|doctype|attlist|entity|notation|element|xmlns-decl> "
 			"[-duration <time-window-ms>] [-trace] [-xmlns [<separator>]] [-ns_triplets] "
 			"<xml-file-path>\n",
 			prog);
@@ -510,6 +538,7 @@ int main(int argc, char **argv) {
 	else if (strcmp(type_arg, "entity") == 0) type = TYPE_ENTITY;
 	else if (strcmp(type_arg, "notation") == 0) type = TYPE_NOTATION;
 	else if (strcmp(type_arg, "element") == 0) type = TYPE_ELEMENT;
+	else if (strcmp(type_arg, "xmlns-decl") == 0) type = TYPE_XMLNS_DECL;
 	else {
 		fprintf(stderr, "Error: invalid -type '%s'\n", type_arg);
 		usage(argv[0]);

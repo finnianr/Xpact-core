@@ -80,9 +80,9 @@ feature {NONE} -- Initialization
 	set_defaults
 		do
 			Precursor
-			is_standalone					:= False
-			parser_data.set_exponential_expansion_threshold (Default_exponential_expansion_threshold)
+			is_standalone := False
 			parser_data.set_defaults
+			parser_data.set_exponential_expansion_threshold (Default_exponential_expansion_threshold)
 		end
 
 feature -- Status query
@@ -588,7 +588,7 @@ feature {NONE} -- Implementation
 
 	name_error (buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]): INTEGER
 		-- try and agree with eXpat on whether invalid XML will be regarded as a syntax error or invalid token
-		-- the assumption is that parser has been given some binary data masquerading as XML, for example:
+		-- the assumption is that element_context has been given some binary data masquerading as XML, for example:
 		-- C:\Windows\WinSxS\amd64_microsoft-windows-deviceaccess_31bf3856ad364e35_10.0.26100.4202_none_a94ac2308a15fa4a\r\AppPrivacy.admx
 		local
 			token, index, tok_end, name_count: INTEGER; invalid_token: BOOLEAN
@@ -635,7 +635,7 @@ feature {NONE} -- Implementation
 		end
 
 	permit_undefined_entities: BOOLEAN
-		-- `True' if document is structured to allow undefined entities to be permitted by conforming parser
+		-- `True' if document is structured to allow undefined entities to be permitted by conforming element_context
 		-- Value is cached in `attribute_intervals.permit_undefined_entities'
 		local
 			parameter: XT_PARAMETER_ENTITY

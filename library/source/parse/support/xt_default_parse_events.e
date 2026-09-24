@@ -59,7 +59,7 @@ feature {NONE} -- Declaration event handlers
 		do
 		end
 
-	on_namespace_declaration_end_ (prefix, uri: STRING; parse_data: POINTER)
+	on_namespace_declaration_end_ (prefix: STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
 		-- 	void *userData, const XML_Char *prefix
 		-- );

@@ -1,5 +1,5 @@
 note
-	description: "Types of XML document data and names"
+	description: "Types/dimensions of XML document data and names"
 
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
@@ -42,7 +42,8 @@ feature {NONE} -- Constants
 				[Type_processing,				"processing"],	-- processing instruction name and data
 				[Type_tag,						"tag"],			-- tag name (open element)
 				[Type_text,						"text"],			-- text content
-				[Type_xml_declaration,		"xml-decl"]		-- XML declaration parts: version, encoding, standalone
+				[Type_xml_declaration,		"xml-decl"],	-- XML declaration parts: version, encoding, standalone
+				[Type_xmlns_declaration,	"xmlns-decl"]	-- XML namespace declaration and scope end
 			>>)
 		end
 
@@ -80,4 +81,5 @@ feature {NONE}	-- Constants
 
 	Type_xml_declaration: INTEGER = 12
 
+	Type_xmlns_declaration: INTEGER = 13
 end

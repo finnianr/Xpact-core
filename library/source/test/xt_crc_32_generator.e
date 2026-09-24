@@ -181,11 +181,17 @@ feature {NONE} -- Declaration event handlers
 			else end
 		end
 
-	on_namespace_declaration_end (prefix, uri: STRING; parse_data: POINTER)
+	on_namespace_declaration_end (prefix: STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
 		-- 	void *userData, const XML_Char *prefix
 		-- );
 		do
+			inspect data_type when Type_xmlns_declaration then
+				if prefix.count > 0 then
+					checksum.add_string (prefix)
+				end
+			else
+			end
 		end
 
 	on_namespace_declaration_start (prefix, uri: STRING; parse_data: POINTER)
@@ -193,6 +199,15 @@ feature {NONE} -- Declaration event handlers
 		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri
 		-- );
 		do
+			inspect data_type when Type_xmlns_declaration then
+				if attached checksum as crc then
+					if prefix.count > 0 then
+						crc.add_string (prefix)
+					end
+					crc.add_string (uri)
+				end
+			else
+			end
 		end
 
 	on_notation_declaration (name: STRING; system_id, public_id: detachable STRING; parse_data: POINTER)

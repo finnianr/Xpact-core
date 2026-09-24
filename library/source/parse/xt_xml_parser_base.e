@@ -17,6 +17,7 @@ inherit
 	XT_XML_PROLOG_PARSER
 		export
 			{ANY} read_natural_64
+			{XT_URI_MAPPED_NAME_CACHE} element_context, on_namespace_declaration_start, parser_data
 		redefine
 			make, set_defaults
 		end
@@ -46,7 +47,6 @@ feature {NONE} -- Initialization
 			is_final_buffer            := False
 			reparse_deferral_enabled   := True
 
-			handler_call_depth         := 0
 			last_buffer_request_size   := 0
 			partial_token_bytes_before := 0
 			parse_end_byte_index       := 0
@@ -54,7 +54,10 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	handler_call_depth: INTEGER
+	handler_call_depth: NATURAL
+		do
+			Result := parser_data.handler_call_depth
+		end
 
 	parsing_state: INTEGER
 			-- Current state: one of the State_* constants.
@@ -321,8 +324,7 @@ feature {NONE} -- Processor dispatch
 			end_in_buf:   end_index <= buffer_end
 			ptr_at_start: buffer_index = start_index
 		local
-			error, have_now, had_before, available: INTEGER; enough, done: BOOLEAN
-			context: like element_context
+			error, have_now, had_before, available: INTEGER; enough, done: BOOLEAN; context: XT_ELEMENT_CONTEXT
 			names: like name_cache; attributes: like attribute_list; buf: like buffer
 			bt_table: like Byte_type_table; declaration_stack: SPECIAL [INTEGER]
 		do
@@ -394,9 +396,9 @@ feature {NONE} -- Processor dispatch
 		end
 
 	call_on_start_parsing: BOOLEAN
-			-- If currently in State_initialized, call `on_start_parsing' for a
-			-- root parser; always succeeds for child/entity parsers.
-			-- Returns False only when `on_start_parsing' fails.
+		-- If currently in State_initialized, call `on_start_parsing' for a
+		-- root parser; always succeeds for child/entity parsers.
+		-- Returns False only when `on_start_parsing' fails.
 		do
 			if parsing_state = State_initialized then
 				if not on_start_parsing then
@@ -477,40 +479,35 @@ feature {NONE} -- Processor dispatch
 
 						when Tok_start_tag_no_attributes then
 							context.push (cached_tag_name (buf, index, names))
-							names.on_element_start (Current, parse_data)
 							on_element_start (buf, context, attributes, token, parse_data)
 
 						when Tok_start_tag_with_attributes then
 							context.push (cached_tag_name (buf, index, names))
-							names.on_element_start (Current, parse_data)
 							on_element_start (buf, context, attributes, token, parse_data)
 							attributes.wipe_out
 
 						when Tok_empty_element_with_attributes, Tok_empty_element_no_attributes then
 							tag_name := cached_tag_name (buf, index, names)
 							context.push (tag_name)
-							names.on_element_start (Current, parse_data)
 							on_element_start (buf, context, attributes, token, parse_data)
 							inspect token when Tok_empty_element_with_attributes then
 								attributes.wipe_out
 							else
 							end
 							on_element_end (tag_name, parse_data)
-							names.on_element_end (Current, parse_data)
 							inspect context.pop (tag_name) when Error_tag_mismatch then
 								Result := Error_tag_mismatch; done := True
 							else
-								names.on_pop (context)
+								names.on_pop (context, Current, parse_data)
 							end
 
 						when Tok_end_tag then
 							tag_name := cached_tag_name (buf, index + 1, names)
 							on_element_end (tag_name, parse_data)  -- skip '</'
-							names.on_element_end (Current, parse_data)
 							inspect context.pop (tag_name) when Error_tag_mismatch then
 								Result := Error_tag_mismatch; done := True
 							else
-								names.on_pop (context)
+								names.on_pop (context, Current, parse_data)
 							end
 
 						when Tok_comment then
@@ -617,29 +614,14 @@ feature {NONE} -- Processor dispatch
 
 feature {NONE} -- Implementation
 
+	current_parser: XT_XML_PARSER_BASE
+		do
+			Result := Current
+		end
+
 	in_cdata_section: BOOLEAN
 		do
 			Result := parser_data.in_cdata_section
-		end
-
-	increment_handler_depth
-		-- Signal entry into a parse-event callback.
-		require
-			parsing_active: parsing_state = State_parsing
-		do
-			handler_call_depth := handler_call_depth + 1
-		ensure
-			depth_increased: handler_call_depth = old handler_call_depth + 1
-		end
-
-	decrement_handler_depth
-		-- Signal exit from a parse-event callback.
-		require
-			in_handler: handler_call_depth > 0
-		do
-			handler_call_depth := handler_call_depth - 1
-		ensure
-			depth_decreased: handler_call_depth = old handler_call_depth - 1
 		end
 
 feature {NONE} -- Internal attributes
@@ -656,7 +638,6 @@ feature {NONE} -- Internal attributes
 invariant
 	valid_state: Parsing_states.has (parsing_state)
 	position_index_non_negative: position_index >= 0
-	non_negative_handler_depth: handler_call_depth >= 0
 	non_negative_byte_index: parse_end_byte_index >= 0
 	partial_token_non_negative: partial_token_bytes_before >= 0
 

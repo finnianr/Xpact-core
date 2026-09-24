@@ -228,23 +228,15 @@ feature -- Basic operations
 
 feature -- Event handler
 
-	on_pop (element_context: XT_ELEMENT_CONTEXT)
+	on_pop (element_context: XT_ELEMENT_CONTEXT; handler: XT_PARSE_EVENTS; parse_data: POINTER)
 		-- notification after `element_context.pop' was called
 		do
 			-- redefined in `XT_URI_MAPPED_NAME_CACHE'
 		end
 
-	on_element_end (handler: XT_PARSE_EVENTS; parse_data: POINTER)
-		do
-		end
-
-	on_element_start (handler: XT_PARSE_EVENTS; parse_data: POINTER)
-		do
-		end
-
 	on_xmlns_declaration_end (
 		buffer: SPECIAL [CHARACTER_8]; tag_name_lower, tag_name_upper: INTEGER
-		element_context: XT_ELEMENT_CONTEXT; attribute_list: XT_ATTRIBUTE_LIST
+		parser: XT_XML_PARSER_BASE; attribute_list: XT_ATTRIBUTE_LIST
 	)
 		-- notification after reading list of attributes containing xmlns declaration
 		do

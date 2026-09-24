@@ -60,6 +60,7 @@ feature -- Element change
 	set_defaults
 		do
 			set_has_dtd_section (self_ptr, False)
+			set_handler_call_depth (self_ptr, 0)
 			set_in_prolog_section (self_ptr, True)
 			set_in_cdata_section (self_ptr, False)
 			set_in_dtd_section (self_ptr, False)
@@ -102,6 +103,11 @@ feature -- Access
 		end
 
 feature -- Measurement
+
+	handler_call_depth: NATURAL
+		do
+			Result := c_handler_call_depth (self_ptr)
+		end
 
 	max_expansion_proportion: DOUBLE
 		do

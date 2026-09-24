@@ -46,6 +46,9 @@ struct XML_ParserStruct {
 	int activeCallbackKind;
 	int stopCallbackKind;
 	
+	unsigned handler_call_depth; // just in case it's needed
+	
+	
 // Handlers
 
 	XML_CharacterDataHandler characterDataHandler;

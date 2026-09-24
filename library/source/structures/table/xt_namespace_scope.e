@@ -25,6 +25,13 @@ inherit
 			empty_duplicate
 		end
 
+	XT_STRING_CONSTANTS
+		rename
+			Empty as Empty_literal
+		undefine
+			copy, is_equal
+		end
+
 create
 	make
 
@@ -45,6 +52,28 @@ feature -- Access
 	cache_bucket_area: SPECIAL [SPECIAL [XT_URI_MAPPED_NAME]]
 		-- name cache `bucket_area' from `XT_URI_MAPPED_NAME_CACHE'
 
+feature -- Event handler
+
+	on_pop (handler: XT_PARSE_EVENTS; parse_data: POINTER)
+		-- notification after `element_context.pop' was called
+		local
+			i, key_index: INTEGER; s: XT_STRING_8_ROUTINES; prefix: STRING
+		do
+			if attached appended_positions as area then
+			-- going in reverse order in which xmlns declarations were made
+				from i := area.count - 1 until i < 0 loop
+					key_index := area [i]
+					if attached keys as key_area and then key_area.valid_index (key_index)
+						and then attached key_area [key_index] as uri_key
+					then
+						prefix := if uri_key = Default_uri_key then s.Empty_string else uri_key end
+						handler.on_namespace_declaration_end (prefix, parse_data)
+					end
+					i := i - 1
+				end
+			end
+		end
+
 feature -- Element change
 
 	append (uri_table: HASH_TABLE [STRING, STRING])
@@ -55,11 +84,11 @@ feature -- Element change
 					force (table.item_for_iteration, table.key_for_iteration)
 					table.forth
 				end
-			-- record appended item positions for `endNamespaceDeclHandler'
+			-- record appended item positions for calling `on_namespace_declaration_end'
 				create appended_positions.make_empty (uri_table.count)
 				from table.start until table.after loop
 					internal_search (table.key_for_iteration)
-					appended_positions.extend (item_position)
+					appended_positions.extend (position)
 					table.forth
 				end
 			end
@@ -86,7 +115,7 @@ feature {NONE} -- Duplication
 			end
 		end
 
-feature {NONE} -- Internal attributes
+feature {XT_NAMESPACE_SCOPE} -- Internal attributes
 
 	appended_positions: SPECIAL [INTEGER]
 

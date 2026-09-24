@@ -52,7 +52,7 @@ feature {NONE} -- Event handlers
 		do
 		end
 
-feature {NONE} -- Declaration event handlers
+feature {XT_NAMESPACE_SCOPE} -- Declaration event handlers
 
 	on_attribute_list_declaration (
 		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
@@ -93,7 +93,7 @@ feature {NONE} -- Declaration event handlers
 		deferred
 		end
 
-	on_namespace_declaration_end (prefix, uri: STRING; parse_data: POINTER)
+	on_namespace_declaration_end (prefix: STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
 		-- 	void *userData, const XML_Char *prefix
 		-- );

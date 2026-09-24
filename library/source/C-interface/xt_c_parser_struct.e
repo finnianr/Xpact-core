@@ -154,6 +154,16 @@ feature {NONE} -- Measurement
 			"((XML_Parser) $ptr)->m_accounting.countBytesIndirect"
 		end
 
+
+	frozen c_handler_call_depth (ptr: POINTER): NATURAL
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->handler_call_depth"
+		end
+
 	frozen c_max_expansion_proportion (ptr: POINTER): DOUBLE
 		-- maximum proportion of entity expanded text to already processed text
 		-- permitted before raising error `Error_amplification_limit_breach'
@@ -186,16 +196,6 @@ feature {NONE} -- Measurement
 
 feature {NONE} -- Element change
 
-	frozen set_active_callback_kind (ptr: POINTER; kind: INTEGER)
-		require
-			parser_attached: is_attached (ptr)
-			-- Record the native callback kind currently dispatching.
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->activeCallbackKind = (int) $kind;"
-		end
-
 	frozen c_set_naming_mode (ptr: POINTER; naming_mode: INTEGER; separator: CHARACTER)
 		-- set class `XT_NAMING_MODE_CONSTANTS'
 		require
@@ -221,6 +221,46 @@ feature {NONE} -- Element change
 						break;
 				}
 			]"
+		end
+
+	frozen decrement_handler_call_depth (ptr: POINTER)
+		require
+			parser_attached: is_attached (ptr)
+			not_zero: c_handler_call_depth (ptr) /= 0
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->handler_call_depth --;"
+		end
+
+	frozen increment_handler_call_depth (ptr: POINTER)
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->handler_call_depth ++;"
+		end
+
+	frozen set_active_callback_kind (ptr: POINTER; kind: INTEGER)
+		require
+			parser_attached: is_attached (ptr)
+			-- Record the native callback kind currently dispatching.
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->activeCallbackKind = (int) $kind;"
+		end
+
+	frozen set_handler_call_depth (ptr: POINTER; depth: NATURAL)
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->handler_call_depth = (unsigned)$depth;"
+		ensure
+			handler_call_depth_set: c_handler_call_depth (ptr) = depth
 		end
 
 	frozen set_null_swap (ptr: POINTER; null_swap: CHARACTER)

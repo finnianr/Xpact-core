@@ -88,7 +88,7 @@ feature {NONE} -- Base event handlers
 			end
 		end
 
-	on_base_namespace_declaration_end (prefix, uri: STRING; parse_data: POINTER)
+	on_base_namespace_declaration_end (prefix: STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
 		-- 	void *userData, const XML_Char *prefix
 		-- );

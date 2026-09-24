@@ -601,7 +601,7 @@ feature {NONE} -- Constants
 		end
 
 	Empty_string: STRING_8
-		-- used to accumulate text for output
+		-- used to initialize string attributes
 		once
 			create Result.make_empty
 		end

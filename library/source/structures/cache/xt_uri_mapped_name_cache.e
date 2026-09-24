@@ -15,7 +15,8 @@ class
 inherit
 	XT_NAME_CACHE
 		redefine
-			attribute_item, make, name_area, name_count, new_name, on_pop, on_xmlns_declaration_end,
+			attribute_item, make, name_area, name_count, new_name,
+			on_pop, on_xmlns_declaration_end,
 			reset, transfer, valid_tag_name_count, Default_bucket
 		end
 
@@ -120,28 +121,37 @@ feature -- Element change
 
 feature -- Event handler
 
-	on_pop (element_context: XT_ELEMENT_CONTEXT)
+	on_pop (element_context: XT_ELEMENT_CONTEXT; handler: XT_PARSE_EVENTS; parse_data: POINTER)
 		-- notification after `element_context.pop' was called
+		local
+			element_depth: INTEGER
 		do
-			if element_context.depth + 1 = depth and then attached xmlns_scope_stack as stack
-				and then stack.count > 0 and then attached stack.item as scope
-			then
-				bucket_area := scope.cache_bucket_area
-				xmlns_scope := scope
-				depth := scope.depth
-				stack.remove
+			element_depth := element_context.depth
+			inspect element_depth when 0 then
+				xmlns_scope.on_pop (handler, parse_data)
+			else
+				if element_depth + 1 = depth and then attached xmlns_scope_stack as stack
+					and then stack.count > 0 and then attached stack.item as scope
+				then
+					xmlns_scope.on_pop (handler, parse_data)
+					bucket_area := scope.cache_bucket_area
+					xmlns_scope := scope
+					depth := scope.depth
+					stack.remove
+				end
 			end
 		end
 
 	on_xmlns_declaration_end (
 		buffer: SPECIAL [CHARACTER_8]; tag_name_lower, tag_name_upper: INTEGER
-		element_context: XT_ELEMENT_CONTEXT; attribute_list: XT_ATTRIBUTE_LIST
+		parser: XT_XML_PARSER_BASE; attribute_list: XT_ATTRIBUTE_LIST
 	)
 		-- notification after reading list of attributes containing xmlns declaration
 		local
-			scope: XT_NAMESPACE_SCOPE; nested_scope, recycle_strings: BOOLEAN
-			scope_key: STRING
+			scope: XT_NAMESPACE_SCOPE; nested_scope, recycle_strings, is_default_name: BOOLEAN
+			scope_key: STRING; element_context: XT_ELEMENT_CONTEXT; prefix: STRING
 		do
+			element_context := parser.element_context
 			inspect element_context.depth when 0 then
 				scope := xmlns_scope
 				scope.append (element_uri_table)
@@ -174,13 +184,16 @@ feature -- Event handler
 			if attached element_uri_table as table then
 				from table.start until table.after loop
 					if attached table.key_for_iteration as name and then attached table.item_for_iteration as uri then
+						is_default_name := name = Default_uri_key
 						attribute_list.check_forward (name, uri)
-						if depth = 0 and then name = Default_uri_key then
+						if depth = 0 and is_default_name then
 							element_context.update_default_attribute_names (Current)
 						end
+						prefix := if is_default_name then Empty_string else name end
+						parser.on_namespace_declaration_start (prefix, uri, parser.parser_data.self_ptr)
 						if recycle_strings then
 						-- recycle strings borrowed during `transfer'
-							if name /= Default_uri_key then
+							if not is_default_name then
 								string_pool.return (name)
 							end
 							string_pool.return (uri)
@@ -276,10 +289,6 @@ feature {NONE} -- Internal attributes
 
 	depth: INTEGER
 		-- element depth of current shadow scope
-
-	xmlns_pending: BOOLEAN
-		-- `True' when there is a xmlns declaration pending to fire handler
-		-- includes the case of going out of scope
 
 	xmlns_scope: XT_NAMESPACE_SCOPE
 

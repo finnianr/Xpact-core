@@ -340,7 +340,7 @@ feature {NONE} -- Tag scanning
 					attributes.wipe_out; scanned_index_x4_buffer.wipe_out
 				else
 					if xmlns_declaration_found then
-						name_cache.on_xmlns_declaration_end (buf, tag_name_lower, tag_name_upper, element_context, attributes)
+						name_cache.on_xmlns_declaration_end (buf, tag_name_lower, tag_name_upper, current_parser, attributes)
 					end
 				end
 			else
@@ -572,7 +572,7 @@ feature {NONE} -- Deferred
 		deferred
 		end
 
-	element_context: XT_ELEMENT_CONTEXT
+	current_parser: XT_XML_PARSER_BASE
 		deferred
 		end
 
