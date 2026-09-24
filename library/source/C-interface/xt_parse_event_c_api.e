@@ -195,6 +195,30 @@ feature {NONE} -- Declaration event call backs
 			]"
 		end
 
+	frozen call_on_namespace_declaration_end (callback, user_data, prefix: POINTER)
+			-- Invoke native `XML_EndNamespaceDeclHandler'.
+		require
+			callback_attached: is_attached (callback)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_EndNamespaceDeclHandler) $callback) ((void *) $user_data, (const char *) $prefix);"
+		end
+
+	frozen call_on_namespace_declaration_start (callback, user_data, prefix, uri: POINTER)
+			-- Invoke native `XML_StartNamespaceDeclHandler'.
+		require
+			callback_attached: is_attached (callback)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				((XML_StartNamespaceDeclHandler) $callback)(
+					(void *) $user_data, (const char *) $prefix, (const char *) $uri
+				);
+			]"
+		end
+
 	frozen call_on_notation_declaration (callback, user_data, notation_name, base, system_id, public_id: POINTER)
 			-- Invoke native `XML_NotationDeclHandler'.
 		require
@@ -326,6 +350,24 @@ feature {NONE} -- Declaration event handlers
 			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->entityDeclHandler"
+		end
+
+	frozen c_on_namespace_declaration_end (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->endNamespaceDeclHandler"
+		end
+
+	frozen c_on_namespace_declaration_start (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->startNamespaceDeclHandler"
 		end
 
 	frozen c_on_notation_declaration (ptr: POINTER): POINTER

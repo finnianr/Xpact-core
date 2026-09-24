@@ -61,9 +61,7 @@ feature {NONE} -- Parse event handlers
 		end
 
 	on_comment (buf: like buffer; start_index, end_index: INTEGER; parse_data: POINTER)
-		-- typedef void (XMLCALL *XML_CommentHandler) (
-		--		void *userData, const XML_Char *data
-		-- );
+		-- typedef void (XMLCALL *XML_CommentHandler) (void *userData, const XML_Char *data);
 		local
 			ptr: POINTER
 		do
@@ -76,9 +74,7 @@ feature {NONE} -- Parse event handlers
 		end
 
 	on_content (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
-		--	typedef void (XMLCALL *XML_CharacterDataHandler) (
-		--		void *userData, const XML_Char *s, int len
-		--	);	
+		--	typedef void (XMLCALL *XML_CharacterDataHandler) (void *userData, const XML_Char *s, int len);	
 		local
 			ptr: POINTER
 		do
@@ -91,9 +87,7 @@ feature {NONE} -- Parse event handlers
 		end
 
 	on_element_end (name: STRING; parse_data: POINTER)
-		--	typedef void (XMLCALL *XML_EndElementHandler) (
-		--		void *userData, const XML_Char *name
-		--	);	
+		--	typedef void (XMLCALL *XML_EndElementHandler) (void *userData, const XML_Char *name);	
 		local
 			ptr: POINTER
 		do
@@ -145,7 +139,6 @@ feature {NONE} -- Parse event handlers
 		-- typedef void (XMLCALL *XML_ProcessingInstructionHandler) (
 		--		void *userData, const XML_Char *target, const XML_Char *data
 		--	);
-
 		require else
 			buffer_big_enough: buf.valid_index (end_index + 1)
 		local
@@ -259,7 +252,13 @@ feature {NONE} -- Declaration event handlers
 		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
 		-- 	void *userData, const XML_Char *prefix
 		-- );
+		local
+			ptr: POINTER
 		do
+			ptr := c_on_namespace_declaration_end (parse_data)
+			if is_attached (ptr) then
+				call_on_namespace_declaration_end (ptr, c_user_data (parse_data), base_address_or_null (prefix))
+			end
 		end
 
 	on_namespace_declaration_start (prefix, uri: STRING; parse_data: POINTER)
@@ -267,12 +266,13 @@ feature {NONE} -- Declaration event handlers
 		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri
 		-- );
 		local
-			null, ptr: POINTER
+			ptr: POINTER
 		do
-			inspect prefix.count when 0 then
-				do_nothing
-			else
-
+			ptr := c_on_namespace_declaration_start (parse_data)
+			if is_attached (ptr) then
+				call_on_namespace_declaration_start (
+					ptr, c_user_data (parse_data), base_address_or_null (prefix), base_address_or_null (uri)
+				)
 			end
 		end
 
@@ -316,10 +316,25 @@ feature {NONE} -- Declaration event handlers
 feature {NONE} -- Implementation
 
 	base_address (a_str: detachable STRING): POINTER
+		-- `a_str.area.base_address' or else NULL pointer if `a_str = Void'
 		do
 			if attached a_str as str then
 				Result := str.area.base_address
 			end
+		ensure
+			valid_result: Result.is_default_pointer implies a_str = Void
+		end
+
+	base_address_or_null (a_str: STRING): POINTER
+		-- `a_str.area.base_address' or else NULL pointer if `a_str.is_empty'
+		do
+			inspect a_str.count when 0 then
+				do_nothing
+			else
+				Result := a_str.area.base_address
+			end
+		ensure
+			valid_result: Result.is_default_pointer implies a_str.is_empty
 		end
 
 	null_terminate (buf: like buffer; end_index: INTEGER; parse_data: POINTER)
