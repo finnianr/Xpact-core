@@ -247,7 +247,7 @@ feature {NONE} -- Contract support
 feature {NONE} -- Implementation
 
 	fill_ascii_half (t: SPECIAL [INTEGER])
-			-- Fill entries 0..127 with BT_* values from asciitab.h.
+		-- Fill entries 0..127 with BT_* values from asciitab.h.
 		do
 			-- 0x00-0x08, 0x0B-0x0C, 0x0E-0x1F: BT_non_xml = 0 (make_filled default)
 			t [9]  := 21; t [10] := 10; t [13] := 9   -- tab, LF, CR

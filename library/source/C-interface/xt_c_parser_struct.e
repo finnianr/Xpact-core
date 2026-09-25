@@ -92,6 +92,30 @@ feature {NONE} -- Access
 			"((XML_Parser) $ptr)->null_swap"
 		end
 
+feature {NONE} -- Combined ASCII + UTF-8 upper byte classification
+
+	frozen c_byte_table_code (ptr, character_buffer: POINTER; i: INTEGER): INTEGER
+		-- byte classification for `i'th character in `character_buffer'
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				unsigned char c = ((unsigned char *)$character_buffer)[(int)$i];
+				return ((XML_Parser) $ptr)->byte_type_table [(int)c];
+			]"
+		end
+
+	frozen c_byte_table_item (ptr: POINTER; i: INTEGER): INTEGER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->byte_type_table [(int)$i]"
+		end
+
 feature {NONE} -- Declaration token stack
 
 	frozen declaration_stack_count (ptr: POINTER): INTEGER
@@ -170,7 +194,6 @@ feature {NONE} -- Declaration token stack
 	frozen declaration_stack_wipe_out (ptr: POINTER)
 		require
 			parser_attached: is_attached (ptr)
-			has_at_least_one_item: declaration_stack_count (ptr) >= 1
 		external
 			"C inline use <xpact_private.h>"
 		alias
@@ -550,6 +573,16 @@ feature {NONE} -- Element change
 			"((XML_Parser) $ptr)->null_index = (int)$null_index;"
 		ensure
 			null_index_set: null_index = c_null_index (ptr)
+		end
+
+	frozen put_byte_table (ptr: POINTER; i, type: INTEGER)
+		require
+			parser_attached: is_attached (ptr)
+			valid_index: 0 <= i and i < 256
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->byte_type_table [(int)$i] = (int)$type;"
 		end
 
 end

@@ -50,6 +50,8 @@ struct XML_ParserStruct {
 	
 	unsigned handler_call_depth; // just in case it's needed
 	
+// Combined ASCII + UTF-8 upper byte classification table.
+	int byte_type_table [256];
 	
 // Handlers
 
