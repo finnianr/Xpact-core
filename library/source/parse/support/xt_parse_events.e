@@ -67,8 +67,7 @@ feature {XT_NAMESPACE_SCOPE} -- Declaration event handlers
 	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
 		-- typedef void (
 		-- 	XMLCALL *XML_StartDoctypeDeclHandler)(void *userData,
- 		-- 	const XML_Char *doctypeName, const XML_Char *sysid, const XML_Char *pubid, int has_internal_subset
- 		-- );
+ 		-- 	const XML_Char *doctypeName, const XML_Char *sysid, const XML_Char *pubid, int has_internal_subset);
 
 		deferred
 		end
@@ -95,15 +94,13 @@ feature {XT_NAMESPACE_SCOPE} -- Declaration event handlers
 
 	on_namespace_declaration_end (prefix: STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
-		-- 	void *userData, const XML_Char *prefix
-		-- );
+		-- 	void *userData, const XML_Char *prefix);
 		deferred
 		end
 
 	on_namespace_declaration_start (prefix, uri: STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_StartNamespaceDeclHandler) (
-		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri
-		-- );
+		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri);
 		deferred
 		end
 
@@ -113,9 +110,49 @@ feature {XT_NAMESPACE_SCOPE} -- Declaration event handlers
 		deferred
 		end
 
+	on_unparsed_entity_declaration (
+		entity_name: STRING; system_id, public_id, notation_name: detachable STRING; parse_data: POINTER
+	)
+		-- typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
+		-- 	void *userData, const XML_Char *entityName, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId, const XML_Char *notationName);
+		deferred
+		end
+
 	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
 		require
 			valid_attribute_indices_count: attributes.is_valid_count
+		deferred
+		end
+
+feature {NONE} -- Other parse events
+
+	on_default (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_DefaultHandler) (void *userData, const XML_Char *s, int len);
+		deferred
+		end
+
+	on_external_entity_reference (context: STRING; system_id, public_id: detachable STRING; parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_ExternalEntityRefHandler) (
+		-- 	XML_Parser parser, const XML_Char *context, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId);
+		deferred
+		end
+
+	on_not_standalone (parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
+		deferred
+		end
+
+	on_skipped_entity (entity_name: STRING; is_parameter_entity: BOOLEAN; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_SkippedEntityHandler) (
+		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity);
+		deferred
+		end
+
+	on_unknown_encoding (name: STRING; parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_UnknownEncodingHandler) (
+		-- 	void *encodingHandlerData, const XML_Char *name, XML_Encoding *info);
 		deferred
 		end
 

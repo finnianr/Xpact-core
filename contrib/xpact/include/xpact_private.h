@@ -116,10 +116,16 @@ struct XML_ParserStruct {
 	XML_Bool in_prolog_section;
 	XML_Bool in_CDATA_section;
 
+// DOCTYPE declaration token stack
+
+	int declaration_stack_count;
+	int declaration_stack [2];
+
 // Xpact-core null-termination
 	
 	XML_Char null_swap;
 	int null_index;
+
 };
 
 #define XPACT_CALLBACK_NONE 0

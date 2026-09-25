@@ -21,7 +21,7 @@ class
 inherit
 	EL_C_API
 
-feature {NONE} -- Parse event call backs
+feature {NONE} -- Data event call backs
 
 	frozen call_on_cdata_section_end (callback, user_data: POINTER)
 		-- typedef void (XMLCALL *XML_EndCdataSectionHandler) (void *userData);
@@ -116,6 +116,87 @@ feature {NONE} -- Parse event call backs
 				((XML_ProcessingInstructionHandler) $callback)(
 					(void *) $user_data, (const char *) $target, (const char *) $data
 				);
+			]"
+		end
+
+feature {NONE} -- Parse event call backs
+
+	frozen call_on_default (callback, user_data, s: POINTER; length: INTEGER)
+			-- Invoke native `XML_DefaultHandler'.
+			-- typedef void (XMLCALL *XML_DefaultHandler) (
+			-- 	void *userData, const XML_Char *s, int len);
+		require
+			callback_attached: is_attached (callback)
+			s_attached: is_attached (s)
+			non_negative_length: length >= 0
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_DefaultHandler) $callback) ((void *) $user_data, (const char *) $s, (int) $length);"
+		end
+
+	frozen call_on_external_entity_reference (callback, parser, context, base, system_id, public_id: POINTER): INTEGER
+			-- Invoke native `XML_ExternalEntityRefHandler'.
+			-- typedef int (XMLCALL *XML_ExternalEntityRefHandler) (
+			-- 	XML_Parser parser, const XML_Char *context, const XML_Char *base,
+			-- 	const XML_Char *systemId, const XML_Char *publicId);
+		require
+			callback_attached: is_attached (callback)
+			context_attached: is_attached (context)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				((XML_ExternalEntityRefHandler) $callback)(
+					(XML_Parser) $parser, (const char *) $context, (const char *) $base,
+					(const char *) $system_id, (const char *) $public_id
+				)
+			]"
+		end
+
+	frozen call_on_not_standalone (callback, user_data: POINTER): INTEGER
+			-- Invoke native `XML_NotStandaloneHandler'.
+			-- typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
+		require
+			callback_attached: is_attached (callback)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_NotStandaloneHandler) $callback) ((void *) $user_data)"
+		end
+
+	frozen call_on_skipped_entity (callback, user_data, entity_name: POINTER; is_parameter_entity: INTEGER)
+			-- Invoke native `XML_SkippedEntityHandler'.
+			-- typedef void (XMLCALL *XML_SkippedEntityHandler) (
+			-- 	void *userData, const XML_Char *entityName, int is_parameter_entity);
+		require
+			callback_attached: is_attached (callback)
+			entity_name_attached: is_attached (entity_name)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				((XML_SkippedEntityHandler) $callback)(
+					(void *) $user_data, (const char *) $entity_name, (int) $is_parameter_entity
+				);
+			]"
+		end
+
+	frozen call_on_unknown_encoding (callback, encoding_handler_data, name, info: POINTER): INTEGER
+			-- Invoke native `XML_UnknownEncodingHandler'.
+			-- typedef int (XMLCALL *XML_UnknownEncodingHandler) (
+			-- 	void *encodingHandlerData, const XML_Char *name, XML_Encoding *info);
+		require
+			callback_attached: is_attached (callback)
+			name_attached: is_attached (name)
+			info_attached: is_attached (info)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				((XML_UnknownEncodingHandler) $callback)(
+					(void *) $encoding_handler_data, (const char *) $name, (XML_Encoding *) $info
+				)
 			]"
 		end
 
@@ -235,6 +316,27 @@ feature {NONE} -- Declaration event call backs
 			]"
 		end
 
+	frozen call_on_unparsed_entity_declaration (
+		callback, user_data, entity_name, base, system_id, public_id, notation_name: POINTER
+	)
+			-- Invoke native `XML_UnparsedEntityDeclHandler'.
+			-- typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
+			-- 	void *userData, const XML_Char *entityName, const XML_Char *base,
+			-- 	const XML_Char *systemId, const XML_Char *publicId, const XML_Char *notationName);
+		require
+			callback_attached: is_attached (callback)
+			entity_name_attached: is_attached (entity_name)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				((XML_UnparsedEntityDeclHandler) $callback)(
+					(void *) $user_data, (const char *) $entity_name, (const char *) $base,
+					(const char *) $system_id, (const char *) $public_id, (const char *) $notation_name
+				);
+			]"
+		end
+
 	frozen call_on_xml_declaration (callback, user_data, version, encoding: POINTER; standalone: INTEGER)
 			-- Invoke native `XML_XmlDeclHandler'.
 		require
@@ -249,7 +351,7 @@ feature {NONE} -- Declaration event call backs
 			]"
 		end
 
-feature {NONE} -- Parse event handlers
+feature {NONE} -- Data event handlers
 
 	frozen c_on_cdata_section_end (ptr: POINTER): POINTER
 		require
@@ -312,6 +414,53 @@ feature {NONE} -- Parse event handlers
 			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->processingInstructionHandler"
+		end
+
+feature {NONE} -- Other parse event handlers
+
+	frozen c_on_default (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->defaultHandler"
+		end
+
+	frozen c_on_external_entity_reference (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->externalEntityRefHandler"
+		end
+
+	frozen c_on_not_standalone (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->notStandaloneHandler"
+		end
+
+	frozen c_on_skipped_entity (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->skippedEntityHandler"
+		end
+
+	frozen c_on_unknown_encoding (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->unknownEncodingHandler"
 		end
 
 feature {NONE} -- Declaration event handlers
@@ -377,6 +526,15 @@ feature {NONE} -- Declaration event handlers
 			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->notationDeclHandler"
+		end
+
+	frozen c_on_unparsed_entity_declaration (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->unparsedEntityDeclHandler"
 		end
 
 	frozen c_on_xml_declaration (ptr: POINTER): POINTER

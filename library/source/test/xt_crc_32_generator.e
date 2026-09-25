@@ -233,6 +233,12 @@ feature {NONE} -- Declaration event handlers
 			else end
 		end
 
+	on_unparsed_entity_declaration (
+		entity_name: STRING; system_id, public_id, notation_name: detachable STRING; parse_data: POINTER
+	)
+		do
+		end
+
 	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
 		do
 			inspect data_type when Type_xml_declaration then
@@ -240,7 +246,7 @@ feature {NONE} -- Declaration event handlers
 			else end
 		end
 
-feature {NONE} -- Parse event handlers
+feature {NONE} -- Data event handlers
 
 	on_comment (area: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
 		do
@@ -301,6 +307,28 @@ feature {NONE} -- Parse event handlers
 				end
 			else
 			end
+		end
+
+feature {NONE} -- Parse events
+
+	on_default (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
+		do
+		end
+
+	on_external_entity_reference (context: STRING; system_id, public_id: detachable STRING; parse_data: POINTER): BOOLEAN
+		do
+		end
+
+	on_not_standalone (parse_data: POINTER): BOOLEAN
+		do
+		end
+
+	on_skipped_entity (entity_name: STRING; is_parameter_entity: BOOLEAN; parse_data: POINTER)
+		do
+		end
+
+	on_unknown_encoding (name: STRING; parse_data: POINTER): BOOLEAN
+		do
 		end
 
 feature -- Factory

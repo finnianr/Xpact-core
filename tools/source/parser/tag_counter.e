@@ -25,14 +25,20 @@ inherit
 			on_cdata_section_end_ as on_cdata_section_end,
 			on_comment_ as on_comment,
 			on_content_ as on_content,
+			on_default_ as on_default,
 			on_doctype_declaration_start_ as on_doctype_declaration_start,
 			on_element_declaration_ as on_element_declaration,
 			on_entity_declaration_ as on_entity_declaration,
+			on_external_entity_reference_ as on_external_entity_reference,
 			on_namespace_declaration_end_ as on_namespace_declaration_end,
 			on_namespace_declaration_start_ as on_namespace_declaration_start,
+			on_not_standalone_ as on_not_standalone,
 			on_notation_declaration_ as on_notation_declaration,
 			on_element_end_ as on_element_end,
 			on_processing_instruction_ as on_processing_instruction,
+			on_skipped_entity_ as on_skipped_entity,
+			on_unknown_encoding_ as on_unknown_encoding,
+			on_unparsed_entity_declaration_ as on_unparsed_entity_declaration,
 			on_xml_declaration_ as on_xml_declaration
 		end
 

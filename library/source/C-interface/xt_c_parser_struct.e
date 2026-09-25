@@ -92,6 +92,91 @@ feature {NONE} -- Access
 			"((XML_Parser) $ptr)->null_swap"
 		end
 
+feature {NONE} -- Declaration token stack
+
+	frozen declaration_stack_count (ptr: POINTER): INTEGER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->declaration_stack_count"
+		end
+
+	frozen declaration_stack_first (ptr: POINTER): INTEGER
+		require
+			parser_attached: is_attached (ptr)
+			has_at_least_one_item: declaration_stack_count (ptr) >= 1
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				XML_Parser p = (XML_Parser) $ptr;
+				return p->declaration_stack [0];
+			]"
+		end
+
+	frozen declaration_stack_item (ptr: POINTER): INTEGER
+		require
+			parser_attached: is_attached (ptr)
+			has_at_least_one_item: declaration_stack_count (ptr) >= 1
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				XML_Parser p = (XML_Parser) $ptr;
+				return p->declaration_stack [p->declaration_stack_count - 1];
+			]"
+		end
+
+	frozen declaration_stack_pop (ptr: POINTER)
+		require
+			parser_attached: is_attached (ptr)
+			has_at_least_one_item: declaration_stack_count (ptr) >= 1
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->declaration_stack_count --;"
+		end
+
+	frozen declaration_stack_push (ptr: POINTER; item: INTEGER)
+		require
+			parser_attached: is_attached (ptr)
+			enough_room: 2 - declaration_stack_count (ptr) > 0
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				XML_Parser p = (XML_Parser) $ptr;
+				p->declaration_stack_count ++;
+				p->declaration_stack [p->declaration_stack_count - 1] = (int)$item;
+			]"
+		end
+
+	frozen declaration_stack_replace (ptr: POINTER; item: INTEGER)
+		-- replace top item
+		require
+			parser_attached: is_attached (ptr)
+			not_empty: declaration_stack_count (ptr) > 0
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				XML_Parser p = (XML_Parser) $ptr;
+				p->declaration_stack [p->declaration_stack_count - 1] = (int)$item;
+			]"
+		end
+
+	frozen declaration_stack_wipe_out (ptr: POINTER)
+		require
+			parser_attached: is_attached (ptr)
+			has_at_least_one_item: declaration_stack_count (ptr) >= 1
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->declaration_stack_count = 0;"
+		end
+
 feature {NONE} -- Status query
 
 	frozen c_has_dtd_section (ptr: POINTER): BOOLEAN

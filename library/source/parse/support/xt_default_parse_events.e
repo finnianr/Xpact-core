@@ -61,15 +61,13 @@ feature {NONE} -- Declaration event handlers
 
 	on_namespace_declaration_end_ (prefix: STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
-		-- 	void *userData, const XML_Char *prefix
-		-- );
+		-- 	void *userData, const XML_Char *prefix);
 		do
 		end
 
 	on_namespace_declaration_start_ (prefix, uri: STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_StartNamespaceDeclHandler) (
-		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri
-		-- );
+		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri);
 		do
 		end
 
@@ -79,11 +77,52 @@ feature {NONE} -- Declaration event handlers
 		do
 		end
 
+	on_unparsed_entity_declaration_ (
+		entity_name: STRING; system_id, public_id, notation_name: detachable STRING; parse_data: POINTER
+	)
+		-- typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
+		-- 	void *userData, const XML_Char *entityName, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId, const XML_Char *notationName);
+		do
+		end
+
 	on_xml_declaration_ (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
 		do
 		end
 
-feature {NONE} -- Parse event handlers
+feature {NONE} -- Parse events
+
+	on_default_ (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_DefaultHandler) (
+		-- 	void *userData, const XML_Char *s, int len);
+		do
+		end
+
+	on_external_entity_reference_ (context: STRING; system_id, public_id: detachable STRING; parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_ExternalEntityRefHandler) (
+		-- 	XML_Parser parser, const XML_Char *context, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId);
+		do
+		end
+
+	on_not_standalone_ (parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
+		do
+		end
+
+	on_skipped_entity_ (entity_name: STRING; is_parameter_entity: BOOLEAN; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_SkippedEntityHandler) (
+		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity);
+		do
+		end
+
+	on_unknown_encoding_ (name: STRING; parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_UnknownEncodingHandler) (
+		-- 	void *encodingHandlerData, const XML_Char *name, XML_Encoding *info);
+		do
+		end
+
+feature {NONE} -- Data event handlers
 
 	on_cdata_section_start_ (parse_data: POINTER)
 		do

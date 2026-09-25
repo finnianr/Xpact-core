@@ -18,12 +18,18 @@ inherit
 			on_attribute_list_declaration as on_base_attribute_list_declaration,
 			on_content as on_base_content,
 			on_comment as on_base_commment,
+			on_default as on_base_default,
+			on_external_entity_reference as on_base_external_entity_reference,
 			on_namespace_declaration_end as on_base_namespace_declaration_end,
 			on_namespace_declaration_start as on_base_namespace_declaration_start,
+			on_not_standalone as on_base_not_standalone,
 			on_element_declaration as on_base_element_declaration,
 			on_element_start as on_base_start_element,
 			on_element_end as on_base_end_element,
-			on_processing_instruction as on_base_processing_instruction
+			on_processing_instruction as on_base_processing_instruction,
+			on_skipped_entity as on_base_skipped_entity,
+			on_unknown_encoding as on_base_unknown_encoding,
+			on_unparsed_entity_declaration as on_base_unparsed_entity_declaration
 		redefine
 			make
 		end
@@ -88,6 +94,21 @@ feature {NONE} -- Base event handlers
 			end
 		end
 
+	on_base_default (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_DefaultHandler) (
+		-- 	void *userData, const XML_Char *s, int len);
+		do
+		end
+
+	on_base_external_entity_reference (
+		context: STRING; system_id, public_id: detachable STRING; parse_data: POINTER
+	): BOOLEAN
+		-- typedef int (XMLCALL *XML_ExternalEntityRefHandler) (
+		-- 	XML_Parser parser, const XML_Char *context, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId);
+		do
+		end
+
 	on_base_namespace_declaration_end (prefix: STRING; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
 		-- 	void *userData, const XML_Char *prefix
@@ -99,6 +120,32 @@ feature {NONE} -- Base event handlers
 		-- typedef void (XMLCALL *XML_StartNamespaceDeclHandler) (
 		-- 	void *userData, const XML_Char *prefix, const XML_Char *uri
 		-- );
+		do
+		end
+
+	on_base_not_standalone (parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
+		do
+		end
+
+	on_base_skipped_entity (entity_name: STRING; is_parameter_entity: BOOLEAN; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_SkippedEntityHandler) (
+		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity);
+		do
+		end
+
+	on_base_unknown_encoding (name: STRING; parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_UnknownEncodingHandler) (
+		-- 	void *encodingHandlerData, const XML_Char *name, XML_Encoding *info);
+		do
+		end
+
+	on_base_unparsed_entity_declaration (
+		entity_name: STRING; system_id, public_id, notation_name: detachable STRING; parse_data: POINTER
+	)
+		-- typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
+		-- 	void *userData, const XML_Char *entityName, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId, const XML_Char *notationName);
 		do
 		end
 

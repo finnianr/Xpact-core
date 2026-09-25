@@ -44,7 +44,6 @@ feature {NONE} -- Initialization
 		do
 			parser_data := a_parser_data
 			create attribute_value_defaults_table.make (37)
-			create doctype_declaration_stack.make_empty (2)
 			doctype_identifiers := [Empty_string, Empty_string]
 			element_context := parser_data.new_element_context
 			create parameter_entity_table.make (3)
@@ -92,21 +91,21 @@ feature -- Status query
 feature {NONE} -- Token processing
 
 	process_doctype_definition (
-		buf: like buffer; index, end_index, token: INTEGER; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
+		buf: like buffer; index, end_index, token: INTEGER; names: like name_cache
 		parse_data: POINTER; done, default_case, common_case: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
 			decl_type, declaration: INTEGER; parts_list: XT_DECLARATION_PARTS_LIST
 		do
-			inspect declaration_stack.count when 0 then
+			inspect declaration_stack_count (parse_data) when 0 then
 				parts_list := document_type_parts_list
 			else
-				declaration := declaration_stack [declaration_stack.count - 1]
+				declaration := declaration_stack_item (parse_data)
 				parts_list := declaration_parts [declaration - 1]
 			end
 			inspect token
 				when Tok_close_bracket then
-					inspect declaration_stack.count when 1 then
+					inspect declaration_stack_count (parse_data) when 1 then
 						set_in_dtd_section (parse_data, False)
 					else
 						Result := Error_syntax; put_boolean (done, True)
@@ -117,24 +116,24 @@ feature {NONE} -- Token processing
 					inspect decl_type when 0 then
 						Result := Error_syntax; put_boolean (done, True)
 					else
-						inspect declaration_stack.count when 1 then
-							declaration_stack.extend (decl_type)
+						inspect declaration_stack_count (parse_data) when 1 then
+							declaration_stack_push (parse_data, decl_type)
 						else
 							Result := Error_syntax; put_boolean (done, True)
 						end
 					end
 
 				when Tok_decl_close then
-					inspect declaration_stack.count when 2 then
+					inspect declaration_stack_count (parse_data) when 2 then
 						Result := on_close_declaration (declaration, token, parse_data)
-						declaration_stack.remove_tail (1)
+						declaration_stack_pop (parse_data)
 					else
 						Result := Error_syntax; put_boolean (done, True)
 					end
 
 				when Tok_name then
 					inspect declaration when ATTLIST, ELEMENT, ENTITY_, NOTATION_, PARAMETER_ENTITY then
-						if declaration_stack.count = 2 then
+						inspect declaration_stack_count (parse_data) when 2 then
 							parts_list.extend (buf, index, end_index, token, newline_or_tab_found)
 							if parts_list.is_complete then
 								Result := on_close_declaration (declaration, token, parse_data)
@@ -148,7 +147,7 @@ feature {NONE} -- Token processing
 
 				when Tok_name_question, Tok_name_asterisk, Tok_name_plus then
 					inspect declaration when ELEMENT then
-						if declaration_stack.count = 2 then
+						inspect declaration_stack_count (parse_data) when 2 then
 							parts_list.extend (buf, index, end_index - 1, token, newline_or_tab_found)
 						else
 							Result := Error_syntax; put_boolean (done, True)
@@ -159,7 +158,7 @@ feature {NONE} -- Token processing
 
 				when Tok_literal then
 					inspect declaration when ATTLIST, ELEMENT, ENTITY_, NOTATION_, PARAMETER_ENTITY then
-						if declaration_stack.count = 2 then
+						inspect declaration_stack_count (parse_data) when 2 then
 							if attached expanded_dtd_literal (buf, index, end_index) as str
 								and then attached str.area as area
 							then
@@ -194,16 +193,14 @@ feature {NONE} -- Token processing
 
 				when Tok_percent then
 					inspect declaration when ENTITY_ then
-						inspect declaration_stack.count when 2 then
+						inspect declaration_stack_count (parse_data) when 2 then
 							declaration := PARAMETER_ENTITY
-							declaration_stack [1] := declaration
+							declaration_stack_replace (parse_data, declaration)
 						else end
 					else end
 
 				when Tok_param_entity_ref then
-					Result := process_parameter_entity (
-						buf, index + 1, end_index - 1, names, declaration_stack, parse_data, done
-					)
+					Result := process_parameter_entity (buf, index + 1, end_index - 1, names, parse_data, done)
 
 				when Tok_open_parenthesis, Tok_or, Tok_close_parenthesis, Tok_close_paren_plus,
 					Tok_close_paren_question, Tok_close_paren_asterisk, Tok_comma
@@ -216,8 +213,8 @@ feature {NONE} -- Token processing
 		end
 
 	process_parameter_entity (
-		buf: like buffer; start_index, end_index: INTEGER; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
-		parse_data: POINTER; done: TYPED_POINTER [BOOLEAN]
+		buf: like buffer; start_index, end_index: INTEGER; names: like name_cache; parse_data: POINTER
+		done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
 			buffer_index_copy, error: INTEGER; entity_name: XT_ENTITY_NAME; source_type: NATURAL_8
@@ -236,8 +233,7 @@ feature {NONE} -- Token processing
 					entity_name.open
 					update_accounting_source_type (parse_data)
 					error := process_content (
-						value.area, 0, value.count, Byte_type_table, attribute_list, names, declaration_stack,
-						element_context, parse_data
+						value.area, 0, value.count, Byte_type_table, attribute_list, names, element_context, parse_data
 					)  -- Recurse
 
 					entity_name.close
@@ -259,8 +255,7 @@ feature {NONE} -- Token processing
 
 	process_prolog (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_LIST
-		names: like name_cache; declaration_stack: SPECIAL [INTEGER]; parse_data: POINTER
-		a_index: TYPED_POINTER [INTEGER]; done: TYPED_POINTER [BOOLEAN]
+		names: like name_cache; parse_data: POINTER; a_index: TYPED_POINTER [INTEGER]; done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
 		local
@@ -272,7 +267,7 @@ feature {NONE} -- Token processing
 			tok_end := next_token_index
 			if c_in_dtd_section (parse_data) then
 				Result := process_doctype_definition (
-					buf, index, tok_end - 1, token, names, declaration_stack, parse_data, done, $default_case, $common_case
+					buf, index, tok_end - 1, token, names, parse_data, done, $default_case, $common_case
 				)
 			else
 				inspect token
@@ -309,16 +304,16 @@ feature {NONE} -- Token processing
 						inspect decl_type when 0 then
 							Result := Error_syntax; put_boolean (done, True)
 						else
-							inspect declaration_stack.count when 0 then
-								declaration_stack.extend (decl_type)
+							inspect declaration_stack_count (parse_data) when 0 then
+								declaration_stack_push (parse_data, decl_type)
 							else
 								Result := Error_syntax; put_boolean (done, True)
 							end
 						end
 
 					when Tok_decl_close then
-						inspect declaration_stack.count when 1 then
-							declaration_stack.remove_tail (1)
+						inspect declaration_stack_count (parse_data) when 1 then
+							declaration_stack_pop (parse_data)
 							if c_has_dtd_section (parse_data) then
 								do_nothing
 							else
@@ -330,21 +325,21 @@ feature {NONE} -- Token processing
 						end
 
 					when Tok_literal then
-						if declaration_stack.count = 1 and then declaration_stack [0] = Doctype then
+						if declaration_stack_count (parse_data) = 1 and then declaration_stack_first (parse_data) = Doctype then
 							document_type_parts_list.extend (buf, index + 1, tok_end - 2, token, newline_or_tab_found)
 						else
 							Result := name_error (buf, index, end_index, bt_table); put_boolean (done, True)
 						end
 
 					when Tok_name then
-						if declaration_stack.count = 1 and then declaration_stack [0] = Doctype then
+						if declaration_stack_count (parse_data) = 1 and then declaration_stack_first (parse_data) = Doctype then
 							document_type_parts_list.extend (buf, index, tok_end - 1, token, newline_or_tab_found)
 						else
 							Result := name_error (buf, index, end_index, bt_table); put_boolean (done, True)
 						end
 
 					when Tok_open_bracket then
-						if declaration_stack.count = 1 and then attached document_type_parts_list as parts_list then
+						inspect declaration_stack_count (parse_data) when 1 then
 							set_in_dtd_section (parse_data, True)
 							set_has_dtd_section (parse_data, True)
 							Result := on_close_declaration (DOCTYPE, token, parse_data)
@@ -373,9 +368,9 @@ feature {NONE} -- Token processing
 						put_boolean (done, True)
 
 					when Tok_open_bracket, Tok_close_bracket, tok_open_parenthesis, tok_close_parenthesis, Tok_or, Tok_name_question then
-						if declaration_stack.count = 0 then
+						inspect declaration_stack_count (parse_data) when 0 then
 							Result := Error_syntax; put_boolean (done, True)
-						end
+						else end
 
 					when Tok_pi then
 						on_processing_instruction (buf, index + 2, tok_end - 3, attributes, parse_data)
@@ -538,11 +533,6 @@ feature {NONE} -- Implementation
 			Result := parser_data.in_prolog_section
 		end
 
-	in_doctype_definition: BOOLEAN
-		do
-			Result := doctype_declaration_stack.count > 0
-		end
-
 	declaration_type (buf: like buffer; offset: INTEGER): INTEGER
 		-- one of: Attlist, Doctype, Element, Entity or 0 if no match
 		do
@@ -687,7 +677,6 @@ feature {NONE} -- Implementation
 				declaration_parts [i].wipe_out
 				i := i + 1
 			end
-			doctype_declaration_stack.wipe_out
 			parameter_entity_table.wipe_out
 
 			doctype_identifiers.uri := Empty_string
@@ -698,7 +687,7 @@ feature {NONE} -- Deferred
 
 	process_content (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
-		attributes: XT_ATTRIBUTE_LIST; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
+		attributes: XT_ATTRIBUTE_LIST; names: like name_cache
 		a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER
 	): INTEGER
 		require
@@ -743,9 +732,6 @@ feature {NONE} -- Internal attributes
 	doctype_identifiers: TUPLE [formal_public, uri: STRING]
 		-- The two literal strings shown in this example:
 		-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-
-	doctype_declaration_stack: SPECIAL [INTEGER]
-		-- DOCTYPE declaration type stack
 
 	element_context: XT_ELEMENT_CONTEXT
 

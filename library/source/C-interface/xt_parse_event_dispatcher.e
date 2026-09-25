@@ -293,6 +293,15 @@ feature {NONE} -- Declaration event handlers
 			end
 		end
 
+	on_unparsed_entity_declaration (
+		entity_name: STRING; system_id, public_id, notation_name: detachable STRING; parse_data: POINTER
+	)
+		-- typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
+		-- 	void *userData, const XML_Char *entityName, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId, const XML_Char *notationName);
+		do
+		end
+
 	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_XmlDeclHandler)(
 		-- 	void *userData, const XML_Char *version, const XML_Char *encoding, int standalone
@@ -311,6 +320,38 @@ feature {NONE} -- Declaration event handlers
 			end
 		ensure then
 			buffer_unchanged: attributes.upper_plus_1_characters (buf) ~ old attributes.upper_plus_1_characters (buf)
+		end
+
+feature {NONE} -- Other parse events
+
+	on_default (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_DefaultHandler) (
+		-- 	void *userData, const XML_Char *s, int len);
+		do
+		end
+
+	on_external_entity_reference (context: STRING; system_id, public_id: detachable STRING; parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_ExternalEntityRefHandler) (
+		-- 	XML_Parser parser, const XML_Char *context, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId);
+		do
+		end
+
+	on_not_standalone (parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
+		do
+		end
+
+	on_skipped_entity (entity_name: STRING; is_parameter_entity: BOOLEAN; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_SkippedEntityHandler) (
+		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity);
+		do
+		end
+
+	on_unknown_encoding (name: STRING; parse_data: POINTER): BOOLEAN
+		-- typedef int (XMLCALL *XML_UnknownEncodingHandler) (
+		-- 	void *encodingHandlerData, const XML_Char *name, XML_Encoding *info);
+		do
 		end
 
 feature {NONE} -- Implementation

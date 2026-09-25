@@ -69,9 +69,12 @@ feature -- Element change
 			set_in_prolog_section (self_ptr, True)
 			set_in_cdata_section (self_ptr, False)
 			set_in_dtd_section (self_ptr, False)
+
 			c_set_accounting_source_type (self_ptr, Source_content)
 			c_set_accounting_content_count (self_ptr, 1) -- prevent divide by zero error
 			c_set_entity_expansion_count (self_ptr, 0)
+
+			declaration_stack_wipe_out (self_ptr)
 		end
 
 	set_naming_mode (a_naming_mode: INTEGER; separator: CHARACTER)
