@@ -66,7 +66,7 @@ feature {XT_STRING_CONSTANTS} -- Declaration types
 
 	Parameter_entity: INTEGER = 6
 
-feature {NONE} -- Content expansion
+feature {NONE} -- Entity expansion accounting
 
 	Default_exponential_expansion_threshold: NATURAL_64 = 0x800000
 		-- number of bytes processed after which checks for runaway expansion should be performed

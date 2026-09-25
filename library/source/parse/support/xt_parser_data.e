@@ -36,6 +36,11 @@ inherit
 			copy, is_equal
 		end
 
+	XT_PARSE_CONSTANTS
+		undefine
+			copy, is_equal
+		end
+
 create
 	make, make_default, make_shared
 
@@ -64,8 +69,9 @@ feature -- Element change
 			set_in_prolog_section (self_ptr, True)
 			set_in_cdata_section (self_ptr, False)
 			set_in_dtd_section (self_ptr, False)
-			c_set_content_count (self_ptr, 1) -- prevent divide by zero error
-			set_entity_expansion_count (self_ptr, 0)
+			c_set_accounting_source_type (self_ptr, Source_content)
+			c_set_accounting_content_count (self_ptr, 1) -- prevent divide by zero error
+			c_set_entity_expansion_count (self_ptr, 0)
 		end
 
 	set_naming_mode (a_naming_mode: INTEGER; separator: CHARACTER)
@@ -116,7 +122,7 @@ feature -- Measurement
 
 	content_count: NATURAL_64
 		do
-			Result := c_content_count (self_ptr)
+			Result := c_accounting_content_count (self_ptr)
 		end
 
 feature -- Status query

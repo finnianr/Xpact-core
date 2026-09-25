@@ -64,16 +64,17 @@ feature -- Basic operations
 
 	transfer (
 		buffer: SPECIAL [CHARACTER_8]; additions: SPECIAL [INTEGER]; colon_index: INTEGER
-		attribute_list: XT_ATTRIBUTE_LIST; entity_list: ARRAYED_LIST [XT_ENTITY_NAME]
+		attributes: XT_ATTRIBUTE_LIST; entity_list: ARRAYED_LIST [XT_ENTITY_NAME]
 	): INTEGER
-		-- add xmlns declaration
+		-- add single xmlns declaration from `buffer' intervals specifified in `additions' and expanding any
+		-- entities.
 		local
 			start_index: INTEGER; expanded_uri, uri, name_key: STRING
 		do
 			start_index := local_part_index (additions [0], colon_index)
-			if entity_list.count > 0 and then attached attribute_list.entity_table as entity_table then
+			if entity_list.count > 0 and then attached attributes.entity_table as entity_table then
 				expanded_uri := entity_table.expanded_value (buffer, additions [2], additions [3], entity_list.area, False, False)
-				if entity_table.undefined_entity_found and then not attribute_list.permit_undefined_entities then
+				if entity_table.undefined_entity_found and then not attributes.permit_undefined_entities then
 					Result := Error_undefined_entity; uri := Empty_string
 				else
 					uri := new_recyleable (expanded_uri.area, 0, expanded_uri.count - 1)
@@ -144,7 +145,7 @@ feature -- Event handler
 
 	on_xmlns_declaration_end (
 		buffer: SPECIAL [CHARACTER_8]; tag_name_lower, tag_name_upper: INTEGER
-		parser: XT_XML_PARSER_BASE; attribute_list: XT_ATTRIBUTE_LIST
+		parser: XT_XML_PARSER_BASE; attributes: XT_ATTRIBUTE_LIST
 	)
 		-- notification after reading list of attributes containing xmlns declaration
 		local
@@ -185,7 +186,7 @@ feature -- Event handler
 				from table.start until table.after loop
 					if attached table.key_for_iteration as name and then attached table.item_for_iteration as uri then
 						is_default_name := name = Default_uri_key
-						attribute_list.check_forward (name, uri)
+						attributes.check_forward (name, uri)
 						if depth = 0 and is_default_name then
 							element_context.update_default_attribute_names (Current)
 						end
@@ -270,7 +271,7 @@ feature {NONE} -- Implementation
 		end
 
 	scope_table_key (buffer: SPECIAL [CHARACTER_8]; tag_name_lower, tag_name_upper: INTEGER): STRING
-		-- unique key to search for an existing scope `like area' that can be reused
+		-- unique key to search for an existing scope `XT_NAMESPACE_SCOPE' that can be reused
 		-- For example, the declaration from ATOM feed: <div xmlns='http://www.w3.org/1999/xhtml'>
 		-- yields this key: "div|<default>|http://www.w3.org/1999/xhtml"
 		do
@@ -290,17 +291,20 @@ feature {NONE} -- Internal attributes
 	depth: INTEGER
 		-- element depth of current shadow scope
 
-	xmlns_scope: XT_NAMESPACE_SCOPE
-
-	xmlns_scope_table: HASH_TABLE [XT_NAMESPACE_SCOPE, STRING]
-
 	element_uri_table: HASH_TABLE [STRING, STRING]
 		-- small buffer table to store xmlns declarations for most recent element
 
 	string_pool: XT_STRING_BUFFER_POOL
 		-- recycleable strings
 
+	xmlns_scope: XT_NAMESPACE_SCOPE
+		-- current scope of last element to define a namespace
+
+	xmlns_scope_table: HASH_TABLE [XT_NAMESPACE_SCOPE, STRING]
+		-- reuseable scopes looked up by `scope_table_key'
+
 	xmlns_scope_stack: ARRAYED_STACK [XT_NAMESPACE_SCOPE]
+		-- scopes of parent elements
 
 feature {NONE} -- Constants
 

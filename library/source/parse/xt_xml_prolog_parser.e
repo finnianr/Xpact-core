@@ -93,7 +93,7 @@ feature {NONE} -- Token processing
 
 	process_doctype_definition (
 		buf: like buffer; index, end_index, token: INTEGER; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
-		parse_data: POINTER; a_source_type: NATURAL_8; done, default_case, common_case: TYPED_POINTER [BOOLEAN]
+		parse_data: POINTER; done, default_case, common_case: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
 			decl_type, declaration: INTEGER; parts_list: XT_DECLARATION_PARTS_LIST
@@ -202,7 +202,7 @@ feature {NONE} -- Token processing
 
 				when Tok_param_entity_ref then
 					Result := process_parameter_entity (
-						buf, index + 1, end_index - 1, names, declaration_stack, parse_data, a_source_type, done
+						buf, index + 1, end_index - 1, names, declaration_stack, parse_data, done
 					)
 
 				when Tok_open_parenthesis, Tok_or, Tok_close_parenthesis, Tok_close_paren_plus,
@@ -217,10 +217,10 @@ feature {NONE} -- Token processing
 
 	process_parameter_entity (
 		buf: like buffer; start_index, end_index: INTEGER; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
-		parse_data: POINTER; a_source_type: NATURAL_8; done: TYPED_POINTER [BOOLEAN]
+		parse_data: POINTER; done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
-			buffer_index_copy, error: INTEGER; entity_name: XT_ENTITY_NAME
+			buffer_index_copy, error: INTEGER; entity_name: XT_ENTITY_NAME; source_type: NATURAL_8
 		do
 			entity_name := parameter_name_cache.item (buf, start_index, end_index)
 			if entity_name.is_open then
@@ -232,14 +232,16 @@ feature {NONE} -- Token processing
 					do_nothing
 				elseif attached parameter.value as value then
 					buffer_index_copy := buffer_index -- save field
-					buffer_index := 0
+					buffer_index := 0; source_type := c_accounting_source_type (parse_data)
 					entity_name.open
+					update_accounting_source_type (parse_data)
 					error := process_content (
 						value.area, 0, value.count, Byte_type_table, attribute_list, names, declaration_stack,
-						element_context, parse_data, source_type (parse_data, a_source_type)
+						element_context, parse_data
 					)  -- Recurse
 
 					entity_name.close
+					c_set_accounting_source_type (parse_data, source_type) -- restore accounting source type
 					buffer_index := buffer_index_copy -- restore field
 					set_in_cdata_section (parse_data, False) -- restore state
 
@@ -257,7 +259,7 @@ feature {NONE} -- Token processing
 
 	process_prolog (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]; attributes: XT_ATTRIBUTE_LIST
-		names: like name_cache; declaration_stack: SPECIAL [INTEGER]; parse_data: POINTER; a_source_type: NATURAL_8
+		names: like name_cache; declaration_stack: SPECIAL [INTEGER]; parse_data: POINTER
 		a_index: TYPED_POINTER [INTEGER]; done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
@@ -270,8 +272,7 @@ feature {NONE} -- Token processing
 			tok_end := next_token_index
 			if c_in_dtd_section (parse_data) then
 				Result := process_doctype_definition (
-					buf, index, tok_end - 1, token, names, declaration_stack, parse_data, a_source_type,
-					done, $default_case, $common_case
+					buf, index, tok_end - 1, token, names, declaration_stack, parse_data, done, $default_case, $common_case
 				)
 			else
 				inspect token
@@ -693,29 +694,12 @@ feature {NONE} -- Implementation
 			doctype_identifiers.formal_public := Empty_string
 		end
 
-
-	source_type (parse_data: POINTER; a_source_type: NATURAL_8): NATURAL_8
-		local
-			l_count: NATURAL_64
-		do
-			inspect a_source_type when Source_expansion_with_checks then
-				Result := a_source_type
-			else
-				l_count := c_content_count (parse_data) + c_entity_expansion_count (parse_data)
-				if l_count > c_exponential_expansion_threshold (parse_data) then
-					Result := Source_expansion_with_checks
-				else
-					Result := Source_expansion
-				end
-			end
-		end
-
 feature {NONE} -- Deferred
 
 	process_content (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
 		attributes: XT_ATTRIBUTE_LIST; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
-		a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER; a_source_type: NATURAL_8
+		a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER
 	): INTEGER
 		require
 			valid_range: start_index >= 0 and then start_index <= end_index

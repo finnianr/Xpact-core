@@ -84,7 +84,7 @@ feature -- Element change
 					force (table.item_for_iteration, table.key_for_iteration)
 					table.forth
 				end
-			-- record appended item positions for calling `on_namespace_declaration_end'
+			-- record appended item positions for calling handler `on_namespace_declaration_end'
 				create appended_positions.make_empty (uri_table.count)
 				from table.start until table.after loop
 					internal_search (table.key_for_iteration)
@@ -107,7 +107,7 @@ feature -- Element change
 feature {NONE} -- Duplication
 
 	empty_duplicate (n: INTEGER): like Current
-			-- Create an empty copy of Current that can accommodate `n' items
+		-- Create an empty copy of Current that can accommodate `n' items
 		do
 			create Result.make (create {like cache_bucket_area}.make_empty (0), n)
 			if object_comparison then
@@ -118,6 +118,7 @@ feature {NONE} -- Duplication
 feature {XT_NAMESPACE_SCOPE} -- Internal attributes
 
 	appended_positions: SPECIAL [INTEGER]
+		-- positions of new entries added by `append'
 
 feature {NONE} -- Constants
 

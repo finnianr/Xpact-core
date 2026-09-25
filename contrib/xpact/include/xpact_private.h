@@ -14,12 +14,14 @@
 // Xpact-core "billion-laugh"  hack accounting defense
 
 typedef unsigned long long XmlBigCount;
+
 typedef struct accounting {
   XmlBigCount countBytesDirect;
   XmlBigCount countBytesIndirect;
   unsigned long debugLevel;
   float maximumAmplificationFactor; // >=1.0
   unsigned long long activationThresholdBytes;
+  unsigned char source_type; // See {XT_PARSE_CONSTANTS}.Source_content
 } ACCOUNTING;
 
 // Wrapped by class XT_PARSER_DATA 

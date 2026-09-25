@@ -353,8 +353,7 @@ feature {NONE} -- Processor dispatch
 
 				from done := False until done loop
 					error := process_content (
-						buf, buffer_index, end_index, bt_table, attributes, names, declaration_stack, context, parse_data,
-						Source_content
+						buf, buffer_index, end_index, bt_table, attributes, names, declaration_stack, context, parse_data
 					)
 
 					-- Suspended state overrides the reenter request.
@@ -416,7 +415,7 @@ feature {NONE} -- Processor dispatch
 	process_content (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
 		attributes: XT_ATTRIBUTE_LIST; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
-		a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER; a_source_type: NATURAL_8
+		a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER
 	): INTEGER
 		-- Scan tokens from `buf' `start_index .. end_index` and triggers relevant XML events.  Advances `buffer_index'.
 		-- Execute one pass of the current processor over `buf [start_index .. end_index)'.
@@ -424,15 +423,14 @@ feature {NONE} -- Processor dispatch
 		-- Returns Error_none on success or an Error_* code on failure.
 		-- Corresponds to a single call of `m_processor' in xmlparse.c.
 		local
-			code, index, token, tok_end: INTEGER; content_plus_expansion_count: NATURAL_64
-			context: XT_ELEMENT_CONTEXT; tag_name: STRING; done: BOOLEAN
+			code, index, token, tok_end: INTEGER; context: XT_ELEMENT_CONTEXT; tag_name: STRING; done: BOOLEAN
 		do
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
 				if c_in_prolog_section (parse_data) then
 					Result := process_prolog (
 						buf, start_index, end_index, bt_table, attributes, names, declaration_stack, parse_data,
-						a_source_type, $index, $done
+						$index, $done
 					)
 					context := element_context
 
@@ -520,7 +518,7 @@ feature {NONE} -- Processor dispatch
 						when Tok_entity_ref then
 							Result := process_entity (
 								buf, index + 1, tok_end - 2, bt_table, attributes, names, declaration_stack,
-								context, parse_data, a_source_type, $done
+								context, parse_data, $done
 							)
 
 						when Tok_char_ref then
@@ -540,14 +538,13 @@ feature {NONE} -- Processor dispatch
 						end
 					end
 					if not done then
-						inspect a_source_type
+						inspect c_accounting_source_type (parse_data)
 							when Source_expansion then
 								add_to_entity_expansion_count (parse_data, tok_end - index)
 
 							when Source_expansion_with_checks then
 								add_to_entity_expansion_count (parse_data, tok_end - index)
-								content_plus_expansion_count := c_content_count (parse_data) + c_entity_expansion_count (parse_data)
-								if content_plus_expansion_count / c_content_count (parse_data) > c_max_expansion_proportion (parse_data) then
+								if is_entity_expansion_limit_breached (parse_data) then
 									Result := Error_amplification_limit_breach; done := True
 								end
 
@@ -557,7 +554,7 @@ feature {NONE} -- Processor dispatch
 				end
 			end
 			inspect Result when 0 then
-				inspect a_source_type when Source_content then
+				inspect c_accounting_source_type (parse_data) when Source_content then
 					add_to_content_count (parse_data, index - buffer_index)
 				else end
 			else end
@@ -567,11 +564,12 @@ feature {NONE} -- Processor dispatch
 	process_entity (
 		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
 		attributes: XT_ATTRIBUTE_LIST; names: like name_cache; declaration_stack: SPECIAL [INTEGER]
-		context: XT_ELEMENT_CONTEXT; parse_data: POINTER; a_source_type: NATURAL_8
+		context: XT_ELEMENT_CONTEXT; parse_data: POINTER
 		done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
 			buffer_index_copy, code, error: INTEGER; entity_name: XT_ENTITY_NAME
+			source_type: NATURAL_8
 		do
 			code := predefined_entity_code (buf, start_index, end_index)
 			inspect code when -1 then
@@ -585,13 +583,16 @@ feature {NONE} -- Processor dispatch
 				elseif attached entity_table.item (entity_name) as entity_value then
 					buffer_index_copy := buffer_index -- save field
 					buffer_index := 0
+					source_type := c_accounting_source_type (parse_data)
 					entity_name.open
+					update_accounting_source_type (parse_data)
 					error := process_content (
 						entity_value.area, 0, entity_value.count, bt_table, attributes, names, declaration_stack,
-						context, parse_data, source_type (parse_data, a_source_type)
+						context, parse_data
 					)  -- Recurse
 
 					entity_name.close
+					c_set_accounting_source_type (parse_data, source_type) -- restore accounting source type
 					buffer_index := buffer_index_copy -- restore field
 					set_in_cdata_section (parse_data, False) -- restore state
 
