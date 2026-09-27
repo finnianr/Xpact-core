@@ -39,7 +39,7 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 			-- Scan the next token in element content.
 			-- Sets `next_token_index'.  Corresponds to scanners[XML_CONTENT_STATE].
 		require
-			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
+			valid_range: valid_range (buf, start_index, end_index)
 		do
 			Result := content_tok (buf, start_index, end_index, parse_data, scanned_entity_buffer)
 		ensure
@@ -50,7 +50,7 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 			-- Scan the next token in the document prolog or DTD.
 			-- Corresponds to scanners[XML_PROLOG_STATE].
 		require
-			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
+			valid_range: valid_range (buf, start_index, end_index)
 		do
 			Result := prolog_tok (buf, start_index, end_index, parse_data)
 		end
@@ -59,7 +59,7 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 			-- Scan the next token inside a CDATA section.
 			-- Corresponds to scanners[XML_CDATA_SECTION_STATE].
 		require
-			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
+			valid_range: valid_range (buf, start_index, end_index)
 		do
 			Result := cdata_section_tok (buf, start_index, end_index, parse_data)
 		end
@@ -71,7 +71,7 @@ feature -- Scanner dispatch (implements XT_ENCODING deferred features)
 			-- Scan the next token inside an entity value literal.
 			-- Corresponds to literalScanners[XML_ENTITY_VALUE_LITERAL].
 		require
-			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
+			valid_range: valid_range (buf, start_index, end_index)
 		do
 			Result := entity_value_tok (buf, start_index, end_index, parse_data, entity_buffer)
 		end
@@ -85,7 +85,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 			-- Tokenize inside an entity value literal.
 			-- Corresponds to entityValueTok() in xmltok_impl.c.
 		require
-			valid_range: start_index <= end_index and end_index <= buf.count
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, start, byte_count, bt_code: INTEGER; done: BOOLEAN
 		do
@@ -163,7 +163,7 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 	skip_whitespace (buf: SPECIAL [CHARACTER]; start_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Index of first non-whitespace byte at or after start_index.
 		require
-			valid_start_index: start_index >= 0
+			valid_start_index: start_index >= 0 and then buf.valid_index (start_index)
 		local
 			done: BOOLEAN
 		do
@@ -181,6 +181,8 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 
 	name_matches_ascii (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; match: STRING_8): BOOLEAN
 			-- True if the name at start_index..end_index equals the ASCII string match.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, i: INTEGER; ok: BOOLEAN
 		do
@@ -198,6 +200,8 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 	predefined_entity_code (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- Code point for predefined entity
 		-- (lt=0x3C, gt=0x3E, amp=0x26, quot=0x22, apos=0x27), or -1 if not a predefined entity.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		do
 			Result := -1
 			inspect end_index - start_index + 1
@@ -235,16 +239,17 @@ feature -- Status query
 	is_public_id (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): BOOLEAN
 			-- True when `buf [start_index] .. buf [end_index]' is a valid PUBLIC identifier literal.
 			-- On False, `bad_char_index' is set to the invalid character's index.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index: INTEGER; ok: BOOLEAN
 		do
 			ok := True
 			from index := start_index until index >= end_index or not ok loop
 				inspect c_byte_table_item (parse_data, buf [index].code)
-					when	BT_digit, BT_hex_digit, BT_minus, BT_apostrophe, BT_left_parenthesis, BT_right_parenthesis,
-							BT_plus, BT_comma, BT_forward_slash, BT_equals, BT_question, BT_CR, BT_LF, BT_semicolon,
-							BT_exclamation, BT_asterisk, BT_percent, BT_hash, BT_colon, BT_whitespace,
-							BT_name_start, BT_name_only
+					when BT_digit, BT_hex_digit, BT_minus, BT_apostrophe, BT_left_parenthesis, BT_right_parenthesis,
+						BT_plus, BT_comma, BT_forward_slash, BT_equals, BT_question, BT_CR, BT_LF, BT_semicolon,
+						BT_exclamation, BT_asterisk, BT_percent, BT_hash, BT_colon, BT_whitespace, BT_name_start, BT_name_only
 					then
 						index := index + 1
 				else
@@ -266,7 +271,7 @@ feature -- Position tracking
 	update_position (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; pos: XT_POSITION; parse_data: POINTER)
 			-- Update line and column numbers by scanning `buf [start_index] .. buf [end_index - 1]'
 		require
-			valid_range: start_index >= 0 and start_index <= end_index and end_index <= buf.count
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index: INTEGER
 		do

@@ -36,7 +36,7 @@ feature {NONE} -- Reference scanning
 			-- Scan entity or character reference after '&'.
 			-- Sets next_token_index.  Returns Tok_entity_ref, Tok_char_ref, or error.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, bt_code, byte_count: INTEGER; done: BOOLEAN
 		do
@@ -94,7 +94,7 @@ feature {NONE} -- Reference scanning
 	): INTEGER
 			-- Scan character reference after '&#'.  Returns Tok_char_ref or error.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index: INTEGER; done: BOOLEAN
 		do
@@ -138,7 +138,8 @@ feature {NONE} -- Reference scanning
 		entity_buffer: LIST [STRING]
 	): INTEGER
 			-- Scan hex character reference after '&#x'.  Returns Tok_char_ref or error.
-		require start_index <= end_index
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, bt: INTEGER; done: BOOLEAN
 		do
@@ -179,6 +180,8 @@ feature {NONE} -- Reference sub-helper
 
 	scan_ref_name_tail (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Continue scanning after a valid nmstrt multi-byte start.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index: INTEGER; done: BOOLEAN
 		do

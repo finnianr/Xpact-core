@@ -176,6 +176,8 @@ feature {NONE} -- Data character accumulation
 	scan_data_chars (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 		-- Accumulate data characters in content context until a delimiter.
 		-- Returns Tok_data_chars.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, bt_code, byte_count: INTEGER; done: BOOLEAN; buf_ptr: POINTER
 		do
@@ -211,6 +213,8 @@ feature {NONE} -- Data character accumulation
 
 	scan_cdata_data_chars (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Accumulate data characters inside a CDATA section.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, bt_code, byte_count: INTEGER; done: BOOLEAN; buf_ptr: POINTER
 		do

@@ -63,6 +63,13 @@ feature -- Status query
 
 	newline_or_tab_found: BOOLEAN
 
+	valid_range (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): BOOLEAN
+		do
+			if start_index <= end_index then
+				Result := end_index <= buf.count
+			end
+		end
+
 feature -- Element change
 
 	reset

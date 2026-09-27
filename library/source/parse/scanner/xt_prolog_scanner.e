@@ -38,7 +38,7 @@ feature -- Prolog tokenization
 	prolog_tok (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 		-- Return the next prolog/DTD token.  Sets next_token_index.
 		require
-			valid_range: start_index <= end_index and end_index <= buf.count
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, tok, bt_code, byte_count: INTEGER
 		do
@@ -164,6 +164,8 @@ feature -- Status query
 
 	is_plausible_xml (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): BOOLEAN
 		-- `True' if characters from `start_index' to `end_index' are plausibly the start of an XML document
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			i, j, bt_code, byte_count: INTEGER; found_lt, found: BOOLEAN
 		do
@@ -354,7 +356,8 @@ feature {NONE} -- Prolog sub-scanners
 
 	scan_percent (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Scan parameter entity reference after '%'.
-		require start_index <= end_index
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index: INTEGER; done: BOOLEAN; buf_ptr: POINTER
 		do
@@ -391,7 +394,8 @@ feature {NONE} -- Prolog sub-scanners
 
 	scan_pound_name (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Scan #name after '#'.  Negative result means partial token.
-		require start_index <= end_index
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index: INTEGER; done: BOOLEAN; buf_ptr: POINTER
 		do
@@ -427,7 +431,7 @@ feature {NONE} -- Prolog sub-scanners
 		-- a_open quote type BT_quote or BT_apostrophe).
 		-- Returns Tok_literal or negative (partial) or Tok_invalid.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, bt_code, byte_count: INTEGER; done: BOOLEAN; buf_ptr: POINTER
 		do
@@ -479,6 +483,8 @@ feature {NONE} -- Prolog sub-scanners
 
 	scan_prolog_whitespace (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 		-- Collect whitespace run and return `Tok_prolog_whitespace'.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index: INTEGER; buf_ptr: POINTER
 		do
@@ -508,6 +514,8 @@ feature {NONE} -- Prolog sub-scanners
 			-- Continue scanning a name or nmtoken started by caller.
 			-- a_tok is Tok_name or Tok_nmtoken from the first character.
 			-- Returns the token (possibly with suffix +, *, ?) or negative if partial.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, tok: INTEGER; done: BOOLEAN; buf_ptr: POINTER
 		do
@@ -528,7 +536,7 @@ feature {NONE} -- Prolog sub-scanners
 							next_token_index := index + 1; Result := Tok_name_plus
 						end
 						done := True
-						
+
 					when BT_asterisk then
 						if tok = tok_name_token then
 							next_token_index := index; Result := Tok_invalid
@@ -555,7 +563,7 @@ feature {NONE} -- Prolog sub-scanners
 	scan_name (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 		-- check if `buf' from `start_index .. end_index' is a valid name
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, bt_code, byte_count: INTEGER; done: BOOLEAN; buf_ptr: POINTER
 		do

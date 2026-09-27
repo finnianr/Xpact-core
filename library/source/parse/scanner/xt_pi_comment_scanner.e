@@ -24,7 +24,7 @@ feature {NONE} -- PI and comment scanning
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Scan comment after '<!-'.  Returns Tok_comment or error.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, byte_count, bt_code: INTEGER; done: BOOLEAN; buf_ptr: POINTER
 		do
@@ -90,7 +90,7 @@ feature {NONE} -- PI and comment scanning
 			-- Scan processing instruction after '<?'.
 			-- Returns Tok_pi (or Tok_xml_decl if target is "xml").
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, token, bt_code, byte_count, error: INTEGER; target_start: INTEGER; done: BOOLEAN
 			lower_upper: SPECIAL [INTEGER]; base_address: POINTER
@@ -175,7 +175,7 @@ feature {NONE} -- PI and comment scanning
 	scan_decl (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Scan declaration keyword after '<!'.  Returns Tok_decl_open or error.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index: INTEGER; done: BOOLEAN; base_address: POINTER
 		do
@@ -218,7 +218,7 @@ feature {NONE} -- PI and comment scanning
 	scan_cdata_section_open (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Verify 'CDATA[' after '<!['.  Returns Tok_cdata_sect_open or error.
 		require
-			start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		do
 			if end_index - start_index < Cdata_lsqb.count then
 				Result := Tok_partial

@@ -64,7 +64,7 @@ feature -- Contract support
 		local
 			index: INTEGER; done: BOOLEAN; parse_data: POINTER
 		do
-			parse_data := parser_data.self_ptr
+			parse_data := current_parser.parser_data.self_ptr
 			from index := start_index until index >= buf.count or done loop
 				inspect c_byte_table_item (parse_data, buf [index].code)
 					when Bt_lead_2_byte then
@@ -93,7 +93,7 @@ feature {NONE} -- Tag scanning
 			-- Dispatch on the character after '<'.
 			-- Returns the appropriate XML_TOK_* code; sets next_token_ptr.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, bt_code, byte_count: INTEGER
 		do
@@ -150,7 +150,7 @@ feature {NONE} -- Tag scanning
 	scan_end_tag (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Scan end tag after '</'.  Returns Tok_end_tag or error.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, name_upper, bt_code, byte_count, l_last_colon_index: INTEGER; done: BOOLEAN
 			buf_ptr: POINTER
@@ -255,7 +255,7 @@ feature {NONE} -- Tag scanning
 		-- Scan attribute list starting at the first attribute name character.
 		-- Returns Tok_start_tag_with_atts, Tok_empty_element_with_atts, or error.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, bt_code, byte_count, l_last_colon_index, error: INTEGER; done, xmlns_declaration_found: BOOLEAN
 			index_buffer: SPECIAL [INTEGER]; entity_buffer: ARRAYED_LIST [XT_ENTITY_NAME]
@@ -389,6 +389,8 @@ feature {NONE} -- Tag sub-helpers
 		buf: SPECIAL [CHARACTER]; start_index, end_index, lead_count: INTEGER; parse_data: POINTER
 	): INTEGER
 		-- After consuming name-start char(s); scan rest of start tag name.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, name_upper, byte_count, bt_code, l_last_colon_index: INTEGER; done: BOOLEAN
 			buf_ptr: POINTER
@@ -485,6 +487,8 @@ feature {NONE} -- Tag sub-helpers
 			-- Scan past whitespace to the opening quote, then the value up to matching
 			-- close quote.  Sets next_token_ptr past the closing quote.
 			-- Returns 0 (caller should continue) or a non-zero error/end token code.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
 		local
 			index, opening_quote, byte_count, bt_code: INTEGER; done, closed: BOOLEAN
 			buf_ptr: POINTER
@@ -599,36 +603,28 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Deferred
 
-	attribute_value_defaults_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING]
-		deferred
-		end
-
 	current_parser: XT_XML_PARSER_BASE
-		deferred
-		end
-
-	parser_data: XT_PARSER_DATA
 		deferred
 		end
 
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		deferred
 		end
 
 	scan_pi (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		deferred
 		end
 
 	scan_cdata_section_open (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
 		require
-			valid_range: start_index <= end_index
+			valid_range: valid_range (buf, start_index, end_index)
 		deferred
 		end
 

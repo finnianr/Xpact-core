@@ -17,7 +17,7 @@ inherit
 	XT_XML_PROLOG_PARSER
 		export
 			{ANY} read_natural_64
-			{XT_URI_MAPPED_NAME_CACHE} element_context, on_namespace_declaration_start, parser_data
+			{XT_URI_MAPPED_NAME_CACHE, XT_TAG_SCANNER} element_context, on_namespace_declaration_start, parser_data
 		redefine
 			make, set_defaults
 		end
