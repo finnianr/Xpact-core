@@ -54,15 +54,21 @@ feature {NONE} -- Initialization
 	make (a_naming_mode: INTEGER; separator: CHARACTER_8)
 		require
 			valid_naming_mode: Valid_naming_modes.has (a_naming_mode)
-		local
-			ascii_table: SPECIAL [INTEGER]; i: INTEGER; ptr: POINTER
 		do
 			make_allocated
 			set_naming_mode (a_naming_mode, separator)
 			set_defaults
+			fill_byte_type_table
+		end
 
+feature -- Element change
+
+	fill_byte_type_table
 		-- Initialize combined ASCII + UTF-8 upper byte classification table.
 		-- int byte_type_table [256];
+		local
+			ascii_table: SPECIAL [INTEGER]; i: INTEGER; ptr: POINTER
+		do
 			create ascii_table.make_filled (0, 128)
 			fill_utf_8_ascii_half (ascii_table)
 			ptr := self_ptr
@@ -85,8 +91,6 @@ feature {NONE} -- Initialization
 			put_byte_table (ptr, 255, 1) -- BT_malform = 1
 		end
 
-feature -- Element change
-
 	set_defaults
 		do
 			set_has_dtd_section (self_ptr, False)
@@ -98,8 +102,6 @@ feature -- Element change
 			c_set_accounting_source_type (self_ptr, Source_content)
 			c_set_accounting_content_count (self_ptr, 1) -- prevent divide by zero error
 			c_set_entity_expansion_count (self_ptr, 0)
-
-			declaration_stack_wipe_out (self_ptr)
 		end
 
 	set_naming_mode (a_naming_mode: INTEGER; separator: CHARACTER)

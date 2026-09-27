@@ -326,7 +326,6 @@ feature {NONE} -- Processor dispatch
 		local
 			error, have_now, had_before, available: INTEGER; enough, done: BOOLEAN; context: XT_ELEMENT_CONTEXT
 			names: like name_cache; attributes: like attribute_list; buf: like buffer
-			bt_table: like Byte_type_table
 		do
 			have_now := end_index - start_index
 
@@ -348,13 +347,10 @@ feature {NONE} -- Processor dispatch
 			if enough then
 				-- Re-enter loop: drives the processor repeatedly when it sets
 				-- the reenter flag (avoids deep C-style recursion).
-				context := element_context; names := name_cache; bt_table := byte_type_table
-				attributes := attribute_list; buf := buffer
+				context := element_context; names := name_cache; attributes := attribute_list; buf := buffer
 
 				from done := False until done loop
-					error := process_content (
-						buf, buffer_index, end_index, bt_table, attributes, names, context, parse_data
-					)
+					error := process_content (buf, buffer_index, end_index, attributes, names, context, parse_data)
 
 					-- Suspended state overrides the reenter request.
 					inspect parsing_state when State_parsing then
@@ -413,8 +409,8 @@ feature {NONE} -- Processor dispatch
 		end
 
 	process_content (
-		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
-		attributes: XT_ATTRIBUTE_LIST; names: like name_cache; a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER
+		buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST
+		names: like name_cache; a_context: XT_ELEMENT_CONTEXT; parse_data: POINTER
 	): INTEGER
 		-- Scan tokens from `buf' `start_index .. end_index` and triggers relevant XML events.  Advances `buffer_index'.
 		-- Execute one pass of the current processor over `buf [start_index .. end_index)'.
@@ -427,13 +423,11 @@ feature {NONE} -- Processor dispatch
 			index := start_index; context := a_context
 			from until index >= end_index or done loop
 				if c_in_prolog_section (parse_data) then
-					Result := process_prolog (
-						buf, start_index, end_index, bt_table, attributes, names, parse_data, $index, $done
-					)
+					Result := process_prolog (buf, start_index, end_index, attributes, names, parse_data, $index, $done)
 					context := element_context
 
 				elseif c_in_cdata_section (parse_data) then
-					token := scan_cdata_section (buf, index, end_index, bt_table)
+					token := scan_cdata_section (buf, index, end_index, parse_data)
 					tok_end := next_token_index
 					inspect token
 						when Tok_cdata_sect_close then
@@ -457,7 +451,7 @@ feature {NONE} -- Processor dispatch
 						end
 					end
 				else
-					token := scan_content (buf, index, end_index, bt_table)
+					token := scan_content (buf, index, end_index, parse_data)
 					tok_end := next_token_index
 					inspect token
 						when Tok_cdata_sect_open then
@@ -514,9 +508,7 @@ feature {NONE} -- Processor dispatch
 							attributes.wipe_out
 
 						when Tok_entity_ref then
-							Result := process_entity (
-								buf, index + 1, tok_end - 2, bt_table, attributes, names, context, parse_data, $done
-							)
+							Result := process_entity (buf, index + 1, tok_end - 2, attributes, names, context, parse_data, $done)
 
 						when Tok_char_ref then
 							-- index is '&'; tok_end is exclusive end past ';'
@@ -559,8 +551,8 @@ feature {NONE} -- Processor dispatch
 		end
 
 	process_entity (
-		buf: like buffer; start_index, end_index: INTEGER; bt_table: SPECIAL [INTEGER]
-		attributes: XT_ATTRIBUTE_LIST; names: like name_cache; context: XT_ELEMENT_CONTEXT; parse_data: POINTER
+		buf: like buffer; start_index, end_index: INTEGER; attributes: XT_ATTRIBUTE_LIST
+		names: like name_cache; context: XT_ELEMENT_CONTEXT; parse_data: POINTER
 		done: TYPED_POINTER [BOOLEAN]
 	): INTEGER
 		local
@@ -583,7 +575,7 @@ feature {NONE} -- Processor dispatch
 					entity_name.open
 					update_accounting_source_type (parse_data)
 					error := process_content (
-						entity_value.area, 0, entity_value.count, bt_table, attributes, names, context, parse_data
+						entity_value.area, 0, entity_value.count, attributes, names, context, parse_data
 					)  -- Recurse
 
 					entity_name.close

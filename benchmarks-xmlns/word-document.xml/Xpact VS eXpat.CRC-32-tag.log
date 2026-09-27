@@ -2,3 +2,9 @@ Log of benchmarks for parsing file: word-document.xml
 
 2026 20 SEP 8:42
 word-document.xml: eXpat passes = 952; Xpact-core passes = 983 (x1.03 to eXpat)
+
+2026 26 SEP 18:01
+word-document.xml: eXpat passes = 1927; Xpact-core passes = 2032 (x1.05 to eXpat)
+
+2026 26 SEP 18:13
+word-document.xml: eXpat passes = 1929; Xpact-core passes = 1985 (x1.03 to eXpat)

@@ -56,9 +56,40 @@ feature -- Contract support
 			end
 		end
 
+	xml_name_count (buf: SPECIAL [CHARACTER]; start_index: INTEGER): INTEGER
+		-- Byte count of the XML name starting at start_index.
+		-- Stops at first byte whose type is not a name-continuation type.
+		require
+			valid_start_index: start_index >= 0
+		local
+			index: INTEGER; done: BOOLEAN; parse_data: POINTER
+		do
+			parse_data := parser_data.self_ptr
+			from index := start_index until index >= buf.count or done loop
+				inspect c_byte_table_item (parse_data, buf [index].code)
+					when Bt_lead_2_byte then
+						index := index + 2
+
+					when Bt_lead_3_byte then
+						index := index + 3
+
+					when Bt_lead_4_byte then
+						index := index + 4
+
+					when BT_name_start, BT_name_only, BT_hex_digit, BT_digit, BT_minus, BT_colon then
+						index := index + 1
+				else
+					done := True
+				end
+			end
+			Result := index - start_index
+		ensure
+			non_negative: Result >= 0
+		end
+
 feature {NONE} -- Tag scanning
 
-	scan_lt (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
+	scan_lt (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Dispatch on the character after '<'.
 			-- Returns the appropriate XML_TOK_* code; sets next_token_ptr.
 		require
@@ -70,16 +101,16 @@ feature {NONE} -- Tag scanning
 			if index >= end_index then
 				Result := Tok_partial
 			else
-				bt_code := BT_table [buf [index].code]
+				bt_code := c_byte_table_item (parse_data, buf [index].code)
 				inspect bt_code
 					when BT_exclamation then
 						index := index + 1
 						if index >= end_index then
 							Result := Tok_partial
 						else
-							inspect BT_table [buf [index].code]
+							inspect c_byte_table_item (parse_data, buf [index].code)
 								when BT_minus then
-									Result := scan_comment (buf, index + 1, end_index, BT_table)
+									Result := scan_comment (buf, index + 1, end_index, parse_data)
 								when BT_left_square_bracket then
 									Result := scan_cdata_section_open (buf, index + 1, end_index)
 							else
@@ -88,14 +119,14 @@ feature {NONE} -- Tag scanning
 							end
 						end
 					when BT_question then
-						Result := scan_pi (buf, index + 1, end_index, BT_table)
+						Result := scan_pi (buf, index + 1, end_index, parse_data)
 
 					when BT_forward_slash then
-						Result := scan_end_tag (buf, index + 1, end_index, BT_table)
+						Result := scan_end_tag (buf, index + 1, end_index, parse_data)
 
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
-						Result := scan_start_tag_name (buf, index, end_index, 1, BT_table)
+						Result := scan_start_tag_name (buf, index, end_index, 1, parse_data)
 
 					when BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
 						byte_count := bt_code - 3
@@ -107,7 +138,7 @@ feature {NONE} -- Tag scanning
 							Result := Tok_invalid
 						else
 							index := index + byte_count
-							Result := scan_start_tag_name (buf, index, end_index, byte_count, BT_table)
+							Result := scan_start_tag_name (buf, index, end_index, byte_count, parse_data)
 						end
 				else
 					next_token_index := index
@@ -116,7 +147,7 @@ feature {NONE} -- Tag scanning
 			end
 		end
 
-	scan_end_tag (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
+	scan_end_tag (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Scan end tag after '</'.  Returns Tok_end_tag or error.
 		require
 			valid_range: start_index <= end_index
@@ -129,7 +160,7 @@ feature {NONE} -- Tag scanning
 			if index >= end_index then
 				Result := Tok_partial
 			else
-				bt_code := BT_table [c_read_character_8 (buf_ptr, index).code]
+				bt_code := c_byte_type_code (parse_data, buf_ptr + index)
 				inspect bt_code
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
@@ -151,7 +182,7 @@ feature {NONE} -- Tag scanning
 				end
 				if not done then
 					from until index >= end_index or done loop
-						bt_code := BT_table [c_read_character_8 (buf_ptr, index).code]
+						bt_code := c_byte_type_code (parse_data, buf_ptr + index)
 						inspect bt_code
 							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 								index := index + 1
@@ -178,7 +209,7 @@ feature {NONE} -- Tag scanning
 								else end
 								index := index + 1
 								from until index >= end_index or done loop
-									inspect BT_table [c_read_character_8 (buf_ptr, index).code]
+									inspect c_byte_type_code (parse_data, buf_ptr + index)
 										when BT_whitespace, BT_CR, BT_LF then
 											index := index + 1
 										when BT_gt then
@@ -217,7 +248,7 @@ feature {NONE} -- Tag scanning
 		end
 
 	scan_attributes (
-		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER
 		attributes: XT_ATTRIBUTE_LIST
 
 	): INTEGER
@@ -234,7 +265,7 @@ feature {NONE} -- Tag scanning
 			index_buffer := scanned_index_x4_buffer; entity_buffer := scanned_entity_buffer
 			index_buffer.extend (index + c_read_character_8 (buf_ptr, index).is_space.to_integer) -- name lower
 			from until index >= end_index or done loop
-				bt_code := BT_table [c_read_character_8 (buf_ptr, index).code]
+				bt_code := c_byte_type_code (parse_data, buf_ptr + index)
 				inspect bt_code
 					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 						inspect append_name_lower (buf, index_buffer, index) when Tok_invalid then
@@ -275,7 +306,7 @@ feature {NONE} -- Tag scanning
 								index_buffer.extend (index - 1) -- name upper
 						else end
 						index := index + 1
-						Result := scan_attribute_value (buf, index, end_index, BT_table, index_buffer, entity_buffer)
+						Result := scan_attribute_value (buf, index, end_index, parse_data, index_buffer, entity_buffer)
 						inspect Result
 							when Tok_partial, Tok_partial_char then
 								attributes.wipe_out; index_buffer.wipe_out; entity_buffer.wipe_out
@@ -355,7 +386,7 @@ feature {NONE} -- Tag scanning
 feature {NONE} -- Tag sub-helpers
 
 	scan_start_tag_name (
-		buf: SPECIAL [CHARACTER]; start_index, end_index, lead_count: INTEGER; BT_table: SPECIAL [INTEGER]
+		buf: SPECIAL [CHARACTER]; start_index, end_index, lead_count: INTEGER; parse_data: POINTER
 	): INTEGER
 		-- After consuming name-start char(s); scan rest of start tag name.
 		local
@@ -365,7 +396,7 @@ feature {NONE} -- Tag sub-helpers
 			buf_ptr := buf.base_address; index := start_index
 			tag_name_lower := start_index - lead_count; name_upper := Unset
 			from until index >= end_index or done loop
-				bt_code := BT_table [c_read_character_8 (buf_ptr, index).code]
+				bt_code := c_byte_type_code (parse_data, buf_ptr + index)
 				inspect bt_code
 					when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 						index := index + 1
@@ -391,9 +422,9 @@ feature {NONE} -- Tag sub-helpers
 						else end
 						index := index + 1
 						from until index >= end_index or done loop
-							inspect BT_table [c_read_character_8 (buf_ptr, index).code]
+							inspect c_byte_type_code (parse_data, buf_ptr + index)
 								when BT_name_start, BT_hex_digit, BT_lead_2_byte, BT_lead_3_byte, BT_lead_4_byte then
-									Result := scan_attributes (buf, index, end_index, BT_table, attribute_list); done := True
+									Result := scan_attributes (buf, index, end_index, parse_data, attribute_list); done := True
 								when BT_gt then
 									next_token_index := index + 1
 									Result := tok_start_tag_no_attributes; done := True
@@ -449,7 +480,7 @@ feature {NONE} -- Tag sub-helpers
 
 	scan_attribute_value (
 		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER
-		BT_table: SPECIAL [INTEGER]; lower_upper: SPECIAL [INTEGER]; entity_buffer: LIST [XT_ENTITY_NAME];
+		parse_data: POINTER; lower_upper: SPECIAL [INTEGER]; entity_buffer: LIST [XT_ENTITY_NAME];
 	): INTEGER
 			-- Scan past whitespace to the opening quote, then the value up to matching
 			-- close quote.  Sets next_token_ptr past the closing quote.
@@ -461,7 +492,7 @@ feature {NONE} -- Tag sub-helpers
 			index := start_index; buf_ptr := buf.base_address
 			-- skip to opening quote
 			from until index >= end_index or done loop
-				inspect BT_table [c_read_character_8 (buf_ptr, index).code]
+				inspect c_byte_type_code (parse_data, buf_ptr + index)
 					when BT_quote then
 						opening_quote := BT_quote; done := True
 					when BT_apostrophe then
@@ -477,7 +508,7 @@ feature {NONE} -- Tag sub-helpers
 				index := index + 1  -- skip opening quote
 				lower_upper.extend (index)
 				from until index >= end_index or closed loop
-					bt_code := BT_table [c_read_character_8 (buf_ptr, index).code]
+					bt_code := c_byte_type_code (parse_data, buf_ptr + index)
 					inspect bt_code
 						when BT_quote then
 							inspect opening_quote
@@ -496,7 +527,7 @@ feature {NONE} -- Tag sub-helpers
 								index := index + 1
 							end
 						when BT_ampersand then
-							Result := scan_ref (buf, Tok_attribute_value_s, index + 1, end_index, BT_table, entity_buffer)
+							Result := scan_ref (buf, Tok_attribute_value_s, index + 1, end_index, parse_data, entity_buffer)
 							if Result > 0 then
 								index := next_token_index; Result := 0
 							else
@@ -576,14 +607,18 @@ feature {NONE} -- Deferred
 		deferred
 		end
 
-	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
+	parser_data: XT_PARSER_DATA
+		deferred
+		end
+
+	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
 		require
 			valid_range: start_index <= end_index
 		deferred
 		end
 
-	scan_pi (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
+	scan_pi (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
 		require
 			valid_range: start_index <= end_index

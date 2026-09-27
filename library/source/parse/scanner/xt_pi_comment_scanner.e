@@ -21,7 +21,7 @@ inherit
 
 feature {NONE} -- PI and comment scanning
 
-	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
+	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Scan comment after '<!-'.  Returns Tok_comment or error.
 		require
 			valid_range: start_index <= end_index
@@ -38,7 +38,7 @@ feature {NONE} -- PI and comment scanning
 			else
 				index := index + 1
 				from until index >= end_index or done loop
-					bt_code := BT_table [c_read_character_8 (buf_ptr, index).code]
+					bt_code := c_byte_type_code (parse_data, buf_ptr + index)
 					inspect bt_code
 						when BT_minus then
 							index := index + 1
@@ -86,7 +86,7 @@ feature {NONE} -- PI and comment scanning
 			end
 		end
 
-	scan_pi (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
+	scan_pi (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Scan processing instruction after '<?'.
 			-- Returns Tok_pi (or Tok_xml_decl if target is "xml").
 		require
@@ -100,7 +100,7 @@ feature {NONE} -- PI and comment scanning
 			if index >= end_index then
 				Result := Tok_partial
 			else
-				bt_code := BT_table [c_read_character_8 (base_address, index).code]
+				bt_code := c_byte_type_code (parse_data, base_address + index)
 				inspect bt_code
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
@@ -122,7 +122,7 @@ feature {NONE} -- PI and comment scanning
 				end
 				if not done then
 					from until index >= end_index or done loop
-						inspect BT_table [c_read_character_8 (base_address, index).code]
+						inspect c_byte_type_code (parse_data, base_address + index)
 							when BT_name_start, BT_hex_digit, BT_digit, BT_name_only, BT_minus then
 								index := index + 1
 							when BT_whitespace, BT_CR, BT_LF then
@@ -133,14 +133,14 @@ feature {NONE} -- PI and comment scanning
 									inspect token when Tok_pi then
 										lower_upper.extend (start_index)
 										lower_upper.extend (index - 1)
-										Result := scan_pi_content (buf, index + 1, end_index, token, BT_table, lower_upper); done := True
+										Result := scan_pi_content (buf, index + 1, end_index, token, parse_data, lower_upper); done := True
 										inspect lower_upper.count when 4 then
 										-- 0 for `colon_index' argument
 											error := attribute_list.transfer (buf, lower_upper, 0, scanned_entity_buffer)
 										else
 										end
 									else
-										Result := scan_pi_content (buf, index + 1, end_index, token, BT_table, lower_upper); done := True
+										Result := scan_pi_content (buf, index + 1, end_index, token, parse_data, lower_upper); done := True
 									end
 								end
 							when BT_question then
@@ -172,7 +172,7 @@ feature {NONE} -- PI and comment scanning
 			else end
 		end
 
-	scan_decl (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; BT_table: SPECIAL [INTEGER]): INTEGER
+	scan_decl (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Scan declaration keyword after '<!'.  Returns Tok_decl_open or error.
 		require
 			valid_range: start_index <= end_index
@@ -184,9 +184,9 @@ feature {NONE} -- PI and comment scanning
 				Result := Tok_partial
 
 			else
-				inspect BT_table [c_read_character_8 (base_address, index).code]
+				inspect c_byte_type_code (parse_data, base_address + index)
 					when BT_minus then
-						Result := scan_comment (buf, index + 1, end_index, BT_table)
+						Result := scan_comment (buf, index + 1, end_index, parse_data)
 
 					when BT_left_square_bracket then
 						next_token_index := index + 1
@@ -195,7 +195,7 @@ feature {NONE} -- PI and comment scanning
 					when BT_name_start, BT_hex_digit then
 						index := index + 1
 						from until index >= end_index or done loop
-							inspect BT_table [c_read_character_8 (base_address, index).code]
+							inspect c_byte_type_code (parse_data, base_address + index)
 								when BT_name_start, BT_hex_digit then
 									index := index + 1
 								when BT_whitespace, BT_CR, BT_LF, BT_percent then
@@ -259,7 +259,7 @@ feature {NONE} -- PI helpers
 
 	scan_pi_content (
 		buf: SPECIAL [CHARACTER]; a_start_index, end_index, token: INTEGER
-		BT_table: SPECIAL [INTEGER]; lower_upper: SPECIAL [INTEGER]
+		parse_data: POINTER; lower_upper: SPECIAL [INTEGER]
 	): INTEGER
 			-- Scan PI content until '?>'.  Returns token (Tok_pi or Tok_xml_decl).
 		local
@@ -277,7 +277,7 @@ feature {NONE} -- PI helpers
 			end
 			start_index := index
 			from until index >= end_index or done loop
-				bt_code := BT_table [c_read_character_8 (base_address, index).code]
+				bt_code := c_byte_type_code (parse_data, base_address + index)
 				inspect bt_code
 					when BT_non_xml, BT_malform, BT_continuation_byte then
 						next_token_index := index; Result := Tok_invalid; done := True
@@ -294,7 +294,7 @@ feature {NONE} -- PI helpers
 					when BT_question then
 						inspect token when Tok_xml_decl then
 							buf [index] := '/' -- turn into empty element to collect declaration attributes
-							Result := scan_attributes (buf, start_index, index + 2, BT_table, attribute_list)
+							Result := scan_attributes (buf, start_index, index + 2, parse_data, attribute_list)
 							buf [index] := '?' -- revert
 							inspect token when Tok_invalid then
 								do_nothing
@@ -328,7 +328,7 @@ feature {NONE} -- PI helpers
 		end
 
 	scan_attributes (
-		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER BT_table: SPECIAL [INTEGER]
+		buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER parse_data: POINTER
 		attributes: XT_ATTRIBUTE_LIST
 
 	): INTEGER

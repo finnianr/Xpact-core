@@ -94,17 +94,14 @@ feature {NONE} -- Access
 
 feature {NONE} -- Combined ASCII + UTF-8 upper byte classification
 
-	frozen c_byte_table_code (ptr, character_buffer: POINTER; i: INTEGER): INTEGER
+	frozen c_byte_type_code (ptr, character_ptr: POINTER): INTEGER
 		-- byte classification for `i'th character in `character_buffer'
 		require
 			parser_attached: is_attached (ptr)
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"[
-				unsigned char c = ((unsigned char *)$character_buffer)[(int)$i];
-				return ((XML_Parser) $ptr)->byte_type_table [(int)c];
-			]"
+			"((XML_Parser) $ptr)->byte_type_table [(int)*((unsigned char *)$character_ptr)]"
 		end
 
 	frozen c_byte_table_item (ptr: POINTER; i: INTEGER): INTEGER
@@ -114,90 +111,6 @@ feature {NONE} -- Combined ASCII + UTF-8 upper byte classification
 			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->byte_type_table [(int)$i]"
-		end
-
-feature {NONE} -- Declaration token stack
-
-	frozen declaration_stack_count (ptr: POINTER): INTEGER
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->declaration_stack_count"
-		end
-
-	frozen declaration_stack_first (ptr: POINTER): INTEGER
-		require
-			parser_attached: is_attached (ptr)
-			has_at_least_one_item: declaration_stack_count (ptr) >= 1
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"[
-				XML_Parser p = (XML_Parser) $ptr;
-				return p->declaration_stack [0];
-			]"
-		end
-
-	frozen declaration_stack_item (ptr: POINTER): INTEGER
-		require
-			parser_attached: is_attached (ptr)
-			has_at_least_one_item: declaration_stack_count (ptr) >= 1
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"[
-				XML_Parser p = (XML_Parser) $ptr;
-				return p->declaration_stack [p->declaration_stack_count - 1];
-			]"
-		end
-
-	frozen declaration_stack_pop (ptr: POINTER)
-		require
-			parser_attached: is_attached (ptr)
-			has_at_least_one_item: declaration_stack_count (ptr) >= 1
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->declaration_stack_count --;"
-		end
-
-	frozen declaration_stack_push (ptr: POINTER; item: INTEGER)
-		require
-			parser_attached: is_attached (ptr)
-			enough_room: 2 - declaration_stack_count (ptr) > 0
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"[
-				XML_Parser p = (XML_Parser) $ptr;
-				p->declaration_stack_count ++;
-				p->declaration_stack [p->declaration_stack_count - 1] = (int)$item;
-			]"
-		end
-
-	frozen declaration_stack_replace (ptr: POINTER; item: INTEGER)
-		-- replace top item
-		require
-			parser_attached: is_attached (ptr)
-			not_empty: declaration_stack_count (ptr) > 0
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"[
-				XML_Parser p = (XML_Parser) $ptr;
-				p->declaration_stack [p->declaration_stack_count - 1] = (int)$item;
-			]"
-		end
-
-	frozen declaration_stack_wipe_out (ptr: POINTER)
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->declaration_stack_count = 0;"
 		end
 
 feature {NONE} -- Status query

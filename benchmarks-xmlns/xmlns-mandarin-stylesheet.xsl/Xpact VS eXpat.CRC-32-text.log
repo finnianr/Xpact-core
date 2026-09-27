@@ -2,3 +2,9 @@ Log of benchmarks for parsing file: xmlns-mandarin-stylesheet.xsl
 
 2026 20 SEP 8:41
 xmlns-mandarin-stylesheet.xsl: eXpat passes = 1980; Xpact-core passes = 2725 (x1.38 to eXpat)
+
+2026 26 SEP 18:00
+xmlns-mandarin-stylesheet.xsl: eXpat passes = 3985; Xpact-core passes = 5634 (x1.41 to eXpat)
+
+2026 26 SEP 18:12
+xmlns-mandarin-stylesheet.xsl: eXpat passes = 3987; Xpact-core passes = 5471 (x1.37 to eXpat)

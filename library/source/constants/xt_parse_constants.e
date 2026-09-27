@@ -51,12 +51,12 @@ feature {XT_STRING_CONSTANTS} -- Declaration types
 
 	Valid_declaration_types: INTEGER_INTERVAL
 		once
-			Result := Attlist |..| Notation
+			Result := Doctype |..| Parameter_entity
 		end
 
-	Attlist: INTEGER = 1
+	Doctype: INTEGER = 1
 
-	Doctype: INTEGER = 2
+	Attlist: INTEGER = 2
 
 	Element: INTEGER = 3
 

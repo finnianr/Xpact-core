@@ -2,3 +2,9 @@ Log of benchmarks for parsing file: steam_icon_500.svg
 
 2026 20 SEP 8:41
 steam_icon_500.svg: eXpat passes = 201; Xpact-core passes = 300 (x1.49 to eXpat)
+
+2026 26 SEP 18:00
+steam_icon_500.svg: eXpat passes = 411; Xpact-core passes = 597 (x1.45 to eXpat)
+
+2026 26 SEP 18:12
+steam_icon_500.svg: eXpat passes = 412; Xpact-core passes = 605 (x1.47 to eXpat)

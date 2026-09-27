@@ -77,10 +77,10 @@ feature {NONE} -- Document definition strings
 		local
 			s: XT_STRING_8_ROUTINES
 		once
-			Result := s.to_list ("ATTLIST, DOCTYPE, ELEMENT, ENTITY, NOTATION", ',')
+			Result := s.to_list ("DOCTYPE, ATTLIST, ELEMENT, ENTITY, NOTATION", ',')
 			Result.compare_objects
 		ensure
-			valid_first: Result [{XT_PARSE_CONSTANTS}.Attlist] ~ "ATTLIST"
+			valid_first: Result [{XT_PARSE_CONSTANTS}.Doctype] ~ "DOCTYPE"
 			valid_last: Result [{XT_PARSE_CONSTANTS}.Notation] ~ "NOTATION"
 		end
 

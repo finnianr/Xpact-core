@@ -3,7 +3,7 @@
 
 export BENCHMARKS_DIR=$EIFFEL/library/Xpact-core/benchmarks$1
 
-DURATION_MS=2000
+DURATION_MS=4000
 
 echo
 echo Benchmarking Eiffel Xpact-core and C eXpat

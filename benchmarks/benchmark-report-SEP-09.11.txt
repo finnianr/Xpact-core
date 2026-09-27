@@ -45,5 +45,5 @@
 [x1.11 to eXpat] DTD-attlist-default-values.xml CRC-32-attribute: eXpat passes = 207; Xpact-core passes = 229
 [x1.07 to eXpat] recset.xml CRC-32-attribute: eXpat passes = 15; Xpact-core passes = 16
 [x1.07 to eXpat] nes96.xml CRC-32-text: eXpat passes = 215; Xpact-core passes = 230
-
+Using: BT_table: SPECIAL [INTEGER]
 Average performance: x1.291 to eXpat
