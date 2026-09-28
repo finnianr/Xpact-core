@@ -22,41 +22,39 @@ inherit
 create
 	make
 
+feature -- Access
+
+	formal_public: detachable STRING
+		-- 1st literal string after PUBLIC
+		-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+		do
+			if external_id_list.count > 0 then
+				Result := external_id_list [0]
+			end
+		end
+
+	uri: detachable STRING
+		-- 2nd literal string after PUBLIC
+		-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+		do
+			if external_id_list.count = 2 then
+				Result := external_id_list [1]
+			end
+		end
+
 feature -- Status query
 
 	is_valid: BOOLEAN
 		do
-			inspect count
-				when 1 then
-					Result := not Valid_external_id_list.has (name)
+			if count = 1 then
+				if has_system_id then
+					Result := external_id_list.count = 1
 
-				when 3 then
-					if i_th (2) = SYSTEM then
-						Result := token_area [2] = Tok_literal
-					end
+				elseif has_public_id then
+					Result := external_id_list.count = 2
 
-				when 4 then
-					if i_th (2) = PUBLIC then
-						Result :=  token_area [2] = Tok_literal and token_area [3] = Tok_literal
-					end
-			else end
-		end
-
-feature -- Basic operations
-
-	set_document_type (doctype_identifiers: TUPLE [formal_public, uri: STRING])
-		require
-			valid_list: is_valid
-		local
-			second: STRING
-		do
-			if count >= 3 then
-				second := i_th (2)
-				if Valid_external_id_list.has (second) then
-					doctype_identifiers.formal_public := i_th (3)
-					if count = 4 and then second = PUBLIC then
-						doctype_identifiers.uri := last
-					end
+				else
+					Result := True
 				end
 			end
 		end

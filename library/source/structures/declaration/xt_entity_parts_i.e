@@ -24,38 +24,23 @@ feature -- Status query
 		deferred
 		end
 
-	is_public: BOOLEAN
+	has_public_id: BOOLEAN
 		deferred
 		end
 
-	is_system: BOOLEAN
-		do
-			Result := count >= 2 and then i_th (2) = SYSTEM
+	has_system_id: BOOLEAN
+		deferred
 		end
 
 	is_valid: BOOLEAN
 		do
-			if is_public then
-				inspect count when 4 .. 6 then
-					if i_th_token (3) = Tok_literal then
-						if count > 4 then
-							Result := count = 6 and i_th (5) = NDATA
-						else
-							Result := True
-						end
-					end
+			if (has_public_id and then external_id_list.count = 2)
+				or else (has_system_id and then external_id_list.count = 1)
+			then
+				if count > 1 then
+					Result := count = 3 and i_th (2) = NDATA
 				else
-				end
-			elseif is_system then
-				inspect count when 3 .. 5 then
-					if i_th_token (3) = Tok_literal then
-						if count > 3 then
-							Result := count = 5 and i_th (4) = NDATA
-						else
-							Result := True
-						end
-					end
-				else
+					Result := True
 				end
 
 			elseif count = 2 then
@@ -65,42 +50,36 @@ feature -- Status query
 
 feature -- Access
 
+	external_id_type: detachable STRING
+		deferred
+		end
+
 	name: STRING
 		deferred
 		end
 
 	public_id: detachable STRING
-		do
-			if is_public and then count >= 3 then
-				Result := i_th (3)
-			end
+		deferred
 		end
 
 	system_id: detachable STRING
-		local
-			offset: INTEGER
-		do
-			offset := is_public.to_integer
-			if count >= 3 + offset then
-				Result := i_th (3 + offset)
-			end
+		deferred
 		end
 
 	notation_name: detachable STRING
-		local
-			offset: INTEGER
 		do
-			offset := is_public.to_integer
-			if count = 5 + offset and i_th (4 + offset) = NDATA then
-				Result := i_th (5 + offset)
-			end
+			inspect count when 3 then
+				if i_th (2) = NDATA then
+					Result := i_th (3)
+				end
+			else end
 		end
 
 	value: detachable STRING
 		do
-			if count = 2 then
+			inspect count when 2 then
 				Result := i_th (2)
-			end
+			else end
 		end
 
 feature -- Measurement
@@ -112,11 +91,19 @@ feature -- Measurement
 
 feature {NONE} -- Implementation
 
+	external_id_list: SPECIAL [STRING]
+		deferred
+		end
+
 	i_th alias "[]", at alias "@" (i: INTEGER): STRING
 		deferred
 		end
 
 	i_th_token (i: INTEGER): INTEGER
+		deferred
+		end
+
+	token_area: SPECIAL [INTEGER]
 		deferred
 		end
 

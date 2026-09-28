@@ -118,14 +118,15 @@ feature {NONE} -- Declaration event handlers
 			end
 		end
 
-	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
+	on_doctype_declaration_start (parts_list: XT_DOCUMENT_TYPE_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
 		local
 			i: INTEGER
 		do
 			inspect data_type when Type_decl_doctype then
-				if attached checksum as crc then
-					from i := 1 until i > parts_list.count loop
-						crc.add_string (parts_list [i])
+				if attached checksum as crc and then attached parts_list.external_id_list as id_list then
+					crc.add_string (parts_list.name)
+					from i := 0 until i = id_list.count loop
+						crc.add_string (id_list [i])
 						i := i + 1
 					end
 					crc.add_boolean (has_internal_subset)

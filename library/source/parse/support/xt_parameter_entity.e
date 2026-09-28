@@ -5,8 +5,8 @@ note
 		See for example "%selectors;" in this definition:
 		
 			<!DOCTYPE xsl:stylesheet [
-			<!ENTITY % selectors SYSTEM "db-selectors.mod">
-			%selectors;
+				<!ENTITY % selectors SYSTEM "db-selectors.mod">
+				%selectors;
 			]>
 
 	]"
@@ -32,22 +32,20 @@ feature {NONE} -- Initialization
 
 	make (parts_list: XT_PARAMETER_ENTITY_PARTS_LIST)
 		require
-			valid_parts: parts_list.count >= 2
-		local
-			s: XT_STRING_8_ROUTINES
+			valid_parts: parts_list.count >= 1
 		do
-			name := parts_list.name; external_id := s.Empty_string
-			if parts_list.count = 3 and then attached parts_list [2] as parts_id
-				and then Valid_external_id_list.has (parts_id)
-			then
-				external_id := parts_id
+			name := parts_list.name
+			external_id := parts_list.external_id_type
+			if attached parts_list.external_id_list as id_list and then id_list.count > 0 then
+				value := id_list [id_list.count - 1]
+			else
+				value := parts_list.last
 			end
-			value := parts_list.last
 		end
 
 feature -- Access
 
-	external_id: STRING
+	external_id: detachable STRING
 
 	name: STRING
 
@@ -60,7 +58,7 @@ feature -- Status query
 	is_external: BOOLEAN
 		-- `True' if the entity is defined externaly to document
 		do
-			Result := external_id.count > 0
+			Result := external_id /= Void
 		end
 
 	is_open: BOOLEAN

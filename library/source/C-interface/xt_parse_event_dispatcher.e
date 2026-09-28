@@ -184,24 +184,19 @@ feature {NONE} -- Declaration event handlers
 			end
 		end
 
-	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
+	on_doctype_declaration_start (parts_list: XT_DOCUMENT_TYPE_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_StartDoctypeDeclHandler)(
 		--		void *userData, const XML_Char *doctypeName, const XML_Char *sysid, const XML_Char *pubid,
 		--		int has_internal_subset
 		-- );
 		local
-			ptr, system_id, public_id: POINTER
+			ptr: POINTER
 		do
 			ptr := c_on_doctype_declaration_start (parse_data)
-			if is_attached (ptr) and then attached doctype_identifiers as identifier then
-				if identifier.formal_public /= Empty_string then
-					public_id := identifier.formal_public.area.base_address
-				end
-				if identifier.uri /= Empty_string then
-					system_id := identifier.uri.area.base_address
-				end
+			if is_attached (ptr) then
 				call_on_doctype_declaration_start (
-					ptr, c_user_data (parse_data), parts_list.name.area.base_address, system_id, public_id,
+					ptr, c_user_data (parse_data), parts_list.name.area.base_address,
+					base_address (parts_list.formal_public), base_address (parts_list.uri),
 					has_internal_subset.to_integer
 				)
 			end

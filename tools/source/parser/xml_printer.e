@@ -111,7 +111,7 @@ feature {NONE} -- Event handlers
 			IO.put_new_line
 		end
 
-	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
+	on_doctype_declaration_start (parts_list: XT_DOCUMENT_TYPE_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
 		do
 			IO.put_string ("DOCTYPE: ")
 			across parts_list as part loop

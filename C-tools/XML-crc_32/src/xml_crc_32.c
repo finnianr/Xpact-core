@@ -199,12 +199,10 @@ static void XMLCALL on_start_doctype_decl(void *userData, const XML_Char *doctyp
 	if (ctx->type != TYPE_DOCTYPE) return;
 	crc32_update(ctx, (const unsigned char *) doctypeName, strlen(doctypeName));
 	if (pubid) {
-		crc32_update(ctx, (const unsigned char *) "PUBLIC", strlen("PUBLIC"));
 		crc32_update(ctx, (const unsigned char *) pubid, strlen(pubid));
 		if (sysid)
 			crc32_update(ctx, (const unsigned char *) sysid, strlen(sysid));
 	} else if (sysid) {
-		crc32_update(ctx, (const unsigned char *) "SYSTEM", strlen("SYSTEM"));
 		crc32_update(ctx, (const unsigned char *) sysid, strlen(sysid));
 	}
 	crc32_update_bool(ctx, has_internal_subset);

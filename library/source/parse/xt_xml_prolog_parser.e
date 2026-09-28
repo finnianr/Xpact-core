@@ -44,7 +44,6 @@ feature {NONE} -- Initialization
 		do
 			parser_data := a_parser_data
 			create attribute_value_defaults_table.make (37)
-			doctype_identifiers := [Empty_string, Empty_string]
 			element_context := parser_data.new_element_context
 			create parameter_entity_table.make (3)
 			create parameter_name_cache.make
@@ -458,9 +457,7 @@ feature {NONE} -- Event handlers
 				when DOCTYPE then
 					if attached document_type_parts_list as parts_list then
 						if parts_list.is_valid then
-							parts_list.set_document_type (doctype_identifiers)
 							on_doctype_declaration_start (parts_list, c_has_dtd_section (parse_data), parse_data)
-							parts_list.wipe_out
 						else
 							Result := Error_syntax
 						end
@@ -469,13 +466,9 @@ feature {NONE} -- Event handlers
 				when NOTATION_ then
 					if attached notation_parts_list as parts_list then
 						if parts_list.is_valid then
-							if parts_list.is_public then
-								if parts_list.valid_index (4) then
-									system_id := parts_list [4]
-								end
-								public_id := parts_list [3]
-							else
-								system_id := parts_list [3]
+							system_id := parts_list.system_id
+							if parts_list.has_public_id then
+								public_id := parts_list.public_id
 							end
 							on_notation_declaration (parts_list.name, system_id, public_id, parse_data)
 							parts_list.wipe_out
@@ -512,26 +505,6 @@ feature {NONE} -- Event handlers
 
 feature {NONE} -- Implementation
 
-	pop_declaration
-		-- pop `declaration_type' from a virtual stack of max 2 items
-		require
-			depth_gt_zero: declaration_count > 0
-		do
-			declaration_count := declaration_count - 1
-			inspect declaration_count when 1 then
-				declaration_type := DOCTYPE
-			else
-				declaration_type := 0
-			end
-		end
-
-	push_declaration (type: INTEGER)
-		-- push  `type' on to a virtual stack of max 2 items
-		do
-			declaration_count := declaration_count + 1
-			declaration_type := type
-		end
-
 	extend_attribute_value_defaults_table (element_name, attribute_name, value: STRING)
 		local
 			default_values_list: ARRAYED_LIST [STRING]
@@ -551,16 +524,6 @@ feature {NONE} -- Implementation
 	in_prolog_section: BOOLEAN
 		do
 			Result := parser_data.in_prolog_section
-		end
-
-	to_declaration_type (buf: like buffer; offset: INTEGER): INTEGER
-		-- one of: Attlist, Doctype, Element, Entity or 0 if no match
-		do
-			across Document_definition_names as name until Result > 0 loop
-				if same_characters (buf, offset, offset + name.count - 1, name) then
-					Result := @ name.cursor_index
-				end
-			end
 		end
 
 	expanded_dtd_literal (buf: like buffer; start_index, end_index: INTEGER; parse_data: POINTER): detachable STRING
@@ -654,20 +617,20 @@ feature {NONE} -- Implementation
 			if is_standalone then
 				Result := False
 
-			elseif doctype_identifiers.uri.starts_with (Http) then
+			elseif attached document_type_parts_list.uri as uri and then uri.starts_with (Http) then
 				Result := True
 
 			elseif attached parameter_entity_table as table then
 			-- Check if a PUBLIC or SYSTEM parameter entity was referenced in DTD
 			-- For example:
 			-- 	<!DOCTYPE xsl:stylesheet [
-			-- 	<!ENTITY % selectors SYSTEM "db-selectors.mod">
-			-- 	%selectors;
+			-- 		<!ENTITY % selectors SYSTEM "db-selectors.mod">
+			-- 		%selectors;
 			-- 	]>
 
 				from table.start until table.after or Result loop
 					parameter := table.item_for_iteration
-					if Valid_external_id_list.has (parameter.external_id) then
+					if attached parameter.external_id as external_id and then Valid_external_id_names.has (external_id) then
 						Result := parameter.is_referenced
 					end
 					table.forth
@@ -675,12 +638,31 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	pop_declaration
+		-- pop `declaration_type' from a virtual stack of max 2 items
+		require
+			depth_gt_zero: declaration_count > 0
+		do
+			declaration_count := declaration_count - 1
+			inspect declaration_count when 1 then
+				declaration_type := DOCTYPE
+			else
+				declaration_type := 0
+			end
+		end
+
+	push_declaration (type: INTEGER)
+		-- push  `type' on to a virtual stack of max 2 items
+		do
+			declaration_count := declaration_count + 1
+			declaration_type := type
+		end
+
 	reset
 		local
 			i: INTEGER
 		do
-			Precursor {XT_PARSING_BUFFERS}
-			Precursor {XT_DOCUMENT_SCANNER}
+			Precursor {XT_PARSING_BUFFERS}; Precursor {XT_DOCUMENT_SCANNER}
 
 			attribute_value_defaults_table.wipe_out
 			if element_context.has_default_values then
@@ -692,15 +674,21 @@ feature {NONE} -- Implementation
 			if name_cache /= doctype_name_cache then
 				doctype_name_cache.reset
 			end
-
 			from i := 0 until i = declaration_parts.count loop
 				declaration_parts [i].wipe_out
 				i := i + 1
 			end
 			parameter_entity_table.wipe_out
+		end
 
-			doctype_identifiers.uri := Empty_string
-			doctype_identifiers.formal_public := Empty_string
+	to_declaration_type (buf: like buffer; offset: INTEGER): INTEGER
+		-- one of: Attlist, Doctype, Element, Entity or 0 if no match
+		do
+			across Document_definition_names as name until Result > 0 loop
+				if same_characters (buf, offset, offset + name.count - 1, name) then
+					Result := @ name.cursor_index
+				end
+			end
 		end
 
 feature {NONE} -- Deferred
@@ -756,10 +744,6 @@ feature {NONE} -- Internal attributes
 		-- name cache for use in all DOCTYPE declarations
 		-- Normally refers to `name_cache' unless xmlns declarations are resolved
 		-- with URI mapping then created separately
-
-	doctype_identifiers: TUPLE [formal_public, uri: STRING]
-		-- The two literal strings shown in this example:
-		-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 
 	element_context: XT_ELEMENT_CONTEXT
 

@@ -96,7 +96,7 @@ feature {NONE} -- Document definition strings
 
 	Unknown_id: STRING = "Unknown"
 
-	Valid_external_id_list: ARRAY [STRING]
+	Valid_external_id_names: ARRAY [STRING]
 		once
 			Result := << PUBLIC, SYSTEM >>
 		end

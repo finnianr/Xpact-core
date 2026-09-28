@@ -64,7 +64,7 @@ feature {XT_NAMESPACE_SCOPE} -- Declaration event handlers
 		deferred
 		end
 
-	on_doctype_declaration_start (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
+	on_doctype_declaration_start (parts_list: XT_DOCUMENT_TYPE_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
 		-- typedef void (
 		-- 	XMLCALL *XML_StartDoctypeDeclHandler)(void *userData,
  		-- 	const XML_Char *doctypeName, const XML_Char *sysid, const XML_Char *pubid, int has_internal_subset);

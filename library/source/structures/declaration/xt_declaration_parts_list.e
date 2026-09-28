@@ -74,7 +74,9 @@ feature {NONE} -- Initialization
 			make_sized (11)
 			name_cache := a_name_cache
 			last_name := Empty_string
+			external_id_type := Void
 			state := State_extending
+			create external_id_list.make_empty (2)
 			create token_area.make_empty (area.capacity)
 			create option_list.make (50)
 		end
@@ -86,6 +88,29 @@ feature -- Access
 			valid_index: valid_index (i)
 		do
 			Result := token_area [i - 1]
+		end
+
+	external_id_type: detachable STRING
+
+	external_id_list: SPECIAL [STRING]
+
+	public_id: detachable STRING
+		do
+			if has_public_id and then external_id_list.count > 0 then
+				Result := external_id_list [0]
+			end
+		end
+
+	system_id: detachable STRING
+		do
+			if attached external_id_list as id_list and then id_list.count > 0 then
+				if has_public_id and then id_list.count = 2 then
+					Result := id_list [1]
+
+				elseif has_system_id then
+					Result := id_list [0]
+				end
+			end
 		end
 
 feature -- Status query
@@ -102,9 +127,14 @@ feature -- Status query
 			Result := Reserved_identifiers.index_of (area [i - 1], 0) > -1
 		end
 
-	is_public: BOOLEAN
+	has_public_id: BOOLEAN
 		do
-			Result := count >= 2 and then i_th (2) = PUBLIC
+			Result := external_id_type = PUBLIC
+		end
+
+	has_system_id: BOOLEAN
+		do
+			Result := external_id_type = SYSTEM
 		end
 
 	is_complete: BOOLEAN
@@ -116,7 +146,7 @@ feature -- Status query
 
 	is_valid: BOOLEAN
 		do
-			Result := count >= 2
+			Result := count > 0
 		end
 
 feature -- Element change
@@ -138,6 +168,10 @@ feature -- Element change
 				when Tok_name, Tok_pound_name, Tok_name_question, Tok_name_asterisk, Tok_name_plus then
 					if attached name_constant (buffer, start_index, end_index, token) as constant then
 						l_name := constant
+						if Valid_external_id_names.has (l_name) then
+							external_id_type := l_name
+							state := State_external_id
+						end
 
 					elseif count > 1 and l_area [count - 1] = NDATA then
 						l_name := new_notation_name (buffer, start_index, end_index)
@@ -155,12 +189,22 @@ feature -- Element change
 					else end
 
 				when Tok_literal then
-					if i > 1 and then Valid_external_id_list.has (l_area [i - 2]) then
-						l_area.extend (new_public_id (buffer, start_index, end_index))
+					inspect state when State_external_id then
+						if attached external_id_list as id_list and then id_list.count < 2 then
+							id_list.extend (new_public_id (buffer, start_index, end_index))
+							if external_id_type = SYSTEM and then id_list.count = 1 then
+								state := State_extending
+
+							elseif external_id_type = PUBLIC and then id_list.count = 2 then
+								state := State_extending
+							end
+						else
+							state := State_extending
+						end
 					else
 						l_area.extend (new_value (buffer, start_index, end_index, newline_or_tab_found))
+						l_token_area.extend (token)
 					end
-					l_token_area.extend (token)
 			else
 			end
 		end
@@ -171,6 +215,8 @@ feature -- Element change
 			Precursor
 			token_area.wipe_out
 			option_list.wipe_out
+			external_id_list.wipe_out
+			external_id_type := Void
 			state := State_extending
 			last_name := Empty_string
 		end
@@ -333,6 +379,8 @@ feature {NONE} -- Constants
 
 	State_extending: INTEGER = 2
 
+	State_external_id: INTEGER = 3
+
 	Hash_fixed: STRING = "#FIXED"
 
 	Hash_implied: STRING = "#IMPLIED"
@@ -340,6 +388,9 @@ feature {NONE} -- Constants
 	Hash_required: STRING = "#REQUIRED"
 
 	Hash_pcdata: STRING = "#PCDATA"
+
+invariant
+	valid_external_id_type: attached external_id_type as id_type implies Valid_external_id_names.has (id_type)
 
 note
 	notes: "[

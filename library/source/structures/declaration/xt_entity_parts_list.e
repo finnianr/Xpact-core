@@ -38,23 +38,28 @@ feature -- Basic operations
 	extend_table (entity_table: XT_ENTITY_TABLE)
 		do
 			inspect count
-				when 2 then
-					entity_table.put (last, name)
-				when 3 then
+				when 1 then
 				-- &legal; referenced near end of document /usr/share/gnome/help/synaptic/C/synaptic.xml
 				-- Defined as external: <!ENTITY legal SYSTEM "gpl.xml">
 				-- Without putting into table there will be a %N missing in output compared to eXpat
-					entity_table.put (Empty_string, name)
-				when 4 .. 6 then
-					entity_table.put (Empty_string, name)
+					if has_system_id then
+						entity_table.put (Empty_string, name)
+					end
 
-					if  i_th (count - 1) = NDATA and i_th_token (count) = Tok_name
+				when 2 then
+					entity_table.put (last, name)
+
+				when 3 then
+					if has_system_id then
+						entity_table.put (Empty_string, name)
+					end
+
+					if i_th (2) = NDATA and i_th_token (3) = Tok_name
 						and then attached entity_table.inserted_name as entity_name
 					then
 					-- attempting to reference this name in document returns the `Error_binary_entity_ref' error
 						entity_name.set_has_notation_tag
 					end
-
 			else
 			end
 		end

@@ -38,7 +38,7 @@ feature {NONE} -- Declaration event handlers
 		do
 		end
 
-	on_doctype_declaration_start_ (parts_list: XT_DECLARATION_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
+	on_doctype_declaration_start_ (parts_list: XT_DOCUMENT_TYPE_PARTS_LIST; has_internal_subset: BOOLEAN; parse_data: POINTER)
 		do
 		end
 

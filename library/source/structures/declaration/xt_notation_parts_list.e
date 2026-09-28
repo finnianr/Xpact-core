@@ -33,13 +33,13 @@ feature -- Status query
 
 	is_valid: BOOLEAN
 		do
-			inspect count when 3 .. 4 then
-				if count = 4 then
-					Result := i_th (2) = PUBLIC
-				else
-					Result := Valid_external_id_list.has (i_th (2))
+			if count = 1 then
+				if has_public_id then
+					Result := external_id_list.count > 0
+
+				elseif has_system_id then
+					Result := external_id_list.count = 1
 				end
-			else
 			end
 		end
 
