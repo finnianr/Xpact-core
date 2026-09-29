@@ -359,22 +359,29 @@ feature {NONE} -- Implementation
 
 	address (str: STRING): POINTER
 		-- `str.area.base_address'
+		require
+			null_terminated: null_terminated (str)
 		do
 			Result := str.area.base_address
 		end
 
 	address_if (a_str: detachable STRING): POINTER
 		-- `a_str.area.base_address' or else NULL pointer if `a_str = Void'
+		require
+			null_terminated: attached a_str as str implies null_terminated (str)
 		do
 			if attached a_str as str then
 				Result := str.area.base_address
 			end
 		ensure
-			valid_result: Result.is_default_pointer implies a_str = Void
+			void_gives_null: a_str = Void implies Result.is_default_pointer
+			attached_gives_address: attached a_str implies is_attached (Result)
 		end
 
 	address_or_null (str: STRING): POINTER
 		-- `str.area.base_address' or else NULL pointer if `str.is_empty'
+		require
+			null_terminated: null_terminated (str)
 		do
 			inspect str.count when 0 then
 				do_nothing
@@ -394,6 +401,11 @@ feature {NONE} -- Implementation
 			null_index := end_index + 1
 			set_null_swap (parse_data, buf [null_index])
 			buf [null_index] := '%U'
+		end
+
+	null_terminated (str: STRING): BOOLEAN
+		do
+			Result := str.area [str.count] = '%U'
 		end
 
 	undo_null_termination (buf: like buffer; parse_data: POINTER)
