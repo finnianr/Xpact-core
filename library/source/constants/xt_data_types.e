@@ -34,14 +34,17 @@ feature {NONE} -- Constants
 				[Type_attribute,				"attribute"],	-- attribute name and value
 				[Type_cdata, 					"cdata"],		-- CDATA text content
 				[Type_comment,					"comment"],		-- comment
-				[Type_decl_attribute_list,	"attlist"],		-- ATTLIST declaration
-				[Type_decl_doctype,			"doctype"],		-- DOCTYPE declaration
-				[Type_decl_element,			"element"],		-- ELEMENT declaration
-				[Type_decl_entity,			"entity"],		-- ENTITY declaration
-				[Type_decl_notation,			"notation"],	-- NOTATION declaration
+				[Type_entity,					"entity"],		-- skipped entities
 				[Type_processing,				"processing"],	-- processing instruction name and data
 				[Type_tag,						"tag"],			-- tag name (open element)
 				[Type_text,						"text"],			-- text content
+
+			-- Declarations
+				[Type_decl_attribute_list,	"attlist"],		-- ATTLIST declaration
+				[Type_decl_doctype,			"doctype"],		-- DOCTYPE declaration
+				[Type_decl_element,			"element"],		-- ELEMENT declaration
+				[Type_decl_notation,			"notation"],	-- NOTATION declaration
+				[Type_decl_entity,			"entity-decl"],-- ENTITY declaration
 				[Type_xml_declaration,		"xml-decl"],	-- XML declaration parts: version, encoding, standalone
 				[Type_xmlns_declaration,	"xmlns-decl"]	-- XML namespace declaration and scope end
 			>>)
@@ -55,31 +58,35 @@ feature {NONE} -- Constants
 			end
 		end
 
-feature {NONE}	-- Constants
+feature {NONE} -- Data types
 
-	Type_attribute: INTEGER = 1
+      Type_attribute: INTEGER = 1
 
-	Type_cdata: INTEGER = 2
+      Type_cdata: INTEGER = 2
 
-	Type_comment: INTEGER = 3
+      Type_comment: INTEGER = 3
 
-	Type_decl_attribute_list: INTEGER = 4
+      Type_entity: INTEGER = 4
 
-	Type_decl_doctype: INTEGER = 5
+      Type_processing: INTEGER = 5
 
-	Type_decl_element: INTEGER = 6
+      Type_tag: INTEGER = 6
 
-	Type_decl_entity: INTEGER = 7
+      Type_text: INTEGER = 7
 
-	Type_decl_notation: INTEGER = 8
+feature {NONE} -- Declaration types
 
-	Type_processing: INTEGER = 9
+      Type_decl_attribute_list: INTEGER = 8
 
-	Type_tag: INTEGER = 10
+      Type_decl_doctype: INTEGER = 9
 
-	Type_text: INTEGER = 11
+      Type_decl_element: INTEGER = 10
 
-	Type_xml_declaration: INTEGER = 12
+      Type_decl_entity: INTEGER = 11
 
-	Type_xmlns_declaration: INTEGER = 13
+      Type_decl_notation: INTEGER = 12
+
+      Type_xml_declaration: INTEGER = 13
+
+      Type_xmlns_declaration: INTEGER = 14
 end

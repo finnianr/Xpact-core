@@ -591,7 +591,8 @@ feature {NONE} -- Processor dispatch
 					Result := error
 
 				elseif attributes.permit_undefined_entities then
-					do_nothing
+					on_skipped_entity (entity_name, False, parse_data)
+
 				else
 					Result := Error_undefined_entity; put_boolean (done, True)
 				end

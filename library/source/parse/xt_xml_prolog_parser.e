@@ -225,7 +225,9 @@ feature {NONE} -- Token processing
 			elseif attached parameter_entity_table.item (entity_name) as parameter then
 				parameter.set_referenced
 				if parameter.is_external then
-					do_nothing
+					if c_param_entity_parsing_enabled (parse_data, is_standalone) then
+						on_skipped_entity (entity_name, True, parse_data)
+					end
 
 				elseif attached parameter.value as value then
 					buffer_index_copy := buffer_index -- save field

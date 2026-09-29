@@ -72,6 +72,12 @@ feature -- Access
 			Result := checksum.value
 		end
 
+	new_benchmark (a_file_path: PATH; a_time_start: TIME; a_duration_ms, a_chunk_size: INTEGER): XT_CRC_32_BENCHMARK
+		do
+			create Result.make (Current, a_file_path, a_time_start, a_duration_ms, a_chunk_size)
+			Result.set_data_type (data_type)
+		end
+
 feature -- Basic operations
 
 	put_status (output: IO_MEDIUM)
@@ -156,7 +162,7 @@ feature {NONE} -- Declaration event handlers
 		do
 			inspect data_type when Type_decl_entity then
 				if not c_entity_handled (parse_data) and then attached checksum as crc then
-					crc.add_characters (parts.name.area, 1, parts.name.count - 2)
+					add_entity_name (crc, parts.name)
 					crc.add_boolean (parts.is_parameter)
 					if attached parts.value as str then
 						crc.add_string (str)
@@ -230,7 +236,7 @@ feature {NONE} -- Declaration event handlers
 		do
 			inspect data_type when Type_decl_entity then
 				if attached checksum as crc then
-					crc.add_characters (parts.name.area, 1, parts.name.count - 2)
+					add_entity_name (crc, parts.name)
 					base_ptr := c_base (parse_data)
 					if is_attached (base_ptr) then
 						crc.add_bytes (base_ptr, c_string_8_length (base_ptr))
@@ -329,18 +335,26 @@ feature {NONE} -- Parse events
 
 	on_skipped_entity (entity_name: STRING; is_parameter_entity: BOOLEAN; parse_data: POINTER)
 		do
+			inspect data_type when Type_entity then
+				if attached checksum as crc then
+					add_entity_name (crc, entity_name)
+					crc.add_boolean (is_parameter_entity)
+				end
+			else end
 		end
 
 	on_unknown_encoding (name: STRING; parse_data: POINTER): BOOLEAN
 		do
 		end
 
-feature -- Factory
+feature {NONE} -- Implementation
 
-	new_benchmark (a_file_path: PATH; a_time_start: TIME; a_duration_ms, a_chunk_size: INTEGER): XT_CRC_32_BENCHMARK
+	add_entity_name (crc: like checksum; name: STRING)
+		 -- exclude '&' and ';' from checksum
+		require
+			name_at_least_3_characters: name.count >= 3
 		do
-			create Result.make (Current, a_file_path, a_time_start, a_duration_ms, a_chunk_size)
-			Result.set_data_type (data_type)
+			crc.add_characters (name.area, 1, name.count - 2)
 		end
 
 feature {NONE} -- Internal attributes

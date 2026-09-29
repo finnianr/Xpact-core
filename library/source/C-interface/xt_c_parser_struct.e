@@ -135,6 +135,27 @@ feature {NONE} -- Status query
 			"((XML_Parser) $ptr)->entity_handled"
 		end
 
+	frozen c_param_entity_parsing_enabled (ptr: POINTER a_is_standalone: BOOLEAN): BOOLEAN
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"[
+				XML_Parser p = (XML_Parser) $ptr;
+				XML_Bool result;
+				switch (p->paramEntityParsing) {
+					case XML_PARAM_ENTITY_PARSING_ALWAYS: 
+						result = 1;
+						break;
+					case XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE:
+						result = (XML_Bool)$a_is_standalone;
+						break;
+				}
+				return result;
+			]"
+		end
+
 	frozen is_entity_expansion_limit_breached (ptr: POINTER): BOOLEAN
 		require
 			parser_attached: is_attached (ptr)

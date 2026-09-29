@@ -24,6 +24,7 @@ typedef enum {
 	TYPE_XML_DECL,
 	TYPE_DOCTYPE,
 	TYPE_ATTLIST,
+	TYPE_ENTITY_DECL,
 	TYPE_ENTITY,
 	TYPE_NOTATION,
 	TYPE_ELEMENT,
@@ -32,7 +33,7 @@ typedef enum {
 
 static const char *data_type_name[] = {
 	"text", "cdata", "comment", "tag", "attribute",
-	"processing", "xml-decl", "doctype", "attlist", "entity", "notation",
+	"processing", "xml-decl", "doctype", "attlist", "entity-decl", "entity", "notation",
 	"element", "xmlns-decl"
 };
 
@@ -236,7 +237,7 @@ static void XMLCALL on_entity_decl(void *userData, const XML_Char *entityName,
                                     const XML_Char *systemId, const XML_Char *publicId,
                                     const XML_Char *notationName) {
 	crc_ctx_t *ctx = (crc_ctx_t *) userData;
-	if (ctx->type != TYPE_ENTITY) return;
+	if (ctx->type != TYPE_ENTITY_DECL) return;
 	crc32_update(ctx, (const unsigned char *) entityName, strlen(entityName));
 	crc32_update_bool(ctx, is_parameter_entity);
 	if (value){
@@ -256,7 +257,7 @@ static void XMLCALL on_entity_decl(void *userData, const XML_Char *entityName,
 /* Combines the unparsed-entity declaration's fields, left to right as supplied
  * to XML_UnparsedEntityDeclHandler, into the running checksum: entityName,
  * base, systemId, publicId, notationName. Adds to the same checksum as
- * XML_EntityDeclHandler (-type entity). expat calls the two handlers
+ * XML_EntityDeclHandler (-type entity-decl). expat calls the two handlers
  * mutually exclusively per entity: for an unparsed (NDATA) entity it calls
  * *this* handler instead of XML_EntityDeclHandler (only falling back to
  * XML_EntityDeclHandler, with notationName forced NULL, when no
@@ -273,7 +274,7 @@ static void XMLCALL on_unparsed_entity_decl(void *userData, const XML_Char *enti
                                              const XML_Char *publicId,
                                              const XML_Char *notationName) {
 	crc_ctx_t *ctx = (crc_ctx_t *) userData;
-	if (ctx->type != TYPE_ENTITY) return;
+	if (ctx->type != TYPE_ENTITY_DECL) return;
 	crc32_update(ctx, (const unsigned char *) entityName, strlen(entityName));
 	if (base)
 		crc32_update(ctx, (const unsigned char *) base, strlen(base));
@@ -282,6 +283,24 @@ static void XMLCALL on_unparsed_entity_decl(void *userData, const XML_Char *enti
 	if (publicId)
 		crc32_update(ctx, (const unsigned char *) publicId, strlen(publicId));
 	crc32_update(ctx, (const unsigned char *) notationName, strlen(notationName));
+}
+
+/* Combines the skipped-entity fields, left to right as supplied to
+ * XML_SkippedEntityHandler, into the running checksum: entityName,
+ * is_parameter_entity. This is -type entity, kept separate from
+ * -type entity-decl (XML_EntityDeclHandler / XML_UnparsedEntityDeclHandler):
+ * a skipped entity was never declared or parsed at all -- it's reported
+ * instead of a declaration, not alongside one (an undefined entity
+ * reference that isn't an error, or a known internal entity deliberately
+ * left unexpanded because XML_SetDefaultHandler rather than
+ * XML_SetDefaultHandlerExpand was registered -- see XML_SkippedEntityHandler
+ * in expat.h). entityName is never NULL for this handler. */
+static void XMLCALL on_skipped_entity(void *userData, const XML_Char *entityName,
+                                       int is_parameter_entity) {
+	crc_ctx_t *ctx = (crc_ctx_t *) userData;
+	if (ctx->type != TYPE_ENTITY) return;
+	crc32_update(ctx, (const unsigned char *) entityName, strlen(entityName));
+	crc32_update_bool(ctx, is_parameter_entity);
 }
 
 /* Combines the NOTATION declaration's fields, left to right as supplied to
@@ -446,6 +465,7 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	XML_SetAttlistDeclHandler(parser, on_attlist_decl);
 	XML_SetEntityDeclHandler(parser, on_entity_decl);
 	XML_SetUnparsedEntityDeclHandler(parser, on_unparsed_entity_decl);
+	XML_SetSkippedEntityHandler(parser, on_skipped_entity);
 	XML_SetNotationDeclHandler(parser, on_notation_decl);
 	XML_SetElementDeclHandler(parser, on_element_decl);
 	XML_SetNamespaceDeclHandler(parser, on_start_namespace_decl, on_end_namespace_decl);
@@ -480,7 +500,7 @@ static long now_ms(void) {
 static void usage(const char *prog) {
 	fprintf(stderr,
 			"Usage: %s -type <text|cdata|comment|tag|attribute|"
-			"processing|xml-decl|doctype|attlist|entity|notation|element|xmlns-decl> "
+			"processing|xml-decl|doctype|attlist|entity-decl|entity|notation|element|xmlns-decl> "
 			"[-duration <time-window-ms>] [-trace] [-xmlns [<separator>]] [-ns_triplets] "
 			"<xml-file-path>\n",
 			prog);
@@ -565,6 +585,7 @@ int main(int argc, char **argv) {
 	else if (strcmp(type_arg, "xml-decl") == 0) type = TYPE_XML_DECL;
 	else if (strcmp(type_arg, "doctype") == 0) type = TYPE_DOCTYPE;
 	else if (strcmp(type_arg, "attlist") == 0) type = TYPE_ATTLIST;
+	else if (strcmp(type_arg, "entity-decl") == 0) type = TYPE_ENTITY_DECL;
 	else if (strcmp(type_arg, "entity") == 0) type = TYPE_ENTITY;
 	else if (strcmp(type_arg, "notation") == 0) type = TYPE_NOTATION;
 	else if (strcmp(type_arg, "element") == 0) type = TYPE_ELEMENT;

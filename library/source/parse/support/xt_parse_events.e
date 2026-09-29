@@ -1,6 +1,8 @@
 note
 	description: "Xpact event handling interface"
 
+	notes: "See end of class"
+
 	author: "Finnian Reilly"
 	copyright: "Copyright (c) 2001-2026 Finnian Reilly"
 	contact: "finnian at eiffel hyphen loop dot com"
@@ -17,6 +19,17 @@ feature -- Contract support
 
 	c_entity_handled (parse_data: POINTER): BOOLEAN
 		deferred
+		end
+
+	valid_entity_ref (entity_ref: STRING): BOOLEAN
+		do
+			if entity_ref.count >= 3 then
+				inspect entity_ref [1]
+					when '&', '%%' then
+						Result := entity_ref [entity_ref.count] = ';'
+				else
+				end
+			end
 		end
 
 feature {NONE} -- Event handlers
@@ -91,9 +104,7 @@ feature {XT_NAMESPACE_SCOPE} -- Declaration event handlers
 		-- 	const XML_Char *systemId, const XML_Char *publicId,
 		-- 	const XML_Char *notationName);
 		require
-			entity_name_has_delimiters:
-				attached parts.name as entity_name and then entity_name.count >= 3
-				and then (once "&%%").has (entity_name [1]) and then entity_name [entity_name.count] = ';'
+			valid_entity_reference: valid_entity_ref (parts.name)
 		deferred
 		end
 
@@ -121,6 +132,7 @@ feature {XT_NAMESPACE_SCOPE} -- Declaration event handlers
 		-- 	const XML_Char *systemId, const XML_Char *publicId, const XML_Char *notationName);
 		require
 			entity_handled_reset: not c_entity_handled (parse_data)
+			valid_entity_reference: valid_entity_ref (parts.name)
 		deferred
 		end
 
@@ -150,8 +162,16 @@ feature {NONE} -- Other parse events
 		end
 
 	on_skipped_entity (entity_name: STRING; is_parameter_entity: BOOLEAN; parse_data: POINTER)
+		-- This is called in two situations:
+		-- 1) An entity reference is encountered for which no declaration has been
+		--    read but it is not an error.
+		-- 2) An internal entity reference is read, but not expanded, because
+		--    XML_SetDefaultHandler has been called.
+
 		-- typedef void (XMLCALL *XML_SkippedEntityHandler) (
 		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity);
+		require
+			valid_entity_reference: valid_entity_ref (entity_name)
 		deferred
 		end
 
@@ -219,5 +239,35 @@ feature {NONE} -- Deferred
 	element_tokens: ARRAY [INTEGER]
 		deferred
 		end
+
+note
+	notes: "[
+		**About XML_SkippedEntityHandler**
+
+		This is called in two situations:
+		1. An entity reference is encountered for which no declaration has been read and this is not an error.
+		2. An internal entity reference is read, but not expanded, because XML_SetDefaultHandler has been called.
+
+		Note: skipped parameter entities in declarations and skipped general entities in attribute values cannot
+		be reported, because the event would be out of sync with the reporting of the declarations or attribute value.
+
+		Does it also apply to parameter entities ?
+
+		Partially: situation (1) applies to both, but situation (2) does not apply to parameter entities at all.
+
+		**Situation 1**
+		undefined entity, not an error: confirmed for both. General entities at xmlparse.c:3367 (content, &name;),
+		and parameter entities at xmlparse.c:6046, explicitly gated on role == XML_ROLE_PARAM_ENTITY_REF, that's the %name; case.
+
+		**Situation 2**
+		internal entity read but not expanded because XML_SetDefaultHandler was called: this hinges entirely on the
+		m_defaultExpandInternalEntities flag, and that flag is checked in exactly one place in the whole file
+		(xmlparse.c:3381), inside the general-entity-reference-in-content path (the same block as call site #1 above).
+		There's no equivalent check anywhere in the parameter-entity handling code. So a known, internal parameter entity
+		is always expanded regardless of whether XML_SetDefaultHandler or XML_SetDefaultHandlerExpand was called.
+		There's no "skip instead of expand" path for %name; the way there is for &name;.
+
+		So: parameter entities can trigger XML_SkippedEntityHandler only via situation (1) (undefined + not an error), never via situation (2).
+	]"
 
 end

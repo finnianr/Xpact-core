@@ -233,11 +233,14 @@ feature {NONE} -- Declaration event handlers
 					value_count := l_value.count
 				end
 				call_on_entity_declaration (
-					ptr, c_user_data (parse_data), address (parts.name), parts.is_parameter.to_integer,
+					ptr, c_user_data (parse_data), entity_name_address (parts.name, parse_data), parts.is_parameter.to_integer,
 					value_ptr, value_count, c_base (parse_data), address_if (parts.system_id),
 					address_if (parts.public_id), address (parts.notation_name) -- never NULL
 				)
+				undo_null_termination (parts.name.area, parse_data)
 			end
+		ensure then
+			entity_name_restored: parts.name [parts.name.count - 1] > '%U'
 		end
 
 	on_namespace_declaration_end (prefix: STRING; parse_data: POINTER)
@@ -295,12 +298,15 @@ feature {NONE} -- Declaration event handlers
 			ptr := c_on_unparsed_entity_declaration (parse_data)
 			if is_attached (ptr) then
 				call_on_unparsed_entity_declaration (
-					ptr, c_user_data (parse_data), address (parts.name), c_base (parse_data),
+					ptr, c_user_data (parse_data), entity_name_address (parts.name, parse_data), c_base (parse_data),
 					address_if (parts.system_id), address_if (parts.public_id),
 					address (parts.notation_name) -- never NULL
 				)
+				undo_null_termination (parts.name.area, parse_data)
 				set_entity_handled (parse_data, True)
 			end
+		ensure then
+			entity_name_restored: parts.name [parts.name.count - 1] > '%U'
 		end
 
 	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
@@ -343,10 +349,21 @@ feature {NONE} -- Other parse events
 		do
 		end
 
-	on_skipped_entity (entity_name: STRING; is_parameter_entity: BOOLEAN; parse_data: POINTER)
+	on_skipped_entity (entity_name: STRING; is_parameter: BOOLEAN; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_SkippedEntityHandler) (
 		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity);
+		local
+			ptr: POINTER
 		do
+			ptr := c_on_skipped_entity (parse_data)
+			if is_attached (ptr) then
+				call_on_skipped_entity (
+					ptr, c_user_data (parse_data), entity_name_address (entity_name, parse_data), is_parameter.to_integer
+				)
+				undo_null_termination (entity_name.area, parse_data)
+			end
+		ensure then
+			entity_name_restored: entity_name [entity_name.count - 1] > '%U'
 		end
 
 	on_unknown_encoding (name: STRING; parse_data: POINTER): BOOLEAN
@@ -401,6 +418,17 @@ feature {NONE} -- Implementation
 			null_index := end_index + 1
 			set_null_swap (parse_data, buf [null_index])
 			buf [null_index] := '%U'
+		end
+
+	entity_name_address (name: STRING; parse_data: POINTER): POINTER
+		 -- exclude '&' and ';' from checksum and add temporary NULL terminator
+		require
+			name_at_least_3_characters: name.count >= 3
+		do
+			if attached name.area as area then
+				null_terminate (area, name.count - 2, parse_data) -- exclude ';'
+				Result := area.item_address (1) -- exclude '&'
+			end
 		end
 
 	null_terminated (str: STRING): BOOLEAN
