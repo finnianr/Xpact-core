@@ -22,8 +22,18 @@ class
 
 inherit
 	XT_DECLARATION_PARTS_LIST
+		undefine
+			extend_external_id, make_external_id, try_set_external_id, wipe_out_external_id
 		redefine
 			new_name, is_valid
+		end
+
+	XT_EXTERNALLY_LINKABLE_DECLARATION
+		rename
+			make as make_external_id,
+			wipe_out as wipe_out_external_id
+		undefine
+			copy, is_equal
 		end
 
 create

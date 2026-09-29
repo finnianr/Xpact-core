@@ -19,7 +19,7 @@ class
 inherit
 	XT_DECLARATION_PARTS_LIST
 		undefine
-			is_valid
+			extend_external_id, is_valid, make_external_id, try_set_external_id, wipe_out_external_id
 		redefine
 			name_cache, new_name
 		end

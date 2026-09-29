@@ -145,10 +145,7 @@ feature {NONE} -- Declaration event handlers
 			else end
 		end
 
-	on_entity_declaration (
-		entity_name: STRING; value, system_id, public_id, notation_name: detachable STRING
-		is_parameter_entity: BOOLEAN; parse_data: POINTER
-	)
+	on_entity_declaration (parts: XT_ENTITY_PARTS_I; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
 		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity,
 		-- 	const XML_Char *value, int value_length, const XML_Char *base,
@@ -158,10 +155,10 @@ feature {NONE} -- Declaration event handlers
 			base_ptr: POINTER
 		do
 			inspect data_type when Type_decl_entity then
-				if attached checksum as crc then
-					crc.add_characters (entity_name.area, 1, entity_name.count - 2)
-					crc.add_boolean (is_parameter_entity)
-					if attached value as str then
+				if not c_entity_handled (parse_data) and then attached checksum as crc then
+					crc.add_characters (parts.name.area, 1, parts.name.count - 2)
+					crc.add_boolean (parts.is_parameter)
+					if attached parts.value as str then
 						crc.add_string (str)
 						crc.add_integer_32 (str.count)
 					end
@@ -169,15 +166,9 @@ feature {NONE} -- Declaration event handlers
 					if is_attached (base_ptr) then
 						crc.add_bytes (base_ptr, c_string_8_length (base_ptr))
 					end
-					if attached system_id as str then
-						crc.add_string (str)
-					end
-					if attached public_id as str then
-						crc.add_string (str)
-					end
-					if attached notation_name as str then
-						crc.add_string (str)
-					end
+					crc.add_attached_string (parts.system_id)
+					crc.add_attached_string (parts.public_id)
+					crc.add_string (parts.notation_name) -- never NULL
 				end
 			else end
 		end
@@ -211,7 +202,7 @@ feature {NONE} -- Declaration event handlers
 			end
 		end
 
-	on_notation_declaration (name: STRING; system_id, public_id: detachable STRING; parse_data: POINTER)
+	on_notation_declaration (parts: XT_NOTATION_PARTS_LIST; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
 		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
 		local
@@ -219,25 +210,37 @@ feature {NONE} -- Declaration event handlers
 		do
 			inspect data_type when Type_decl_notation then
 				if attached checksum as crc then
-					crc.add_string (name)
+					crc.add_string (parts.name)
 					base_ptr := c_base (parse_data)
 					if is_attached (base_ptr) then
 						crc.add_bytes (base_ptr, c_string_8_length (base_ptr))
 					end
-					if attached system_id as str then
-						crc.add_string (str)
-					end
-					if attached public_id as str then
-						crc.add_string (str)
-					end
+					crc.add_attached_string (parts.system_id)
+					crc.add_attached_string (parts.public_id)
 				end
 			else end
 		end
 
-	on_unparsed_entity_declaration (
-		entity_name: STRING; system_id, public_id, notation_name: detachable STRING; parse_data: POINTER
-	)
+	on_unparsed_entity_declaration (parts: XT_ENTITY_PARTS_I; parse_data: POINTER)
+		-- typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
+		-- 	void *userData, const XML_Char *entityName, const XML_Char *base,
+		-- 	const XML_Char *systemId, const XML_Char *publicId, const XML_Char *notationName);
+		local
+			base_ptr: POINTER
 		do
+			inspect data_type when Type_decl_entity then
+				if attached checksum as crc then
+					crc.add_characters (parts.name.area, 1, parts.name.count - 2)
+					base_ptr := c_base (parse_data)
+					if is_attached (base_ptr) then
+						crc.add_bytes (base_ptr, c_string_8_length (base_ptr))
+					end
+					crc.add_attached_string (parts.system_id)
+					crc.add_attached_string (parts.public_id)
+					crc.add_string (parts.notation_name) -- never NULL
+					set_entity_handled (parse_data, True)
+				end
+			else end
 		end
 
 	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)

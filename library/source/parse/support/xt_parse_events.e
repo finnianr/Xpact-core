@@ -13,6 +13,12 @@ note
 deferred class
 	XT_PARSE_EVENTS
 
+feature -- Contract support
+
+	c_entity_handled (parse_data: POINTER): BOOLEAN
+		deferred
+		end
+
 feature {NONE} -- Event handlers
 
 	on_clear_reenter
@@ -77,17 +83,16 @@ feature {XT_NAMESPACE_SCOPE} -- Declaration event handlers
 		deferred
 		end
 
-	on_entity_declaration (
-		entity_name: STRING; value, system_id, public_id, notation_name: detachable STRING
-		is_parameter_entity: BOOLEAN; parse_data: POINTER
-	)
+	on_entity_declaration (parts: XT_ENTITY_PARTS_I; parse_data: POINTER)
+
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
 		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity,
 		-- 	const XML_Char *value, int value_length, const XML_Char *base,
 		-- 	const XML_Char *systemId, const XML_Char *publicId,
 		-- 	const XML_Char *notationName);
 		require
-			entity_name_has_delimiters: entity_name.count >= 3
+			entity_name_has_delimiters:
+				attached parts.name as entity_name and then entity_name.count >= 3
 				and then (once "&%%").has (entity_name [1]) and then entity_name [entity_name.count] = ';'
 		deferred
 		end
@@ -104,18 +109,18 @@ feature {XT_NAMESPACE_SCOPE} -- Declaration event handlers
 		deferred
 		end
 
-	on_notation_declaration (name: STRING; system_id, public_id: detachable STRING; parse_data: POINTER)
+	on_notation_declaration (parts: XT_NOTATION_PARTS_LIST; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_NotationDeclHandler)(void *userData,
 		-- const XML_Char *notationName, const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId);
 		deferred
 		end
 
-	on_unparsed_entity_declaration (
-		entity_name: STRING; system_id, public_id, notation_name: detachable STRING; parse_data: POINTER
-	)
+	on_unparsed_entity_declaration (parts: XT_ENTITY_PARTS_I; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
 		-- 	void *userData, const XML_Char *entityName, const XML_Char *base,
 		-- 	const XML_Char *systemId, const XML_Char *publicId, const XML_Char *notationName);
+		require
+			entity_handled_reset: not c_entity_handled (parse_data)
 		deferred
 		end
 

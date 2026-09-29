@@ -16,7 +16,7 @@ class
 inherit
 	XT_DECLARATION_PARTS_LIST
 		undefine
-			is_valid
+			extend_external_id, is_valid, make_external_id, try_set_external_id, wipe_out_external_id
 		redefine
 			is_reserved_first_letter, name_cache, new_value, Reserved_identifiers
 		end
@@ -24,12 +24,24 @@ inherit
 	XT_ENTITY_PARTS_I
 		undefine
 			copy, is_equal
+		redefine
+			has_unparsed_entity
 		end
 
 create
 	make
 
 feature -- Status query
+
+	has_unparsed_entity: BOOLEAN
+		-- For example:
+		-- 	<!NOTATION gif SYSTEM "image/gif">
+		-- 	<!ENTITY logo SYSTEM "logo.gif" NDATA gif>
+		do
+			if count = 3 then
+				Result := i_th (2) = NDATA and then i_th_token (3) = Tok_name
+			end
+		end
 
 	is_parameter: BOOLEAN = False
 

@@ -14,29 +14,31 @@ deferred class
 	XT_ENTITY_PARTS_I
 
 inherit
-	XT_STRING_CONSTANTS
+	XT_EXTERNALLY_LINKABLE_DECLARATION
+		rename
+			make as make_external_id,
+			wipe_out as wipe_out_external_id
+		end
 
 	XT_TOKEN_CONSTANTS
 
 feature -- Status query
 
+	has_unparsed_entity: BOOLEAN
+		-- For example:
+		-- 	<!NOTATION gif SYSTEM "image/gif">
+		-- 	<!ENTITY logo SYSTEM "logo.gif" NDATA gif>
+		do
+			-- redefined in `XT_ENTITY_PARTS_LIST'
+		end
+
 	is_parameter: BOOLEAN
-		deferred
-		end
-
-	has_public_id: BOOLEAN
-		deferred
-		end
-
-	has_system_id: BOOLEAN
 		deferred
 		end
 
 	is_valid: BOOLEAN
 		do
-			if (has_public_id and then external_id_list.count = 2)
-				or else (has_system_id and then external_id_list.count = 1)
-			then
+			if external_id_type > 0 and then external_id_list.count = external_id_part_count then
 				if count > 1 then
 					Result := count = 3 and i_th (2) = NDATA
 				else
@@ -50,29 +52,17 @@ feature -- Status query
 
 feature -- Access
 
-	external_id_type: detachable STRING
-		deferred
-		end
-
 	name: STRING
 		deferred
 		end
 
-	public_id: detachable STRING
-		deferred
-		end
-
-	system_id: detachable STRING
-		deferred
-		end
-
-	notation_name: detachable STRING
+	notation_name: STRING
 		do
 			inspect count when 3 then
-				if i_th (2) = NDATA then
-					Result := i_th (3)
-				end
-			else end
+				Result := if i_th (2) = NDATA then i_th (3) else Empty_string end
+			else
+				Result := Empty_string
+			end
 		end
 
 	value: detachable STRING
@@ -90,10 +80,6 @@ feature -- Measurement
 		end
 
 feature {NONE} -- Implementation
-
-	external_id_list: SPECIAL [STRING]
-		deferred
-		end
 
 	i_th alias "[]", at alias "@" (i: INTEGER): STRING
 		deferred

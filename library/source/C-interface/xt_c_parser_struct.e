@@ -125,6 +125,16 @@ feature {NONE} -- Status query
 			"((XML_Parser) $ptr)->has_dtd_section"
 		end
 
+	frozen c_entity_handled (ptr: POINTER): BOOLEAN
+		-- `True' if entity already handled by XML_UnparsedEntityDeclHandler
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->entity_handled"
+		end
+
 	frozen is_entity_expansion_limit_breached (ptr: POINTER): BOOLEAN
 		require
 			parser_attached: is_attached (ptr)
@@ -204,6 +214,17 @@ feature {NONE} -- Parsing section (set)
 			"((XML_Parser) $ptr)->has_dtd_section = (XML_Bool)$flag;"
 		ensure
 			has_dtd_section_set: c_has_dtd_section (ptr) = flag
+		end
+
+	frozen set_entity_handled (ptr: POINTER; flag: BOOLEAN)
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->entity_handled = (XML_Bool)$flag;"
+		ensure
+			has_dtd_section_set: c_entity_handled (ptr) = flag
 		end
 
 	frozen set_in_prolog_section (ptr: POINTER; flag: BOOLEAN)

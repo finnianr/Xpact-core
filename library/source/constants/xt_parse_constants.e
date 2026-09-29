@@ -30,6 +30,12 @@ feature {NONE} -- Parsing states (XML_Parsing enum)
 	State_finished: INTEGER = 3
 	State_suspended: INTEGER = 4
 
+feature {NONE} -- Parsing states (XT_DECLARATION_PARTS_LIST)
+
+	State_building: INTEGER = 1
+	State_extending: INTEGER = 2
+	State_external_id: INTEGER = 3 -- setting external (PUBLIC/SYSTEM) ID
+
 feature {NONE} -- Parse status (XML_Status enum)
 
 	Status_error: INTEGER = 0
@@ -65,6 +71,12 @@ feature {XT_STRING_CONSTANTS} -- Declaration types
 	Notation: INTEGER = 5
 
 	Parameter_entity: INTEGER = 6
+
+feature {XT_STRING_CONSTANTS} -- External ID types
+
+	ID_public: INTEGER = 1
+
+	ID_system: INTEGER = 2
 
 feature {NONE} -- Entity expansion accounting
 

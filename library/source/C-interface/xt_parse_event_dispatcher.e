@@ -93,7 +93,7 @@ feature {NONE} -- Parse event handlers
 		do
 			ptr := c_on_element_end (parse_data)
 			if is_attached (ptr) then
-				call_on_element_end (ptr, c_user_data (parse_data), name.area.base_address)
+				call_on_element_end (ptr, c_user_data (parse_data), address (name))
 			end
 		end
 
@@ -178,8 +178,8 @@ feature {NONE} -- Declaration event handlers
 			ptr := c_on_attribute_list_declaration (parse_data)
 			if is_attached (ptr) then
 				call_on_attribute_list_declaration (
-					ptr, c_user_data (parse_data), element_name.area.base_address, attribute_name.area.base_address,
-					attribute_type.area.base_address, base_address (default_value), is_required.to_integer
+					ptr, c_user_data (parse_data), address (element_name), address (attribute_name),
+					address (attribute_type), address_if (default_value), is_required.to_integer
 				)
 			end
 		end
@@ -195,8 +195,8 @@ feature {NONE} -- Declaration event handlers
 			ptr := c_on_doctype_declaration_start (parse_data)
 			if is_attached (ptr) then
 				call_on_doctype_declaration_start (
-					ptr, c_user_data (parse_data), parts_list.name.area.base_address,
-					base_address (parts_list.formal_public), base_address (parts_list.uri),
+					ptr, c_user_data (parse_data), address (parts_list.name),
+					address_if (parts_list.formal_public), address_if (parts_list.uri),
 					has_internal_subset.to_integer
 				)
 			end
@@ -212,14 +212,11 @@ feature {NONE} -- Declaration event handlers
 			ptr := c_on_element_declaration (parse_data)
 			if is_attached (ptr) then
 			-- `model.self_ptr' is field-for-field compatible with `XML_Content *'.
-				call_on_element_declaration (ptr, c_user_data (parse_data), name.area.base_address, model.self_ptr)
+				call_on_element_declaration (ptr, c_user_data (parse_data), address (name), model.self_ptr)
 			end
 		end
 
-	on_entity_declaration (
-		entity_name: STRING; value, system_id, public_id, notation_name: detachable STRING
-		is_parameter_entity: BOOLEAN; parse_data: POINTER
-	)
+	on_entity_declaration (parts: XT_ENTITY_PARTS_I; parse_data: POINTER)
 		-- typedef void(XMLCALL *XML_EntityDeclHandler)(
 		-- 	void *userData, const XML_Char *entityName, int is_parameter_entity,
 		-- 	const XML_Char *value, int value_length, const XML_Char *base,
@@ -230,15 +227,15 @@ feature {NONE} -- Declaration event handlers
 			ptr, value_ptr: POINTER; value_count: INTEGER
 		do
 			ptr := c_on_entity_declaration (parse_data)
-			if is_attached (ptr) then
-				if attached value as l_value then
-					value_ptr := l_value.area.base_address
+			if is_attached (ptr) and then not c_entity_handled (parse_data) then
+				if attached parts.value as l_value then
+					value_ptr := address (l_value)
 					value_count := l_value.count
 				end
 				call_on_entity_declaration (
-					ptr, c_user_data (parse_data), entity_name.area.base_address, is_parameter_entity.to_integer,
-					value_ptr, value_count, c_base (parse_data), base_address (system_id),
-					base_address (public_id), base_address (notation_name)
+					ptr, c_user_data (parse_data), address (parts.name), parts.is_parameter.to_integer,
+					value_ptr, value_count, c_base (parse_data), address_if (parts.system_id),
+					address_if (parts.public_id), address (parts.notation_name) -- never NULL
 				)
 			end
 		end
@@ -252,7 +249,7 @@ feature {NONE} -- Declaration event handlers
 		do
 			ptr := c_on_namespace_declaration_end (parse_data)
 			if is_attached (ptr) then
-				call_on_namespace_declaration_end (ptr, c_user_data (parse_data), base_address_or_null (prefix))
+				call_on_namespace_declaration_end (ptr, c_user_data (parse_data), address_or_null (prefix))
 			end
 		end
 
@@ -266,12 +263,12 @@ feature {NONE} -- Declaration event handlers
 			ptr := c_on_namespace_declaration_start (parse_data)
 			if is_attached (ptr) then
 				call_on_namespace_declaration_start (
-					ptr, c_user_data (parse_data), base_address_or_null (prefix), base_address_or_null (uri)
+					ptr, c_user_data (parse_data), address_or_null (prefix), address_or_null (uri)
 				)
 			end
 		end
 
-	on_notation_declaration (name: STRING; system_id, public_id: detachable STRING; parse_data: POINTER)
+	on_notation_declaration (parts: XT_NOTATION_PARTS_LIST; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_NotationDeclHandler)(
 		-- 	void *userData, const XML_Char *notationName,
 		--		const XML_Char *base, const XML_Char *systemId, const XML_Char *publicId
@@ -282,19 +279,28 @@ feature {NONE} -- Declaration event handlers
 			ptr := c_on_notation_declaration (parse_data)
 			if is_attached (ptr) then
 				call_on_notation_declaration (
-					ptr, c_user_data (parse_data), name.area.base_address, c_base (parse_data),
-					base_address (system_id), base_address (public_id)
+					ptr, c_user_data (parse_data), address (parts.name), c_base (parse_data),
+					address_if (parts.system_id), address_if (parts.public_id)
 				)
 			end
 		end
 
-	on_unparsed_entity_declaration (
-		entity_name: STRING; system_id, public_id, notation_name: detachable STRING; parse_data: POINTER
-	)
+	on_unparsed_entity_declaration (parts: XT_ENTITY_PARTS_I; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
 		-- 	void *userData, const XML_Char *entityName, const XML_Char *base,
 		-- 	const XML_Char *systemId, const XML_Char *publicId, const XML_Char *notationName);
+		local
+			ptr: POINTER
 		do
+			ptr := c_on_unparsed_entity_declaration (parse_data)
+			if is_attached (ptr) then
+				call_on_unparsed_entity_declaration (
+					ptr, c_user_data (parse_data), address (parts.name), c_base (parse_data),
+					address_if (parts.system_id), address_if (parts.public_id),
+					address (parts.notation_name) -- never NULL
+				)
+				set_entity_handled (parse_data, True)
+			end
 		end
 
 	on_xml_declaration (buf: like buffer; attributes: XT_ATTRIBUTE_LIST; parse_data: POINTER)
@@ -351,7 +357,13 @@ feature {NONE} -- Other parse events
 
 feature {NONE} -- Implementation
 
-	base_address (a_str: detachable STRING): POINTER
+	address (str: STRING): POINTER
+		-- `str.area.base_address'
+		do
+			Result := str.area.base_address
+		end
+
+	address_if (a_str: detachable STRING): POINTER
 		-- `a_str.area.base_address' or else NULL pointer if `a_str = Void'
 		do
 			if attached a_str as str then
@@ -361,16 +373,16 @@ feature {NONE} -- Implementation
 			valid_result: Result.is_default_pointer implies a_str = Void
 		end
 
-	base_address_or_null (a_str: STRING): POINTER
-		-- `a_str.area.base_address' or else NULL pointer if `a_str.is_empty'
+	address_or_null (str: STRING): POINTER
+		-- `str.area.base_address' or else NULL pointer if `str.is_empty'
 		do
-			inspect a_str.count when 0 then
+			inspect str.count when 0 then
 				do_nothing
 			else
-				Result := a_str.area.base_address
+				Result := str.area.base_address
 			end
 		ensure
-			valid_result: Result.is_default_pointer implies a_str.is_empty
+			valid_result: Result.is_default_pointer implies str.is_empty
 		end
 
 	null_terminate (buf: like buffer; end_index: INTEGER; parse_data: POINTER)

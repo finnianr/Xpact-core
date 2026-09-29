@@ -15,8 +15,18 @@ class
 
 inherit
 	XT_DECLARATION_PARTS_LIST
+		undefine
+			extend_external_id, make_external_id, try_set_external_id, wipe_out_external_id
 		redefine
 			is_valid
+		end
+
+	XT_EXTERNALLY_LINKABLE_DECLARATION
+		rename
+			make as make_external_id,
+			wipe_out as wipe_out_external_id
+		undefine
+			copy, is_equal
 		end
 
 create
@@ -47,14 +57,10 @@ feature -- Status query
 	is_valid: BOOLEAN
 		do
 			if count = 1 then
-				if has_system_id then
-					Result := external_id_list.count = 1
-
-				elseif has_public_id then
-					Result := external_id_list.count = 2
-
-				else
+				inspect external_id_type when 0 then
 					Result := True
+				else
+					Result := external_id_list.count = external_id_part_count
 				end
 			end
 		end

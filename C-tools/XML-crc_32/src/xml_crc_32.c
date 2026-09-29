@@ -253,6 +253,37 @@ static void XMLCALL on_entity_decl(void *userData, const XML_Char *entityName,
 		crc32_update(ctx, (const unsigned char *) notationName, strlen(notationName));
 }
 
+/* Combines the unparsed-entity declaration's fields, left to right as supplied
+ * to XML_UnparsedEntityDeclHandler, into the running checksum: entityName,
+ * base, systemId, publicId, notationName. Adds to the same checksum as
+ * XML_EntityDeclHandler (-type entity). expat calls the two handlers
+ * mutually exclusively per entity: for an unparsed (NDATA) entity it calls
+ * *this* handler instead of XML_EntityDeclHandler (only falling back to
+ * XML_EntityDeclHandler, with notationName forced NULL, when no
+ * XML_UnparsedEntityDeclHandler is registered at all -- see
+ * XML_ROLE_ENTITY_NOTATION_NAME in xmlparse.c); XML_EntityDeclHandler alone
+ * still handles every other (internal or parsed-external) entity. So
+ * registering this handler doesn't double-count anything -- it replaces the
+ * lossy fallback for unparsed entities and, unlike that fallback, correctly
+ * folds notationName into the checksum too. entityName and notationName are
+ * never NULL for this handler; base/systemId/publicId are skipped when
+ * NULL. */
+static void XMLCALL on_unparsed_entity_decl(void *userData, const XML_Char *entityName,
+                                             const XML_Char *base, const XML_Char *systemId,
+                                             const XML_Char *publicId,
+                                             const XML_Char *notationName) {
+	crc_ctx_t *ctx = (crc_ctx_t *) userData;
+	if (ctx->type != TYPE_ENTITY) return;
+	crc32_update(ctx, (const unsigned char *) entityName, strlen(entityName));
+	if (base)
+		crc32_update(ctx, (const unsigned char *) base, strlen(base));
+	if (systemId)
+		crc32_update(ctx, (const unsigned char *) systemId, strlen(systemId));
+	if (publicId)
+		crc32_update(ctx, (const unsigned char *) publicId, strlen(publicId));
+	crc32_update(ctx, (const unsigned char *) notationName, strlen(notationName));
+}
+
 /* Combines the NOTATION declaration's fields, left to right as supplied to
  * XML_NotationDeclHandler, into the running checksum: notationName, base,
  * systemId, publicId. notationName is never NULL; base/systemId/publicId
@@ -414,6 +445,7 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	XML_SetStartDoctypeDeclHandler(parser, on_start_doctype_decl);
 	XML_SetAttlistDeclHandler(parser, on_attlist_decl);
 	XML_SetEntityDeclHandler(parser, on_entity_decl);
+	XML_SetUnparsedEntityDeclHandler(parser, on_unparsed_entity_decl);
 	XML_SetNotationDeclHandler(parser, on_notation_decl);
 	XML_SetElementDeclHandler(parser, on_element_decl);
 	XML_SetNamespaceDeclHandler(parser, on_start_namespace_decl, on_end_namespace_decl);

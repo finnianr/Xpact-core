@@ -140,9 +140,7 @@ feature {NONE} -- Base event handlers
 		do
 		end
 
-	on_base_unparsed_entity_declaration (
-		entity_name: STRING; system_id, public_id, notation_name: detachable STRING; parse_data: POINTER
-	)
+	on_base_unparsed_entity_declaration (parts: XT_ENTITY_PARTS_I; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
 		-- 	void *userData, const XML_Char *entityName, const XML_Char *base,
 		-- 	const XML_Char *systemId, const XML_Char *publicId, const XML_Char *notationName);

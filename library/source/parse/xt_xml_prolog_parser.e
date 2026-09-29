@@ -447,6 +447,7 @@ feature {NONE} -- Event handlers
 					if attached entity_parts_list as parts_list then
 						if parts_list.is_valid then
 							parts_list.extend_table (entity_table)
+							set_entity_handled (parse_data, False)
 							on_entity (parts_list, parse_data)
 							parts_list.wipe_out
 						else
@@ -470,7 +471,7 @@ feature {NONE} -- Event handlers
 							if parts_list.has_public_id then
 								public_id := parts_list.public_id
 							end
-							on_notation_declaration (parts_list.name, system_id, public_id, parse_data)
+							on_notation_declaration (parts_list, parse_data)
 							parts_list.wipe_out
 						else
 							Result := Error_syntax
@@ -496,10 +497,10 @@ feature {NONE} -- Event handlers
 			is_valid_list: parts.is_valid
 		do
 			if not is_predefined_entity (parts.name) then
-				on_entity_declaration (
-					parts.name, parts.value, parts.system_id, parts.public_id, parts.notation_name,
-					parts.is_parameter, parse_data
-				)
+				if parts.has_unparsed_entity then
+					on_unparsed_entity_declaration (parts, parse_data)
+				end
+				on_entity_declaration (parts, parse_data)
 			end
 		end
 
@@ -630,7 +631,7 @@ feature {NONE} -- Implementation
 
 				from table.start until table.after or Result loop
 					parameter := table.item_for_iteration
-					if attached parameter.external_id as external_id and then Valid_external_id_names.has (external_id) then
+					if Valid_external_id_names.valid_index (parameter.external_id_type) then
 						Result := parameter.is_referenced
 					end
 					table.forth

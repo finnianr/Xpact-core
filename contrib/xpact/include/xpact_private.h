@@ -93,6 +93,7 @@ struct XML_ParserStruct {
 // Status query
 
 	XML_Bool defaultHandlerExpands;
+	XML_Bool entity_handled; // true if entity already handled by XML_UnparsedEntityDeclHandler
 	XML_Bool externalEntityIsParameter;
 	XML_Bool externalEntityIsParameterLiteral;
 	XML_Bool finalBuffer;

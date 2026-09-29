@@ -44,17 +44,15 @@ inherit
 			copy, is_equal
 		end
 
-	XT_STRING_CONSTANTS
-		undefine
-			copy, is_equal
-		end
-
 	XT_PARSE_CONSTANTS
 		rename
 			ENTITY as ENTITY_,
 			NOTATION as NOTATION_
-		export
-			{ANY} Valid_declaration_types
+		undefine
+			copy, is_equal
+		end
+
+	XT_STRING_CONSTANTS
 		undefine
 			copy, is_equal
 		end
@@ -72,11 +70,10 @@ feature {NONE} -- Initialization
 	make (a_name_cache: like name_cache)
 		do
 			make_sized (11)
+			make_external_id
 			name_cache := a_name_cache
 			last_name := Empty_string
-			external_id_type := Void
 			state := State_extending
-			create external_id_list.make_empty (2)
 			create token_area.make_empty (area.capacity)
 			create option_list.make (50)
 		end
@@ -88,29 +85,6 @@ feature -- Access
 			valid_index: valid_index (i)
 		do
 			Result := token_area [i - 1]
-		end
-
-	external_id_type: detachable STRING
-
-	external_id_list: SPECIAL [STRING]
-
-	public_id: detachable STRING
-		do
-			if has_public_id and then external_id_list.count > 0 then
-				Result := external_id_list [0]
-			end
-		end
-
-	system_id: detachable STRING
-		do
-			if attached external_id_list as id_list and then id_list.count > 0 then
-				if has_public_id and then id_list.count = 2 then
-					Result := id_list [1]
-
-				elseif has_system_id then
-					Result := id_list [0]
-				end
-			end
 		end
 
 feature -- Status query
@@ -125,16 +99,6 @@ feature -- Status query
 			valid_index: valid_index (i)
 		do
 			Result := Reserved_identifiers.index_of (area [i - 1], 0) > -1
-		end
-
-	has_public_id: BOOLEAN
-		do
-			Result := external_id_type = PUBLIC
-		end
-
-	has_system_id: BOOLEAN
-		do
-			Result := external_id_type = SYSTEM
 		end
 
 	is_complete: BOOLEAN
@@ -168,10 +132,7 @@ feature -- Element change
 				when Tok_name, Tok_pound_name, Tok_name_question, Tok_name_asterisk, Tok_name_plus then
 					if attached name_constant (buffer, start_index, end_index, token) as constant then
 						l_name := constant
-						if Valid_external_id_names.has (l_name) then
-							external_id_type := l_name
-							state := State_external_id
-						end
+						try_set_external_id (l_name)
 
 					elseif count > 1 and l_area [count - 1] = NDATA then
 						l_name := new_notation_name (buffer, start_index, end_index)
@@ -190,17 +151,7 @@ feature -- Element change
 
 				when Tok_literal then
 					inspect state when State_external_id then
-						if attached external_id_list as id_list and then id_list.count < 2 then
-							id_list.extend (new_public_id (buffer, start_index, end_index))
-							if external_id_type = SYSTEM and then id_list.count = 1 then
-								state := State_extending
-
-							elseif external_id_type = PUBLIC and then id_list.count = 2 then
-								state := State_extending
-							end
-						else
-							state := State_extending
-						end
+						extend_external_id (buffer, start_index, end_index)
 					else
 						l_area.extend (new_value (buffer, start_index, end_index, newline_or_tab_found))
 						l_token_area.extend (token)
@@ -213,10 +164,10 @@ feature -- Element change
 		-- Remove all items.
 		do
 			Precursor
+			wipe_out_external_id
+
 			token_area.wipe_out
 			option_list.wipe_out
-			external_id_list.wipe_out
-			external_id_type := Void
 			state := State_extending
 			last_name := Empty_string
 		end
@@ -291,7 +242,8 @@ feature {NONE} -- Implementation
 			first_letter_ok: BOOLEAN
 		do
 			inspect token when Tok_pound_name then
-				name_array := Hash_identifiers; first_letter_ok := buffer [start_index] = '#'
+				name_array := Hash_identifiers
+				first_letter_ok := buffer [start_index] = '#'
 			else
 				name_array := Reserved_identifiers
 				first_letter_ok := is_reserved_first_letter (buffer [start_index])
@@ -313,6 +265,35 @@ feature {NONE} -- Implementation
 				Result := True
 			else
 			end
+		end
+
+	set_state (a_state: INTEGER)
+		do
+			state := a_state
+		end
+
+feature {NONE} -- External PUBLIC/SYSTEM linking
+
+	make_external_id
+		do
+			-- Implemented in  `XT_EXTERNALLY_LINKED_DECLARATION'
+		end
+
+	wipe_out_external_id
+		do
+			-- Implemented in  `XT_EXTERNALLY_LINKED_DECLARATION'
+		end
+
+	try_set_external_id (a_name: STRING)
+		do
+			-- Implemented in  `XT_EXTERNALLY_LINKED_DECLARATION'
+		end
+
+	extend_external_id (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER)
+		require
+			in_external_id_state: state = State_external_id
+		do
+			-- Implemented in  `XT_EXTERNALLY_LINKED_DECLARATION'
 		end
 
 feature {NONE} -- Factory
@@ -375,12 +356,6 @@ feature {NONE} -- Reserved identifiers
 
 feature {NONE} -- Constants
 
-	State_building: INTEGER = 1
-
-	State_extending: INTEGER = 2
-
-	State_external_id: INTEGER = 3
-
 	Hash_fixed: STRING = "#FIXED"
 
 	Hash_implied: STRING = "#IMPLIED"
@@ -388,9 +363,6 @@ feature {NONE} -- Constants
 	Hash_required: STRING = "#REQUIRED"
 
 	Hash_pcdata: STRING = "#PCDATA"
-
-invariant
-	valid_external_id_type: attached external_id_type as id_type implies Valid_external_id_names.has (id_type)
 
 note
 	notes: "[

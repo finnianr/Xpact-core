@@ -99,6 +99,9 @@ feature {NONE} -- Document definition strings
 	Valid_external_id_names: ARRAY [STRING]
 		once
 			Result := << PUBLIC, SYSTEM >>
+		ensure
+			valid_first: Result [{XT_PARSE_CONSTANTS}.ID_public] = PUBLIC
+			valid_last: Result [{XT_PARSE_CONSTANTS}.ID_system] = SYSTEM
 		end
 
 feature {NONE} -- XML declaration
