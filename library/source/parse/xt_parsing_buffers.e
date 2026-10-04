@@ -13,30 +13,27 @@ deferred class
 	XT_PARSING_BUFFERS
 
 inherit
-	XT_BUFFER_CONSTANTS
-		export
-			{NONE} all
-		end
+	XT_C_PARSER_STRUCT
 
-	XT_PARSE_ERROR_CONSTANTS
-		export
-			{NONE} all
-		end
+	XT_BUFFER_CONSTANTS; XT_PARSE_ERROR_CONSTANTS; XT_ENCODING_TYPE_CONSTANTS
 
-	XT_ENCODING_TYPE_CONSTANTS
-		export
-			{NONE} all
-		end
-
-	XT_TOKEN_CONSTANTS
-
-	XT_STRING_CONSTANTS
+	XT_NAMING_MODE_CONSTANTS; XT_TOKEN_CONSTANTS; XT_STRING_CONSTANTS
 
 feature {NONE} -- Initialization
 
-	make
+	make (a_parser_data: XT_PARSER_DATA)
+		require
+			valid_parse_data_size: a_parser_data.count = c_size_of_parser_struct
 		do
+			parser_data := a_parser_data
 			check attached Token_names end
+
+			attribute_list := new_attribute_list
+			inspect a_parser_data.naming_mode when NM_prefix_SEP_localname then
+				doctype_name_cache := name_cache
+			else
+				create doctype_name_cache.make
+			end
 
 			buffer := new_buffer_area (Default_buffer_size)
 			create new_line.make_filled ('%N', 1)
@@ -67,7 +64,7 @@ feature -- Access
 	buffer_limit: INTEGER
 		-- Total usable capacity of `buffer'.
 
-	encoding: NATURAL_8
+	encoding: INTEGER
 		-- actual encoding or encoding assumption which may or may not be what is declared
 		-- in <?xml ..
 
@@ -91,9 +88,23 @@ feature -- Element change
 			if not codec.is_utf_8 then
 				create {XT_UTF_8_CODEC} codec.make_empty
 			end
+			attribute_list.set_permit_undefined_entities (False)
+			attribute_list.reset -- also resets `name_cache'
+			if name_cache /= doctype_name_cache then
+				doctype_name_cache.reset
+			end
 		end
 
 feature {NONE} -- Factory
+
+	new_attribute_list: XT_ATTRIBUTE_LIST
+		do
+			inspect parser_data.naming_mode when NM_prefix_SEP_localname then
+				create Result.make (Default_attributes_capacity)
+			else
+				create {XT_URI_MAPPED_ATTRIBUTE_LIST} Result.make (Default_attributes_capacity, parser_data)
+			end
+		end
 
 	new_buffer_area (n: INTEGER): like buffer
 		do
@@ -102,107 +113,55 @@ feature {NONE} -- Factory
 			room_for_null_terminator: Result.count = n + 1
 		end
 
+	new_codec (chunk: XT_UTF_8_CODEC; custom_encoding: detachable XT_CUSTOM_ENCODING_I): like codec
+		do
+			Result := codec
+			inspect encoding
+				when Ascii, Utf_8 then
+					check
+						already_set: codec = chunk
+					end
+
+				when Utf_16, UTF_16_LE then
+					create {XT_UTF_16_LE_CODEC} Result.make_shared (chunk.area, chunk.count)
+
+				when Latin_1 then
+					create {XT_LATIN_1_CODEC} Result.make_shared (chunk.area, chunk.count)
+
+				when Unknown_encoding then
+					if attached custom_encoding as custom then
+						create {XT_CUSTOM_CODEC} Result.make (chunk, custom)
+					end
+			else
+			end
+		end
+
 feature {NONE} -- Implementation
 
 	character_width (a_encoding: INTEGER): INTEGER
 		do
-			inspect a_encoding
-				when UTF_16 then
-					Result := 2
+			inspect a_encoding when UTF_16, UTF_16_BE, UTF_16_LE then
+				Result := 2
 			else
 				Result := 1
 			end
 		end
 
-	set_encoding (chunk: XT_C_STRING_CODEC)
-		-- check encoding in XML header calling `set_scanner (Latin_1)' if required
-		-- also check if document is actually XML or something weird
-		require
-			chunk_has_content: chunk.count > 0
+	encoding_from_BOM (chunk: XT_UTF_8_CODEC): INTEGER
+		-- encoding from `chunk' byte order mark
 		local
-			l_chunk: XT_UTF_8_CODEC; u: UTF_CONVERTER
-			found, assumed_utf_8: BOOLEAN; declaration: STRING; declared_encoding: NATURAL_8
+			i: INTEGER
 		do
-			if attached {XT_UTF_8_CODEC} codec as str then
-				l_chunk := str
-			else
-				create l_chunk.make_empty
-			end
-			l_chunk.make_shared (chunk.area, chunk.count)
-		-- check for byte order mark if any and remove
-			across << u.utf_8_bom_to_string_8, u.utf_16le_bom_to_string_8 >> as bom until found loop
-				if l_chunk.starts_with_string (bom, 0) then
-					l_chunk.remove_head (bom.count)
-					inspect @ bom.cursor_index
-						when 1 then
-							encoding := Utf_8
-					else
-						encoding := Utf_16
-					end
-					found := True
-				end
-			end
-			declaration := first_element (l_chunk)
-			if declaration.is_empty then
-				if l_chunk.is_whitespace then
-					error_code := Error_no_elements
-				end
-			else
-				if encoding = Utf_16 or else declaration.occurrences ('%U') = declaration.count // 2 then
-					declaration.extend ('%U')
-					declaration := u.utf_16le_string_8_to_string_32 (declaration).to_string_8
-					encoding := Utf_16
-
-				elseif encoding = Unknown_encoding then
-					encoding := Utf_8; assumed_utf_8 := True
-				end
-				if declaration.starts_with (Xml_declaration.open) and then declaration.has_substring (Xml_declaration.encoding) then
-					declaration.to_upper
-					declared_encoding := encoding_id (declaration)
-					if valid_encoding (declared_encoding) and then valid_encoding (encoding)
-						and then character_width (declared_encoding) /= character_width (encoding)
-					then
-						error_code := Error_incorrect_encoding
-
-					elseif valid_encoding (declared_encoding) and assumed_utf_8 then
-						encoding := declared_encoding
-					end
-				end
-				inspect encoding
-					when Ascii, Utf_8 then
-						do_nothing
-
-					when Utf_16 then
-						create {XT_UTF_16_CODEC} codec.make_shared (l_chunk.area, l_chunk.count)
-
-					when Latin_1 then
-						create {XT_LATIN_1_CODEC} codec.make_shared (l_chunk.area, l_chunk.count)
-
-				else
-				end
-			end
-		end
-
-	set_error_code (a_error_code: INTEGER)
-		do
-			error_code := a_error_code
-		end
-
-	encoding_id (declaration: STRING): NATURAL_8
-		local
-			i: NATURAL_8
-		do
-			from i := Ascii until i > Utf_16 loop
-				if declaration.has_substring (Encoding_names_upper [i.to_integer_32]) then
+			from i := UTF_8 until i > UTF_16_LE or Result > 0 loop
+				if chunk.starts_with_string (Encoding_byte_order_marks [i], 0) then
 					Result := i
-					i := Utf_16 + 1 -- break
 				else
 					i := i + 1
 				end
 			end
 		end
 
-	first_element (chunk: XT_UTF_8_CODEC): STRING
+	first_element (chunk: XT_UTF_8_CODEC; lt_index_ptr: TYPED_POINTER [INTEGER]): STRING
 		local
 			lt_index, gt_index: INTEGER; s: XT_STRING_8_ROUTINES
 		do
@@ -214,6 +173,17 @@ feature {NONE} -- Implementation
 					Result := chunk.substring (lt_index, gt_index).to_string
 				end
 			end
+		end
+
+	name_cache: XT_NAME_CACHE
+		-- efficient lookup of tag names
+		do
+			Result := attribute_list.name_cache
+		end
+
+	set_error_code (a_error_code: INTEGER)
+		do
+			error_code := a_error_code
 		end
 
 	prepare_buffer (a_count: INTEGER): BOOLEAN
@@ -301,21 +271,6 @@ feature {NONE} -- Implementation
 			end_non_negative:    buffer_end >= 0
 		end
 
-	valid_encoding (a_encoding: INTEGER): BOOLEAN
-		do
-			inspect a_encoding when ASCII .. UTF_16 then
-				Result := True
-			else
-			end
-		end
-
-feature {NONE} -- Deferred
-
-	attribute_list: XT_ATTRIBUTE_LIST
-		-- collected attribute name-value pair indices into `buffer'
-		deferred
-		end
-
 feature {NONE} -- Internal attributes
 
 	buffer_end: INTEGER
@@ -332,14 +287,27 @@ feature {NONE} -- Internal attributes
 
 feature {NONE} -- Internal structures
 
+	attribute_list: XT_ATTRIBUTE_LIST
+		-- collected attribute name-value pair indices into `buffer'
+
 	buffer: SPECIAL [CHARACTER_8]
 		-- Raw byte buffer; do not modify indices outside this class.
 
 	codec: XT_C_STRING_CODEC
 
+	doctype_name_cache: XT_NAME_CACHE
+		-- name cache for use in all DOCTYPE declarations
+		-- Normally refers to `name_cache' unless xmlns declarations are resolved
+		-- with URI mapping then created separately
+
 	new_line: SPECIAL [CHARACTER_8]
 
+	parser_data: XT_PARSER_DATA
+		-- allocated memory for C struct `XT_C_PARSE_DATA_STRUCT'
+
 feature {NONE} -- Constants
+
+	Default_attributes_capacity: INTEGER = 11
 
 	Memory: MEMORY
 		once
@@ -350,5 +318,11 @@ invariant
 	room_for_null_terminator: buffer.capacity = buffer_limit + 1
 	buffer_indices_consistent:
 		buffer_index >= 0 and then buffer_index <= buffer_end and then buffer_end <= buffer_limit
+
+	name_cache_same_as_declarations_name_cache:
+		parser_data.naming_mode = NM_prefix_SEP_localname implies name_cache = doctype_name_cache
+
+	not_name_cache_same_as_declarations_name_cache:
+		parser_data.naming_mode /= NM_prefix_SEP_localname implies name_cache /= doctype_name_cache
 
 end

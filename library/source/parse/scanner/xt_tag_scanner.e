@@ -607,6 +607,11 @@ feature {NONE} -- Deferred
 		deferred
 		end
 
+	name_cache: XT_NAME_CACHE
+		-- efficient lookup of tag names
+		deferred
+		end
+
 	scan_comment (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): INTEGER
 			-- Deferred: implemented in XT_PI_COMMENT_SCANNER.
 		require

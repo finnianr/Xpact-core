@@ -37,16 +37,14 @@ inherit
 
 	XT_C_PARSER_STRUCT
 
-	XT_NAMING_MODE_CONSTANTS; XT_TOKEN_CONSTANTS; XT_STRING_CONSTANTS
+	XT_TOKEN_CONSTANTS; XT_STRING_CONSTANTS
 
 feature {NONE} -- Initialisation
 
-	make (parser_data: XT_PARSER_DATA)
+	make
 		do
 			create scanned_entity_buffer.make (5)
 			create scanned_index_x4_buffer.make_empty (4)
-			attribute_list := new_attribute_list (parser_data)
-			name_cache := attribute_list.name_cache
 			entity_cache := attribute_list.entity_cache
 			entity_table := attribute_list.entity_table
 		end
@@ -74,8 +72,6 @@ feature -- Element change
 
 	reset
 		do
-			attribute_list.set_permit_undefined_entities (False)
-			attribute_list.reset -- also resets `name_cache'
 			entity_cache.reset
 			entity_table.wipe_out
 			entity_table.set_predefined (entity_cache)
@@ -92,15 +88,6 @@ feature {NONE} -- Implementation
 			Result := area_substring (buf, index, upper, True)
 		end
 
-	new_attribute_list (parser_data: XT_PARSER_DATA): XT_ATTRIBUTE_LIST
-		do
-			inspect parser_data.naming_mode when NM_prefix_SEP_localname then
-				create Result.make (Default_attributes_capacity)
-			else
-				create {XT_URI_MAPPED_ATTRIBUTE_LIST} Result.make (Default_attributes_capacity, parser_data)
-			end
-		end
-
 	new_bt_name (index: INTEGER): STRING
 		require
 			valid_index: BT_names_list.valid_index (index + 1)
@@ -108,19 +95,20 @@ feature {NONE} -- Implementation
 			Result := BT_names_list [index + 1]
 		end
 
-feature {NONE} -- Internal attributes
+feature {NONE} -- Deferred
 
 	attribute_list: XT_ATTRIBUTE_LIST
 		-- collected attribute name-value pair indices into `buffer'
+		deferred
+		end
+
+feature {NONE} -- Internal attributes
 
 	entity_table: XT_ENTITY_TABLE
 		-- table of expanded entities defined in DOCTYPE by ENTITY
 
 	entity_cache: XT_ENTITY_NAME_CACHE
 		-- efficient lookup of entity names from character buffer interval
-
-	name_cache: XT_NAME_CACHE
-		-- efficient lookup of tag names
 
 	scanned_index_x4_buffer: SPECIAL [INTEGER]
 
@@ -130,9 +118,5 @@ feature {NONE} -- Internal attributes
 
 	bad_char_index: INTEGER
 			-- Set by `is_public_id' on failure: index of the bad character.
-
-feature {NONE} -- Constants
-
-	Default_attributes_capacity: INTEGER = 11
 
 end

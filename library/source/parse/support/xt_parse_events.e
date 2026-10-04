@@ -175,7 +175,7 @@ feature {NONE} -- Other parse events
 		deferred
 		end
 
-	on_unknown_encoding (name: STRING; parse_data: POINTER): BOOLEAN
+	on_unknown_encoding (name: STRING; parse_data: POINTER): detachable XT_CUSTOM_ENCODING_I
 		-- typedef int (XMLCALL *XML_UnknownEncodingHandler) (
 		-- 	void *encodingHandlerData, const XML_Char *name, XML_Encoding *info);
 		deferred

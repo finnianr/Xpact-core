@@ -15,10 +15,8 @@ deferred class
 
 inherit
 	XT_PARSING_BUFFERS
-		rename
-			make as make_buffers
 		redefine
-			set_defaults, reset
+			make, set_defaults, reset
 		end
 
 	XT_DOCUMENT_SCANNER
@@ -39,22 +37,15 @@ inherit
 feature {NONE} -- Initialization
 
 	make (a_parser_data: XT_PARSER_DATA)
-		require
-			valid_parse_data_size: a_parser_data.count = c_size_of_parser_struct
 		do
-			parser_data := a_parser_data
+			Precursor (a_parser_data)
+
 			create attribute_value_defaults_table.make (37)
 			element_context := parser_data.new_element_context
 			create parameter_entity_table.make (3)
 			create parameter_name_cache.make
 
-			make_buffers; make_scanner (a_parser_data)
-
-			inspect a_parser_data.naming_mode when NM_prefix_SEP_localname then
-				doctype_name_cache := name_cache
-			else
-				create doctype_name_cache.make
-			end
+			make_scanner
 
 			create attribute_parts_list.make (doctype_name_cache)
 			create document_type_parts_list.make (doctype_name_cache)
@@ -260,7 +251,6 @@ feature {NONE} -- Token processing
 		-- process XML prolog from `buf' writing back changes in values to `index' and `done'
 		local
 			token, tok_end, decl_type, index: INTEGER; default_case, common_case: BOOLEAN
-			yes_no: STRING
 		do
 			index := read_integer_32 (a_index)
 			token := scan_prolog (buf, index, end_index, parse_data)
@@ -274,19 +264,8 @@ feature {NONE} -- Token processing
 					when Tok_xml_decl then
 						if index > 0 then
 							Result := Error_misplaced_xml_pi; put_boolean (done, True)
-
-						elseif not attributes.has_valid_encoding (buf) then
-							Result := Error_unknown_encoding; put_boolean (done, True)
-						else
-							yes_no := attributes.standalone_value (buf)
-							if Valid_yes_no.has (yes_no) then
-								is_standalone := yes_no [1] = 'y'
-								on_xml_declaration (buf, attributes, parse_data)
-								attributes.wipe_out
-							else
-								Result := Error_xml_decl; put_boolean (done, True)
-							end
 						end
+						attributes.wipe_out
 
 					when Tok_instance_start then
 						if element_context.reached_depth_zero then
@@ -661,6 +640,89 @@ feature {NONE} -- Implementation
 			declaration_type := type
 		end
 
+	read_start (chunk: XT_C_STRING_CODEC)
+		-- read byte order mark and <?xml declaration (if they exist)
+		-- and setting `encoding', `is_standalone' and `codec'
+		require
+			chunk_has_content: chunk.count > 0
+		local
+			declaration, yes_no: STRING; encoding_name: detachable STRING; declared_encoding, lt_index, count: INTEGER
+			l_chunk: XT_UTF_8_CODEC; custom_encoding: detachable XT_CUSTOM_ENCODING_I
+			assumed_utf_8, utf_16_detected, is_utf_16: BOOLEAN
+		do
+			if attached {XT_UTF_8_CODEC} codec as l_codec then
+				l_chunk := l_codec
+			else
+				create l_chunk.make_empty
+			end
+			l_chunk.make_shared (chunk.area, chunk.count)
+			encoding := encoding_from_BOM (l_chunk)
+		-- check for byte order mark if any and remove
+			if encoding > 0 then
+				l_chunk.remove_head (Encoding_byte_order_marks [encoding].count)
+			end
+			declaration := first_element (l_chunk, $lt_index)
+			if declaration.is_empty then
+				if l_chunk.is_whitespace then
+					error_code := Error_no_elements
+				end
+			else
+				utf_16_detected := prune_utf_16_nulls (declaration)
+				inspect encoding when UTF_16, UTF_16_BE, UTF_16_LE then
+					is_utf_16 := True
+				else
+					if utf_16_detected then
+						encoding := UTF_16 -- detected in `utf_16_detected'
+						is_utf_16 := True
+					else
+						encoding := UTF_8; assumed_utf_8 := True
+					end
+				end
+				count := declaration.count -- <?xml ..?>
+				if count >= 7 and then declaration [2] = '?'  and then declaration [count - 1] = '?'
+					and then attached declaration.area as l_area
+				then
+					inspect scan_prolog (l_area, 0, declaration.count, parser_data.self_ptr) when Tok_xml_decl then
+						if lt_index > 1 then
+							error_code := Error_misplaced_xml_pi
+						else
+							yes_no := attribute_list.standalone_value (l_area)
+							if Valid_yes_no.has (yes_no) then
+								is_standalone := yes_no [1] = 'y'
+								on_xml_declaration (l_area, attribute_list, parser_data.self_ptr)
+								if attached attribute_list.encoding_name (l_area) as name then
+									encoding_name := name
+									declared_encoding := Encoding_names_upper.index_of (name.as_upper, 1)
+								end
+								attribute_list.wipe_out
+							else
+								error_code := Error_xml_decl
+							end
+						end
+					else end
+				end
+				if error_code = Error_none then
+					if valid_encoding (declared_encoding) and then valid_encoding (encoding)
+						and then character_width (declared_encoding) /= character_width (encoding)
+					then
+						error_code := Error_incorrect_encoding
+
+					elseif assumed_utf_8 and then valid_encoding (declared_encoding) then
+						encoding := declared_encoding
+
+					elseif attached encoding_name as name and then not (declared_encoding = UTF_16 and is_utf_16) then
+						custom_encoding := on_unknown_encoding (name, parser_data.self_ptr)
+						if attached custom_encoding as custom and then custom.is_valid then
+							encoding := Unknown_encoding
+						else
+							error_code := Error_unknown_encoding
+						end
+					end
+					codec := new_codec (l_chunk, custom_encoding)
+				end
+			end
+		end
+
 	reset
 		local
 			i: INTEGER
@@ -674,9 +736,6 @@ feature {NONE} -- Implementation
 				element_context.reset
 			end
 			parameter_name_cache.reset
-			if name_cache /= doctype_name_cache then
-				doctype_name_cache.reset
-			end
 			from i := 0 until i = declaration_parts.count loop
 				declaration_parts [i].wipe_out
 				i := i + 1
@@ -743,24 +802,9 @@ feature {NONE} -- Internal attributes
 		-- current declaration type being parsed. DOCTYPE is 1
 		-- conceptually the top of a virtual stack of max 2 items
 
-	doctype_name_cache: XT_NAME_CACHE
-		-- name cache for use in all DOCTYPE declarations
-		-- Normally refers to `name_cache' unless xmlns declarations are resolved
-		-- with URI mapping then created separately
-
 	element_context: XT_ELEMENT_CONTEXT
 
 	parameter_name_cache: XT_PARAMETER_ENTITY_NAME_CACHE
 		-- efficient lookup of parameter entity names
-
-	parser_data: XT_PARSER_DATA
-		-- allocated memory for C struct `XT_C_PARSE_DATA_STRUCT'
-
-invariant
-	name_cache_same_as_declarations_name_cache:
-		parser_data.naming_mode = NM_prefix_SEP_localname implies name_cache = doctype_name_cache
-
-	not_name_cache_same_as_declarations_name_cache:
-		parser_data.naming_mode /= NM_prefix_SEP_localname implies name_cache /= doctype_name_cache
 
 end

@@ -50,6 +50,13 @@ inherit
 			copy, is_equal
 		end
 
+	XT_ENCODING_TYPE_CONSTANTS
+		export
+			{ANY} Encoding_names_upper
+		undefine
+			copy, is_equal
+		end
+
 feature {NONE} -- Initialization
 
 	make (n: INTEGER)
@@ -100,6 +107,23 @@ feature -- Access
 			end
 		end
 
+	item_value (buffer: SPECIAL [CHARACTER_8]; name: STRING; keep_ref: BOOLEAN): detachable STRING
+		-- value associated with attribute `name' using comparison by reference
+		-- `Void' if not found
+		require
+			name_in_cache: name_cache.attribute_item (name.area, 0, name.count - 1, 0) = name
+		local
+			i: INTEGER
+		do
+			i := value_index_of (name)
+			if i > -1 and then attached area_v2 as a then
+				Result := area_substring (choose (i, buffer, overflow_buffer_area), a [i], a [i + 1], False)
+				if keep_ref then
+					Result := Result.twin
+				end
+			end
+		end
+
 	value_index_of (name: STRING): INTEGER
 		-- zero based index into `bucket_area' for value start index associated with attribute `name'
 		-- using comparison by reference. `-1' if not found
@@ -113,6 +137,55 @@ feature -- Access
 				Result := (name_index - 1) * 2
 			else
 				Result := -1
+			end
+		end
+
+feature -- <?xml attributes
+
+	encoding_id (buffer: SPECIAL [CHARACTER_8]): INTEGER
+		require
+			object_comparison: Encoding_names_upper.object_comparison
+		do
+			if attached item_value (buffer, xml_attribute [Encoding], False) as l_name then
+				l_name.to_upper
+				Result := Encoding_names_upper.index_of (l_name, 1)
+			end
+		end
+
+	encoding_name (buffer: SPECIAL [CHARACTER_8]): detachable STRING
+		do
+			Result := item_value (buffer, xml_attribute [Encoding], True)
+		end
+
+	has_encoding: BOOLEAN
+		do
+			Result := index_of (xml_attribute [Encoding]).to_boolean
+		end
+
+	has_valid_encoding (buffer: SPECIAL [CHARACTER_8]): BOOLEAN
+		do
+			Result := has_encoding implies encoding_id (buffer).to_boolean
+		end
+
+	standalone_code (a_buffer: SPECIAL [CHARACTER_8]): INTEGER
+		local
+			i: INTEGER; buffer: SPECIAL [CHARACTER_8]
+		do
+			i := value_index_of (xml_attribute [Standalone])
+			inspect i when -1 then
+				Result := i
+			else
+				buffer := choose (i, a_buffer, overflow_buffer_area)
+				Result := if buffer [area [i]] = 'y' then 1 else 0 end
+			end
+		end
+
+	standalone_value (buffer: SPECIAL [CHARACTER_8]): STRING
+		do
+			if attached item_value (buffer, xml_attribute [Standalone], False) as value then
+				Result := value
+			else
+				Result := Valid_yes_no [2]
 			end
 		end
 
@@ -230,17 +303,10 @@ feature {NONE} -- Implementation
 
 	initialize_xml_attributes
 		-- allows attributes to be searched for by reference rather than object comparison
-		local
-			i: INTEGER
 		do
-			from i := Version until i > Standalone loop
-				if attached {STRING} XML_declaration.reference_item (i + 1) as name then
-					xml_attribute [i] := name_cache.attribute_name (name)
-				end
-				i := i + 1
-			end
-		ensure
-			standalone_last: xml_attribute [Standalone].same_string (Xml_declaration.standalone)
+			xml_attribute [Version] := name_cache.attribute_name (once "version")
+			xml_attribute [Encoding] := name_cache.attribute_name (once "encoding")
+			xml_attribute [Standalone] := name_cache.attribute_name (once "standalone")
 		end
 
 	not_utf_8_encoded (lower_index, upper_index, utf_8_count: INTEGER): BOOLEAN

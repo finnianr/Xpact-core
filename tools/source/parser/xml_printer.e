@@ -46,7 +46,7 @@ class XML_PRINTER
 inherit
 	XT_XML_PARSER
 		redefine
-			on_base_start_element
+			on_base_start_element, on_base_unknown_encoding
 		end
 
 create
@@ -70,6 +70,13 @@ feature {NONE} -- Event handlers
 				attributes.upper_plus_1_characters (buf).is_equal (
 					old attributes.upper_plus_1_characters (buf) -- purely to test upper_plus_1_characters
 				)
+		end
+
+	on_base_unknown_encoding (name: STRING; parse_data: POINTER): detachable XT_CUSTOM_ENCODING_I
+		do
+			if name ~ once "ISO-8859-15" then
+				create {XT_LATIN_15_ENCODING} Result.make
+			end
 		end
 
 	on_comment (text: STRING_8)

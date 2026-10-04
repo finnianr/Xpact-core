@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<!-- Test class XT_CUSTOM_CODEC with an unknown encoding -->
+<bookstore>
+	<!--Test data for the billion-user project xpact-->
+	<book category="Cooking &amp; &apos;fine cuisine&apos;">
+		<title lang="en">Everyday Italian</title>
+		<author>Giada De Laurentiis</author>
+		<price currency="Euro (€)">30.00</price>
+	</book>
+	<book category="children">
+		<title lang="en">
+			<!--Test leading/trailing space adjust-->
+			Harry Potter
+		</title>
+		<author>J K. Rowling</author>
+		<price currency="Euro (€)">29.99</price>
+	</book>
+	<dvd region="2" format="PAL"/>
+</bookstore>

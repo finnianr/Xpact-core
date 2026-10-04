@@ -20,11 +20,6 @@ inherit
 			{ANY} valid_substring_intervals
 		end
 
-	XT_ENCODING_TYPE_CONSTANTS
-		undefine
-			copy, is_equal
-		end
-
 	XT_PARSE_ERROR_CONSTANTS
 		export
 			{NONE} all
@@ -67,39 +62,6 @@ feature -- Status query
 			end
 		end
 
-	has_valid_encoding (buffer: SPECIAL [CHARACTER_8]): BOOLEAN
-		do
-			if attached item_value (buffer, xml_attribute [Encoding], False) as l_encoding then
-				Result := across to_list (Valid_encoding_list, ',') as valid_encoding some
-					l_encoding.is_case_insensitive_equal (valid_encoding)
-				end
-			else
-				Result := True
-			end
-		end
-
-	standalone_code (a_buffer: SPECIAL [CHARACTER_8]): INTEGER
-		local
-			i: INTEGER; buffer: SPECIAL [CHARACTER_8]
-		do
-			i := value_index_of (xml_attribute [Standalone])
-			inspect i when -1 then
-				Result := i
-			else
-				buffer := choose (i, a_buffer, overflow_buffer_area)
-				Result := if buffer [area [i]] = 'y' then 1 else 0 end
-			end
-		end
-
-	standalone_value (buffer: SPECIAL [CHARACTER_8]): STRING
-		do
-			if attached item_value (buffer, xml_attribute [Standalone], False) as value then
-				Result := value
-			else
-				Result := Valid_yes_no [2]
-			end
-		end
-
 	is_valid_count: BOOLEAN
 		-- `index_count' is multiple of `Interval_count'
 		do
@@ -117,6 +79,7 @@ feature -- Status query
 		end
 
 	newline_or_tab_found: BOOLEAN
+
 
 feature -- Status change
 
@@ -259,22 +222,6 @@ feature -- Access
 			end
 		end
 
-	item_value (buffer: SPECIAL [CHARACTER_8]; name: STRING; keep_ref: BOOLEAN): detachable STRING
-		-- value associated with attribute `name' using comparison by reference
-		-- `Void' if not found
-		require
-			name_in_cache: name_cache.attribute_item (name.area, 0, name.count - 1, 0) = name
-		local
-			i: INTEGER
-		do
-			i := value_index_of (name)
-			if i > -1 and then attached area_v2 as a then
-				Result := area_substring (choose (i, buffer, overflow_buffer_area), a [i], a [i + 1], False)
-				if keep_ref then
-					Result := Result.twin
-				end
-			end
-		end
 
 feature -- Conversion
 

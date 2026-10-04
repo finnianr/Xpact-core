@@ -343,8 +343,14 @@ feature {NONE} -- Parse events
 			else end
 		end
 
-	on_unknown_encoding (name: STRING; parse_data: POINTER): BOOLEAN
+	on_unknown_encoding (name: STRING; parse_data: POINTER): detachable XT_CUSTOM_ENCODING_I
 		do
+			if name ~ once "ISO-8859-15" then
+				create {XT_LATIN_15_ENCODING} Result.make
+			end
+			inspect data_type when Type_xml_declaration then
+				checksum.add_string (name)
+			else end
 		end
 
 feature {NONE} -- Implementation

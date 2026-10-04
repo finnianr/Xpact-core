@@ -189,7 +189,7 @@ feature {NONE} -- Measurement
 		external
 			"C inline use <xpact_private.h>"
 		alias
-			"(EIF_INTEGER_32) sizeof (struct XML_ParserStruct)"
+			"sizeof (struct XML_ParserStruct)"
 		end
 
 feature {NONE} -- Parsing section state

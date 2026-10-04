@@ -55,19 +55,13 @@ feature {STRING_HANDLER} -- Standard strings
 		-- key for when xmlns attribute does not have a local name
 		-- eg. <root xmlns="http://names.com/">
 
+	PI_ending: STRING = "?>"
+
 	Quote_marks: STRING = "'%""
 
 	Xml_lower: STRING = "xml"
 
 	Xmlns: STRING = "xmlns"
-
-	Xml_declaration: TUPLE [open, version, encoding, standalone: STRING]
-		local
-			s: XT_STRING_8_ROUTINES
-		once
-			create Result
-			s.fill_tuple (Result, "<?xml, version, encoding, standalone")
-		end
 
 	Xml_namespace_uri: STRING = "http://www.w3.org/XML/1998/namespace"
 

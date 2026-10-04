@@ -13,7 +13,7 @@ note
 	date: "2026-07-30 07:48:00 GMT (Thursday 30th July 2026)"
 	revision: "1"
 class
-	XT_UTF_16_CODEC
+	XT_UTF_16_LE_CODEC
 
 inherit
 	EL_MANAGED_C_STRING_8

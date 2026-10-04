@@ -122,7 +122,7 @@ feature -- Basic operations
 					if chunk.count = 0 then
 						error_code := Error_no_elements
 					else
-						set_encoding (chunk)
+						read_start (chunk)
 					end
 
 					inspect error_code when Error_none then
@@ -612,6 +612,7 @@ feature {NONE} -- Implementation
 		do
 			Result := parser_data.in_cdata_section
 		end
+
 
 feature {NONE} -- Internal attributes
 

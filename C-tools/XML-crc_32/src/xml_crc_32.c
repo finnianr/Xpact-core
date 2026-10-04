@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <libgen.h>
 
@@ -187,6 +188,55 @@ static void XMLCALL on_xml_decl(void *userData, const XML_Char *version,
 	if (encoding)
 		crc32_update(ctx, (const unsigned char *) encoding, strlen(encoding));
 	crc32_update_int32 (ctx, standalone); // can have -1 as value, so not a boolean
+}
+
+/* ISO-8859-15 (Latin-9) departs from a pure byte-for-codepoint identity
+ * mapping at exactly these 8 positions; every other byte 0x00-0xFF maps to
+ * the Unicode code point of the same value, which also covers the required
+ * ASCII-identity range 0x00-0x7F. */
+static const struct { unsigned char byte; int codepoint; } iso_8859_15_overrides[] = {
+	{0xA4, 0x20AC}, /* EURO SIGN */
+	{0xA6, 0x0160}, /* LATIN CAPITAL LETTER S WITH CARON */
+	{0xA8, 0x0161}, /* LATIN SMALL LETTER S WITH CARON */
+	{0xB4, 0x017D}, /* LATIN CAPITAL LETTER Z WITH CARON */
+	{0xB8, 0x017E}, /* LATIN SMALL LETTER Z WITH CARON */
+	{0xBC, 0x0152}, /* LATIN CAPITAL LIGATURE OE */
+	{0xBD, 0x0153}, /* LATIN SMALL LIGATURE OE */
+	{0xBE, 0x0178}  /* LATIN CAPITAL LETTER Y WITH DIAERESIS */
+};
+
+/* XML_UnknownEncodingHandler for ISO-8859-15: the only unrecognized encoding
+ * this program knows how to decode. encodingHandlerData is `ctx' (set via
+ * XML_SetUnknownEncodingHandler's own, separate data argument, distinct
+ * from XML_SetUserData's userData). Fills in `info->map' with a single-byte
+ * encoding (no multi-byte sequences, so `convert'/`release'/`data' are left
+ * unused); as with XML_XmlDeclHandler's `encoding' argument, `name' is added
+ * to the checksum when -type is xml-decl. Returns XML_STATUS_ERROR for any
+ * encoding name other than ISO-8859-15, since that's the only one
+ * implemented here. */
+ 
+static int XMLCALL on_unknown_encoding(void *encodingHandlerData,
+                                        const XML_Char *name,
+                                        XML_Encoding *info) {
+	crc_ctx_t *ctx = (crc_ctx_t *) encodingHandlerData;
+	size_t i;
+	int result = XML_STATUS_ERROR;
+
+	if (strcasecmp(name, "ISO-8859-15") == 0){
+		for (i = 0; i < 256; i++)
+			info->map[i] = (int) i;
+		for (i = 0; i < sizeof(iso_8859_15_overrides) / sizeof(iso_8859_15_overrides[0]); i++)
+			info->map[iso_8859_15_overrides[i].byte] = iso_8859_15_overrides[i].codepoint;
+		info->data = NULL;
+		info->convert = NULL;
+		info->release = NULL;
+		result = XML_STATUS_OK;
+	}
+
+	if (ctx->type == TYPE_XML_DECL)
+		crc32_update(ctx, (const unsigned char *) name, strlen(name));
+
+	return result;
 }
 
 /* Combines the DOCTYPE declaration's name, external ID keyword ("PUBLIC" or
@@ -461,6 +511,7 @@ static uint32_t run_pass(const char *file_path, crc_ctx_t *ctx) {
 	XML_SetCdataSectionHandler(parser, on_start_cdata, on_end_cdata);
 	XML_SetProcessingInstructionHandler(parser, on_processing_instruction);
 	XML_SetXmlDeclHandler(parser, on_xml_decl);
+	XML_SetUnknownEncodingHandler(parser, on_unknown_encoding, ctx);
 	XML_SetStartDoctypeDeclHandler(parser, on_start_doctype_decl);
 	XML_SetAttlistDeclHandler(parser, on_attlist_decl);
 	XML_SetEntityDeclHandler(parser, on_entity_decl);

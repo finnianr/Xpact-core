@@ -89,6 +89,21 @@ feature {NONE} -- Access
 			end
 		end
 
+	frozen prune_utf_16_nulls (a_str: STRING): BOOLEAN
+		-- transform UTF-16 to ascii as for example:
+		-- "<%U?%Ux%Um%Ul%U.." becomes "<?xml.."
+		-- `True' if half of `a_str' characters are null
+		local
+			uc: UTF_CONVERTER
+		do
+			if a_str.occurrences ('%U') = a_str.count // 2 and then attached empty_buffer as str then
+				str.append (a_str); str.extend ('%U')
+				a_str.wipe_out
+				uc.utf_16le_string_8_into_utf_8_string_8 (str, a_str)
+				Result := True
+			end
+		end
+
 	frozen empty_buffer: STRING
 		do
 			Result := Output_buffer
