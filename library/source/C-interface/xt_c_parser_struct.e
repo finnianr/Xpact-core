@@ -44,6 +44,15 @@ feature {NONE} -- Access
 			"((XML_Parser) $ptr)->userData"
 		end
 
+	frozen c_unknown_encoding_handler_data (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->unknownEncodingHandlerData"
+		end
+
 	frozen c_naming_mode (ptr: POINTER): INTEGER
 		-- set class `XT_NAMING_MODE_CONSTANTS'
 		require

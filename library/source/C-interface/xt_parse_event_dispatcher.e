@@ -369,7 +369,18 @@ feature {NONE} -- Other parse events
 	on_unknown_encoding (name: STRING; parse_data: POINTER): detachable XT_CUSTOM_ENCODING_I
 		-- typedef int (XMLCALL *XML_UnknownEncodingHandler) (
 		-- 	void *encodingHandlerData, const XML_Char *name, XML_Encoding *info);
+		local
+			ptr, data_ptr, name_ptr: POINTER; custom_encoding: XT_CUSTOM_ENCODING
 		do
+			ptr := c_on_unknown_encoding (parse_data)
+			if is_attached (ptr) then
+				create custom_encoding.make
+				data_ptr := c_unknown_encoding_handler_data (parse_data)
+				name_ptr := name.area.base_address
+				if call_on_unknown_encoding (ptr, data_ptr, name_ptr, custom_encoding.self_ptr).to_boolean then
+					Result := custom_encoding
+				end
+			end
 		end
 
 feature {NONE} -- Implementation
