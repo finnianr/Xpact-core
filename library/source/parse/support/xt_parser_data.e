@@ -29,6 +29,11 @@ inherit
 			copy, is_equal
 		end
 
+	XT_C_EXPANSION_ACCOUNTING_STRUCT
+		undefine
+			copy, is_equal
+		end
+
 	XT_NAMING_MODE_CONSTANTS
 		export
 			{ANY} Valid_naming_modes
@@ -37,6 +42,8 @@ inherit
 		end
 
 	XT_PARSE_CONSTANTS
+		export
+			{ANY} Valid_parameter_entity_parsing_status
 		undefine
 			copy, is_equal
 		end
@@ -58,6 +65,7 @@ feature {NONE} -- Initialization
 			make_allocated
 			set_naming_mode (a_naming_mode, separator)
 			set_defaults
+			set_parameter_entity_parsing (PE_parsing_never)
 			fill_byte_type_table
 		end
 
@@ -91,6 +99,11 @@ feature -- Element change
 			put_byte_table (ptr, 255, 1) -- BT_malform = 1
 		end
 
+	set_dtd_keep_processing (flag: BOOLEAN)
+		do
+			c_set_dtd_keep_processing (self_ptr, flag)
+		end
+
 	set_defaults
 		do
 			set_has_dtd_section (self_ptr, False)
@@ -98,6 +111,8 @@ feature -- Element change
 			set_in_prolog_section (self_ptr, True)
 			set_in_cdata_section (self_ptr, False)
 			set_in_dtd_section (self_ptr, False)
+			set_dtd_keep_processing (True)
+			set_standalone (False)
 
 			c_set_accounting_source_type (self_ptr, Source_content)
 			c_set_accounting_content_count (self_ptr, 1) -- prevent divide by zero error
@@ -121,6 +136,19 @@ feature -- Element change
 			c_set_max_expansion_proportion (self_ptr, value)
 		end
 
+	set_parameter_entity_parsing (status: INTEGER)
+		-- set status of parameter entity parsing (always, never or unless_standalone)
+		require
+			valid_parsing_status: Valid_parameter_entity_parsing_status.has (status)
+		do
+			c_set_parameter_entity_parsing (self_ptr, status)
+		end
+
+	set_standalone (yes: BOOLEAN)
+		do
+			c_set_standalone (self_ptr, yes)
+		end
+
 feature -- Access
 
 	naming_mode: INTEGER
@@ -136,6 +164,23 @@ feature -- Access
 	new_element_context: XT_ELEMENT_CONTEXT
 		do
 			create Result.make (self_ptr)
+		end
+
+	parameter_entity_parsing: INTEGER
+		do
+			Result := c_parameter_entity_parsing (self_ptr)
+		end
+
+	protocol_encoding_name: detachable STRING
+		-- custom encoding name that will over-ride encoding attribute in <?xml?>
+		-- declaration
+		local
+			ptr: POINTER
+		do
+			ptr := c_protocol_encoding_name (self_ptr)
+			if is_attached (ptr) then
+				create Result.make_from_c (ptr)
+			end
 		end
 
 feature -- Measurement
@@ -156,6 +201,11 @@ feature -- Measurement
 		end
 
 feature -- Status query
+
+	is_standalone: BOOLEAN
+		do
+			Result := c_is_standalone (self_ptr)
+		end
 
 	in_prolog_section: BOOLEAN
 		do

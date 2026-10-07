@@ -273,6 +273,7 @@ feature {NONE} -- Factory
 			else
 				create Result.make_default
 			end
+			Result.set_parameter_entity_parsing (PE_parsing_always) -- matches xml_crc_32.c
 		end
 
 	new_option_description_table: HASH_TABLE [STRING, STRING]

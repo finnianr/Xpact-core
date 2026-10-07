@@ -53,8 +53,6 @@ feature -- Access
 
 feature -- Status query
 
-	is_referenced: BOOLEAN
-
 	is_external: BOOLEAN
 		-- `True' if the entity is defined externally to document
 		do
@@ -73,11 +71,6 @@ feature -- Status change
 	open
 		do
 			is_open := True
-		end
-
-	set_referenced
-		do
-			is_referenced := True
 		end
 
 end

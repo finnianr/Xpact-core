@@ -40,6 +40,11 @@ create
 
 feature -- Access
 
+	encoding: INTEGER
+		do
+			Result := UTF_16_LE
+		end
+
 	partial_code_unit: INTEGER
 
 feature -- Measurement

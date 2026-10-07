@@ -12,6 +12,9 @@ note
 deferred class
 	XT_C_STRING_CODEC
 
+inherit
+	XT_ENCODING_TYPE_CONSTANTS
+
 feature -- Initialization
 
 	make_shared (a_ptr: POINTER; n: INTEGER)
@@ -30,13 +33,13 @@ feature -- Access
 		deferred
 		end
 
+	encoding: INTEGER
+		deferred
+		end
+
 	last_index: INTEGER
 
 feature -- Status query
-
-	is_utf_8: BOOLEAN
-		do
-		end
 
 	not_well_formed: BOOLEAN
 		do

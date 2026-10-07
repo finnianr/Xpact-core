@@ -1,0 +1,50 @@
+ In function processXmlDecl(XML_Parser parser, int isGeneralTextEntity, const char *s,
+                 const char *next) \
+  what is the ultimate source of the argument isGeneralTextEntity. Is it set by client ?
+
+  Searched for 1 pattern, read 1 file, ran 1 shell command
+
+No — it is never set by the client application. There's no public expat API that reads or writes it; it's a compile-time-constant literal (0 or 1) hardcoded individually at each of the 4 internal call sites, chosen purely by which parsing context triggered the call:
+
+xmlparse.c:3196  processXmlDecl(parser, 1, start, next);   -- externalEntityInitProcessor3
+xmlparse.c:5010  processXmlDecl(parser, 0, start, next);   -- entityValueInitProcessor
+xmlparse.c:5276  processXmlDecl(parser, 0, s, next);       -- doProlog, XML_ROLE_XML_DECL
+xmlparse.c:5308  processXmlDecl(parser, 1, s, next);       -- doProlog, XML_ROLE_TEXT_DECL
+
+Inside processXmlDecl itself, the flag controls real grammar/semantics, not just bookkeeping (xmlparse.c:4830-4845):
+
+if (! (parser->m_ns ? XmlParseXmlDeclNS : XmlParseXmlDecl)(
+        isGeneralTextEntity, parser->m_encoding, s, next, &parser->m_eventPtr,
+        &version, &versionend, &encodingName, &newEncoding, &standalone)) {
+  if (isGeneralTextEntity)
+    return XML_ERROR_TEXT_DECL;
+  else
+    return XML_ERROR_XML_DECL;
+}
+if (! isGeneralTextEntity && standalone == 1) {
+  parser->m_dtd->standalone = XML_TRUE;
+  ...
+
+It's passed straight into the tokenizer-level grammar function (XmlParseXmlDecl/XmlParseXmlDeclNS), which uses it to decide whether a standalone="..." pseudo-attribute is even grammatically legal in what's being parsed — per XML 1.0 §4.3.1, only the document's own XMLDecl may carry standalone; a TextDecl (the version at the top of an external entity, where this is 1) must not, and the two get distinct error codes (XML_ERROR_XML_DECL vs XML_ERROR_TEXT_DECL) when malformed.
+
+So it's purely a derived, internal signal: "is the <?xml ...?> I'm currently looking at the real document's own declaration (0, standalone permitted), or an external entity/subset's TextDecl (1, standalone forbidden)" — never something the application supplies or influences.
+
+✻ Cogitated for 3m 53s · done 12:07
+
+❯ explain each parsing context
+
+  Searched for 2 patterns, read 1 file
+
+Here's each of the four, in the order I verified them:
+
+1. xmlparse.c:3196 — inside externalEntityInitProcessor3, passes 1
+This runs at the very start of parsing an external general parsed entity's content — i.e. when your XML_ExternalEntityRefHandler creates a sub-parser (via XML_ExternalEntityParserCreate) for a <!ENTITY name SYSTEM "...">-style entity and that sub-parser begins reading the external file. Per XML 1.0 §4.3.1, such content may open with a TextDecl (<?xml version="1.0" encoding="..."?> — version optional, standalone forbidden). isGeneralTextEntity=1 tells processXmlDecl exactly that: don't permit standalone, and report XML_ERROR_TEXT_DECL rather than XML_ERROR_XML_DECL if the declaration is malformed.
+
+2. xmlparse.c:5276 — inside doProlog, role XML_ROLE_XML_DECL, passes 0
+This is the real one: the main document's own <?xml version="1.0" standalone="yes"?> declaration, at the very top of the actual document being parsed. isGeneralTextEntity=0 means standalone is grammatically legal here, and per xmlparse.c:4838, a standalone="yes" here is the one case that actually sets parser->m_dtd->standalone = XML_TRUE (which in turn can disable parameter-entity parsing if it was set to XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE).
+
+3. xmlparse.c:5308 — inside doProlog, role XML_ROLE_TEXT_DECL, passes 1
+Reached via the same doProlog/role-state-machine path as case 2, but when the role the xmlrole.c state machine assigns is XML_ROLE_TEXT_DECL instead — i.e. the leading declaration of an external DTD subset or an external parameter entity read the normal way (via externalParEntProcessor, not nested inside another entity's value literal — see case 4). Same TextDecl rule as case 1: standalone forbidden, isGeneralTextEntity=1.
+
+4. xmlparse.c:5010 — inside entityValueInitProcessor, passes 0
+This is the odd one out, worth being precise about rather than guessing. It fires when an external parameter entity's content is reached while expat is still logically "inside" another entity's value literal — concretely: storeEntityValue (xmlparse.c:6799-6800) sets parser->m_prologState.inEntityValue = 1 for the duration of scanning an <!ENTITY % a "...">'s literal value, so that a nested %b; reference inside it can be expanded in place; if %b turns out to be an external parameter entity and the parser suspends/resumes while reading it, externalParEntInitProcessor (xmlparse.c:4965-4971) checks that still-1 flag and routes to entityValueInitProcessor instead of the normal externalParEntProcessor. Structurally, entityValueInitProcessor is also just different from doProlog: it calls XmlPrologTok directly and switches on the raw lexical tok == XML_TOK_XML_DECL, never going through the xmlrole.c state machine that assigns XML_ROLE_XML_DECL/XML_ROLE_TEXT_DECL in the other two prolog cases — so it isn't choosing 0 as "this is the main document's XMLDecl" the way case 2 does; it's a separate, narrower re-entry path that doesn't carry that role distinction at all. I can't find a comment at that line explaining why 0 specifically was chosen over 1 here, and I'd rather say that plainly than invent a rationale — it reads like a genuinely obscure corner case (a TextDecl on an external PE reached only through nested value-literal expansion) that the other three sites don't share.

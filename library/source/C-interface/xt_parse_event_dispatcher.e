@@ -235,7 +235,7 @@ feature {NONE} -- Declaration event handlers
 				call_on_entity_declaration (
 					ptr, c_user_data (parse_data), entity_name_address (parts.name, parse_data), parts.is_parameter.to_integer,
 					value_ptr, value_count, c_base (parse_data), address_if (parts.system_id),
-					address_if (parts.public_id), address (parts.notation_name) -- never NULL
+					address_if (parts.public_id), address_if (parts.notation_name)
 				)
 				undo_null_termination (parts.name.area, parse_data)
 			end
@@ -300,7 +300,7 @@ feature {NONE} -- Declaration event handlers
 				call_on_unparsed_entity_declaration (
 					ptr, c_user_data (parse_data), entity_name_address (parts.name, parse_data), c_base (parse_data),
 					address_if (parts.system_id), address_if (parts.public_id),
-					address (parts.notation_name) -- never NULL
+					address_if (parts.notation_name)
 				)
 				undo_null_termination (parts.name.area, parse_data)
 				set_entity_handled (parse_data, True)
@@ -344,7 +344,7 @@ feature {NONE} -- Other parse events
 		do
 		end
 
-	on_not_standalone (parse_data: POINTER): BOOLEAN
+	on_not_standalone (parse_data: POINTER): INTEGER
 		-- typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
 		do
 		end

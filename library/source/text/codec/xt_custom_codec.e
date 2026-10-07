@@ -29,6 +29,8 @@ inherit
 		end
 
 	XT_C_STRING_CODEC
+		rename
+			encoding as encoding_code
 		undefine
 			copy, is_equal
 		end
@@ -43,7 +45,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (chunk: XT_UTF_8_CODEC; a_encoding: XT_CUSTOM_ENCODING_I)
+	make (chunk: XT_C_STRING_CODEC; a_encoding: XT_CUSTOM_ENCODING_I)
 		do
 			make_shared (chunk.area, chunk.count)
 			encoding := a_encoding
@@ -59,6 +61,13 @@ feature {NONE} -- Initialization
 		do
 			Precursor (n)
 			encoding := Default_encoding
+		end
+
+feature -- Access
+
+	encoding_code: INTEGER
+		do
+			Result := Unknown_encoding
 		end
 
 feature -- Basic operations

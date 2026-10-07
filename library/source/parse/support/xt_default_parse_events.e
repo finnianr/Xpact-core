@@ -100,7 +100,7 @@ feature {NONE} -- Parse events
 		do
 		end
 
-	on_not_standalone_ (parse_data: POINTER): BOOLEAN
+	on_not_standalone_ (parse_data: POINTER): INTEGER
 		-- typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
 		do
 		end

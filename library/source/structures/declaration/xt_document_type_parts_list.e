@@ -54,6 +54,12 @@ feature -- Access
 
 feature -- Status query
 
+	has_external_subset: BOOLEAN
+		-- `True' if has public or system id
+		do
+			Result := external_id_type > 0
+		end
+
 	is_valid: BOOLEAN
 		do
 			if count = 1 then

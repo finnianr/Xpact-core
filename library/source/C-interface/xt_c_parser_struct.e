@@ -101,6 +101,122 @@ feature {NONE} -- Access
 			"((XML_Parser) $ptr)->null_swap"
 		end
 
+	frozen c_protocol_encoding_name (ptr: POINTER): POINTER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->protocol_encoding_name"
+		end
+
+feature {NONE} -- DTD access
+
+	frozen c_parameter_entity_parsing (ptr: POINTER): INTEGER
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->dtd.paramEntityParsing"
+		end
+
+feature {NONE} -- DTD status query
+
+	frozen c_dtd_keep_processing (ptr: POINTER): BOOLEAN
+		-- false once a parameter entity reference has been skipped
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->dtd.keep_processing"
+		end
+
+	frozen c_has_parameter_entity_reference (ptr: POINTER): BOOLEAN
+		-- `true' once an internal or external PE reference has been encountered
+		-- this includes the reference to an external subset
+		-- For example:
+		-- 	<!DOCTYPE xsl:stylesheet [
+		-- 		<!ENTITY % selectors SYSTEM "db-selectors.mod">
+		-- 		%selectors;
+		-- 	]>
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->dtd.hasParamEntityRefs"
+		end
+
+	frozen c_param_entity_parsing_enabled (ptr: POINTER): BOOLEAN
+		-- possible `PE_parsing_unless_standalone' value of `paramEntityParsing' is
+		-- overwritten in `read_declaration' so it becomes binary state.
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->dtd.paramEntityParsing > 0 ? 1 : 0"
+		end
+
+	frozen c_is_standalone (ptr: POINTER): BOOLEAN
+		-- `True' if document is standalone
+		-- standalone="yes" is the author's claim that no external markup declarations affect the document's content
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->dtd.is_standalone"
+		end
+
+feature {NONE} -- DTD element change
+
+	frozen c_set_dtd_keep_processing (ptr: POINTER; flag: BOOLEAN)
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->dtd.keep_processing = (XML_Bool)$flag;"
+		ensure
+			dtd_keep_processing_set: c_dtd_keep_processing (ptr) = flag
+		end
+
+	frozen c_set_has_parameter_entity_reference (ptr: POINTER; flag: BOOLEAN)
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->dtd.hasParamEntityRefs = (XML_Bool)$flag;"
+		ensure
+			has_parameter_entity_reference_set: c_has_parameter_entity_reference (ptr) = flag
+		end
+
+	frozen c_set_parameter_entity_parsing (ptr: POINTER; status: INTEGER)
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->dtd.paramEntityParsing = (enum XML_ParamEntityParsing)$status;"
+		ensure
+			parameter_entity_parsing_set: c_parameter_entity_parsing (ptr) = status
+		end
+
+	frozen c_set_standalone (ptr: POINTER; yes: BOOLEAN)
+		require
+			parser_attached: is_attached (ptr)
+		external
+			"C inline use <xpact_private.h>"
+		alias
+			"((XML_Parser) $ptr)->dtd.is_standalone = (XML_Bool)$yes;"
+		ensure
+			is_standalone_set: c_is_standalone (ptr) = yes
+		end
+
 feature {NONE} -- Combined ASCII + UTF-8 upper byte classification
 
 	frozen c_byte_type_code (ptr, character_ptr: POINTER): INTEGER
@@ -125,7 +241,7 @@ feature {NONE} -- Combined ASCII + UTF-8 upper byte classification
 feature {NONE} -- Status query
 
 	frozen c_has_dtd_section (ptr: POINTER): BOOLEAN
-		-- True if prolog has document type definition (DTD) after DOCTYPE x [
+		-- `True' if prolog has document type definition (DTD) after DOCTYPE x [
 		require
 			parser_attached: is_attached (ptr)
 		external
@@ -142,44 +258,6 @@ feature {NONE} -- Status query
 			"C inline use <xpact_private.h>"
 		alias
 			"((XML_Parser) $ptr)->entity_handled"
-		end
-
-	frozen c_param_entity_parsing_enabled (ptr: POINTER a_is_standalone: BOOLEAN): BOOLEAN
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"[
-				XML_Parser p = (XML_Parser) $ptr;
-				XML_Bool result;
-				switch (p->paramEntityParsing) {
-					case XML_PARAM_ENTITY_PARSING_ALWAYS: 
-						result = 1;
-						break;
-					case XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE:
-						result = (XML_Bool)$a_is_standalone;
-						break;
-				}
-				return result;
-			]"
-		end
-
-	frozen is_entity_expansion_limit_breached (ptr: POINTER): BOOLEAN
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"[
-				XML_Parser p = (XML_Parser) $ptr;
-				XmlBigCount combined_count; unsigned char result = 0;
-
-				combined_count = p->m_accounting.countBytesDirect + p->m_accounting.countBytesIndirect;
-				if ((float)combined_count / p->m_accounting.countBytesDirect > p->m_accounting.maximumAmplificationFactor)
-					result = 1;
-				return result;
-			]"
 		end
 
 feature {NONE} -- Measurement
@@ -233,7 +311,7 @@ feature {NONE} -- Parsing section state
 			"((XML_Parser) $ptr)->in_CDATA_section"
 		end
 
-feature {NONE} -- Parsing section (set)
+feature {NONE} -- Parsing status change
 
 	frozen set_has_dtd_section (ptr: POINTER; flag: BOOLEAN)
 		require
@@ -284,168 +362,6 @@ feature {NONE} -- Parsing section (set)
 			"((XML_Parser) $ptr)->in_CDATA_section = (XML_Bool)$flag;"
 		ensure
 			in_cdata_section_set: c_in_cdata_section (ptr) = flag
-		end
-
-feature {NONE} -- Entity expansion accounting
-
--- typedef struct accounting {
--- 	XmlBigCount countBytesDirect;
--- 	XmlBigCount countBytesIndirect;
--- 	unsigned long debugLevel;
--- 	float maximumAmplificationFactor; // >=1.0
--- 	unsigned long long activationThresholdBytes;
---} ACCOUNTING;
-
-	frozen c_accounting_source_type (ptr: POINTER): NATURAL_8
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.source_type"
-		end
-
-	frozen c_accounting_content_count (ptr: POINTER): NATURAL_64
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.countBytesDirect"
-		end
-
-	frozen c_entity_expansion_count (ptr: POINTER): NATURAL_64
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.countBytesIndirect"
-		end
-
-	frozen c_exponential_expansion_threshold (ptr: POINTER): NATURAL_64
-		-- number of bytes processed after which checks for runaway entity expansion
-		-- should be performed
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.activationThresholdBytes"
-		end
-
-	frozen c_max_expansion_proportion (ptr: POINTER): DOUBLE
-		-- maximum proportion of entity expanded text to already processed text
-		-- permitted before raising error `Error_amplification_limit_breach'
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.maximumAmplificationFactor"
-		end
-
-feature {NONE} -- Entity expansion accounting (change)
-
-	frozen add_to_content_count (ptr: POINTER; value: INTEGER)
-		require
-			non_negative: value >= 0
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.countBytesDirect += (XmlBigCount) $value;"
-		ensure
-			added: c_accounting_content_count (ptr) = old c_accounting_content_count (ptr) + value.to_natural_64
-		end
-
-	frozen add_to_entity_expansion_count (ptr: POINTER; value: INTEGER)
-		require
-			non_negative: value >= 0
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.countBytesIndirect += (XmlBigCount) $value;"
-		ensure
-			added: c_entity_expansion_count (ptr) = old c_entity_expansion_count (ptr) + value.to_natural_64
-		end
-
-	frozen update_accounting_source_type (ptr: POINTER)
-		-- if total bytes of content plus total bytes of expanded entities is greater than
-		-- `c_exponential_expansion_threshold (ptr)' then set source type to `Source_expansion_with_checks'
-		-- but do nothing if `c_source_type (ptr) = Source_expansion_with_checks'
-		-- (Constants defined in `XT_PARSE_CONSTANTS')
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"[
-				XML_Parser p = (XML_Parser) $ptr;
-				XmlBigCount combined_count;
-
-				switch (p->m_accounting.source_type) {
-					case 2: // Source_expansion_with_checks
-						break;
-					default:
-						combined_count = p->m_accounting.countBytesDirect + p->m_accounting.countBytesIndirect;
-						if (combined_count > p->m_accounting.activationThresholdBytes)
-							p->m_accounting.source_type = 2; // Source_expansion_with_checks
-						else
-							p->m_accounting.source_type = 1; // Source_expansion;
-						break;
-				}
-			]"
-		end
-
-	frozen c_set_accounting_content_count (ptr: POINTER; value: NATURAL_64)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.countBytesDirect = (XmlBigCount)$value;"
-		ensure
-			content_count_set: c_accounting_content_count (ptr) = value
-		end
-
-	frozen c_set_accounting_source_type (ptr: POINTER; type: NATURAL_8)
-		require
-			three_types: 0 <= type and type <= 2
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.source_type = (unsigned char)$type;"
-		ensure
-			content_count_set: c_accounting_source_type (ptr) = type
-		end
-
-	frozen c_set_exponential_expansion_threshold (ptr: POINTER; threshold_count: NATURAL_64)
-		require
-			parser_attached: is_attached (ptr)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.activationThresholdBytes = (unsigned long long)$threshold_count;"
-		ensure
-			exponential_expansion_threshold_set: threshold_count = c_exponential_expansion_threshold (ptr)
-		end
-
-	frozen c_set_max_expansion_proportion (ptr: POINTER; value: REAL_32)
-		require
-			value_gt_1: value >= 1.0
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.maximumAmplificationFactor = $value;"
-		ensure
-			max_expansion_proportion_set: c_max_expansion_proportion (ptr) = value
-		end
-
-	frozen c_set_entity_expansion_count (ptr: POINTER; value: NATURAL_64)
-		external
-			"C inline use <xpact_private.h>"
-		alias
-			"((XML_Parser) $ptr)->m_accounting.countBytesIndirect = (XmlBigCount)$value;"
-		ensure
-			entity_expansion_count_set: c_entity_expansion_count (ptr) = value
 		end
 
 feature {NONE} -- Element change

@@ -17,15 +17,18 @@ class
 inherit
 	XT_LATIN_1_CODEC
 		redefine
-			copy_as_utf_8, is_utf_8
+			copy_as_utf_8, encoding
 		end
 
 create
 	make, make_shared, make_empty, make_from_string
 
-feature -- Status query
+feature -- Access
 
-	is_utf_8: BOOLEAN = True
+	encoding: INTEGER
+		do
+			Result := UTF_8
+		end
 
 feature -- Basic operations
 

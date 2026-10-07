@@ -26,9 +26,16 @@ inherit
 		undefine
 			copy, is_equal
 		end
-		
+
 create
 	make, make_shared, make_from_string, make_empty, make_filled
+
+feature -- Access
+
+	encoding: INTEGER
+		do
+			Result := Latin_1
+		end
 
 feature -- Basic operations
 

@@ -56,12 +56,11 @@ feature -- Access
 		deferred
 		end
 
-	notation_name: STRING
+	notation_name: detachable STRING
 		do
 			inspect count when 3 then
 				Result := if i_th (2) = NDATA then i_th (3) else Empty_string end
 			else
-				Result := Empty_string
 			end
 		end
 

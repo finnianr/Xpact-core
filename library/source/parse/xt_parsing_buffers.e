@@ -37,8 +37,6 @@ feature {NONE} -- Initialization
 
 			buffer := new_buffer_area (Default_buffer_size)
 			create new_line.make_filled ('%N', 1)
-			create {XT_UTF_8_CODEC} codec.make_empty
-
 			set_defaults
 		ensure then
 			empty_buffer: buffer_end = 0 and buffer_index = 0
@@ -46,7 +44,8 @@ feature {NONE} -- Initialization
 
 	set_defaults
 		do
-			encoding := Unknown_encoding
+			codec := Default_codec
+			encoding := UTF_8
 			parse_end_index := 0
 			position_index := 0
 			buffer_end := 0
@@ -85,7 +84,7 @@ feature -- Element change
 	reset
 		do
 			set_defaults
-			if not codec.is_utf_8 then
+			if codec.encoding /= UTF_8 then
 				create {XT_UTF_8_CODEC} codec.make_empty
 			end
 			attribute_list.set_permit_undefined_entities (False)
@@ -111,29 +110,6 @@ feature {NONE} -- Factory
 			create Result.make_filled ('%U', n + 1)
 		ensure
 			room_for_null_terminator: Result.count = n + 1
-		end
-
-	new_codec (chunk: XT_UTF_8_CODEC; custom_encoding: detachable XT_CUSTOM_ENCODING_I): like codec
-		do
-			Result := codec
-			inspect encoding
-				when Ascii, Utf_8 then
-					check
-						already_set: codec = chunk
-					end
-
-				when Utf_16, UTF_16_LE then
-					create {XT_UTF_16_LE_CODEC} Result.make_shared (chunk.area, chunk.count)
-
-				when Latin_1 then
-					create {XT_LATIN_1_CODEC} Result.make_shared (chunk.area, chunk.count)
-
-				when Unknown_encoding then
-					if attached custom_encoding as custom then
-						create {XT_CUSTOM_CODEC} Result.make (chunk, custom)
-					end
-			else
-			end
 		end
 
 feature {NONE} -- Implementation
@@ -170,7 +146,8 @@ feature {NONE} -- Implementation
 			if lt_index > 0 then
 				gt_index := chunk.index_of ('>', lt_index + 1)
 				if gt_index > 0 then
-					Result := chunk.substring (lt_index, gt_index).to_string
+					create Result.make (gt_index - lt_index + 1)
+					chunk.append_slice_to_string_8 (Result, lt_index - 1, gt_index - 1)
 				end
 			end
 		end
@@ -306,6 +283,11 @@ feature {NONE} -- Internal structures
 		-- allocated memory for C struct `XT_C_PARSE_DATA_STRUCT'
 
 feature {NONE} -- Constants
+
+	Default_codec: XT_UTF_8_CODEC
+		once
+			create Result.make_empty
+		end
 
 	Default_attributes_capacity: INTEGER = 11
 

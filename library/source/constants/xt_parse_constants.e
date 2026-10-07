@@ -53,6 +53,17 @@ feature {NONE} -- Parse status (XML_Status enum)
 		Suspended
 	]"
 
+feature {NONE} -- enum XML_ParamEntityParsing
+
+	PE_parsing_never: INTEGER = 0
+	PE_parsing_unless_standalone: INTEGER = 1
+	PE_parsing_always: INTEGER = 2
+
+	Valid_parameter_entity_parsing_status: INTEGER_INTERVAL
+		once
+			Result := PE_parsing_never |..| PE_parsing_always
+		end
+
 feature {XT_STRING_CONSTANTS} -- Declaration types
 
 	Valid_declaration_types: INTEGER_INTERVAL

@@ -123,7 +123,7 @@ feature {NONE} -- Base event handlers
 		do
 		end
 
-	on_base_not_standalone (parse_data: POINTER): BOOLEAN
+	on_base_not_standalone (parse_data: POINTER): INTEGER
 		-- typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
 		do
 		end

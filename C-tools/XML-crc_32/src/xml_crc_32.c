@@ -345,12 +345,14 @@ static void XMLCALL on_unparsed_entity_decl(void *userData, const XML_Char *enti
  * left unexpanded because XML_SetDefaultHandler rather than
  * XML_SetDefaultHandlerExpand was registered -- see XML_SkippedEntityHandler
  * in expat.h). entityName is never NULL for this handler. */
-static void XMLCALL on_skipped_entity(void *userData, const XML_Char *entityName,
-                                       int is_parameter_entity) {
+ 
+static void XMLCALL on_skipped_entity(
+	void *userData, const XML_Char *entityName, int is_parameter_entity) {
 	crc_ctx_t *ctx = (crc_ctx_t *) userData;
-	if (ctx->type != TYPE_ENTITY) return;
-	crc32_update(ctx, (const unsigned char *) entityName, strlen(entityName));
-	crc32_update_bool(ctx, is_parameter_entity);
+	if (ctx->type == TYPE_ENTITY){
+		crc32_update(ctx, (const unsigned char *) entityName, strlen(entityName));
+		crc32_update_bool(ctx, is_parameter_entity);
+	}
 }
 
 /* Combines the NOTATION declaration's fields, left to right as supplied to
@@ -626,22 +628,17 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	data_type_t type;
-	if (strcmp(type_arg, "text") == 0) type = TYPE_TEXT;
-	else if (strcmp(type_arg, "cdata") == 0) type = TYPE_CDATA;
-	else if (strcmp(type_arg, "comment") == 0) type = TYPE_COMMENT;
-	else if (strcmp(type_arg, "tag") == 0) type = TYPE_TAG;
-	else if (strcmp(type_arg, "attribute") == 0) type = TYPE_ATTRIBUTE;
-	else if (strcmp(type_arg, "processing") == 0) type = TYPE_PROCESSING;
-	else if (strcmp(type_arg, "xml-decl") == 0) type = TYPE_XML_DECL;
-	else if (strcmp(type_arg, "doctype") == 0) type = TYPE_DOCTYPE;
-	else if (strcmp(type_arg, "attlist") == 0) type = TYPE_ATTLIST;
-	else if (strcmp(type_arg, "entity-decl") == 0) type = TYPE_ENTITY_DECL;
-	else if (strcmp(type_arg, "entity") == 0) type = TYPE_ENTITY;
-	else if (strcmp(type_arg, "notation") == 0) type = TYPE_NOTATION;
-	else if (strcmp(type_arg, "element") == 0) type = TYPE_ELEMENT;
-	else if (strcmp(type_arg, "xmlns-decl") == 0) type = TYPE_XMLNS_DECL;
-	else {
+	// match data_type enum with argument -type 
+	data_type_t type = TYPE_TEXT;
+	int type_found = 0;
+	for (size_t i = 0; i < sizeof(data_type_name) / sizeof(data_type_name[0]); i++) {
+		if (strcmp(type_arg, data_type_name[i]) == 0) {
+			type = (data_type_t) i;
+			type_found = 1;
+			break;
+		}
+	}
+	if (!type_found) {
 		fprintf(stderr, "Error: invalid -type '%s'\n", type_arg);
 		usage(argv[0]);
 		return 1;

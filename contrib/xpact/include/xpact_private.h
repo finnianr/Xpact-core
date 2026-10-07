@@ -26,12 +26,28 @@ typedef struct accounting {
 
 // Wrapped by class XT_PARSER_DATA 
 
+typedef struct {
+	XML_Bool keep_processing;
+		// false once a parameter entity reference has been skipped
+
+	XML_Bool hasParamEntityRefs;
+		// true once an internal or external PE reference has been encountered;
+		// this includes the reference to an external subset */
+  
+	XML_Bool is_standalone;
+
+	XML_Bool paramEntityRead;
+		// indicates if external PE has been read
+
+  enum XML_ParamEntityParsing paramEntityParsing;
+	
+} DTD;
+
 struct XML_ParserStruct {
 	void *userData;
 	void *eiffelParser;
 	const struct XPACT_EiffelBridge *bridge;
 	XML_Memory_Handling_Suite memory;
-	enum XML_ParamEntityParsing paramEntityParsing;
 	XML_Char *base;
 	char *buffer;
 	int bufferCapacity;
@@ -40,7 +56,8 @@ struct XML_ParserStruct {
 
 	void *externalEntityRefArg;
 	XML_Char namespaceSeparator;
-	void *unknownEncodingHandlerData;
+	const char *protocol_encoding_name;
+	
 	XML_Parser parentParser;
 	int externalChildParseCount;
 	unsigned long long lastExternalChildDirectCount;
@@ -49,6 +66,8 @@ struct XML_ParserStruct {
 	int stopCallbackKind;
 	
 	unsigned handler_call_depth; // just in case it's needed
+	
+	DTD dtd;
 	
 // Combined ASCII + UTF-8 upper byte classification table.
 	int byte_type_table [256];
@@ -71,6 +90,8 @@ struct XML_ParserStruct {
 	XML_StartElementHandler startElementHandler;
 
 	XML_UnknownEncodingHandler unknownEncodingHandler;
+
+	void *unknownEncodingHandlerData;
 
 // Declaration handlers
 
@@ -111,7 +132,7 @@ struct XML_ParserStruct {
 
 // Xpact-core "billion-laugh" hack accounting defense
 	
-	ACCOUNTING m_accounting;
+	ACCOUNTING accounting;
 	
 // Xpact-core parsing states
 	XML_Bool has_dtd_section;

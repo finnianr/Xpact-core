@@ -122,7 +122,7 @@ feature -- Basic operations
 					if chunk.count = 0 then
 						error_code := Error_no_elements
 					else
-						read_start (chunk)
+						read_declaration (chunk)
 					end
 
 					inspect error_code when Error_none then

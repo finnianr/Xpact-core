@@ -72,6 +72,7 @@ feature -- Status query
 		-- `True' if `null_terminate_values' was called
 
 	permit_undefined_entities: BOOLEAN
+		-- `True' if document is structured to allow undefined entities to be referenced
 
 	swap_area_big_enough: BOOLEAN
 		do

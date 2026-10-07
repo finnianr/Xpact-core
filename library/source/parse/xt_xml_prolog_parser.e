@@ -34,6 +34,8 @@ inherit
 			NOTATION as NOTATION_
 		end
 
+	XT_C_EXPANSION_ACCOUNTING_STRUCT
+
 feature {NONE} -- Initialization
 
 	make (a_parser_data: XT_PARSER_DATA)
@@ -70,14 +72,9 @@ feature {NONE} -- Initialization
 		do
 			Precursor
 			declaration_count := 0; declaration_type := 0
-			is_standalone := False
 			parser_data.set_defaults
 			parser_data.set_exponential_expansion_threshold (Default_exponential_expansion_threshold)
 		end
-
-feature -- Status query
-
-	is_standalone: BOOLEAN
 
 feature {NONE} -- Token processing
 
@@ -190,7 +187,9 @@ feature {NONE} -- Token processing
 					end
 
 				when Tok_param_entity_ref then
-					Result := process_parameter_entity (buf, index + 1, end_index - 1, names, parse_data, done)
+					if c_param_entity_parsing_enabled (parse_data) then
+						Result := process_parameter_entity (buf, index + 1, end_index - 1, names, parse_data, done)
+					end
 
 				when Tok_open_parenthesis, Tok_or, Tok_close_parenthesis, Tok_close_paren_plus,
 					Tok_close_paren_question, Tok_close_paren_asterisk, Tok_comma
@@ -214,13 +213,8 @@ feature {NONE} -- Token processing
 				Result := Error_recursive_entity_ref; put_boolean (done, True)
 
 			elseif attached parameter_entity_table.item (entity_name) as parameter then
-				parameter.set_referenced
-				if parameter.is_external then
-					if c_param_entity_parsing_enabled (parse_data, is_standalone) then
-						on_skipped_entity (entity_name, True, parse_data)
-					end
-
-				elseif attached parameter.value as value then
+				c_set_has_parameter_entity_reference (parse_data, True)
+				if not parameter.is_external and then attached parameter.value as value then
 					buffer_index_copy := buffer_index -- save field
 					buffer_index := 0; source_type := c_accounting_source_type (parse_data)
 					entity_name.open
@@ -240,6 +234,7 @@ feature {NONE} -- Token processing
 					Result := error
 				end
 			else
+				on_skipped_entity (entity_name, True, parse_data)
 				Result := Error_undefined_entity; put_boolean (done, True)
 			end
 		end
@@ -272,7 +267,9 @@ feature {NONE} -- Token processing
 							Result := Error_junk_after_doc_element; put_boolean (done, True)
 						else
 							set_in_prolog_section (parse_data, False)
-							attributes.set_permit_undefined_entities (permit_undefined_entities)
+							if not c_is_standalone (parse_data) then
+								attributes.set_permit_undefined_entities (c_has_parameter_entity_reference (parse_data))
+							end
 							if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
 								create {XT_ELEMENT_ATTRIBUTES_CONTEXT} element_context.make (parse_data, attribute_value_defaults_table)
 							end
@@ -297,6 +294,9 @@ feature {NONE} -- Token processing
 								do_nothing
 							else
 								Result := on_close_declaration (DOCTYPE, token, parse_data)
+								if Result = 0 and then not c_is_standalone (parse_data) then
+									Result := on_not_standalone (parse_data)
+								end
 								put_boolean (done, Result > 0)
 							end
 						else
@@ -440,6 +440,9 @@ feature {NONE} -- Event handlers
 					if attached document_type_parts_list as parts_list then
 						if parts_list.is_valid then
 							on_doctype_declaration_start (parts_list, c_has_dtd_section (parse_data), parse_data)
+							if parts_list.has_external_subset then
+								c_set_has_parameter_entity_reference (parse_data, True)
+							end
 						else
 							Result := Error_syntax
 						end
@@ -590,36 +593,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	permit_undefined_entities: BOOLEAN
-		-- `True' if document is structured to allow undefined entities to be permitted by conforming element_context
-		-- Value is cached in `attribute_intervals.permit_undefined_entities'
-		local
-			parameter: XT_PARAMETER_ENTITY
-		do
-			if is_standalone then
-				Result := False
-
-			elseif attached document_type_parts_list.uri as uri and then uri.starts_with (Http) then
-				Result := True
-
-			elseif attached parameter_entity_table as table then
-			-- Check if a PUBLIC or SYSTEM parameter entity was referenced in DTD
-			-- For example:
-			-- 	<!DOCTYPE xsl:stylesheet [
-			-- 		<!ENTITY % selectors SYSTEM "db-selectors.mod">
-			-- 		%selectors;
-			-- 	]>
-
-				from table.start until table.after or Result loop
-					parameter := table.item_for_iteration
-					if Valid_external_id_names.valid_index (parameter.external_id_type) then
-						Result := parameter.is_referenced
-					end
-					table.forth
-				end
-			end
-		end
-
 	pop_declaration
 		-- pop `declaration_type' from a virtual stack of max 2 items
 		require
@@ -640,23 +613,20 @@ feature {NONE} -- Implementation
 			declaration_type := type
 		end
 
-	read_start (chunk: XT_C_STRING_CODEC)
+	read_declaration (chunk: XT_C_STRING_CODEC)
 		-- read byte order mark and <?xml declaration (if they exist)
 		-- and setting `encoding', `is_standalone' and `codec'
 		require
 			chunk_has_content: chunk.count > 0
 		local
-			declaration, yes_no: STRING; encoding_name: detachable STRING; declared_encoding, lt_index, count: INTEGER
-			l_chunk: XT_UTF_8_CODEC; custom_encoding: detachable XT_CUSTOM_ENCODING_I
-			assumed_utf_8, utf_16_detected, is_utf_16: BOOLEAN
+			declaration, yes_no: STRING; encoding_name: detachable STRING
+			l_chunk: XT_UTF_8_CODEC; assumed_utf_8, utf_16_detected, is_utf_16: BOOLEAN
+			lt_index, count: INTEGER
 		do
-			if attached {XT_UTF_8_CODEC} codec as l_codec then
-				l_chunk := l_codec
-			else
-				create l_chunk.make_empty
-			end
+			l_chunk := Default_codec
 			l_chunk.make_shared (chunk.area, chunk.count)
 			encoding := encoding_from_BOM (l_chunk)
+			encoding_name := parser_data.protocol_encoding_name
 		-- check for byte order mark if any and remove
 			if encoding > 0 then
 				l_chunk.remove_head (Encoding_byte_order_marks [encoding].count)
@@ -688,11 +658,17 @@ feature {NONE} -- Implementation
 						else
 							yes_no := attribute_list.standalone_value (l_area)
 							if Valid_yes_no.has (yes_no) then
-								is_standalone := yes_no [1] = 'y'
+								if yes_no [1] = 'y' then
+									parser_data.set_standalone (True)
+									if parser_data.parameter_entity_parsing = PE_parsing_unless_standalone then
+										parser_data.set_parameter_entity_parsing (PE_parsing_never)
+									end
+								end
+--								parser_data.set_dtd_keep_processing (is_standalone)
 								on_xml_declaration (l_area, attribute_list, parser_data.self_ptr)
-								if attached attribute_list.encoding_name (l_area) as name then
+							-- ignore if `encoding_name' already set from `parser_data.protocol_encoding_name'
+								if encoding_name = Void and then attached attribute_list.encoding_name (l_area) as name then
 									encoding_name := name
-									declared_encoding := Encoding_names_upper.index_of (name.as_upper, 1)
 								end
 								attribute_list.wipe_out
 							else
@@ -702,24 +678,50 @@ feature {NONE} -- Implementation
 					else end
 				end
 				if error_code = Error_none then
-					if valid_encoding (declared_encoding) and then valid_encoding (encoding)
-						and then character_width (declared_encoding) /= character_width (encoding)
-					then
-						error_code := Error_incorrect_encoding
-
-					elseif assumed_utf_8 and then valid_encoding (declared_encoding) then
-						encoding := declared_encoding
-
-					elseif attached encoding_name as name and then not (declared_encoding = UTF_16 and is_utf_16) then
-						custom_encoding := on_unknown_encoding (name, parser_data.self_ptr)
-						if attached custom_encoding as custom and then custom.is_valid then
-							encoding := Unknown_encoding
-						else
-							error_code := Error_unknown_encoding
-						end
-					end
-					codec := new_codec (l_chunk, custom_encoding)
+					set_codec (l_chunk, encoding_name, assumed_utf_8, is_utf_16)
 				end
+			end
+		end
+
+	set_codec (chunk: XT_C_STRING_CODEC; encoding_name: detachable STRING; assumed_utf_8, is_utf_16: BOOLEAN)
+		local
+			custom_encoding: detachable XT_CUSTOM_ENCODING_I
+			declared_encoding: INTEGER
+		do
+			if attached encoding_name as name then
+				declared_encoding := Encoding_names_upper.index_of (name.as_upper, 1)
+			end
+			if valid_encoding (declared_encoding) and then valid_encoding (encoding)
+				and then character_width (declared_encoding) /= character_width (encoding)
+			then
+				error_code := Error_incorrect_encoding
+
+			elseif assumed_utf_8 and then valid_encoding (declared_encoding) then
+				encoding := declared_encoding
+
+			elseif attached encoding_name as name and then not (declared_encoding = UTF_16 and is_utf_16) then
+				custom_encoding := on_unknown_encoding (name, parser_data.self_ptr)
+				if attached custom_encoding as custom and then custom.is_valid then
+					encoding := Unknown_encoding
+				else
+					error_code := Error_unknown_encoding
+				end
+			end
+			inspect encoding
+				when Ascii, Utf_8 then
+					codec := Default_codec
+
+				when Utf_16, UTF_16_LE then
+					create {XT_UTF_16_LE_CODEC} codec.make_shared (chunk.area, chunk.count)
+
+				when Latin_1 then
+					create {XT_LATIN_1_CODEC} codec.make_shared (chunk.area, chunk.count)
+
+				when Unknown_encoding then
+					if attached custom_encoding as custom then
+						create {XT_CUSTOM_CODEC} codec.make (chunk, custom)
+					end
+			else
 			end
 		end
 
@@ -727,7 +729,8 @@ feature {NONE} -- Implementation
 		local
 			i: INTEGER
 		do
-			Precursor {XT_PARSING_BUFFERS}; Precursor {XT_DOCUMENT_SCANNER}
+			Precursor {XT_PARSING_BUFFERS}
+			Precursor {XT_DOCUMENT_SCANNER}
 
 			attribute_value_defaults_table.wipe_out
 			if element_context.has_default_values then

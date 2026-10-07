@@ -174,7 +174,7 @@ feature {NONE} -- Declaration event handlers
 					end
 					crc.add_attached_string (parts.system_id)
 					crc.add_attached_string (parts.public_id)
-					crc.add_string (parts.notation_name) -- never NULL
+					crc.add_attached_string (parts.notation_name)
 				end
 			else end
 		end
@@ -243,7 +243,7 @@ feature {NONE} -- Declaration event handlers
 					end
 					crc.add_attached_string (parts.system_id)
 					crc.add_attached_string (parts.public_id)
-					crc.add_string (parts.notation_name) -- never NULL
+					crc.add_attached_string (parts.notation_name)
 					set_entity_handled (parse_data, True)
 				end
 			else end
@@ -329,7 +329,7 @@ feature {NONE} -- Parse events
 		do
 		end
 
-	on_not_standalone (parse_data: POINTER): BOOLEAN
+	on_not_standalone (parse_data: POINTER): INTEGER
 		do
 		end
 

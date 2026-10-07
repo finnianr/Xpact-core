@@ -156,7 +156,7 @@ feature {NONE} -- Other parse events
 		deferred
 		end
 
-	on_not_standalone (parse_data: POINTER): BOOLEAN
+	on_not_standalone (parse_data: POINTER): INTEGER
 		-- typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
 		deferred
 		end
