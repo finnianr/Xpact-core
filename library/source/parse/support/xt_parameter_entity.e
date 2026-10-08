@@ -33,13 +33,15 @@ feature {NONE} -- Initialization
 	make (parts_list: XT_PARAMETER_ENTITY_PARTS_LIST)
 		require
 			valid_parts: parts_list.count >= 1
+		local
+			s: XT_STRING_8_ROUTINES
 		do
 			name := parts_list.name
 			external_id_type := parts_list.external_id_type
-			if attached parts_list.external_id_list as id_list and then id_list.count > 0 then
-				value := id_list [id_list.count - 1]
-			else
+			inspect external_id_type when 0 then
 				value := parts_list.last
+			else
+				value := s.Empty_string
 			end
 		end
 
@@ -57,20 +59,6 @@ feature -- Status query
 		-- `True' if the entity is defined externally to document
 		do
 			Result := external_id_type > 0
-		end
-
-	is_open: BOOLEAN
-
-feature -- Status change	
-
-	close
-		do
-			is_open := False
-		end
-
-	open
-		do
-			is_open := True
 		end
 
 end
