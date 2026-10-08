@@ -22,8 +22,6 @@ inherit
 	XT_DOCUMENT_SCANNER
 		rename
 			make as make_scanner
-		redefine
-			reset
 		end
 
 	XT_PARSE_EVENTS
@@ -267,9 +265,7 @@ feature {NONE} -- Token processing
 							Result := Error_junk_after_doc_element; put_boolean (done, True)
 						else
 							set_in_prolog_section (parse_data, False)
-							if not c_is_standalone (parse_data) then
-								attributes.set_permit_undefined_entities (c_has_parameter_entity_reference (parse_data))
-							end
+							attributes.set_undefined_entities_permitted (parser_data.undefined_entities_permitted)
 							if not element_context.has_attributes and then attribute_value_defaults_table.count > 0 then
 								create {XT_ELEMENT_ATTRIBUTES_CONTEXT} element_context.make (parse_data, attribute_value_defaults_table)
 							end
@@ -427,7 +423,7 @@ feature {NONE} -- Event handlers
 				when ENTITY_ then
 					if attached entity_parts_list as parts_list then
 						if parts_list.is_valid then
-							parts_list.extend_table (entity_table)
+							entity_table.extend (parts_list)
 							set_entity_handled (parse_data, False)
 							on_entity (parts_list, parse_data)
 							parts_list.wipe_out
@@ -730,7 +726,6 @@ feature {NONE} -- Implementation
 			i: INTEGER
 		do
 			Precursor {XT_PARSING_BUFFERS}
-			Precursor {XT_DOCUMENT_SCANNER}
 
 			attribute_value_defaults_table.wipe_out
 			if element_context.has_default_values then

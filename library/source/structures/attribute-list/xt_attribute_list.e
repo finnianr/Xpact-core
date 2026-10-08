@@ -71,7 +71,7 @@ feature -- Status query
 	is_null_terminated: BOOLEAN
 		-- `True' if `null_terminate_values' was called
 
-	permit_undefined_entities: BOOLEAN
+	undefined_entities_permitted: BOOLEAN
 		-- `True' if document is structured to allow undefined entities to be referenced
 
 	swap_area_big_enough: BOOLEAN
@@ -142,9 +142,9 @@ feature -- Status change
 			newline_or_tab_found := True
 		end
 
-	set_permit_undefined_entities (yes: BOOLEAN)
+	set_undefined_entities_permitted (yes: BOOLEAN)
 		do
-			permit_undefined_entities := yes
+			undefined_entities_permitted := yes
 		end
 
 feature -- Access
@@ -494,7 +494,7 @@ feature -- Basic operations
 					expanded_value := entity_table.expanded_value (buffer, additions [2], additions [3], entity_list.area, False, False)
 					value_count := expanded_value.count
 
-					if entity_table.undefined_entity_found and then not permit_undefined_entities then
+					if entity_table.undefined_entity_found and then not undefined_entities_permitted then
 						Result := Error_undefined_entity
 					else
 						if attached buffer_pool.borrow_item (value_count) as l_buffer

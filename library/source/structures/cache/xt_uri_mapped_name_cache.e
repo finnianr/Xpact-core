@@ -74,7 +74,7 @@ feature -- Basic operations
 			start_index := local_part_index (additions [0], colon_index)
 			if entity_list.count > 0 and then attached attributes.entity_table as entity_table then
 				expanded_uri := entity_table.expanded_value (buffer, additions [2], additions [3], entity_list.area, False, False)
-				if entity_table.undefined_entity_found and then not attributes.permit_undefined_entities then
+				if entity_table.undefined_entity_found and then not attributes.undefined_entities_permitted then
 					Result := Error_undefined_entity; uri := Empty_string
 				else
 					uri := new_recyleable (expanded_uri.area, 0, expanded_uri.count - 1)

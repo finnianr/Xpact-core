@@ -16,6 +16,7 @@ inherit
 	HASH_TABLE [STRING, XT_ENTITY_NAME]
 		rename
 			empty as table_empty,
+			extend as extend_table,
 			item as table_item,
 			put as put_name
 		export
@@ -33,6 +34,11 @@ inherit
 		end
 
 	XT_STRING_CONSTANTS
+		undefine
+			copy, is_equal
+		end
+
+	XT_TOKEN_CONSTANTS
 		undefine
 			copy, is_equal
 		end
@@ -69,7 +75,7 @@ feature -- Access
 					code := char_ref_number (key.area, 0, key.count - 1)
 					if attached utf_8_encoded (code) as l_area then
 						Result := new_substring (l_area, 0, l_area.count - 1)
-						extend (Result, key)
+						extend_table (Result, key)
 					end
 				end
 			else
@@ -129,6 +135,35 @@ feature -- Access
 		end
 
 feature -- Element change
+
+	extend (parts: XT_ENTITY_PARTS_LIST)
+		do
+			inspect parts.count
+				when 1 then
+				-- &legal; referenced near end of document /usr/share/gnome/help/synaptic/C/synaptic.xml
+				-- Defined as external: <!ENTITY legal SYSTEM "gpl.xml">
+				-- Without putting into table there will be a %N missing in output compared to eXpat
+					if parts.has_system_id then
+						put (Empty_string, parts.name)
+					end
+
+				when 2 then
+					put (parts.last, parts.name)
+
+				when 3 then
+					if parts.has_system_id then
+						put (Empty_string, parts.name)
+					end
+
+					if parts.i_th (2) = NDATA and parts.i_th_token (3) = Tok_name
+						and then attached inserted_name as entity_name
+					then
+					-- attempting to reference this name in document returns the `Error_binary_entity_ref' error
+						entity_name.set_has_notation_tag
+					end
+			else
+			end
+		end
 
 	set_predefined (entity_cache: XT_ENTITY_NAME_CACHE)
 		do

@@ -215,6 +215,9 @@ feature -- Removal
 	reset
 		do
 			name_cache.reset
+			entity_cache.reset
+			entity_table.wipe_out
+			entity_table.set_predefined (entity_cache)
 			initialize_xml_attributes
 			wipe_out
 		end

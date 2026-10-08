@@ -217,6 +217,13 @@ feature -- Status query
 			Result := c_in_cdata_section (self_ptr)
 		end
 
+	undefined_entities_permitted: BOOLEAN
+		do
+			if not is_standalone then
+				Result := c_has_parameter_entity_reference (self_ptr)
+			end
+		end
+		
 feature {NONE} -- Implementation
 
 	fill_byte_type_range (struct_ptr: POINTER; type, start_index, end_index: INTEGER)

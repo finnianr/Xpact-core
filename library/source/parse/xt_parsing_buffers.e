@@ -29,6 +29,7 @@ feature {NONE} -- Initialization
 			check attached Token_names end
 
 			attribute_list := new_attribute_list
+			entity_table := attribute_list.entity_table
 			inspect a_parser_data.naming_mode when NM_prefix_SEP_localname then
 				doctype_name_cache := name_cache
 			else
@@ -87,8 +88,8 @@ feature -- Element change
 			if codec.encoding /= UTF_8 then
 				create {XT_UTF_8_CODEC} codec.make_empty
 			end
-			attribute_list.set_permit_undefined_entities (False)
-			attribute_list.reset -- also resets `name_cache'
+			attribute_list.set_undefined_entities_permitted (False)
+			attribute_list.reset -- also resets `name_cache' and `entity_table'
 			if name_cache /= doctype_name_cache then
 				doctype_name_cache.reset
 			end
@@ -276,6 +277,9 @@ feature {NONE} -- Internal structures
 		-- name cache for use in all DOCTYPE declarations
 		-- Normally refers to `name_cache' unless xmlns declarations are resolved
 		-- with URI mapping then created separately
+
+	entity_table: XT_ENTITY_TABLE
+		-- table of expanded entities defined in DOCTYPE by ENTITY
 
 	new_line: SPECIAL [CHARACTER_8]
 

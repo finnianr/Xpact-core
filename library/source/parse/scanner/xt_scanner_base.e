@@ -46,7 +46,6 @@ feature {NONE} -- Initialisation
 			create scanned_entity_buffer.make (5)
 			create scanned_index_x4_buffer.make_empty (4)
 			entity_cache := attribute_list.entity_cache
-			entity_table := attribute_list.entity_table
 		end
 
 feature -- Access
@@ -66,15 +65,6 @@ feature -- Status query
 			if start_index <= end_index then
 				Result := end_index <= buf.count
 			end
-		end
-
-feature -- Element change
-
-	reset
-		do
-			entity_cache.reset
-			entity_table.wipe_out
-			entity_table.set_predefined (entity_cache)
 		end
 
 feature {NONE} -- Implementation
@@ -103,9 +93,6 @@ feature {NONE} -- Deferred
 		end
 
 feature {NONE} -- Internal attributes
-
-	entity_table: XT_ENTITY_TABLE
-		-- table of expanded entities defined in DOCTYPE by ENTITY
 
 	entity_cache: XT_ENTITY_NAME_CACHE
 		-- efficient lookup of entity names from character buffer interval
