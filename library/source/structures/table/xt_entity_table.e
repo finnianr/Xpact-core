@@ -138,30 +138,12 @@ feature -- Element change
 
 	extend (parts: XT_ENTITY_PARTS_LIST)
 		do
-			inspect parts.count
-				when 1 then
-				-- &legal; referenced near end of document /usr/share/gnome/help/synaptic/C/synaptic.xml
-				-- Defined as external: <!ENTITY legal SYSTEM "gpl.xml">
-				-- Without putting into table there will be a %N missing in output compared to eXpat
-					if parts.has_system_id then
-						put (Empty_string, parts.name)
-					end
-
-				when 2 then
-					put (parts.last, parts.name)
-
-				when 3 then
-					if parts.has_system_id then
-						put (Empty_string, parts.name)
-					end
-
-					if parts.i_th (2) = NDATA and parts.i_th_token (3) = Tok_name
-						and then attached inserted_name as entity_name
-					then
-					-- attempting to reference this name in document returns the `Error_binary_entity_ref' error
-						entity_name.set_has_notation_tag
-					end
-			else
+			if attached parts.to_string as str then
+				put (str, parts.name)
+				if parts.has_unparsed_entity and then attached inserted_name as entity_name then
+				-- attempting to reference this name in document returns the `Error_binary_entity_ref' error
+					entity_name.set_has_notation_tag
+				end
 			end
 		end
 

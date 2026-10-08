@@ -48,17 +48,34 @@ feature {NONE} -- Initialization
 			internal_case_insensitive_hash_code := 0
 		end
 
-feature -- Status query
+feature -- Access
 
-	is_open: BOOLEAN
+	external_id_type: INTEGER
+
+feature -- Status query
 
 	is_dtd_expandable: BOOLEAN
 		-- `True' if entity should be expanded in literal values referenced in document type definition
+
+	is_external: BOOLEAN
+		-- `True' if the entity is defined externally to document
+		do
+			Result := external_id_type > 0
+		end
+
+	is_open: BOOLEAN
 
 	has_notation_tag: BOOLEAN
 		-- `True' if entity was assigned with an NDATA type
 		-- <!ENTITY img_gif SYSTEM "photo.gif" NDATA gif>
 		-- It is not permissible to reference this entity anywhere if `True'
+
+feature -- Element change
+
+	set_external_id_type (a_external_id_type: INTEGER)
+		do
+			external_id_type := a_external_id_type
+		end
 
 feature -- Status change
 

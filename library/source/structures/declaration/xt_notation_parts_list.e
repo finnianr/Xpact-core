@@ -55,7 +55,7 @@ feature -- Status query
 
 feature {NONE} -- Factory
 
-	new_name (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): STRING_8
+	new_name (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): like name_cache.item
 		do
 			Result := new_substring (buffer, start_index, end_index)
 		end

@@ -31,6 +31,26 @@ inherit
 create
 	make
 
+feature -- Access
+
+	to_string: detachable STRING
+		do
+			inspect count
+				when 1, 3 then
+				-- &legal; referenced near end of document /usr/share/gnome/help/synaptic/C/synaptic.xml
+				-- Defined as external: <!ENTITY legal SYSTEM "gpl.xml">
+				-- Without putting into table there will be a %N missing in output compared to eXpat
+					if has_system_id then
+						Result := Empty_string
+					end
+
+				when 2 then
+					Result := last
+
+			else
+			end
+		end
+
 feature -- Status query
 
 	has_unparsed_entity: BOOLEAN

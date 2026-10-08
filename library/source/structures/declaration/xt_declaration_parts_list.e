@@ -298,7 +298,7 @@ feature {NONE} -- External PUBLIC/SYSTEM linking
 
 feature {NONE} -- Factory
 
-	new_name (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): STRING_8
+	new_name (buffer: SPECIAL [CHARACTER_8]; start_index, end_index: INTEGER): like name_cache.item
 		local
 			colon_index: INTEGER
 		do

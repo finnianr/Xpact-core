@@ -212,7 +212,7 @@ feature {NONE} -- Token processing
 
 			elseif attached parameter_entity_table.item (entity_name) as parameter then
 				c_set_has_parameter_entity_reference (parse_data, True)
-				if not parameter.is_external then
+				if not entity_name.is_external then
 					buffer_index_copy := buffer_index -- save field
 					buffer_index := 0; source_type := c_accounting_source_type (parse_data)
 					entity_name.open
@@ -460,8 +460,13 @@ feature {NONE} -- Event handlers
 
 				when PARAMETER_ENTITY then
 					if attached parameter_entity_parts_list as parts_list then
-						if parts_list.is_valid then
-							parameter_entity_table.put (parts_list.new_parameter, as_entity_name (parts_list.name))
+						if parts_list.is_valid and then attached as_entity_name (parts_list.name) as entity_name then
+							entity_name.set_external_id_type (parts_list.external_id_type)
+							if entity_name.is_external then
+								parameter_entity_table.put (Empty_string, entity_name)
+							else
+								parameter_entity_table.put (parts_list.last, entity_name)
+							end
 							on_entity (parts_list, parse_data)
 							parts_list.wipe_out
 						else
@@ -787,7 +792,7 @@ feature {NONE} -- Tables
 
 	attribute_value_defaults_table: HASH_TABLE [ARRAYED_LIST [STRING], STRING]
 
-	parameter_entity_table: HASH_TABLE [XT_PARAMETER_ENTITY, XT_ENTITY_NAME]
+	parameter_entity_table: HASH_TABLE [STRING, XT_ENTITY_NAME]
 
 feature {NONE} -- Internal attributes
 
