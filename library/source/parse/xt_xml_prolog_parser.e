@@ -212,12 +212,12 @@ feature {NONE} -- Token processing
 
 			elseif attached parameter_entity_table.item (entity_name) as parameter then
 				c_set_has_parameter_entity_reference (parse_data, True)
-				if not parameter.is_external and then attached parameter.value as value then
+				if not parameter.is_external then
 					buffer_index_copy := buffer_index -- save field
 					buffer_index := 0; source_type := c_accounting_source_type (parse_data)
 					entity_name.open
 					update_accounting_source_type (parse_data)
-					error := process_content (value.area, 0, value.count, attribute_list, names, element_context, parse_data)  -- Recurse
+					error := process_content (parameter.area, 0, parameter.count, attribute_list, names, element_context, parse_data)  -- Recurse
 
 					entity_name.close
 					c_set_accounting_source_type (parse_data, source_type) -- restore accounting source type

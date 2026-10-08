@@ -23,26 +23,45 @@ class
 	XT_PARAMETER_ENTITY
 
 inherit
+	STRING
+		rename
+			empty as is_string_empty,
+			empty_area as new_empty_area,
+			make as make_sized
+		redefine
+			make_sized
+		end
+
 	XT_STRING_CONSTANTS
+		undefine
+			copy, is_equal, out
+		end
 
 create
-	make
+	make, make_sized
 
 feature {NONE} -- Initialization
 
 	make (parts_list: XT_PARAMETER_ENTITY_PARTS_LIST)
 		require
 			valid_parts: parts_list.count >= 1
-		local
-			s: XT_STRING_8_ROUTINES
 		do
 			name := parts_list.name
 			external_id_type := parts_list.external_id_type
 			inspect external_id_type when 0 then
-				value := parts_list.last
+				share (parts_list.last)
 			else
-				value := s.Empty_string
+				area := Empty_area
 			end
+		end
+
+	make_sized (n: INTEGER)
+			-- Allocate space for at least `n' characters.
+		local
+			s: XT_STRING_8_ROUTINES
+		do
+			Precursor (n)
+			name := s.Empty_string
 		end
 
 feature -- Access
@@ -51,14 +70,19 @@ feature -- Access
 
 	name: STRING
 
-	value: STRING
-
 feature -- Status query
 
 	is_external: BOOLEAN
 		-- `True' if the entity is defined externally to document
 		do
 			Result := external_id_type > 0
+		end
+
+feature {NONE} -- Constants
+
+	Empty_area: SPECIAL [CHARACTER]
+		once
+			create Result.make_filled ('%U', 1)
 		end
 
 end
