@@ -24,14 +24,6 @@ inherit
 
 feature -- Status query
 
-	has_unparsed_entity: BOOLEAN
-		-- For example:
-		-- 	<!NOTATION gif SYSTEM "image/gif">
-		-- 	<!ENTITY logo SYSTEM "logo.gif" NDATA gif>
-		do
-			-- redefined in `XT_ENTITY_PARTS_LIST'
-		end
-
 	is_parameter: BOOLEAN
 		deferred
 		end
@@ -51,6 +43,17 @@ feature -- Status query
 		end
 
 feature -- Access
+
+	entity_name: XT_ENTITY_NAME
+		-- entity `name' with properties set
+		do
+			if attached {XT_ENTITY_NAME} name as l_name then
+				set_properties (l_name)
+				Result := l_name
+			else
+				Result := Default_entity_name
+			end
+		end
 
 	name: STRING
 		deferred
@@ -78,7 +81,7 @@ feature -- Measurement
 		deferred
 		end
 
-feature {NONE} -- Implementation
+feature {NONE} -- Deferred
 
 	i_th alias "[]", at alias "@" (i: INTEGER): STRING
 		deferred
@@ -90,6 +93,22 @@ feature {NONE} -- Implementation
 
 	token_area: SPECIAL [INTEGER]
 		deferred
+		end
+
+feature {NONE} -- Implementation
+
+	set_properties (a_name: XT_ENTITY_NAME)
+		do
+			a_name.set_external_id_type (external_id_type)
+			a_name.set_public_id (public_id)
+			a_name.set_system_id (system_id)
+		end
+
+feature {NONE} -- Constants
+
+	Default_entity_name: XT_ENTITY_NAME
+		once
+			create Result.make_empty
 		end
 
 end

@@ -109,14 +109,36 @@ static void crc32_update_bool(crc_ctx_t *ctx, int value) {
  * parameter entity ref and has no handler, which silently discards all entity
  * declarations that follow it in the internal subset.
  * Calling XML_Parse on the sub-parser (even with empty content) sets
- * dtd->paramEntityRead=true, which keeps keepProcessing=true. */
+ * dtd->paramEntityRead=true, which keeps keepProcessing=true.
+ * Also combines its own arguments, left to right, into the checksum for
+ * -type entity (the same type XML_SkippedEntityHandler contributes to):
+ * context, base, systemId, publicId. context is NULL when the reference is
+ * to a parameter entity (as here) and non-NULL for a general entity
+ * reference; systemId is never NULL; base is NULL unless XML_SetBase was
+ * called (this program never calls it); publicId is NULL unless a PUBLIC
+ * identifier was given. All four are skipped when NULL. `parser' itself
+ * (the referencing parser, used below only to create the sub-parser) isn't
+ * document data, so it isn't checksummed; `ctx' is recovered from it via
+ * XML_GetUserData rather than received directly, since this handler's own
+ * first argument is the parser, not userData. */
 static int XMLCALL on_external_entity(XML_Parser parser,
                                       const XML_Char *context,
                                       const XML_Char *base,
                                       const XML_Char *systemId,
                                       const XML_Char *publicId)
 {
-	(void)base; (void)systemId; (void)publicId;
+	crc_ctx_t *ctx = (crc_ctx_t *) XML_GetUserData(parser);
+	if (ctx->type == TYPE_ENTITY) {
+		if (context)
+			crc32_update(ctx, (const unsigned char *) context, strlen(context));
+		if (base)
+			crc32_update(ctx, (const unsigned char *) base, strlen(base));
+		if (systemId)
+			crc32_update(ctx, (const unsigned char *) systemId, strlen(systemId));
+		if (publicId)
+			crc32_update(ctx, (const unsigned char *) publicId, strlen(publicId));
+	}
+
 	XML_Parser sub = XML_ExternalEntityParserCreate(parser, context, NULL);
 	if (sub) {
 		XML_Parse(sub, "", 0, 1);

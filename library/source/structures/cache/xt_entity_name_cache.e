@@ -32,15 +32,15 @@ feature {NONE} -- Initialization
 	make
 		do
 			Precursor
-			if attached new_predefined_table as table then
-				create predefined_table.make (table.count)
-				from table.start until table.after loop
-					if attached table.key_for_iteration as name
+			if attached new_predefined_list as list then
+				create predefined_table.make (list.count)
+				from list.start until list.after loop
+					if attached list.item.name as name
 						and then attached item (name.area, 0, name.count - 1) as l_entity
 					then
-						predefined_table.extend (table.item_for_iteration.out, l_entity)
+						predefined_table.extend (list.item.character.out, l_entity)
 					end
-					table.forth
+					list.forth
 				end
 			else
 				create predefined_table.make (3)
@@ -89,9 +89,9 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Factory
 
-	new_predefined_table: HASH_TABLE [CHARACTER, STRING]
+	new_predefined_list: ARRAYED_LIST [TUPLE [character: CHARACTER; name: STRING]]
 		do
-			create Result.make_from_iterable_tuples (<<
+			create Result.make_from_array (<<
 				['&', Predefined_amp], ['<', Predefined_lt], ['>', Predefined_gt],
 				['%'', Predefined_apos], ['"', Predefined_quot]
 			>>)

@@ -18,6 +18,7 @@ deferred class XT_CONTENT_SCANNER
 
 inherit
 	XT_TAG_SCANNER
+
 	XT_PI_COMMENT_SCANNER
 
 feature -- Content tokenization

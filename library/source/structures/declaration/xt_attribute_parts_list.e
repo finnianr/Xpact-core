@@ -17,8 +17,8 @@ class
 inherit
 	XT_DECLARATION_PARTS_LIST
 		rename
-			name as element_name,
-			is_valid as is_valid_as_one
+			is_valid as is_valid_as_one,
+			name as element_name
 		redefine
 			is_complete, is_valid_as_one, is_reserved_first_letter, Hash_identifiers, Reserved_identifiers
 		end
@@ -34,6 +34,13 @@ feature -- Access
 				Result := l_area [1]
 			else
 				Result := Empty_string
+			end
+		end
+
+	default_value: detachable STRING
+		do
+			if last_is_literal and then attached last as value then
+				Result := value
 			end
 		end
 
@@ -91,7 +98,7 @@ feature -- Status query
 		require
 			completed: is_complete
 		do
-			if attached i_th (4) as l_name then
+			if count >= 4 and then attached i_th (4) as l_name then
 				Result := l_name = Hash_fixed or else l_name = Hash_required
 			end
 		end

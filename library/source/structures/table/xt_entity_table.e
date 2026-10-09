@@ -17,8 +17,7 @@ inherit
 		rename
 			empty as table_empty,
 			extend as extend_table,
-			item as table_item,
-			put as put_name
+			item as table_item
 		export
 			{NONE} all
 			{ANY} inserted
@@ -83,8 +82,6 @@ feature -- Access
 			end
 		end
 
-	inserted_name: detachable XT_ENTITY_NAME
-
 	expanded_value (
 		buffer: SPECIAL [CHARACTER_8]; lower_index, upper_index: INTEGER; a_entity: SPECIAL [XT_ENTITY_NAME]
 		is_dtd_literal, keep_ref: BOOLEAN
@@ -136,29 +133,9 @@ feature -- Access
 
 feature -- Element change
 
-	extend (parts: XT_ENTITY_PARTS_LIST)
-		do
-			if attached parts.to_string as str then
-				put (str, parts.name)
-				if parts.has_unparsed_entity and then attached inserted_name as entity_name then
-				-- attempting to reference this name in document returns the `Error_binary_entity_ref' error
-					entity_name.set_has_notation_tag
-				end
-			end
-		end
-
 	set_predefined (entity_cache: XT_ENTITY_NAME_CACHE)
 		do
 			merge (entity_cache.predefined_table)
-		end
-
-	put (new: STRING; a_name: STRING)
-		local
-			l_name: XT_ENTITY_NAME
-		do
-			l_name := as_entity_name (a_name)
-			put_name (new, l_name)
-			inserted_name := if inserted then l_name else Void end
 		end
 
 feature {NONE} -- Implementation

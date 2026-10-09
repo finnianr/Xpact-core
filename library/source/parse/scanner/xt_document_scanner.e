@@ -197,43 +197,6 @@ feature -- Name utilities (implements XT_ENCODING deferred features)
 			Result := ok and index = end_index
 		end
 
-	predefined_entity_code (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
-		-- Code point for predefined entity
-		-- (lt=0x3C, gt=0x3E, amp=0x26, quot=0x22, apos=0x27), or -1 if not a predefined entity.
-		require
-			valid_range: valid_range (buf, start_index, end_index)
-		do
-			Result := -1
-			inspect end_index - start_index + 1
-				when 2 then
-					inspect buf [start_index]
-						when 'g' then
-							if same_characters (buf, start_index, end_index, Predefined_gt) then
-								Result := {ASCII}.Greaterthan -- 0x3E
-							end
-						when 'l' then
-							if same_characters (buf, start_index, end_index, Predefined_lt) then
-								Result := {ASCII}.Lessthan -- 0x3C
-							end
-					else end
-				when 3 then
-					if same_characters (buf, start_index, end_index, Predefined_amp) then
-						Result := {ASCII}.Ampersand -- 0x26
-					end
-				when 4 then
-					inspect buf [start_index]
-						when 'q' then
-							if same_characters (buf, start_index, end_index, Predefined_quot) then
-								Result := {ASCII}.Doublequote -- 0x22
-							end
-						when 'a' then
-							if same_characters (buf, start_index, end_index, Predefined_apos) then
-								Result := {ASCII}.Singlequote -- 0x27
-							end
-					else end
-			else end
-		end
-
 feature -- Status query
 
 	is_public_id (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER; parse_data: POINTER): BOOLEAN
@@ -257,13 +220,6 @@ feature -- Status query
 				end
 			end
 			Result := ok
-		end
-
-	is_predefined_entity (name: STRING): BOOLEAN
-		do
-			if attached name.area as area then
-				Result := area [0] = '&' and then predefined_entity_code (area, 1, name.count - 2) > 0
-			end
 		end
 
 feature -- Position tracking

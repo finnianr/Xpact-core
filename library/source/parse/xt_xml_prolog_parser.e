@@ -212,7 +212,7 @@ feature {NONE} -- Token processing
 
 			elseif attached parameter_entity_table.item (entity_name) as parameter then
 				c_set_has_parameter_entity_reference (parse_data, True)
-				if not entity_name.is_external then
+				if not entity_name.has_external_id then
 					buffer_index_copy := buffer_index -- save field
 					buffer_index := 0; source_type := c_accounting_source_type (parse_data)
 					entity_name.open
@@ -379,8 +379,6 @@ feature {NONE} -- Token processing
 feature {NONE} -- Event handlers
 
 	on_close_declaration (declaration, token: INTEGER; parse_data: POINTER): INTEGER
-		local
-			system_id, public_id, default_value: detachable STRING
 		do
 			inspect declaration
 				when ATTLIST then
@@ -398,14 +396,15 @@ feature {NONE} -- Event handlers
 							parts_list.wipe_out
 
 						else
-							if parts_list.last_is_literal and then attached parts_list.last as value then
-								default_value := value
-								extend_attribute_value_defaults_table (parts_list.element_name, parts_list.name, value)
+							if parts_list.is_complete then
+								if attached parts_list.default_value as value then
+									extend_attribute_value_defaults_table (parts_list, value)
+								end
+								on_attribute_list_declaration (parts_list, parse_data)
+								parts_list.reset -- reset to just `element_name'
+							else
+								Result := Error_syntax
 							end
-							if attached parts_list.area as part then
-								on_attribute_list_declaration (part [0], part [1], part [2], default_value, parts_list.is_required, parse_data)
-							end
-							parts_list.reset -- reset to just `element_name'
 						end
 					end
 
@@ -423,7 +422,7 @@ feature {NONE} -- Event handlers
 				when ENTITY_ then
 					if attached entity_parts_list as parts_list then
 						if parts_list.is_valid then
-							entity_table.extend (parts_list)
+							parts_list.extend_table (entity_table)
 							set_entity_handled (parse_data, False)
 							on_entity (parts_list, parse_data)
 							parts_list.wipe_out
@@ -447,10 +446,6 @@ feature {NONE} -- Event handlers
 				when NOTATION_ then
 					if attached notation_parts_list as parts_list then
 						if parts_list.is_valid then
-							system_id := parts_list.system_id
-							if parts_list.has_public_id then
-								public_id := parts_list.public_id
-							end
 							on_notation_declaration (parts_list, parse_data)
 							parts_list.wipe_out
 						else
@@ -460,13 +455,8 @@ feature {NONE} -- Event handlers
 
 				when PARAMETER_ENTITY then
 					if attached parameter_entity_parts_list as parts_list then
-						if parts_list.is_valid and then attached as_entity_name (parts_list.name) as entity_name then
-							entity_name.set_external_id_type (parts_list.external_id_type)
-							if entity_name.is_external then
-								parameter_entity_table.put (Empty_string, entity_name)
-							else
-								parameter_entity_table.put (parts_list.last, entity_name)
-							end
+						if parts_list.is_valid then
+							parts_list.extend_table (parameter_entity_table)
 							on_entity (parts_list, parse_data)
 							parts_list.wipe_out
 						else
@@ -481,8 +471,8 @@ feature {NONE} -- Event handlers
 		require
 			is_valid_list: parts.is_valid
 		do
-			if not is_predefined_entity (parts.name) then
-				if parts.has_unparsed_entity then
+			if attached parts.entity_name as entity_name and then not entity_name.is_predefined then
+				if entity_name.is_unparsed then
 					on_unparsed_entity_declaration (parts, parse_data)
 				end
 				on_entity_declaration (parts, parse_data)
@@ -491,18 +481,18 @@ feature {NONE} -- Event handlers
 
 feature {NONE} -- Implementation
 
-	extend_attribute_value_defaults_table (element_name, attribute_name, value: STRING)
+	extend_attribute_value_defaults_table (parts: XT_ATTRIBUTE_PARTS_LIST; value: STRING)
 		local
 			default_values_list: ARRAYED_LIST [STRING]
 		do
 			if attached attribute_value_defaults_table as table then
-				if attached table [element_name] as list then
+				if attached table [parts.element_name] as list then
 					default_values_list := list
 				else
 					create default_values_list.make (5)
-					table.extend (default_values_list, element_name)
+					table.extend (default_values_list, parts.element_name)
 				end
-				default_values_list.extend (attribute_name)
+				default_values_list.extend (parts.name)
 				default_values_list.extend (value)
 			end
 		end

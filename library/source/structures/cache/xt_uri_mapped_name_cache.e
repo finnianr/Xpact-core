@@ -317,5 +317,5 @@ feature {NONE} -- Constants
 
 invariant
 	depth_same_as_stack_top_depth:
-		(xmlns_scope_stack.count > 0 implies xmlns_scope_stack.item.element_depth = depth) or else depth = 0
+		(xmlns_scope_stack.count > 0 implies xmlns_scope_stack.item.depth = depth) or else depth = 0
 end

@@ -12,7 +12,6 @@ note
 	date: "2026-08-16 13:40:00 GMT (Saturday 16th August 2026)"
 	revision: "1"
 
-
 class
 	XT_PARAMETER_ENTITY_PARTS_LIST
 
@@ -35,6 +34,19 @@ create
 feature -- Status query
 
 	is_parameter: BOOLEAN = True
+
+feature -- Basic operations
+
+	extend_table (table: HASH_TABLE [STRING, XT_ENTITY_NAME])
+		do
+			if attached entity_name as l_name and then l_name.count > 0 then
+				if entity_name.has_external_id then
+					table.put (Empty_string, l_name)
+				else
+					table.put (last, l_name)
+				end
+			end
+		end
 
 feature {NONE} -- Implementation
 

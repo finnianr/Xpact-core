@@ -562,7 +562,7 @@ feature {NONE} -- Processor dispatch
 			code := predefined_entity_code (buf, start_index, end_index)
 			inspect code when -1 then
 				entity_name := entity_cache.item (buf, start_index, end_index)
-				if entity_name.has_notation_tag then
+				if entity_name.is_unparsed then
 					Result := Error_binary_entity_ref; put_boolean (done, True)
 
 				elseif entity_name.is_open then

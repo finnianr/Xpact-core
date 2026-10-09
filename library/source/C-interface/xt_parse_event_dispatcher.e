@@ -164,10 +164,7 @@ feature {NONE} -- Parse event handlers
 
 feature {NONE} -- Declaration event handlers
 
-	on_attribute_list_declaration (
-		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
-		is_required: BOOLEAN; parse_data: POINTER
-	)
+	on_attribute_list_declaration (parts_list: XT_ATTRIBUTE_PARTS_LIST; parse_data: POINTER)
 		-- typedef void (XMLCALL *XML_AttlistDeclHandler)(
 		--   void *userData, const XML_Char *elname, const XML_Char *attname,
 		--   const XML_Char *att_type, const XML_Char *default, int isrequired
@@ -176,10 +173,10 @@ feature {NONE} -- Declaration event handlers
 			ptr: POINTER
 		do
 			ptr := c_on_attribute_list_declaration (parse_data)
-			if is_attached (ptr) then
+			if is_attached (ptr) and then attached parts_list.area as part then
 				call_on_attribute_list_declaration (
-					ptr, c_user_data (parse_data), address (element_name), address (attribute_name),
-					address (attribute_type), address_if (default_value), is_required.to_integer
+					ptr, c_user_data (parse_data), address (part [0]), address (part [1]), address (part [2]),
+					address_if (parts_list.default_value), parts_list.is_required.to_integer
 				)
 			end
 		end

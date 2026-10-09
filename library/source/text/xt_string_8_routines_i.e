@@ -46,15 +46,6 @@ feature {NONE} -- Access
 			valid_last: Result [Result.count - 1] = str [str.count]
 		end
 
-	frozen as_entity_name (a_name: STRING): XT_ENTITY_NAME
-		do
-			if attached {XT_ENTITY_NAME} a_name as name then
-				Result := name
-			else
-				create Result.make_shared (a_name)
-			end
-		end
-
 	frozen char_ref_number (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
 		-- Parse &#N; or &#xH; starting at '&'
 		-- Unicode code point of the character reference starting at start_index ('&').
@@ -87,6 +78,43 @@ feature {NONE} -- Access
 					index := index + 1
 				end
 			end
+		end
+
+	frozen predefined_entity_code (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): INTEGER
+		-- Code point for predefined entity
+		-- (lt=0x3C, gt=0x3E, amp=0x26, quot=0x22, apos=0x27), or -1 if not a predefined entity.
+		require
+			valid_range: valid_range (buf, start_index, end_index)
+		do
+			Result := -1
+			inspect end_index - start_index + 1
+				when 2 then
+					inspect buf [start_index]
+						when 'g' then
+							if same_characters (buf, start_index, end_index, Predefined_gt) then
+								Result := {ASCII}.Greaterthan -- 0x3E
+							end
+						when 'l' then
+							if same_characters (buf, start_index, end_index, Predefined_lt) then
+								Result := {ASCII}.Lessthan -- 0x3C
+							end
+					else end
+				when 3 then
+					if same_characters (buf, start_index, end_index, Predefined_amp) then
+						Result := {ASCII}.Ampersand -- 0x26
+					end
+				when 4 then
+					inspect buf [start_index]
+						when 'q' then
+							if same_characters (buf, start_index, end_index, Predefined_quot) then
+								Result := {ASCII}.Doublequote -- 0x22
+							end
+						when 'a' then
+							if same_characters (buf, start_index, end_index, Predefined_apos) then
+								Result := {ASCII}.Singlequote -- 0x27
+							end
+					else end
+			else end
 		end
 
 	frozen prune_utf_16_nulls (a_str: STRING): BOOLEAN
@@ -420,6 +448,13 @@ feature {NONE} -- Status report
 			definition: Result implies new_substring (area, lower, upper).same_caseless_characters (string, 1, string.count, 1)
 		end
 
+	valid_range (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): BOOLEAN
+		do
+			if start_index <= end_index then
+				Result := end_index <= buf.count
+			end
+		end
+
 	valid_substring_intervals (a_area: SPECIAL [INTEGER]): BOOLEAN
 		-- `True' if all alternating (lower then upper) substring bounds are valid
 		local
@@ -585,6 +620,18 @@ feature {NONE} -- Constants
 		end
 
 	Reserved_path_chars: STRING = "*?[]<>|&;`$()%"%'!~ %T%N-"
+
+feature {NONE} -- Predefined entities
+
+	Predefined_apos: STRING_8 = "apos"
+
+	Predefined_amp: STRING_8 = "amp"
+
+	Predefined_gt: STRING_8 = "gt"
+
+	Predefined_lt: STRING_8 = "lt"
+
+	Predefined_quot: STRING_8 = "quot"
 
 invariant
 	empty_definition: Empty_string.is_empty

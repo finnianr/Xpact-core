@@ -106,16 +106,4 @@ feature {NONE} -- XML declaration
 			Result.compare_objects
 		end
 
-feature {NONE} -- Predefined entities
-
-	Predefined_apos: STRING_8 = "apos"
-
-	Predefined_amp: STRING_8 = "amp"
-
-	Predefined_gt: STRING_8 = "gt"
-
-	Predefined_lt: STRING_8 = "lt"
-
-	Predefined_quot: STRING_8 = "quot"
-
 end

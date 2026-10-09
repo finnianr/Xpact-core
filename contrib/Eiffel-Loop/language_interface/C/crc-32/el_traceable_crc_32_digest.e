@@ -48,8 +48,6 @@ feature -- Element change
 		end
 
 	add_characters (area: SPECIAL [CHARACTER]; lower, upper: INTEGER)
-		local
-			c_i, code: CHARACTER; i: INTEGER
 		do
 			Precursor (area, lower, upper)
 			put_indexable (area, lower, upper)

@@ -105,20 +105,15 @@ feature -- Status report
 
 feature {NONE} -- Declaration event handlers
 
-	on_attribute_list_declaration (
-		element_name, attribute_name, attribute_type: STRING; default_value: detachable STRING
-		is_required: BOOLEAN; parse_data: POINTER
-	)
+	on_attribute_list_declaration (parts_list: XT_ATTRIBUTE_PARTS_LIST; parse_data: POINTER)
 		do
 			inspect data_type when Type_decl_attribute_list then
-				if attached checksum as crc then
-					crc.add_string (element_name)
-					crc.add_string (attribute_name)
-					crc.add_string (attribute_type)
-					if attached default_value as value then
-						crc.add_string (value)
-					end
-					crc.add_boolean (is_required)
+				if attached checksum as crc and then attached parts_list.area as part then
+					crc.add_string (part [0])
+					crc.add_string (part [1])
+					crc.add_string (part [2])
+					crc.add_attached_string (parts_list.default_value)
+					crc.add_boolean (parts_list.is_required)
 				end
 			else
 			end

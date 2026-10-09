@@ -52,12 +52,25 @@ feature -- Access
 
 	external_id_type: INTEGER
 
+	public_id: detachable STRING
+
+	system_id: detachable STRING
+
 feature -- Status query
 
 	is_dtd_expandable: BOOLEAN
 		-- `True' if entity should be expanded in literal values referenced in document type definition
 
-	is_external: BOOLEAN
+	is_predefined: BOOLEAN
+		local
+			s: XT_STRING_8_ROUTINES
+		do
+			if attached area as l_area then
+				Result := l_area [0] = '&' and then s.predefined_entity_code (l_area, 1, count - 2) > 0
+			end
+		end
+
+	has_external_id: BOOLEAN
 		-- `True' if the entity is defined externally to document
 		do
 			Result := external_id_type > 0
@@ -65,7 +78,7 @@ feature -- Status query
 
 	is_open: BOOLEAN
 
-	has_notation_tag: BOOLEAN
+	is_unparsed: BOOLEAN
 		-- `True' if entity was assigned with an NDATA type
 		-- <!ENTITY img_gif SYSTEM "photo.gif" NDATA gif>
 		-- It is not permissible to reference this entity anywhere if `True'
@@ -75,6 +88,16 @@ feature -- Element change
 	set_external_id_type (a_external_id_type: INTEGER)
 		do
 			external_id_type := a_external_id_type
+		end
+
+	set_public_id (a_public_id: detachable STRING)
+		do
+			public_id := a_public_id
+		end
+
+	set_system_id (a_system_id: detachable STRING)
+		do
+			system_id := a_system_id
 		end
 
 feature -- Status change
@@ -89,9 +112,9 @@ feature -- Status change
 			is_open := True
 		end
 
-	set_has_notation_tag
+	set_unparsed
 		do
-			has_notation_tag := True
+			is_unparsed := True
 		end
 
 end

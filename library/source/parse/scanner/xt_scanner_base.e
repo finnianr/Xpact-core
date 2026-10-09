@@ -32,6 +32,9 @@ inherit
 	XT_UTF_8_VALIDATION
 
 	XT_STRING_8_ROUTINES_I
+		export
+			{ANY} valid_range
+		end
 
 	EL_STRING_H_C_API
 
@@ -59,13 +62,6 @@ feature -- Access
 feature -- Status query
 
 	newline_or_tab_found: BOOLEAN
-
-	valid_range (buf: SPECIAL [CHARACTER]; start_index, end_index: INTEGER): BOOLEAN
-		do
-			if start_index <= end_index then
-				Result := end_index <= buf.count
-			end
-		end
 
 feature {NONE} -- Implementation
 

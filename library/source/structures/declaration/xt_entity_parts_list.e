@@ -25,7 +25,7 @@ inherit
 		undefine
 			copy, is_equal
 		redefine
-			has_unparsed_entity
+			set_properties
 		end
 
 create
@@ -53,17 +53,16 @@ feature -- Access
 
 feature -- Status query
 
-	has_unparsed_entity: BOOLEAN
-		-- For example:
-		-- 	<!NOTATION gif SYSTEM "image/gif">
-		-- 	<!ENTITY logo SYSTEM "logo.gif" NDATA gif>
+	is_parameter: BOOLEAN = False
+
+feature -- Basic operations
+
+	extend_table (table: XT_ENTITY_TABLE)
 		do
-			if count = 3 then
-				Result := i_th (2) = NDATA and then i_th_token (3) = Tok_name
+			if attached to_string as str and then attached entity_name as l_name and then l_name.count > 0 then
+				table.put (str, l_name)
 			end
 		end
-
-	is_parameter: BOOLEAN = False
 
 feature {NONE} -- Implementation
 
@@ -86,6 +85,21 @@ feature {NONE} -- Implementation
 				Result := True
 			else
 			end
+		end
+
+	set_properties (a_name: XT_ENTITY_NAME)
+		do
+			Precursor (a_name)
+			inspect count when 3 then
+			-- For example:
+			-- 	<!NOTATION gif SYSTEM "image/gif">
+			-- 	<!ENTITY logo SYSTEM "logo.gif" NDATA gif>
+
+				if i_th (2) = NDATA and then i_th_token (3) = Tok_name then
+				-- attempting to reference this name in document returns the `Error_binary_entity_ref' error
+					a_name.set_unparsed
+				end
+			else end
 		end
 
 feature {NONE} -- Internal attributes
